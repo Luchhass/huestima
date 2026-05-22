@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="hue-0" x1="256" y1="102" x2="365" y2="147" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#32d989"/>
+      <stop offset="1" stop-color="#39d7b5"/>
+    </linearGradient>
+    <linearGradient id="hue-1" x1="365" y1="147" x2="410" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39d7b5"/>
+      <stop offset="1" stop-color="#45a6ff"/>
+    </linearGradient>
+    <linearGradient id="hue-2" x1="410" y1="256" x2="365" y2="365" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#45a6ff"/>
+      <stop offset="1" stop-color="#9d6cff"/>
+    </linearGradient>
+    <linearGradient id="hue-3" x1="365" y1="365" x2="256" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9d6cff"/>
+      <stop offset="1" stop-color="#ff5fba"/>
+    </linearGradient>
+    <linearGradient id="hue-4" x1="256" y1="410" x2="147" y2="365" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff5fba"/>
+      <stop offset="1" stop-color="#ff8f4e"/>
+    </linearGradient>
+    <linearGradient id="hue-5" x1="147" y1="365" x2="102" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8f4e"/>
+      <stop offset="1" stop-color="#f7d046"/>
+    </linearGradient>
+    <linearGradient id="hue-6" x1="102" y1="256" x2="147" y2="147" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7d046"/>
+      <stop offset="1" stop-color="#72d965"/>
+    </linearGradient>
+    <linearGradient id="hue-7" x1="147" y1="147" x2="256" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#72d965"/>
+      <stop offset="1" stop-color="#32d989"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-width="124" stroke-linecap="butt">
+    <path d="M 256 102 A 154 154 0 0 1 365 147" stroke="url(#hue-0)"/>
+    <path d="M 365 147 A 154 154 0 0 1 410 256" stroke="url(#hue-1)"/>
+    <path d="M 410 256 A 154 154 0 0 1 365 365" stroke="url(#hue-2)"/>
+    <path d="M 365 365 A 154 154 0 0 1 256 410" stroke="url(#hue-3)"/>
+    <path d="M 256 410 A 154 154 0 0 1 147 365" stroke="url(#hue-4)"/>
+    <path d="M 147 365 A 154 154 0 0 1 102 256" stroke="url(#hue-5)"/>
+    <path d="M 102 256 A 154 154 0 0 1 147 147" stroke="url(#hue-6)"/>
+    <path d="M 147 147 A 154 154 0 0 1 256 102" stroke="url(#hue-7)"/>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "name": "huestima-multiplayer-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "pm2:start": "pm2 start src/index.js --name huestima-backend",
+    "pm2:restart": "pm2 restart huestima-backend",
+    "pm2:logs": "pm2 logs huestima-backend"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "socket.io": "^4.8.1"
+  }
+}

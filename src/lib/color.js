@@ -1,0 +1,136 @@
+import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
+
+export function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+export function clampHsv({ h, s, v }) {
+  const normalizedHue = Number.isFinite(h) ? ((h % 360) + 360) % 360 : 0;
+
+  return {
+    h: normalizedHue,
+    s: clamp(Number.isFinite(s) ? s : 0, 0, 100),
+    v: clamp(Number.isFinite(v) ? v : 0, 0, 100),
+  };
+}
+
+export function hsvToRgb(input) {
+  const { h, s, v } = clampHsv(input);
+  const saturation = s / 100;
+  const value = v / 100;
+  const chroma = value * saturation;
+  const huePrime = h / 60;
+  const x = chroma * (1 - Math.abs((huePrime % 2) - 1));
+  const match = value - chroma;
+
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (huePrime >= 0 && huePrime < 1) {
+    red = chroma;
+    green = x;
+  } else if (huePrime >= 1 && huePrime < 2) {
+    red = x;
+    green = chroma;
+  } else if (huePrime >= 2 && huePrime < 3) {
+    green = chroma;
+    blue = x;
+  } else if (huePrime >= 3 && huePrime < 4) {
+    green = x;
+    blue = chroma;
+  } else if (huePrime >= 4 && huePrime < 5) {
+    red = x;
+    blue = chroma;
+  } else {
+    red = chroma;
+    blue = x;
+  }
+
+  return {
+    r: Math.round((red + match) * 255),
+    g: Math.round((green + match) * 255),
+    b: Math.round((blue + match) * 255),
+  };
+}
+
+export function rgbToHex({ r, g, b }) {
+  return `#${[r, g, b]
+    .map((channel) => clamp(Math.round(channel), 0, 255).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+export function hsvToHex(hsv) {
+  return rgbToHex(hsvToRgb(hsv));
+}
+
+export function hexToRgb(hex) {
+  const normalized = hex.replace("#", "").trim();
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split("")
+          .map((character) => character + character)
+          .join("")
+      : normalized;
+
+  const number = Number.parseInt(value, 16);
+
+  return {
+    r: (number >> 16) & 255,
+    g: (number >> 8) & 255,
+    b: number & 255,
+  };
+}
+
+export function withHex(hsv) {
+  const cleanHsv = clampHsv(hsv);
+
+  return {
+    ...cleanHsv,
+    hex: hsvToHex(cleanHsv),
+  };
+}
+
+export function randomTargetColor(difficultyId) {
+  const difficulty = getDifficultyOption(difficultyId);
+
+  return withHex({
+    h: Math.floor(Math.random() * 360),
+    s: hasDifficultyControl(difficulty, "s")
+      ? Math.floor(54 + Math.random() * 38)
+      : difficulty.fixed.s,
+    v: hasDifficultyControl(difficulty, "v")
+      ? Math.floor(46 + Math.random() * 42)
+      : difficulty.fixed.v,
+  });
+}
+
+export function relativeLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const channels = [r, g, b].map((channel) => {
+    const srgb = channel / 255;
+    return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  });
+
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+export function readableTone(hex) {
+  return relativeLuminance(hex) > 0.42 ? "dark" : "light";
+}
+
+export function hueGradient() {
+  return "linear-gradient(to top, #f00 0%, #ff0 16.66%, #0f0 33.33%, #0ff 50%, #00f 66.66%, #f0f 83.33%, #f00 100%)";
+}
+
+export function saturationGradient(hue, value = 100) {
+  const left = hsvToHex({ h: hue, s: 0, v: value });
+  const right = hsvToHex({ h: hue, s: 100, v: value });
+  return `linear-gradient(to top, ${left}, ${right})`;
+}
+
+export function valueGradient(hue, saturation) {
+  const top = hsvToHex({ h: hue, s: saturation, v: 100 });
+  return `linear-gradient(to top, #050505, ${top})`;
+}

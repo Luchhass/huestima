@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from "react";
+import { X } from "lucide-react";
+import ModeSelector from "./ModeSelector";
+import MultiplayerCard from "./MultiplayerCard";
+import SingleplayerCard from "./SingleplayerCard";
+import { useTranslation } from "@/hooks/useLanguage";
+import {
+  APP_NAME,
+  DEFAULT_DIFFICULTY_ID,
+  DEFAULT_GAME_MODE_ID,
+  DIFFICULTY_IDS,
+} from "@/lib/constants";
+
+const DIFFICULTY_BURST_COLORS = {
+  [DIFFICULTY_IDS.EASY]: {
+    color: "#31e981",
+    rgb: "49 233 129",
+  },
+  [DIFFICULTY_IDS.NORMAL]: {
+    color: "#ffbd2f",
+    rgb: "255 189 47",
+  },
+  [DIFFICULTY_IDS.HARD]: {
+    color: "#ff3f46",
+    rgb: "255 63 70",
+  },
+};
+
+export default function HomeCard({ initialView = "home" }) {
+  const { t } = useTranslation();
+  const [view, setView] = useState(initialView);
+  const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
+  const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
+  const [difficultyBurst, setDifficultyBurst] = useState(null);
+
+  const isSingleplayer = view === "singleplayer";
+  const isMultiplayer = view === "multiplayer";
+
+  const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
+    const burst =
+      DIFFICULTY_BURST_COLORS[nextDifficulty] ||
+      DIFFICULTY_BURST_COLORS[DIFFICULTY_IDS.NORMAL];
+
+    setDifficultyBurst({
+      id: nextDifficulty,
+      color: burst.color,
+      rgb: burst.rgb,
+      key: `${nextDifficulty}-${optionIndex}-${Date.now()}`,
+    });
+  };
+
+  return (
+    <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
+      <section
+        data-intro-card-target
+        className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8"
+        style={{ height: "min(calc(100dvh - 132px), 390px)" }}
+      >
+        {difficultyBurst && (
+          <span
+            key={difficultyBurst.key}
+            className={`difficulty-burst difficulty-burst--${difficultyBurst.id}`}
+            style={{
+              "--difficulty-burst-color": difficultyBurst.color,
+              "--difficulty-burst-rgb": difficultyBurst.rgb,
+            }}
+            aria-hidden="true"
+          />
+        )}
+
+        {(isSingleplayer || isMultiplayer) && (
+          <button
+            type="button"
+            aria-label={t("common.backHome")}
+            onClick={() => setView("home")}
+            className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
+          >
+            <X className="size-6 sm:size-[26px]" strokeWidth={1.7} />
+          </button>
+        )}
+
+        <div
+          className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
+        >
+          {view === "home" ? (
+            <>
+              <div className="home-copy max-w-[23.5rem]">
+                <h1
+                  className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]"
+                >
+                  {APP_NAME}
+                </h1>
+
+                <div
+                  className="mt-5 space-y-4 text-[0.95rem] font-medium leading-[1.22] text-white/82 sm:text-base"
+                >
+                  {t("home.paragraphs").map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="home-actions mt-auto self-start"
+              >
+                <ModeSelector
+                  onSingleplayer={() => setView("singleplayer")}
+                  onMultiplayer={() => setView("multiplayer")}
+                />
+              </div>
+            </>
+          ) : isSingleplayer ? (
+            <SingleplayerCard
+              difficulty={difficulty}
+              gameMode={gameMode}
+              onDifficultyChange={setDifficulty}
+              onDifficultyFeedback={triggerDifficultyFeedback}
+              onGameModeChange={setGameMode}
+            />
+          ) : (
+            <MultiplayerCard onDifficultyFeedback={triggerDifficultyFeedback} />
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}

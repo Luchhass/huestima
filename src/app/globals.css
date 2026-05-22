@@ -1,26 +1,671 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --surface: #000000;
+}
+
+.dark {
+  --background: #2f2f2f;
+  --foreground: #ffffff;
+  --surface: #000000;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--background);
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: geometricPrecision;
+  user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+::selection {
+  color: inherit;
+  background: transparent;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-gradient {
+  background: var(--background);
+}
+
+@keyframes rgb-disk-ramp {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes rgb-disk-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes difficulty-wash {
+  0% {
+    opacity: 0;
+  }
+
+  6% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes difficulty-blast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.08);
+  }
+
+  9% {
+    opacity: 0.86;
+    transform: translate(-50%, -50%) scale(0.62);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.2);
+  }
+}
+
+@keyframes difficulty-flash {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.05);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.25);
+  }
+}
+
+@layer utilities {
+  .card-action-height {
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .card-action-size {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+  }
+
+  .card-control-frame {
+    border: 2px solid rgba(255, 255, 255, 0.96);
+    border-radius: 9999px;
+    background: transparent;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .difficulty-burst {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    pointer-events: none;
+    border-radius: inherit;
+    overflow: hidden;
+    background: rgb(var(--difficulty-burst-rgb) / 0.88);
+    opacity: 0;
+    animation: difficulty-wash 3.8s linear both;
+    will-change: opacity;
+  }
+
+  .difficulty-burst::before,
+  .difficulty-burst::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    pointer-events: none;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    will-change: opacity, transform;
+  }
+
+  .difficulty-burst::before {
+    width: 132%;
+    aspect-ratio: 1;
+    background:
+      radial-gradient(
+        circle,
+        rgb(255 255 255 / 0.36) 0 8%,
+        rgb(var(--difficulty-burst-rgb) / 0.95) 22%,
+        rgb(var(--difficulty-burst-rgb) / 0.58) 44%,
+        transparent 78%
+      );
+    filter: blur(22px) saturate(1.08);
+    animation: difficulty-blast 2.9s cubic-bezier(0.12, 0.72, 0.2, 1) both;
+  }
+
+  .difficulty-burst::after {
+    width: 38%;
+    aspect-ratio: 1;
+    background: radial-gradient(
+      circle,
+      rgb(255 255 255 / 0.9) 0 8%,
+      rgb(var(--difficulty-burst-rgb) / 0.72) 22%,
+      transparent 68%
+    );
+    filter: blur(10px);
+    animation: difficulty-flash 0.72s cubic-bezier(0.12, 0.72, 0.2, 1) both;
+  }
+
+  .gradient-icon-flow {
+    background: conic-gradient(
+      from 25deg,
+      #ff5f7a,
+      #f7d046,
+      #32d989,
+      #45a6ff,
+      #9d6cff,
+      #ff5f7a
+    );
+  }
+
+  .rgb-hover-button {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      color 0.24s ease,
+      transform 0.24s ease;
+  }
+
+  .rgb-hover-button::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 0;
+    width: max(155%, 172px);
+    aspect-ratio: 1;
+    border-radius: 999px;
+    opacity: 0;
+    background:
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.32) 0 7%,
+        transparent 18%
+      ),
+      conic-gradient(
+        from 18deg,
+        #ff5f7a,
+        #f7d046,
+        #32d989,
+        #45a6ff,
+        #9d6cff,
+        #ff5f7a
+      );
+    transition: opacity 0.24s ease;
+    transform: translate(-50%, -50%) rotate(0deg);
+    transform-origin: center;
+  }
+
+  .rgb-hover-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0;
+    background: radial-gradient(
+      circle at 48% 48%,
+      transparent 0 24%,
+      rgba(0, 0, 0, 0.04) 45%,
+      rgba(0, 0, 0, 0.12) 100%
+    );
+    transition: opacity 0.24s ease;
+  }
+
+  .rgb-hover-button:not(:disabled):hover,
+  .rgb-hover-button:not(:disabled):focus-visible {
+    color: #ffffff;
+    transform: scale(1.04);
+  }
+
+  .rgb-hover-button:not(:disabled):hover::before,
+  .rgb-hover-button:not(:disabled):focus-visible::before {
+    opacity: 1;
+    animation:
+      rgb-disk-ramp 0.16s cubic-bezier(0.9, 0, 0.1, 1) 1 both,
+      rgb-disk-spin 0.18s linear 0.16s infinite;
+  }
+
+  .rgb-hover-button:not(:disabled):hover::after,
+  .rgb-hover-button:not(:disabled):focus-visible::after {
+    opacity: 1;
+  }
+
+  .soft-icon-button {
+    transition: transform 0.22s ease;
+  }
+
+  .soft-icon-button:hover,
+  .soft-icon-button:focus-visible {
+    transform: scale(1.06);
+  }
+
+  .result-next-button {
+    overflow: hidden;
+  }
+
+  .app-header,
+  .creator-tag {
+    transition:
+      opacity 0.22s ease,
+      transform 0.22s ease;
+  }
+
+  .solo-close-button {
+    z-index: 30;
+    pointer-events: auto;
+    transition: opacity 0.2s ease;
+  }
+
+  .solo-close-button:hover,
+  .solo-close-button:focus-visible {
+    opacity: 0.62;
+  }
+
+  .difficulty-switch {
+    --difficulty-index: 1;
+    position: relative;
+  }
+
+  .difficulty-switch__thumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 3);
+    border-radius: 999px;
+    background: #ffffff;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(calc(var(--difficulty-index) * 100%));
+  }
+
+  .game-mode-switch {
+    --game-mode-index: 0;
+    position: relative;
+  }
+
+  .game-mode-switch__thumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 3);
+    border-radius: 999px;
+    background: #ffffff;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(calc(var(--game-mode-index) * 100%));
+  }
+
+  .creator-link::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    height: 1px;
+    background: currentColor;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.28s ease;
+  }
+
+  .creator-link:hover::after,
+  .creator-link:focus-visible::after {
+    clip-path: inset(0 0 0 0);
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    main.app-gradient {
+    --fullscreen-page-x: clamp(1.5rem, 4vw, 3rem);
+    --fullscreen-page-top: clamp(6.25rem, 13dvh, 8.25rem);
+    --fullscreen-page-bottom: clamp(3.75rem, 8dvh, 5rem);
+    --fullscreen-content-width: min(44rem, 100%);
+
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: var(--fullscreen-page-top) var(--fullscreen-page-x)
+      var(--fullscreen-page-bottom);
+    background: var(--surface);
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .app-header__brand,
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .header-controls
+    > * {
+    color: #ffffff;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .creator-tag {
+    color: rgb(161 161 170);
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card,
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .game-card-shell {
+    width: var(--fullscreen-content-width);
+    max-width: var(--fullscreen-content-width);
+    height: calc(
+      100dvh - var(--fullscreen-page-top) - var(--fullscreen-page-bottom)
+    ) !important;
+    min-height: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 !important;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .game-card-shell
+    > * {
+    height: 100%;
+    min-height: 0;
+    background: transparent;
+    padding: 0 !important;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card
+    .solo-close-button,
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .game-card-shell
+    .solo-close-button {
+    top: 0;
+    right: 0;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-view-actions {
+    max-width: min(100%, 50rem);
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card-content,
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-view-panel {
+    min-height: 100%;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card-content--home {
+    height: auto;
+    min-height: 0;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card-content--home
+    .home-actions {
+    margin-top: clamp(3rem, 8dvh, 5rem) !important;
+  }
+
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card-content--singleplayer
+    .home-view-panel,
+  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+    .home-card-content--multiplayer
+    .home-view-panel {
+    height: min(100%, 34rem);
+    min-height: min(100%, 28rem);
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .app-header {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-100%);
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .creator-tag {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(100%);
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .game-stage {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    background: var(--surface);
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .game-card-shell {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh !important;
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .game-card-shell > * {
+    min-height: 100dvh;
+  }
+
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .guess-picker-track {
+    border-radius: 0 !important;
+  }
+}
+
+@media (min-width: 640px) {
+  @layer utilities {
+    .card-action-height {
+      height: 62px;
+      min-height: 62px;
+    }
+
+    .card-action-size {
+      width: 62px;
+      height: 62px;
+      min-width: 62px;
+      min-height: 62px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rgb-hover-button,
+  .rgb-hover-button::before,
+  .rgb-hover-button::after,
+  .soft-icon-button,
+  .solo-close-button,
+  .app-header,
+  .creator-tag,
+  .difficulty-burst,
+  .difficulty-switch__thumb,
+  .game-mode-switch__thumb,
+  .creator-link::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) {
+  --fullscreen-page-x: clamp(1.5rem, 3vw, 2rem);
+  --fullscreen-page-y: clamp(1.5rem, 3vw, 2rem);
+  --fullscreen-content-top: clamp(5.25rem, 10dvh, 7rem);
+  --fullscreen-action-gap: clamp(3.5rem, 9dvh, 6.5rem);
+  --fullscreen-content-width: min(56rem, 100%);
+  --fullscreen-copy-width: min(28rem, 100%);
+  background: var(--surface);
+  color: #ffffff;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) body,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) .app-gradient {
+  background: var(--surface) !important;
+  color: #ffffff;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .app-header {
+  padding: var(--fullscreen-page-x);
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .app-header__brand,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .header-controls
+  > * {
+  color: #ffffff !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .app-header__brand {
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .creator-tag {
+  bottom: var(--fullscreen-page-y);
+  left: var(--fullscreen-page-x);
+  color: rgb(161 161 170) !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  main.app-gradient {
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: var(--fullscreen-page-y) var(--fullscreen-page-x) !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .game-card-shell {
+  width: var(--fullscreen-content-width) !important;
+  max-width: var(--fullscreen-content-width) !important;
+  height: calc(100dvh - (var(--fullscreen-page-y) * 2)) !important;
+  min-height: 0 !important;
+  overflow: visible;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .game-card-shell
+  > * {
+  height: 100%;
+  min-height: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-view-panel,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-view-actions {
+  overflow: visible;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .game-card-shell
+  > * {
+  padding-top: var(--fullscreen-content-top) !important;
+  padding-bottom: calc(var(--fullscreen-page-y) + 2.25rem) !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-copy,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-view-copy {
+  max-width: var(--fullscreen-copy-width);
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-copy
+  h1,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-view-copy
+  h1 {
+  font-size: clamp(3.25rem, 6vw, 5rem);
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content--home
+  .home-actions {
+  margin-top: var(--fullscreen-action-gap) !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content--singleplayer
+  .home-view-panel,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content--multiplayer
+  .home-view-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card
+  .solo-close-button,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .game-card-shell
+  .solo-close-button {
+  top: var(--fullscreen-content-top) !important;
+  right: 0 !important;
 }
