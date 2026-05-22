@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { playIntroStep } from "@/lib/sound";
@@ -10,7 +10,18 @@ export default function IntroPhase({ onComplete }) {
   const scopeRef = useRef(null);
   const wordRefs = useRef([]);
   const onCompleteRef = useRef(onComplete);
-  const steps = [t("game.ready"), t("game.set"), t("game.go")];
+  const steps = useMemo(
+    () => [t("game.ready"), t("game.set"), t("game.go")],
+    [t]
+  );
+  const widestStep = useMemo(
+    () =>
+      steps.reduce(
+        (widest, step) => (step.length > widest.length ? step : widest),
+        steps[0]
+      ),
+    [steps]
+  );
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -97,7 +108,7 @@ export default function IntroPhase({ onComplete }) {
     }, scopeRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [steps]);
 
   return (
     <div
@@ -105,9 +116,12 @@ export default function IntroPhase({ onComplete }) {
       className="relative h-full bg-black p-6 text-white sm:p-8"
     >
       <div className="pointer-events-none absolute top-6 right-6 text-7xl leading-none font-semibold tracking-normal lowercase sm:top-8 sm:right-8 sm:text-[7rem]">
-        <div className="relative overflow-hidden pb-[0.12em]">
+        <div
+          data-intro-word-mask
+          className="relative overflow-hidden pb-[0.12em]"
+        >
           <span className="invisible block select-none" aria-hidden="true">
-            {t("game.ready")}
+            {widestStep}
           </span>
 
           {steps.map((step, index) => (

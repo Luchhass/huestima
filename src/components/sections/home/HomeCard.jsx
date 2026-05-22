@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
+import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   APP_NAME,
@@ -37,6 +38,8 @@ export default function HomeCard({ initialView = "home" }) {
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
+
+  useAppChromeHidden(isSingleplayer || isMultiplayer);
 
   const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
     const burst =
@@ -72,6 +75,7 @@ export default function HomeCard({ initialView = "home" }) {
 
         {(isSingleplayer || isMultiplayer) && (
           <button
+            data-game-mode-shock-target
             type="button"
             aria-label={t("common.backHome")}
             onClick={() => setView("home")}

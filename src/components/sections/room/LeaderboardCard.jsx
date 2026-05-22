@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { readableTone } from "@/lib/color";
@@ -31,7 +30,14 @@ function tileScoreTone(hex) {
   return readableTone(hex) === "dark" ? "text-zinc-950" : "text-white";
 }
 
-export default function LeaderboardCard({ leaderboard, currentPlayerId }) {
+export default function LeaderboardCard({
+  leaderboard,
+  currentPlayerId,
+  onBackHome,
+  onBackLobby,
+  isReturningLobby = false,
+  error = "",
+}) {
   const { t } = useTranslation();
   const rows = leaderboard?.leaderboard || [];
   const winner = rows[0];
@@ -41,13 +47,14 @@ export default function LeaderboardCard({ leaderboard, currentPlayerId }) {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
-      <Link
-        href="/"
+      <button
+        type="button"
+        onClick={onBackHome}
         aria-label={t("common.backHome")}
         className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
       >
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </Link>
+      </button>
 
       {winner && (
         <div className="max-w-100 pr-10">
@@ -126,12 +133,32 @@ export default function LeaderboardCard({ leaderboard, currentPlayerId }) {
         })}
       </div>
 
-      <Link
-        href="/"
-        className="rgb-hover-button card-action-height mt-4 inline-flex w-full items-center justify-center rounded-full bg-white px-6 text-base font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-      >
-        <span className="relative z-10">{t("common.backHome")}</span>
-      </Link>
+      <div className="mt-4 grid w-full grid-cols-2 gap-3 max-[460px]:grid-cols-1">
+        <button
+          type="button"
+          onClick={onBackHome}
+          className="card-action-height inline-flex min-w-0 items-center justify-center rounded-full border-2 border-white/95 bg-transparent px-5 text-center text-sm font-semibold leading-tight text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
+        >
+          <span className="min-w-0 truncate">{t("common.backHome")}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onBackLobby}
+          disabled={isReturningLobby}
+          className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base"
+        >
+          <span className="relative z-10 min-w-0 truncate">
+            {isReturningLobby ? t("room.returningLobby") : t("room.backLobby")}
+          </span>
+        </button>
+      </div>
+
+      {error && (
+        <p className="mt-2 text-center text-xs font-semibold text-red-200">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

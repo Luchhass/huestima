@@ -31,6 +31,12 @@ export function useMultiplayerRoom(roomCode) {
 
         if (nextRoom.game) {
           setStartedGame(nextRoom.game);
+        } else if (nextRoom.status === "lobby") {
+          setStartedGame(null);
+        }
+
+        if (nextRoom.status !== "completed") {
+          setLeaderboard(null);
         }
       }
     };
@@ -186,6 +192,44 @@ export function useMultiplayerRoom(roomCode) {
     [roomCode],
   );
 
+  const updateSettings = useCallback(
+    async ({ playerId, gameMode, difficulty }) => {
+      const response = await emitWithAck("room:updateSettings", {
+        roomCode,
+        playerId,
+        gameMode,
+        difficulty,
+      });
+
+      if (response.ok) {
+        const data = responseData(response);
+        setRoom(data.room);
+      }
+
+      return response;
+    },
+    [roomCode],
+  );
+
+  const returnToLobby = useCallback(
+    async (playerId) => {
+      const response = await emitWithAck("room:returnToLobby", {
+        roomCode,
+        playerId,
+      });
+
+      if (response.ok) {
+        const data = responseData(response);
+        setRoom(data.room);
+        setStartedGame(null);
+        setLeaderboard(null);
+      }
+
+      return response;
+    },
+    [roomCode],
+  );
+
   return {
     room,
     leaderboard,
@@ -198,5 +242,7 @@ export function useMultiplayerRoom(roomCode) {
     leaveRoom,
     startGame,
     kickPlayer,
+    updateSettings,
+    returnToLobby,
   };
 }

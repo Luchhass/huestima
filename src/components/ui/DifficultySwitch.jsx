@@ -11,6 +11,7 @@ export default function DifficultySwitch({
   onSelectFeedback,
   ariaLabel,
   disabled = false,
+  className = "",
 }) {
   const { t } = useTranslation();
   const [hoverIndex, setHoverIndex] = useState(null);
@@ -33,7 +34,7 @@ export default function DifficultySwitch({
 
   return (
     <div
-      className="difficulty-switch card-control-frame card-action-height grid min-w-0 grid-cols-3 overflow-hidden p-1"
+      className={`difficulty-switch card-control-frame card-action-height grid min-w-0 grid-cols-3 overflow-hidden p-1 ${className}`}
       aria-label={ariaLabel || t("difficulty.label")}
       onPointerLeave={() => setHoverIndex(null)}
       style={{ "--difficulty-index": visualIndex }}

@@ -1,5 +1,5 @@
 import { env } from "../config/env.js";
-import { ROOM_STATUSES } from "../constants.js";
+import { ROOM_STATUSES, ROUND_COUNT } from "../constants.js";
 import {
   buildGamePayload,
   markPlayerInactiveForGame,
@@ -67,7 +67,24 @@ function touchRoom(room) {
   room.expiresAt = now() + env.roomTtlMs;
 }
 
-function serializePlayer(player) {
+function getPlayerProgress(player, room) {
+  const completedRounds = player.results?.filter(Boolean).length || 0;
+  const totalRounds = room?.game?.roundCount || ROUND_COUNT;
+  const currentRound =
+    room?.status === ROOM_STATUSES.IN_GAME
+      ? Math.min(completedRounds + (player.submitted ? 0 : 1), totalRounds)
+      : completedRounds;
+
+  return {
+    completedRounds,
+    currentRound,
+    totalRounds,
+  };
+}
+
+function serializePlayer(player, room = null) {
+  const progress = getPlayerProgress(player, room);
+
   return {
     id: player.id,
     playerId: player.id,
@@ -77,6 +94,10 @@ function serializePlayer(player) {
     joinedAt: player.joinedAt,
     lastSeenAt: player.lastSeenAt,
     submitted: player.submitted,
+    progress,
+    completedRounds: progress.completedRounds,
+    currentRound: progress.currentRound,
+    totalRounds: progress.totalRounds,
   };
 }
 
@@ -99,7 +120,7 @@ export function getRoomSnapshot(room) {
     players: Array.from(room.players.values())
       .filter((player) => !player.kicked)
       .sort((first, second) => first.joinedAt - second.joinedAt)
-      .map(serializePlayer),
+      .map((player) => serializePlayer(player, room)),
     game:
       room.status === ROOM_STATUSES.IN_GAME || room.status === ROOM_STATUSES.COMPLETED
         ? buildGamePayload(room)
@@ -216,7 +237,7 @@ export function createRoom(payload) {
 
   return ok({
     room: getRoomSnapshot(room),
-    player: serializePlayer(room.players.get(validation.data.playerId)),
+    player: serializePlayer(room.players.get(validation.data.playerId), room),
   });
 }
 
@@ -242,7 +263,7 @@ export function requestRoomState(payload) {
 
   return ok({
     room: getRoomSnapshot(room),
-    player: player ? serializePlayer(player) : null,
+    player: player ? serializePlayer(player, room) : null,
     game: player ? buildGamePayload(room) : null,
     leaderboard: room.leaderboard,
   });
@@ -287,7 +308,7 @@ export function joinRoom(payload) {
     reconnectPlayer(room, existingPlayer, payload.socketId);
     return ok({
       room: getRoomSnapshot(room),
-      player: serializePlayer(existingPlayer),
+      player: serializePlayer(existingPlayer, room),
       game: buildGamePayload(room),
       leaderboard: room.leaderboard,
     });
@@ -323,8 +344,91 @@ export function joinRoom(payload) {
 
   return ok({
     room: getRoomSnapshot(room),
-    player: serializePlayer(player),
+    player: serializePlayer(player, room),
   });
+}
+
+export function updateRoomSettings(payload) {
+  const roomCode = validateRoomCode(payload.roomCode);
+  if (!roomCode.ok) return roomCode;
+
+  const playerId = validatePlayerId(payload.hostPlayerId || payload.playerId);
+  if (!playerId.ok) return playerId;
+
+  const room = getRoom(roomCode.data.roomCode);
+  if (!room) return fail("Lobby not found or expired.");
+  if (room.status !== ROOM_STATUSES.LOBBY) return fail("Settings can only be changed in the lobby.");
+  if (room.hostPlayerId !== playerId.data.playerId) return fail("Only the host can change lobby settings.");
+
+  if (payload.gameMode !== undefined || payload.mode !== undefined) {
+    const gameMode = validateGameMode(payload.gameMode || payload.mode);
+    if (!gameMode.ok) return gameMode;
+
+    room.gameMode = gameMode.data.gameMode;
+  }
+
+  if (payload.difficulty !== undefined) {
+    const difficulty = validateDifficulty(payload.difficulty);
+    if (!difficulty.ok) return difficulty;
+
+    room.difficulty = difficulty.data.difficulty;
+  }
+
+  touchRoom(room);
+
+  return ok({ room: getRoomSnapshot(room) });
+}
+
+export function returnRoomToLobby(payload) {
+  const roomCode = validateRoomCode(payload.roomCode);
+  if (!roomCode.ok) return roomCode;
+
+  const playerId = validatePlayerId(payload.playerId);
+  if (!playerId.ok) return playerId;
+
+  const room = getRoom(roomCode.data.roomCode);
+  if (!room) return fail("Lobby not found or expired.");
+  if (room.status !== ROOM_STATUSES.COMPLETED) return fail("The match is still running.");
+
+  const requester = room.players.get(playerId.data.playerId);
+  if (!requester || requester.kicked) return fail("Player is not in this lobby.");
+
+  clearTimer(room.timers.completed);
+  room.timers.completed = null;
+  room.status = ROOM_STATUSES.LOBBY;
+  room.game = null;
+  room.leaderboard = null;
+  room.seed = null;
+
+  for (const [id, player] of room.players.entries()) {
+    if (player.kicked || !player.connected) {
+      room.players.delete(id);
+      continue;
+    }
+
+    player.submitted = false;
+    player.inactive = false;
+    player.results = [];
+    player.totalScore = 0;
+    player.lastSeenAt = now();
+  }
+
+  if (!room.players.has(room.hostPlayerId)) {
+    const nextHost = Array.from(room.players.values())[0] || null;
+    if (!nextHost) {
+      closeRoom(room, "empty", true);
+      return ok({ room: null, closed: true });
+    }
+
+    room.hostPlayerId = nextHost.id;
+    for (const player of room.players.values()) {
+      player.isHost = player.id === nextHost.id;
+    }
+  }
+
+  touchRoom(room);
+
+  return ok({ room: getRoomSnapshot(room) });
 }
 
 export function leaveRoom(payload) {

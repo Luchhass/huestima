@@ -18,7 +18,7 @@ export default function AppHeader() {
         href="/"
         aria-label={t("app.homeAria")}
         data-sound="off"
-        className="app-header__brand pointer-events-auto inline-flex h-11 items-center gap-3 rounded-full px-1 text-[15px] font-semibold uppercase tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-base"
+        className="app-header__brand pointer-events-auto inline-flex h-11 items-center gap-3 rounded-full text-[15px] font-semibold uppercase tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-base"
       >
         <BrandLogoMark />
         <span>{APP_NAME}</span>

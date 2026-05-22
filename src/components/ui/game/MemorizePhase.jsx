@@ -10,16 +10,19 @@ import {
   startMemorizeMechanism,
 } from "@/lib/sound";
 import CountdownReel from "./CountdownReel";
+import MultiplayerProgressList from "./MultiplayerProgressList";
 
 export default function MemorizePhase({
   round,
   onComplete,
   durationMs = MEMORIZE_DURATION_MS,
+  progressItems = [],
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const roundRef = useRef(null);
   const brandRef = useRef(null);
+  const progressRef = useRef(null);
 
   const { centiseconds } = useCountdown({
     durationMs,
@@ -43,6 +46,13 @@ export default function MemorizePhase({
         autoAlpha: 0,
       });
 
+      if (progressRef.current) {
+        gsap.set(progressRef.current, {
+          yPercent: 80,
+          autoAlpha: 0,
+        });
+      }
+
       uiTimeline
         .to(roundRef.current, {
           yPercent: 0,
@@ -58,8 +68,21 @@ export default function MemorizePhase({
             duration: 0.78,
             ease: "power4.out",
           },
-          0.08,
+          0.28,
         );
+
+      if (progressRef.current) {
+        uiTimeline.to(
+          progressRef.current,
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 0.72,
+            ease: "power4.out",
+          },
+          0.16,
+        );
+      }
     }, scopeRef);
 
     return () => {
@@ -99,6 +122,15 @@ export default function MemorizePhase({
           {APP_NAME}
         </p>
       </div>
+
+      {progressItems.length > 0 && (
+        <div
+          ref={progressRef}
+          className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8"
+        >
+          <MultiplayerProgressList items={progressItems} />
+        </div>
+      )}
     </div>
   );
 }

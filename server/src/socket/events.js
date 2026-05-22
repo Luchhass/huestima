@@ -7,8 +7,10 @@ import {
   kickPlayer,
   leaveRoom,
   requestRoomState,
+  returnRoomToLobby,
   scheduleCompletedCleanup,
   startRoomGame,
+  updateRoomSettings,
 } from "../rooms/roomService.js";
 import { getRoom } from "../rooms/roomStore.js";
 import { submitFullResults, submitRoundGuess } from "../game/gameService.js";
@@ -122,6 +124,28 @@ export function registerSocketEvents(io) {
       "room:kickPlayer",
       safeEvent((payload, ack) => {
         const result = kickPlayer(payload);
+        if (!result.ok) return ackFail(ack, result.error);
+
+        ackOk(ack, result.data);
+        if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+      }),
+    );
+
+    socket.on(
+      "room:updateSettings",
+      safeEvent((payload, ack) => {
+        const result = updateRoomSettings(payload);
+        if (!result.ok) return ackFail(ack, result.error);
+
+        ackOk(ack, result.data);
+        if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+      }),
+    );
+
+    socket.on(
+      "room:returnToLobby",
+      safeEvent((payload, ack) => {
+        const result = returnRoomToLobby(payload);
         if (!result.ok) return ackFail(ack, result.error);
 
         ackOk(ack, result.data);

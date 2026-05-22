@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import { useTranslation } from "@/hooks/useLanguage";
 import { APP_NAME } from "@/lib/constants";
+import MultiplayerProgressList from "./MultiplayerProgressList";
 
 export default function GuessPhase({
   round,
@@ -13,11 +14,13 @@ export default function GuessPhase({
   guessColor,
   onGuessChange,
   onSubmit,
+  progressItems = [],
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const roundRef = useRef(null);
   const brandRef = useRef(null);
+  const progressRef = useRef(null);
 
   const submitButtonRef = useRef(null);
   const submitButtonCoreRef = useRef(null);
@@ -42,6 +45,13 @@ export default function GuessPhase({
         yPercent: 120,
         autoAlpha: 0,
       });
+
+      if (progressRef.current) {
+        gsap.set(progressRef.current, {
+          yPercent: 80,
+          autoAlpha: 0,
+        });
+      }
 
       gsap.set(pickerTracks, {
         xPercent: -104,
@@ -128,7 +138,7 @@ export default function GuessPhase({
             ease: "power4.out",
             clearProps: "transform,opacity,visibility",
           },
-          0.18
+          0.34
         )
 
         // Slider yuvarlakları — aynen korundu
@@ -242,6 +252,20 @@ export default function GuessPhase({
           0.83
         );
 
+      if (progressRef.current) {
+        timeline.to(
+          progressRef.current,
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 0.68,
+            ease: "power4.out",
+            clearProps: "transform,opacity,visibility",
+          },
+          0.22,
+        );
+      }
+
       if (checkPath) {
         timeline.to(
           checkPath,
@@ -293,6 +317,19 @@ export default function GuessPhase({
           {APP_NAME}
         </p>
       </div>
+
+      {progressItems.length > 0 && (
+        <div
+          ref={progressRef}
+          className="absolute bottom-6 z-20 sm:bottom-8"
+          style={{
+            left: `${pickerWidth + 24}px`,
+            maxWidth: `calc(100% - ${pickerWidth + 24}px - 112px)`,
+          }}
+        >
+          <MultiplayerProgressList items={progressItems} />
+        </div>
+      )}
 
       <button
         ref={submitButtonRef}

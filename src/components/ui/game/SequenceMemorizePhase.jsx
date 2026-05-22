@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { APP_NAME, ROUND_COUNT, SEQUENCE_MEMORIZE_DURATION_MS } from "@/lib/constants";
 import CountdownReel from "./CountdownReel";
+import MultiplayerProgressList from "./MultiplayerProgressList";
 import {
   playMemorizeSecondTick,
   playSequenceColorStep,
@@ -19,6 +20,7 @@ export default function SequenceMemorizePhase({
   durationMs = SEQUENCE_MEMORIZE_DURATION_MS,
   onColorChange,
   onComplete,
+  progressItems = [],
 }) {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -118,29 +120,35 @@ export default function SequenceMemorizePhase({
       </div>
 
       <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-5 sm:bottom-8 sm:left-8 sm:right-8">
-        <div className="flex gap-2">
-          {visibleColors.map((color, index) => {
-            const hasAppeared = index <= activeIndex;
+        <div className="min-w-0 space-y-3">
+          {progressItems.length > 0 && (
+            <MultiplayerProgressList items={progressItems} />
+          )}
 
-            return (
-              <span
-                key={`${color.hex}-${index}`}
-                className={`grid size-4 place-items-center rounded-full text-[0.55rem] font-bold leading-none ring-1 transition-transform ${
-                  index === activeIndex
-                    ? "scale-125 ring-white/80"
-                    : "ring-white/24"
-                } ${
-                  hasAppeared
-                    ? "text-transparent"
-                    : "bg-black text-white/62"
-                }`}
-                style={hasAppeared ? { backgroundColor: color.hex } : undefined}
-                aria-hidden="true"
-              >
-                {hasAppeared ? "" : "?"}
-              </span>
-            );
-          })}
+          <div className="flex gap-2">
+            {visibleColors.map((color, index) => {
+              const hasAppeared = index <= activeIndex;
+
+              return (
+                <span
+                  key={`${color.hex}-${index}`}
+                  className={`grid size-4 place-items-center rounded-full text-[0.55rem] font-bold leading-none ring-1 transition-transform ${
+                    index === activeIndex
+                      ? "scale-125 ring-white/80"
+                      : "ring-white/24"
+                  } ${
+                    hasAppeared
+                      ? "text-transparent"
+                      : "bg-black text-white/62"
+                  }`}
+                  style={hasAppeared ? { backgroundColor: color.hex } : undefined}
+                  aria-hidden="true"
+                >
+                  {hasAppeared ? "" : "?"}
+                </span>
+              );
+            })}
+          </div>
         </div>
 
         <p className="text-lg font-semibold text-current/88">

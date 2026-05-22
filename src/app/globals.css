@@ -6,6 +6,7 @@
   --background: #ffffff;
   --foreground: #171717;
   --surface: #000000;
+  --app-page-padding: 1.5rem;
 }
 
 .dark {
@@ -370,109 +371,15 @@ input {
     clip-path: inset(0 0 0 0);
   }
 
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    main.app-gradient {
-    --fullscreen-page-x: clamp(1.5rem, 4vw, 3rem);
-    --fullscreen-page-top: clamp(6.25rem, 13dvh, 8.25rem);
-    --fullscreen-page-bottom: clamp(3.75rem, 8dvh, 5rem);
-    --fullscreen-content-width: min(44rem, 100%);
-
-    align-items: stretch;
-    justify-content: flex-start;
-    padding: var(--fullscreen-page-top) var(--fullscreen-page-x)
-      var(--fullscreen-page-bottom);
-    background: var(--surface);
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .app-header__brand,
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .header-controls
-    > * {
-    color: #ffffff;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .creator-tag {
-    color: rgb(161 161 170);
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card,
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .game-card-shell {
-    width: var(--fullscreen-content-width);
-    max-width: var(--fullscreen-content-width);
-    height: calc(
-      100dvh - var(--fullscreen-page-top) - var(--fullscreen-page-bottom)
-    ) !important;
-    min-height: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    padding: 0 !important;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .game-card-shell
-    > * {
-    height: 100%;
-    min-height: 0;
-    background: transparent;
-    padding: 0 !important;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card
-    .solo-close-button,
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .game-card-shell
-    .solo-close-button {
-    top: 0;
-    right: 0;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-view-actions {
-    max-width: min(100%, 50rem);
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card-content,
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-view-panel {
-    min-height: 100%;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card-content--home {
-    height: auto;
-    min-height: 0;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card-content--home
-    .home-actions {
-    margin-top: clamp(3rem, 8dvh, 5rem) !important;
-  }
-
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card-content--singleplayer
-    .home-view-panel,
-  html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-    .home-card-content--multiplayer
-    .home-view-panel {
-    height: min(100%, 34rem);
-    min-height: min(100%, 28rem);
-  }
-
-  html[data-fullscreen-mode="on"][data-game-immersive="true"] .app-header {
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .app-header,
+  html[data-fullscreen-mode="on"][data-app-chrome-hidden="true"] .app-header {
     opacity: 0;
     pointer-events: none;
     transform: translateY(-100%);
   }
 
-  html[data-fullscreen-mode="on"][data-game-immersive="true"] .creator-tag {
+  html[data-fullscreen-mode="on"][data-game-immersive="true"] .creator-tag,
+  html[data-fullscreen-mode="on"][data-app-chrome-hidden="true"] .creator-tag {
     opacity: 0;
     pointer-events: none;
     transform: translateY(100%);
@@ -504,6 +411,10 @@ input {
 }
 
 @media (min-width: 640px) {
+  :root {
+    --app-page-padding: 2rem;
+  }
+
   @layer utilities {
     .card-action-height {
       height: 62px;
@@ -537,9 +448,9 @@ input {
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) {
-  --fullscreen-page-x: clamp(1.5rem, 3vw, 2rem);
-  --fullscreen-page-y: clamp(1.5rem, 3vw, 2rem);
-  --fullscreen-content-top: clamp(5.25rem, 10dvh, 7rem);
+  --fullscreen-page-x: var(--app-page-padding);
+  --fullscreen-page-y: var(--app-page-padding);
+  --fullscreen-home-content-top: clamp(5.25rem, 10dvh, 7rem);
   --fullscreen-action-gap: clamp(3.5rem, 9dvh, 6.5rem);
   --fullscreen-content-width: min(56rem, 100%);
   --fullscreen-copy-width: min(28rem, 100%);
@@ -555,7 +466,7 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) .app-gradient 
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .app-header {
-  padding: var(--fullscreen-page-x);
+  padding: var(--fullscreen-page-y) var(--fullscreen-page-x);
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
@@ -620,12 +531,16 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-  .home-card-content,
+  .home-view-actions {
+  max-width: min(100%, 50rem);
+}
+
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-  .game-card-shell
-  > * {
-  padding-top: var(--fullscreen-content-top) !important;
-  padding-bottom: calc(var(--fullscreen-page-y) + 2.25rem) !important;
+  .home-card
+  .difficulty-burst {
+  position: fixed;
+  inset: 0;
+  border-radius: 0;
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
@@ -642,6 +557,11 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .home-view-copy
   h1 {
   font-size: clamp(3.25rem, 6vw, 5rem);
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .home-card-content--home {
+  padding-top: var(--fullscreen-home-content-top) !important;
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
@@ -666,6 +586,6 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .game-card-shell
   .solo-close-button {
-  top: var(--fullscreen-content-top) !important;
+  top: 0 !important;
   right: 0 !important;
 }

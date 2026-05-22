@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -15,13 +15,52 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 
+function buildProgressItems(room, currentPlayerId) {
+  const totalRounds = room?.game?.roundCount || ROUND_COUNT;
+
+  return (room?.players || [])
+    .map((player, index) => {
+      const progress = player.progress || {};
+      const completedRounds = progress.completedRounds ?? player.completedRounds ?? 0;
+      const currentRound =
+        progress.currentRound ?? player.currentRound ?? Math.min(completedRounds + 1, totalRounds);
+      const roundsTotal = progress.totalRounds || player.totalRounds || totalRounds;
+
+      return {
+        id: player.id,
+        name: player.name,
+        joinedAt: player.joinedAt || index,
+        isCurrent: player.id === currentPlayerId,
+        completedRounds,
+        currentRound: Math.max(0, Math.min(currentRound, roundsTotal)),
+        totalRounds: roundsTotal,
+        label: `${Math.max(0, Math.min(currentRound, roundsTotal))}/${roundsTotal}`,
+      };
+    })
+    .sort((first, second) => {
+      if (second.currentRound !== first.currentRound) {
+        return second.currentRound - first.currentRound;
+      }
+
+      if (second.completedRounds !== first.completedRounds) {
+        return second.completedRounds - first.completedRounds;
+      }
+
+      return first.joinedAt - second.joinedAt;
+    });
+}
+
 export default function MultiplayerGame({
   roomCode,
   playerId,
   difficultyId,
   gameModeId,
   gamePayload,
+  room,
   leaderboard,
+  onBackHome,
+  onBackLobby,
+  isReturningLobby,
 }) {
   const { t } = useTranslation();
   const game = useMultiplayerGame({
@@ -33,6 +72,10 @@ export default function MultiplayerGame({
     incomingLeaderboard: leaderboard,
   });
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
+  const progressItems = useMemo(
+    () => buildProgressItems(room, playerId),
+    [playerId, room],
+  );
   const isImmersivePhase =
     phase === GAME_PHASES.INTRO ||
     phase === GAME_PHASES.MEMORIZE ||
@@ -75,6 +118,7 @@ export default function MultiplayerGame({
                 durationMs={game.revealDurationMs || undefined}
                 onColorChange={game.setTargetColor}
                 onComplete={game.finishMemorize}
+                progressItems={progressItems}
               />
             ) : (
               <MemorizePhase
@@ -82,6 +126,7 @@ export default function MultiplayerGame({
                 round={game.roundIndex + 1}
                 durationMs={game.revealDurationMs || undefined}
                 onComplete={game.finishMemorize}
+                progressItems={progressItems}
               />
             )
           )}
@@ -94,6 +139,7 @@ export default function MultiplayerGame({
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
+              progressItems={progressItems}
             />
           )}
 
@@ -114,6 +160,9 @@ export default function MultiplayerGame({
             <LeaderboardCard
               leaderboard={game.leaderboard}
               currentPlayerId={playerId}
+              onBackHome={onBackHome}
+              onBackLobby={onBackLobby}
+              isReturningLobby={isReturningLobby}
             />
           )}
 

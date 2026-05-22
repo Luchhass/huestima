@@ -298,7 +298,7 @@ export default function FinalSummary({
   return (
     <div
       ref={scopeRef}
-      className="relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8"
+      className="final-summary relative flex h-full min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8"
     >
       <Link
         ref={closeRef}
@@ -363,7 +363,7 @@ export default function FinalSummary({
         </p>
       </div>
 
-      <div className="mt-7 grid h-19.5 grid-cols-5 overflow-hidden sm:h-21.5">
+      <div className="mt-7 grid h-19.5 w-full max-w-[32rem] grid-cols-5 overflow-hidden sm:h-21.5">
         {results.map((result) => (
           <div
             key={result.round}
@@ -394,7 +394,7 @@ export default function FinalSummary({
         ))}
       </div>
 
-      <div className="relative mt-auto">
+      <div className="relative mt-auto w-full max-w-[32rem]">
         <span
           ref={playAgainRingRef}
           className="pointer-events-none absolute inset-0 rounded-full border border-white/28"

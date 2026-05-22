@@ -38,6 +38,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
     leaveRoom,
     startGame,
     kickPlayer,
+    updateSettings,
+    returnToLobby,
   } = useMultiplayerRoom(roomCode);
   const { session, isLoaded, saveSession, clearSession } = useRoomSession(roomCode);
   const bootstrappedRef = useRef(false);
@@ -45,6 +47,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
   const [player, setPlayer] = useState(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [isReturningLobby, setIsReturningLobby] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -169,6 +173,60 @@ export default function MultiplayerRoomClient({ roomCode }) {
     return response;
   };
 
+  const handleUpdateGameMode = async (gameMode) => {
+    if (!player) return;
+
+    setIsUpdatingSettings(true);
+    setError("");
+
+    const response = await updateSettings({
+      playerId: player.playerId,
+      gameMode,
+    });
+
+    setIsUpdatingSettings(false);
+
+    if (!response.ok) {
+      setError(response.error || t("room.couldNotUpdateSettings"));
+    }
+  };
+
+  const handleUpdateDifficulty = async (difficulty) => {
+    if (!player) return;
+
+    setIsUpdatingSettings(true);
+    setError("");
+
+    const response = await updateSettings({
+      playerId: player.playerId,
+      difficulty,
+    });
+
+    setIsUpdatingSettings(false);
+
+    if (!response.ok) {
+      setError(response.error || t("room.couldNotUpdateSettings"));
+    }
+  };
+
+  const handleReturnToLobby = async () => {
+    if (!player) return;
+
+    setIsReturningLobby(true);
+    setError("");
+
+    const response = await returnToLobby(player.playerId);
+
+    setIsReturningLobby(false);
+
+    if (!response.ok) {
+      setError(response.error || t("room.couldNotReturnToLobby"));
+      return;
+    }
+
+    setView("lobby");
+  };
+
   const handleBackHome = async () => {
     if (player?.playerId && room?.status === "lobby") {
       await leaveRoom(player.playerId);
@@ -182,11 +240,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
       ? "kicked"
       : closedMessage
         ? "closed"
-        : player && view !== "game" && leaderboard && room?.status === "completed"
+        : player && room?.status === "lobby"
+          ? "lobby"
+          : player && leaderboard && room?.status === "completed"
           ? "leaderboard"
-          : player &&
-              view !== "game" &&
-              (startedGame || room?.game || room?.status === "in_game")
+          : player && (startedGame || room?.game || room?.status === "in_game")
             ? "game"
             : view;
 
@@ -200,7 +258,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
         difficultyId={room.difficulty}
         gameModeId={room.gameMode}
         gamePayload={activeGame}
+        room={room}
         leaderboard={leaderboard}
+        onBackHome={handleBackHome}
+        onBackLobby={handleReturnToLobby}
+        isReturningLobby={isReturningLobby}
       />
     );
   }
@@ -252,8 +314,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
           onCopyInvite={handleCopyInvite}
           onStartGame={handleStartGame}
           onKickPlayer={handleKickPlayer}
+          onGameModeChange={handleUpdateGameMode}
+          onDifficultyChange={handleUpdateDifficulty}
           onBackHome={handleBackHome}
           isStarting={isStarting}
+          isUpdatingSettings={isUpdatingSettings}
           error={error || connectionError}
         />
       )}
@@ -262,6 +327,10 @@ export default function MultiplayerRoomClient({ roomCode }) {
         <LeaderboardCard
           leaderboard={leaderboard}
           currentPlayerId={player?.playerId}
+          onBackHome={handleBackHome}
+          onBackLobby={handleReturnToLobby}
+          isReturningLobby={isReturningLobby}
+          error={error || connectionError}
         />
       )}
     </RoomCardShell>

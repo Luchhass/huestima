@@ -7,7 +7,7 @@ import { useTheme } from "@/hooks/useTheme";
 export default function ThemeToggle() {
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
-  const Icon = isDark ? Sun : Moon;
+  const Icon = isDark ? Moon : Sun;
 
   return (
     <button
