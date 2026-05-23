@@ -61,6 +61,7 @@ export default function MultiplayerGame({
   onBackHome,
   onBackLobby,
   isReturningLobby,
+  error = "",
 }) {
   const { t } = useTranslation();
   const game = useMultiplayerGame({
@@ -163,6 +164,7 @@ export default function MultiplayerGame({
               onBackHome={onBackHome}
               onBackLobby={onBackLobby}
               isReturningLobby={isReturningLobby}
+              error={error}
             />
           )}
 

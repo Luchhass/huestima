@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { readableTone } from "@/lib/color";
@@ -39,17 +40,47 @@ export default function LeaderboardCard({
   error = "",
 }) {
   const { t } = useTranslation();
+  const [lastAction, setLastAction] = useState(null);
+  const [hiddenActionError, setHiddenActionError] = useState("");
   const rows = leaderboard?.leaderboard || [];
   const winner = rows[0];
   const totalRounds = leaderboard?.totalRounds || 5;
   const maxTotalScore =
     leaderboard?.maxTotalScore || totalRounds * MULTIPLAYER_MAX_ROUND_SCORE;
+  const activeActionError = error && error !== hiddenActionError ? error : "";
+  const homeActionError = activeActionError && lastAction === "home";
+  const lobbyActionError = activeActionError && (lastAction === "lobby" || !lastAction);
+
+  useEffect(() => {
+    if (!activeActionError) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setHiddenActionError(activeActionError);
+      setLastAction(null);
+    }, 2200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [activeActionError]);
+
+  const handleBackHome = () => {
+    setHiddenActionError("");
+    setLastAction("home");
+    onBackHome?.();
+  };
+
+  const handleBackLobby = () => {
+    if (isReturningLobby) return;
+
+    setHiddenActionError("");
+    setLastAction("lobby");
+    onBackLobby?.();
+  };
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       <button
         type="button"
-        onClick={onBackHome}
+        onClick={handleBackHome}
         aria-label={t("common.backHome")}
         className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
       >
@@ -133,32 +164,43 @@ export default function LeaderboardCard({
         })}
       </div>
 
-      <div className="mt-4 grid w-full grid-cols-2 gap-3 max-[460px]:grid-cols-1">
+      <div className="mt-4 grid w-full grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={onBackHome}
-          className="card-action-height inline-flex min-w-0 items-center justify-center rounded-full border-2 border-white/95 bg-transparent px-5 text-center text-sm font-semibold leading-tight text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
+          onClick={handleBackHome}
+          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 px-3 text-center text-[0.78rem] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
+            homeActionError
+              ? "border-red-500 bg-red-500 text-white"
+              : "border-white/95 bg-transparent text-white hover:bg-white/10"
+          }`}
         >
-          <span className="min-w-0 truncate">{t("common.backHome")}</span>
+          {homeActionError && (
+            <X className="shrink-0" size={16} strokeWidth={2.35} />
+          )}
+          <span className="min-w-0 truncate">
+            {homeActionError || t("common.backHome")}
+          </span>
         </button>
 
         <button
           type="button"
-          onClick={onBackLobby}
+          onClick={handleBackLobby}
           disabled={isReturningLobby}
-          className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base"
+          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[0.78rem] font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
+            lobbyActionError
+              ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+              : "rgb-hover-button bg-white text-zinc-950"
+          }`}
         >
+          {lobbyActionError && (
+            <X className="relative z-10 shrink-0" size={16} strokeWidth={2.35} />
+          )}
           <span className="relative z-10 min-w-0 truncate">
-            {isReturningLobby ? t("room.returningLobby") : t("room.backLobby")}
+            {lobbyActionError ||
+              (isReturningLobby ? t("room.returningLobby") : t("room.backLobby"))}
           </span>
         </button>
       </div>
-
-      {error && (
-        <p className="mt-2 text-center text-xs font-semibold text-red-200">
-          {error}
-        </p>
-      )}
     </div>
   );
 }

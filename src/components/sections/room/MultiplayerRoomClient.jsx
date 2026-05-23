@@ -263,6 +263,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
         onBackHome={handleBackHome}
         onBackLobby={handleReturnToLobby}
         isReturningLobby={isReturningLobby}
+        error={error || connectionError}
       />
     );
   }
