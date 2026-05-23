@@ -81,7 +81,7 @@ export default function LeaderboardCard({
   };
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+    <div className="leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       <button
         type="button"
         onClick={handleBackHome}

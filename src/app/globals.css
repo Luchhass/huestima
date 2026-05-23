@@ -525,6 +525,11 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   padding: 0 !important;
 }
 
+html[data-fullscreen-mode="on"] .final-summary,
+html[data-fullscreen-mode="on"] .leaderboard-card {
+  padding: 0 !important;
+}
+
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .home-card-content,
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
