@@ -58,7 +58,7 @@ export default function SingleplayerCard({
         </div>
       </div>
 
-      <div className="mt-3">
+      <div className="home-view-actions mt-3">
         <Link
           data-game-mode-shock-target
           href={`/play/singleplayer?difficulty=${difficulty}&gameMode=${gameMode}`}

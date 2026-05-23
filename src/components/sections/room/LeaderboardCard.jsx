@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { readableTone } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
@@ -42,6 +43,9 @@ export default function LeaderboardCard({
   const { t } = useTranslation();
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
+
+  useAppChromeHidden(true);
+
   const rows = leaderboard?.leaderboard || [];
   const winner = rows[0];
   const totalRounds = leaderboard?.totalRounds || 5;

@@ -454,6 +454,10 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"]) {
   --fullscreen-action-gap: clamp(3.5rem, 9dvh, 6.5rem);
   --fullscreen-content-width: min(56rem, 100%);
   --fullscreen-copy-width: min(28rem, 100%);
+  --fullscreen-close-offset: max(
+    0px,
+    calc(100vw - (var(--fullscreen-page-x) * 2) - var(--fullscreen-content-width))
+  );
   background: var(--surface);
   color: #ffffff;
 }
@@ -587,5 +591,5 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .game-card-shell
   .solo-close-button {
   top: 0 !important;
-  right: 0 !important;
+  right: calc(0px - var(--fullscreen-close-offset)) !important;
 }

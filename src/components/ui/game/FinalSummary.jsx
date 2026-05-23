@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { X } from "lucide-react";
+import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
 import { readableTone } from "@/lib/color";
@@ -34,6 +35,8 @@ export default function FinalSummary({
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
+
+  useAppChromeHidden(true);
 
   const closeRef = useRef(null);
   const scoreRef = useRef(null);
