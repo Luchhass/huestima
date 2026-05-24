@@ -150,7 +150,7 @@ input {
     display: none;
   }
 
-  [data-screen-reveal]:not([data-screen-reveal-ready="true"]) > * {
+  [data-screen-reveal]:not([data-screen-reveal-ready="true"]) {
     opacity: 0;
   }
 

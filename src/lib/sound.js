@@ -396,28 +396,37 @@ export function playButtonHover() {
   if (!context || !allowSound("button-hover", 58)) return;
 
   scheduleNoise(context, {
-    duration: 0.012,
-    gain: 0.008,
+    duration: 0.018,
+    gain: 0.019,
     filterFrequency: 5200,
     filterType: "highpass",
     q: 2,
   });
 
   scheduleTone(context, {
-    frequency: 405,
-    endFrequency: 610,
-    type: "triangle",
+    frequency: 172,
+    endFrequency: 214,
+    type: "sine",
     gain: 0.021,
-    duration: 0.064,
+    duration: 0.105,
+    attack: 0.01,
+  });
+
+  scheduleTone(context, {
+    frequency: 380,
+    endFrequency: 640,
+    type: "triangle",
+    gain: 0.043,
+    duration: 0.078,
     attack: 0.003,
   });
 
   scheduleTone(context, {
     frequency: 1180,
-    endFrequency: 1510,
+    endFrequency: 1580,
     type: "sine",
-    gain: 0.009,
-    duration: 0.07,
+    gain: 0.019,
+    duration: 0.086,
     delay: 0.018,
     attack: 0.007,
   });
@@ -428,9 +437,9 @@ export function playButtonClick() {
   if (!context || !allowSound("button-click", 34)) return;
 
   scheduleNoise(context, {
-    duration: 0.026,
-    gain: 0.034,
-    filterFrequency: 1450,
+    duration: 0.03,
+    gain: 0.058,
+    filterFrequency: 1520,
     filterType: "bandpass",
     q: 7,
   });
@@ -439,27 +448,27 @@ export function playButtonClick() {
     frequency: 92,
     endFrequency: 64,
     type: "sine",
-    gain: 0.073,
-    duration: 0.095,
+    gain: 0.102,
+    duration: 0.105,
     attack: 0.003,
   });
 
   scheduleTone(context, {
-    frequency: 315,
-    endFrequency: 455,
+    frequency: 305,
+    endFrequency: 480,
     type: "triangle",
-    gain: 0.039,
-    duration: 0.088,
+    gain: 0.068,
+    duration: 0.1,
     delay: 0.008,
     attack: 0.004,
   });
 
   scheduleTone(context, {
     frequency: 1040,
-    endFrequency: 760,
+    endFrequency: 820,
     type: "sine",
-    gain: 0.017,
-    duration: 0.072,
+    gain: 0.032,
+    duration: 0.085,
     delay: 0.038,
     attack: 0.006,
   });
@@ -470,9 +479,9 @@ export function playCloseHover() {
   if (!context || !allowSound("close-hover", 70)) return;
 
   scheduleNoise(context, {
-    duration: 0.017,
-    gain: 0.012,
-    filterFrequency: 1700,
+    duration: 0.022,
+    gain: 0.027,
+    filterFrequency: 1900,
     filterType: "bandpass",
     q: 7,
   });
@@ -481,9 +490,19 @@ export function playCloseHover() {
     frequency: 360,
     endFrequency: 220,
     type: "triangle",
-    gain: 0.027,
-    duration: 0.095,
+    gain: 0.047,
+    duration: 0.11,
     attack: 0.004,
+  });
+
+  scheduleTone(context, {
+    frequency: 690,
+    endFrequency: 430,
+    type: "sine",
+    gain: 0.019,
+    duration: 0.09,
+    delay: 0.012,
+    attack: 0.008,
   });
 }
 
@@ -492,8 +511,8 @@ export function playCloseClick() {
   if (!context || !allowSound("close-click", 52)) return;
 
   scheduleNoise(context, {
-    duration: 0.04,
-    gain: 0.044,
+    duration: 0.045,
+    gain: 0.067,
     filterFrequency: 760,
     filterType: "bandpass",
     q: 8,
@@ -503,8 +522,8 @@ export function playCloseClick() {
     frequency: 330,
     endFrequency: 118,
     type: "sawtooth",
-    gain: 0.044,
-    duration: 0.15,
+    gain: 0.069,
+    duration: 0.155,
     attack: 0.002,
   });
 
@@ -512,7 +531,7 @@ export function playCloseClick() {
     frequency: 82,
     endFrequency: 38,
     type: "sine",
-    gain: 0.072,
+    gain: 0.105,
     duration: 0.18,
     attack: 0.003,
   });
@@ -521,7 +540,7 @@ export function playCloseClick() {
     frequency: 515,
     endFrequency: 295,
     type: "triangle",
-    gain: 0.022,
+    gain: 0.038,
     duration: 0.105,
     delay: 0.025,
     attack: 0.004,
@@ -533,26 +552,75 @@ export function playDifficultyHover(index = 1) {
   if (!context || !allowSound("difficulty-hover", 48)) return;
 
   const base = 255 + index * 74;
+  const pan = (index - 1) * 0.05;
+
+  scheduleNoise(context, {
+    duration: 0.012,
+    gain: 0.016,
+    filterFrequency: 2450 + index * 420,
+    filterType: "bandpass",
+    q: 5,
+    pan,
+  });
 
   scheduleTone(context, {
     frequency: base,
     endFrequency: base * 1.38,
     type: "triangle",
-    gain: 0.026,
-    duration: 0.105,
+    gain: 0.045,
+    duration: 0.118,
     attack: 0.012,
-    pan: (index - 1) * 0.05,
+    pan,
   });
 
   scheduleTone(context, {
     frequency: base * 2.05,
     endFrequency: base * 2.32,
     type: "sine",
-    gain: 0.012,
-    duration: 0.11,
+    gain: 0.025,
+    duration: 0.125,
     delay: 0.008,
     attack: 0.018,
     pan: (index - 1) * 0.04,
+  });
+}
+
+export function playGameModeHover(index = 0) {
+  const context = getPlayableContext();
+  if (!context || !allowSound("game-mode-hover", 52)) return;
+
+  const base = 360 + index * 94;
+  const pan = (index - 1) * 0.045;
+
+  scheduleTone(context, {
+    frequency: base,
+    endFrequency: base * 1.22,
+    type: "triangle",
+    gain: 0.04,
+    duration: 0.09,
+    attack: 0.006,
+    pan,
+  });
+
+  scheduleNoise(context, {
+    duration: 0.012,
+    gain: 0.019,
+    delay: 0.01,
+    filterFrequency: 2600 + index * 780,
+    filterType: "bandpass",
+    q: 5,
+    pan,
+  });
+
+  scheduleTone(context, {
+    frequency: base * 0.48,
+    endFrequency: base * 0.56,
+    type: "sine",
+    gain: 0.018,
+    duration: 0.105,
+    delay: 0.004,
+    attack: 0.012,
+    pan: -pan * 0.5,
   });
 }
 
@@ -563,8 +631,8 @@ export function playDifficultySwitch(index = 1) {
   const base = 188 + index * 46;
 
   scheduleNoise(context, {
-    duration: 0.034,
-    gain: 0.038,
+    duration: 0.036,
+    gain: 0.059,
     filterFrequency: 1120 + index * 160,
     filterType: "bandpass",
     q: 8,
@@ -574,7 +642,7 @@ export function playDifficultySwitch(index = 1) {
     frequency: base,
     endFrequency: base * 0.72,
     type: "triangle",
-    gain: 0.055,
+    gain: 0.076,
     duration: 0.105,
     attack: 0.003,
   });
@@ -583,7 +651,7 @@ export function playDifficultySwitch(index = 1) {
     frequency: base * 2.12,
     endFrequency: base * 2.52,
     type: "sine",
-    gain: 0.035,
+    gain: 0.052,
     duration: 0.145,
     delay: 0.035,
     attack: 0.009,
@@ -591,7 +659,7 @@ export function playDifficultySwitch(index = 1) {
 
   scheduleNoise(context, {
     duration: 0.018,
-    gain: 0.018,
+    gain: 0.031,
     delay: 0.072,
     filterFrequency: 3600,
     filterType: "highpass",
@@ -610,11 +678,12 @@ export function playDifficultySelect(difficultyId = "normal", index = 1) {
       sub: 78,
       duration: 0.155,
       wave: "square",
-      gain: 0.058,
-      subGain: 0.045,
+      gain: 0.086,
+      subGain: 0.078,
       noise: 3200,
+      noiseGain: 0.052,
       tailFrequency: 540,
-      tailGain: 0.018,
+      tailGain: 0.032,
     },
     normal: {
       start: 760,
@@ -622,11 +691,12 @@ export function playDifficultySelect(difficultyId = "normal", index = 1) {
       sub: 54,
       duration: 0.2,
       wave: "sawtooth",
-      gain: 0.078,
-      subGain: 0.08,
+      gain: 0.09,
+      subGain: 0.092,
       noise: 2200,
+      noiseGain: 0.05,
       tailFrequency: 265,
-      tailGain: 0.012,
+      tailGain: 0.026,
     },
     hard: {
       start: 520,
@@ -634,11 +704,12 @@ export function playDifficultySelect(difficultyId = "normal", index = 1) {
       sub: 36,
       duration: 0.28,
       wave: "sawtooth",
-      gain: 0.095,
-      subGain: 0.13,
+      gain: 0.088,
+      subGain: 0.1,
       noise: 1250,
+      noiseGain: 0.05,
       tailFrequency: 88,
-      tailGain: 0.026,
+      tailGain: 0.032,
     },
   };
 
@@ -664,8 +735,8 @@ export function playDifficultySelect(difficultyId = "normal", index = 1) {
   });
 
   scheduleNoise(context, {
-    duration: 0.024,
-    gain: 0.032,
+    duration: 0.028,
+    gain: preset.noiseGain,
     filterFrequency: preset.noise,
     filterType: "bandpass",
     q: 6,
@@ -695,8 +766,12 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
     normal: {
       start: 520,
       end: 260,
+      body: 122,
+      bodyEnd: 98,
       duration: 0.15,
-      gain: 0.044,
+      gain: 0.072,
+      bodyGain: 0.043,
+      noiseGain: 0.038,
       type: "triangle",
       noise: 1500,
       echo: false,
@@ -704,8 +779,12 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
     flash: {
       start: 1280,
       end: 420,
+      body: 156,
+      bodyEnd: 128,
       duration: 0.09,
-      gain: 0.05,
+      gain: 0.074,
+      bodyGain: 0.039,
+      noiseGain: 0.045,
       type: "square",
       noise: 4200,
       echo: false,
@@ -713,8 +792,12 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
     sequence: {
       start: 420,
       end: 230,
+      body: 110,
+      bodyEnd: 86,
       duration: 0.12,
-      gain: 0.038,
+      gain: 0.07,
+      bodyGain: 0.044,
+      noiseGain: 0.04,
       type: "triangle",
       noise: 2100,
       echo: true,
@@ -733,9 +816,19 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
     attack: 0.001,
   });
 
+  scheduleTone(context, {
+    frequency: preset.body,
+    endFrequency: preset.bodyEnd,
+    type: "sine",
+    gain: preset.bodyGain,
+    duration: preset.duration + 0.07,
+    delay: 0.006,
+    attack: 0.006,
+  });
+
   scheduleNoise(context, {
-    duration: gameModeId === "flash" ? 0.015 : 0.02,
-    gain: gameModeId === "flash" ? 0.025 : 0.016,
+    duration: gameModeId === "flash" ? 0.018 : 0.024,
+    gain: preset.noiseGain,
     filterFrequency: preset.noise,
     filterType: "bandpass",
     q: gameModeId === "flash" ? 8 : 5,
@@ -747,7 +840,7 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
         frequency: preset.end * (1 + echoIndex * 0.24),
         endFrequency: preset.end * (0.86 + echoIndex * 0.1),
         type: "sine",
-        gain: 0.018 - echoIndex * 0.004,
+        gain: 0.028 - echoIndex * 0.006,
         duration: 0.095,
         delay,
         attack: 0.006,
@@ -826,7 +919,7 @@ export function startRgbHoverDrive() {
       frequency: base,
       endFrequency: base * (1.08 + progress * 0.08),
       type: "sine",
-      gain: 0.012 + progress * 0.01,
+      gain: 0.022 + progress * 0.014,
       duration: Math.min(0.18, interval / 1000 + 0.035),
       attack: 0.025,
       pan: Math.sin(step * 0.9) * 0.06,
@@ -836,7 +929,7 @@ export function startRgbHoverDrive() {
       frequency: base * 2.5,
       endFrequency: base * 2.75,
       type: "triangle",
-      gain: 0.005 + progress * 0.006,
+      gain: 0.012 + progress * 0.009,
       duration: 0.105,
       delay: 0.018,
       attack: 0.018,

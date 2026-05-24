@@ -4,13 +4,17 @@ import { useLayoutEffect } from "react";
 import gsap from "gsap";
 
 const REVEAL_SELECTOR = "[data-screen-reveal]";
+export const SCREEN_REVEAL_REPLAY_EVENT = "huestima-screen-reveal-replay";
 const INTRO_SETTLE_DELAY = 220;
 const INTRO_TIMEOUT = 7200;
 const INTRO_APPEAR_WAIT = 240;
-const GROUP_GAP = 0.18;
-const ITEM_STAGGER = 0.055;
-const MASK_CLIP = "inset(-28px -120vw -28px 0px)";
+const GROUP_GAP = 0.22;
+const LATE_GROUP_GAP = 0.075;
+const ITEM_STAGGER = 0.085;
+const REVEAL_DURATION = 0.9;
+const MASK_CLIP = "inset(-32px -120vw -32px 0px)";
 const READY_ATTR = "screenRevealReady";
+const FINAL_LEFT = "0px";
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -111,112 +115,170 @@ export function useScreenReveal(scopeRef, dependencies = []) {
     const scope = scopeRef.current;
     if (!scope) return undefined;
 
-    const items = gsap.utils.toArray(REVEAL_SELECTOR, scope);
-    if (!items.length) {
-      gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
-      return undefined;
-    }
-
-    items.forEach((item) => {
-      delete item.dataset[READY_ATTR];
-    });
-
-    const groups = items.map((mask) => {
-      const children = Array.from(mask.children).filter(
-        (child) => child instanceof HTMLElement,
-      );
-      const className = mask.className?.toString() || "";
-      const isUnifiedRow =
-        mask.tagName === "ARTICLE" ||
-        className.includes("actions") ||
-        className.includes("grid") ||
-        className.includes("flex");
-
-      return {
-        mask,
-        children: children.length ? children : [mask],
-        shouldStaggerChildren: children.length > 1 && !isUnifiedRow,
-        useMask: children.length > 0,
-      };
-    });
-    const animatedItems = groups.flatMap((group) => group.children);
-
-    if (prefersReducedMotion()) {
-      gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
-      gsap.set(items, { clearProps: "clipPath,willChange" });
-      gsap.set(animatedItems, {
-        autoAlpha: 1,
-        clearProps: "clipPath,transform,transformOrigin,opacity,visibility,willChange",
-      });
-      return undefined;
-    }
-
     let timeline = null;
-    gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+    let cancelIntroWait = null;
+    let activeItems = [];
+    let activeAnimatedItems = [];
 
-    gsap.set(
-      groups.filter((group) => group.useMask).map((group) => group.mask),
-      {
-        clipPath: MASK_CLIP,
-        willChange: "clip-path",
-      },
-    );
-
-    groups.forEach((group) => {
-      const maskRect = group.mask.getBoundingClientRect();
-      const childRightEdge = group.children.reduce((rightEdge, child) => {
-        const childRect = child.getBoundingClientRect();
-        return Math.max(rightEdge, childRect.right - maskRect.left);
-      }, maskRect.width);
-      const slideDistance = Math.max(maskRect.width, childRightEdge) + 34;
-
-      gsap.set(group.children, {
-        x: -slideDistance,
-        autoAlpha: 1,
-        willChange: "transform",
-        force3D: false,
-      });
-    });
-
-    items.forEach((item) => {
-      item.dataset[READY_ATTR] = "true";
-    });
-
-    const cancelIntroWait = waitForIntro(() => {
-      timeline = gsap.timeline({
-        defaults: { overwrite: "auto" },
-      });
-
-      groups.forEach((group, groupIndex) => {
-        const startAt =
-          groupIndex < 5
-            ? groupIndex * GROUP_GAP
-            : 4 * GROUP_GAP + (groupIndex - 4) * 0.055;
-
-        timeline.to(
-          group.children,
-          {
-            x: 0,
-            duration: 0.98,
-            ease: "power4.out",
-            stagger: group.shouldStaggerChildren ? ITEM_STAGGER : 0,
-            clearProps: "opacity,visibility,willChange",
-            force3D: false,
-          },
-          startAt,
-        );
-      });
-
-      timeline.set(items, { clearProps: "clipPath,willChange" });
-    });
-
-    return () => {
+    const clearActiveAnimation = () => {
       cancelIntroWait?.();
+      cancelIntroWait = null;
       timeline?.kill();
-      gsap.killTweensOf(animatedItems);
-      items.forEach((item) => {
+      timeline = null;
+      gsap.killTweensOf(activeAnimatedItems);
+
+      if (activeItems.length) {
+        gsap.set(activeItems, {
+          clearProps: "clipPath,opacity,visibility,willChange",
+        });
+      }
+
+      if (activeAnimatedItems.length) {
+        gsap.set(activeAnimatedItems, {
+          clearProps:
+            "left,position,opacity,visibility,willChange",
+        });
+      }
+
+      activeItems.forEach((item) => {
         delete item.dataset[READY_ATTR];
       });
+    };
+
+    const playReveal = ({ waitForPageIntro = true, delay = 0 } = {}) => {
+      clearActiveAnimation();
+
+      const items = gsap.utils.toArray(REVEAL_SELECTOR, scope);
+      if (!items.length) {
+        gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+        return;
+      }
+
+      activeItems = items;
+      activeItems.forEach((item) => {
+        delete item.dataset[READY_ATTR];
+      });
+
+      const groups = items.map((mask) => {
+        const children = Array.from(mask.children).filter(
+          (child) => child instanceof HTMLElement,
+        );
+        const className = mask.className?.toString() || "";
+        const isUnifiedRow =
+          mask.tagName === "ARTICLE" ||
+          className.includes("actions") ||
+          className.includes("grid") ||
+          className.includes("flex");
+
+        return {
+          mask,
+          children: children.length ? children : [mask],
+          shouldStaggerChildren: children.length > 1 && !isUnifiedRow,
+          useMask: children.length > 0,
+        };
+      });
+
+      activeAnimatedItems = groups.flatMap((group) => group.children);
+
+      if (prefersReducedMotion()) {
+        gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+        gsap.set(items, {
+          autoAlpha: 1,
+          clearProps: "clipPath,opacity,visibility,willChange",
+        });
+        gsap.set(activeAnimatedItems, {
+          autoAlpha: 1,
+          clearProps:
+            "clipPath,left,position,opacity,visibility,willChange",
+        });
+        items.forEach((item) => {
+          item.dataset[READY_ATTR] = "true";
+        });
+        return;
+      }
+
+      gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+      gsap.set(items, {
+        autoAlpha: 1,
+        clearProps: "clipPath,opacity,visibility,willChange",
+      });
+      gsap.set(activeAnimatedItems, {
+        clearProps:
+          "left,position,opacity,visibility,willChange",
+      });
+
+      gsap.set(
+        groups.filter((group) => group.useMask).map((group) => group.mask),
+        {
+          clipPath: MASK_CLIP,
+        },
+      );
+
+      groups.forEach((group) => {
+        const maskRect = group.mask.getBoundingClientRect();
+        const childRightEdge = group.children.reduce((rightEdge, child) => {
+          const childRect = child.getBoundingClientRect();
+          return Math.max(rightEdge, childRect.right - maskRect.left);
+        }, maskRect.width);
+        const slideDistance = Math.ceil(
+          Math.max(maskRect.width, childRightEdge) + 34,
+        );
+
+        gsap.set(group.children, {
+          position: "relative",
+          left: `${-slideDistance}px`,
+          autoAlpha: 1,
+        });
+      });
+
+      items.forEach((item) => {
+        item.dataset[READY_ATTR] = "true";
+      });
+
+      const startTimeline = () => {
+        const revealDelayId = window.setTimeout(() => {
+          timeline = gsap.timeline({
+            defaults: { overwrite: "auto" },
+          });
+
+          groups.forEach((group, groupIndex) => {
+            const startAt =
+              groupIndex < 5
+                ? groupIndex * GROUP_GAP
+                : 4 * GROUP_GAP + (groupIndex - 4) * LATE_GROUP_GAP;
+
+            timeline.to(
+              group.children,
+              {
+                left: FINAL_LEFT,
+                duration: REVEAL_DURATION,
+                ease: "power4.out",
+                stagger: group.shouldStaggerChildren ? ITEM_STAGGER : 0,
+                clearProps: "opacity,visibility",
+              },
+              startAt,
+            );
+          });
+
+          timeline.set(items, { clearProps: "clipPath,willChange" });
+        }, delay);
+
+        return () => window.clearTimeout(revealDelayId);
+      };
+
+      cancelIntroWait = waitForPageIntro ? waitForIntro(startTimeline) : startTimeline();
+    };
+
+    const handleReplay = () => {
+      playReveal({ waitForPageIntro: false, delay: 80 });
+    };
+
+    playReveal({ waitForPageIntro: true });
+    window.addEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
+
+    return () => {
+      window.removeEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
+      clearActiveAnimation();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);

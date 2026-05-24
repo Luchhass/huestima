@@ -7,6 +7,7 @@ import {
   playButtonClick,
   playButtonHover,
   playDifficultyHover,
+  playGameModeHover,
   prepareAudio,
   resumeAudioIfAllowed,
   startRgbHoverDrive,
@@ -36,6 +37,14 @@ function getSoundKind(element) {
 
 function getDifficultyIndex(element) {
   const switchElement = element.closest(".difficulty-switch");
+  if (!switchElement) return 0;
+
+  const buttons = Array.from(switchElement.querySelectorAll("button"));
+  return Math.max(0, buttons.indexOf(element));
+}
+
+function getGameModeIndex(element) {
+  const switchElement = element.closest(".game-mode-switch");
   if (!switchElement) return 0;
 
   const buttons = Array.from(switchElement.querySelectorAll("button"));
@@ -77,7 +86,10 @@ export default function InteractionAudio() {
         return;
       }
 
-      if (soundKind === "game-mode") return;
+      if (soundKind === "game-mode") {
+        playGameModeHover(getGameModeIndex(element));
+        return;
+      }
 
       playButtonHover();
 

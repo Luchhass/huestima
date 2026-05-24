@@ -4,7 +4,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { LANGUAGE_STORAGE_KEY } from "@/lib/constants";
 import { DEFAULT_LOCALE, normalizeLocale, translate } from "@/lib/i18n";
 
-const LANGUAGE_CHANGE_EVENT = "huestima-language-change";
+export const LANGUAGE_CHANGE_EVENT = "huestima-language-change";
 
 function readStoredLanguage() {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
@@ -60,6 +60,9 @@ export function useLanguage() {
 
   const setLanguage = useCallback((nextLocale) => {
     const cleanLocale = normalizeLocale(nextLocale);
+    const currentLocale = getLanguageSnapshot();
+
+    if (cleanLocale === currentLocale) return;
 
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, cleanLocale);
     applyLanguage(cleanLocale);

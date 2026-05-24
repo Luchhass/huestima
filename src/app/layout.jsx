@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
+import StructuredData from "@/components/seo/StructuredData";
 import {
   APP_NAME,
   FULLSCREEN_STORAGE_KEY,
@@ -12,6 +13,7 @@ import {
   ROUTE_SEO,
   SEO_KEYWORDS,
   SITE_DESCRIPTION,
+  SITE_IMAGE_URL,
   SITE_URL,
 } from "@/lib/seo";
 import "./globals.css";
@@ -25,6 +27,8 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -48,7 +52,7 @@ export const metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: "/",
+    canonical: SITE_URL,
   },
   icons: {
     icon: [
@@ -65,10 +69,11 @@ export const metadata = {
     siteName: APP_NAME,
     images: [
       {
-        url: "/opengraph-image",
+        url: SITE_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: `${APP_NAME} color memory game preview`,
+        alt: `${APP_NAME} free online color memory game preview`,
+        type: "image/png",
       },
     ],
     locale: "en_US",
@@ -78,9 +83,17 @@ export const metadata = {
     card: "summary_large_image",
     title: ROUTE_SEO.home.title,
     description: SITE_DESCRIPTION,
-    images: ["/twitter-image"],
+    images: [
+      {
+        url: SITE_IMAGE_URL,
+        alt: `${APP_NAME} free online color memory game preview`,
+      },
+    ],
     creator: "@furkancosar",
   },
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
   robots: {
     index: true,
     follow: true,
@@ -102,6 +115,7 @@ export const metadata = {
   other: {
     "mobile-web-app-capable": "yes",
     "msapplication-TileColor": "#000000",
+    "msapplication-TileImage": "/og-image.png",
   },
 };
 
@@ -147,6 +161,7 @@ export default function RootLayout({ children }) {
         className="h-full overflow-hidden bg-background text-foreground"
       >
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <StructuredData />
         <InteractionAudio />
         <AppHeader />
         {children}

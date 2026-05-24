@@ -16,5 +16,11 @@ export default function sitemap() {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: absoluteUrl("/play/multiplayer"),
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.82,
+    },
   ];
 }

@@ -248,22 +248,28 @@ export default function MultiplayerRoomClient({ roomCode }) {
     router.push("/");
   };
 
-  const effectiveView =
-    kickedMessage
-      ? "kicked"
-      : closedMessage
-        ? "closed"
-        : player && room?.status === "completed" && currentRoomPlayer?.returnedToLobby
-          ? "lobby"
-        : player && room?.status === "lobby"
-          ? "lobby"
-          : player && leaderboard && room?.status === "completed"
-          ? "leaderboard"
-          : player && (startedGame || room?.game || room?.status === "in_game")
-            ? "game"
-            : view;
-
   const activeGame = startedGame || room?.game;
+  let effectiveView = view;
+
+  if (kickedMessage) {
+    effectiveView = "kicked";
+  } else if (closedMessage) {
+    effectiveView = "closed";
+  } else if (
+    player &&
+    room?.status === "completed" &&
+    currentRoomPlayer?.returnedToLobby
+  ) {
+    effectiveView = "lobby";
+  } else if (player && room?.status === "lobby") {
+    effectiveView = "lobby";
+  } else if (player && startedGame && room?.status === "completed") {
+    effectiveView = "game";
+  } else if (player && leaderboard && room?.status === "completed") {
+    effectiveView = "leaderboard";
+  } else if (player && activeGame) {
+    effectiveView = "game";
+  }
 
   if (effectiveView === "game" && player && room && activeGame) {
     return (

@@ -175,7 +175,7 @@ export default function LobbyCard({
         type="button"
         aria-label={t("common.backHome")}
         onClick={onBackHome}
-        className="lobby-close-button solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
+        className="lobby-close-button solo-close-button absolute right-0 top-0 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:size-9"
       >
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
       </button>

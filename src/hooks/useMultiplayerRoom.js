@@ -29,7 +29,7 @@ export function useMultiplayerRoom(roomCode) {
       if (nextRoom?.code === roomCode) {
         setRoom(nextRoom);
 
-        if (nextRoom.game) {
+        if (nextRoom.status === "in_game" && nextRoom.game) {
           setStartedGame(nextRoom.game);
         } else if (nextRoom.status === "lobby") {
           setStartedGame(null);
@@ -117,8 +117,14 @@ export function useMultiplayerRoom(roomCode) {
 
       if (response.ok) {
         const data = responseData(response);
+        const nextRoom = data.room;
+
         setRoom(data.room);
-        setStartedGame(data.game || data.room?.game || null);
+        setStartedGame(
+          nextRoom?.status === "completed"
+            ? null
+            : data.game || nextRoom?.game || null,
+        );
         if (data.leaderboard) setLeaderboard(data.leaderboard);
       }
 
