@@ -1,5 +1,9 @@
 import { APP_NAME } from "@/lib/constants";
-import { SITE_DESCRIPTION } from "@/lib/seo";
+import {
+  SITE_DESCRIPTION,
+  SITE_IMAGE_HEIGHT,
+  SITE_IMAGE_WIDTH,
+} from "@/lib/seo";
 
 export default function manifest() {
   return {
@@ -17,6 +21,24 @@ export default function manifest() {
     categories: ["games", "entertainment"],
     icons: [
       {
+        src: "/favicon-48x48.png",
+        sizes: "48x48",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any maskable",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any maskable",
+      },
+      {
         src: "/icon.svg",
         sizes: "512x512",
         type: "image/svg+xml",
@@ -26,7 +48,7 @@ export default function manifest() {
     screenshots: [
       {
         src: "/og-image.png",
-        sizes: "1200x630",
+        sizes: `${SITE_IMAGE_WIDTH}x${SITE_IMAGE_HEIGHT}`,
         type: "image/png",
         form_factor: "wide",
         label: `${APP_NAME} color memory game preview`,

@@ -101,7 +101,7 @@ export default function SequenceMemorizePhase({
   const remainingCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
 
   return (
-    <div className="relative h-full p-6 sm:p-8">
+    <div data-fullscreen-surface-transition className="relative h-full p-6 sm:p-8">
       <div className="absolute left-6 top-6 sm:left-8 sm:top-8">
         <p className="text-base font-semibold text-current/88">
           {activeIndex + 1}/{visibleColors.length || ROUND_COUNT}

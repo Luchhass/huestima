@@ -13,7 +13,9 @@ import {
   ROUTE_SEO,
   SEO_KEYWORDS,
   SITE_DESCRIPTION,
+  SITE_IMAGE_HEIGHT,
   SITE_IMAGE_URL,
+  SITE_IMAGE_WIDTH,
   SITE_URL,
 } from "@/lib/seo";
 import "./globals.css";
@@ -56,9 +58,11 @@ export const metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/icon.svg",
+    shortcut: "/favicon.ico",
     apple: "/apple-icon.svg",
   },
   manifest: "/manifest.webmanifest",
@@ -70,8 +74,8 @@ export const metadata = {
     images: [
       {
         url: SITE_IMAGE_URL,
-        width: 1200,
-        height: 630,
+        width: SITE_IMAGE_WIDTH,
+        height: SITE_IMAGE_HEIGHT,
         alt: `${APP_NAME} free online color memory game preview`,
         type: "image/png",
       },

@@ -6,6 +6,8 @@ export const SITE_URL =
 
 export const SITE_IMAGE_PATH = "/og-image.png";
 export const SITE_IMAGE_URL = absoluteUrl(SITE_IMAGE_PATH);
+export const SITE_IMAGE_WIDTH = 1730;
+export const SITE_IMAGE_HEIGHT = 909;
 
 export const SITE_DESCRIPTION =
   "Huestima is a free online color memory game. Memorize a shade, rebuild it with hue, saturation, and brightness controls, then score your eye across five rounds.";
@@ -60,8 +62,8 @@ export function createPageMetadata(route, options = {}) {
   const images = [
     {
       url: SITE_IMAGE_URL,
-      width: 1200,
-      height: 630,
+      width: SITE_IMAGE_WIDTH,
+      height: SITE_IMAGE_HEIGHT,
       alt: `${APP_NAME} free online color memory game preview`,
       type: "image/png",
     },

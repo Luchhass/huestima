@@ -106,7 +106,7 @@ export default function MultiplayerCard({ onDifficultyFeedback }) {
       isHost: true,
     });
 
-    await copyInviteLink(response.room.code);
+    void copyInviteLink(response.room.code);
     router.push(`/${response.room.code}`);
   };
 

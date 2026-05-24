@@ -92,7 +92,11 @@ export default function MemorizePhase({
   }, [durationMs]);
 
   return (
-    <div ref={scopeRef} className="relative h-full p-6 sm:p-8">
+    <div
+      ref={scopeRef}
+      data-fullscreen-surface-transition
+      className="relative h-full p-6 sm:p-8"
+    >
       <div className="absolute top-6 left-6 overflow-hidden sm:top-8 sm:left-8">
         <p
           ref={roundRef}

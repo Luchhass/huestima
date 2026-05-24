@@ -64,12 +64,52 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
     let scoreTween = null;
     let scoreSound = null;
     let resultCharsTween = null;
+    let scoreStartTimeout = null;
+    let scoreStarted = false;
 
     const ctx = gsap.context(() => {
       const resultChars = gsap.utils.toArray(
         "[data-result-char]",
         resultLineElement
       );
+
+      const startScoreCounter = () => {
+        if (scoreStarted || !scoreElement.isConnected) return;
+
+        scoreStarted = true;
+        const state = { value: 0 };
+
+        scoreSound = startScoreCountSound({
+          duration: SCORE_COUNT_DURATION,
+          score: result.score,
+        });
+
+        scoreTween = gsap.to(state, {
+          value: result.score,
+          duration: SCORE_COUNT_DURATION,
+          ease: "power2.out",
+          onUpdate: () => {
+            scoreElement.textContent = formatScore(state.value);
+          },
+          onComplete: () => {
+            scoreElement.textContent = formatScore(result.score);
+            scoreSound?.finish();
+
+            gsap.set(resultLineElement, {
+              autoAlpha: 1,
+            });
+
+            resultCharsTween = gsap.to(resultChars, {
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.2,
+              ease: "power3.out",
+              stagger: 0.018,
+              clearProps: "transform,opacity,visibility",
+            });
+          },
+        });
+      };
 
       const timeline = gsap.timeline();
 
@@ -139,6 +179,9 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
       scoreElement.textContent = formatScore(0);
 
       timeline
+        .add(() => {
+          scoreStartTimeout = window.setTimeout(startScoreCounter, 1560);
+        }, 0)
         // 1) Your selection + Original aynı anda açılır
         .to(
           [selectionLabelRef.current, originalLabelRef.current],
@@ -278,6 +321,9 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
         // 5) Skor sayımı başlar
         .call(
           () => {
+            if (scoreStarted || !scoreElement.isConnected) return;
+
+            scoreStarted = true;
             const state = { value: 0 };
 
             scoreSound = startScoreCountSound({
@@ -317,6 +363,10 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
     }, scopeRef);
 
     return () => {
+      if (scoreStartTimeout) {
+        window.clearTimeout(scoreStartTimeout);
+      }
+
       scoreSound?.stop();
       scoreTween?.kill();
       resultCharsTween?.kill();

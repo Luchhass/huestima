@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import { SCREEN_REVEAL_REPLAY_EVENT } from "@/hooks/useScreenReveal";
 import { FULLSCREEN_STORAGE_KEY } from "@/lib/constants";
@@ -9,6 +9,7 @@ const FULLSCREEN_CHANGE_EVENT = "huestima-fullscreen-change";
 const FULLSCREEN_TRANSITION_COVER_SELECTOR = "[data-fullscreen-transition-cover]";
 const FULLSCREEN_CARD_SELECTOR =
   "[data-intro-card-target], .game-card-shell, .home-card";
+const SURFACE_ONLY_PHASE_SELECTOR = "[data-fullscreen-surface-transition]";
 const SCREEN_REVEAL_SELECTOR = "[data-screen-reveal]";
 const EXTRA_FADE_SELECTOR = ".solo-close-button";
 const LEAF_FADE_SELECTOR =
@@ -86,10 +87,21 @@ function animateTo(targets, vars) {
       return;
     }
 
+    const { onComplete, onInterrupt, ...animationVars } = vars;
+    let settled = false;
+    const finish = (callback) => {
+      callback?.();
+
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
     gsap.to(targets, {
-      ...vars,
+      ...animationVars,
       overwrite: true,
-      onComplete: resolve,
+      onComplete: () => finish(onComplete),
+      onInterrupt: () => finish(onInterrupt),
     });
   });
 }
@@ -212,10 +224,52 @@ function createTransitionCover(card) {
     "top,left,width,height,border-radius,box-shadow,opacity",
   );
 
-  gsap.set(getTransitionFadeTargets(cover), { autoAlpha: 0 });
+  document.body.appendChild(cover);
+  return cover;
+}
+
+function createSurfaceTransitionCover(card) {
+  const rect = card.getBoundingClientRect();
+  const styles = window.getComputedStyle(card);
+  const cover = document.createElement("div");
+
+  cover.setAttribute("data-fullscreen-transition-cover", "true");
+  cover.setAttribute("aria-hidden", "true");
+
+  setImportantStyle(cover, "position", "fixed");
+  setImportantStyle(cover, "top", `${rect.top}px`);
+  setImportantStyle(cover, "left", `${rect.left}px`);
+  setImportantStyle(cover, "width", `${rect.width}px`);
+  setImportantStyle(cover, "max-width", "none");
+  setImportantStyle(cover, "height", `${rect.height}px`);
+  setImportantStyle(cover, "min-height", "0px");
+  setImportantStyle(cover, "margin", "0px");
+  setImportantStyle(cover, "border-radius", styles.borderRadius || "24px");
+  setImportantStyle(cover, "background", styles.background || styles.backgroundColor);
+  setImportantStyle(cover, "box-shadow", styles.boxShadow || "none");
+  setImportantStyle(cover, "transform", "none");
+  setImportantStyle(cover, "transform-origin", "top left");
+  setImportantStyle(cover, "opacity", "1");
+  setImportantStyle(cover, "visibility", "visible");
+  setImportantStyle(cover, "overflow", "hidden");
+  setImportantStyle(cover, "pointer-events", "auto");
+  setImportantStyle(cover, "z-index", "9998");
+  setImportantStyle(
+    cover,
+    "will-change",
+    "top,left,width,height,border-radius,box-shadow,opacity",
+  );
 
   document.body.appendChild(cover);
   return cover;
+}
+
+function createFullscreenTransitionCover(card) {
+  if (card.querySelector(SURFACE_ONLY_PHASE_SELECTOR)) {
+    return createSurfaceTransitionCover(card);
+  }
+
+  return createTransitionCover(card);
 }
 
 function createViewportSurfaceCover() {
@@ -324,6 +378,15 @@ function isGameImmersiveLayout() {
   return document.documentElement.dataset.gameImmersive === "true";
 }
 
+async function fadeCoverContent(cover) {
+  await animateTo(getTransitionFadeTargets(cover), {
+    autoAlpha: 0,
+    duration: CONTENT_FADE_DURATION,
+    ease: "power2.out",
+    stagger: 0.012,
+  });
+}
+
 async function playFullscreenModeTransition(nextEnabled) {
   if (typeof window === "undefined") {
     applyAndNotifyFullscreenMode(nextEnabled);
@@ -356,20 +419,14 @@ async function playFullscreenModeTransition(nextEnabled) {
   isTransitioningFullscreen = true;
 
   const wasScreenRevealDriven = hasScreenRevealTargets(card);
-  const fadeTargets = getTransitionFadeTargets(card);
+  const isImmersiveLayout = isGameImmersiveLayout();
   let cover = null;
   let hiddenTargetCard = null;
 
   try {
-    await animateTo(fadeTargets, {
-      autoAlpha: 0,
-      duration: CONTENT_FADE_DURATION,
-      ease: "power2.out",
-      stagger: fadeTargets.length > 6 ? 0.012 : 0.025,
-    });
-
     if (nextEnabled) {
-      cover = createTransitionCover(card);
+      cover = createFullscreenTransitionCover(card);
+      await fadeCoverContent(cover);
 
       const viewport = readViewportBox();
 
@@ -386,11 +443,14 @@ async function playFullscreenModeTransition(nextEnabled) {
 
       applyAndNotifyFullscreenMode(nextEnabled);
       await waitForLayoutFrames();
-      replayVisibleScreenReveals(30);
 
-      const nextCard = findTransitionCard();
-      if (nextCard && !hasScreenRevealTargets(nextCard)) {
-        fadeVisibleContentBackIn(nextCard, 0.08);
+      if (!isImmersiveLayout) {
+        replayVisibleScreenReveals(30);
+
+        const nextCard = findTransitionCard();
+        if (nextCard && !hasScreenRevealTargets(nextCard)) {
+          fadeVisibleContentBackIn(nextCard, 0.08);
+        }
       }
 
       await animateTo(cover, {
@@ -400,9 +460,20 @@ async function playFullscreenModeTransition(nextEnabled) {
         ease: "power2.out",
       });
     } else {
-      cover = isGameImmersiveLayout()
-        ? createTransitionCover(card)
-        : createViewportSurfaceCover();
+      if (isImmersiveLayout) {
+        cover = createFullscreenTransitionCover(card);
+        await fadeCoverContent(cover);
+      } else {
+        const fadeTargets = getTransitionFadeTargets(card);
+        await animateTo(fadeTargets, {
+          autoAlpha: 0,
+          duration: CONTENT_FADE_DURATION,
+          ease: "power2.out",
+          stagger: fadeTargets.length > 6 ? 0.012 : 0.025,
+        });
+
+        cover = createViewportSurfaceCover();
+      }
 
       const coverStartBox = getCoverBox(cover);
 
@@ -464,7 +535,7 @@ async function playFullscreenModeTransition(nextEnabled) {
     }
 
     const activeCard = findTransitionCard();
-    if (activeCard) {
+    if (!isImmersiveLayout && activeCard) {
       gsap.to(getExtraFadeTargets(activeCard), {
         autoAlpha: 1,
         duration: 0.24,
@@ -474,7 +545,12 @@ async function playFullscreenModeTransition(nextEnabled) {
       });
     }
 
-    if (!wasScreenRevealDriven && activeCard && !hasScreenRevealTargets(activeCard)) {
+    if (
+      !isImmersiveLayout &&
+      !wasScreenRevealDriven &&
+      activeCard &&
+      !hasScreenRevealTargets(activeCard)
+    ) {
       gsap.set(getTransitionFadeTargets(activeCard), {
         clearProps: "opacity,visibility",
       });
@@ -528,8 +604,31 @@ export function useFullscreenMode() {
     playFullscreenModeTransition(nextEnabled);
   }, []);
 
+  const exitFullscreen = useCallback(() => {
+    if (!readStoredFullscreenMode()) return;
+
+    playFullscreenModeTransition(false);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      if (!readStoredFullscreenMode()) return;
+
+      event.preventDefault();
+      exitFullscreen();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [exitFullscreen]);
+
   return {
     isFullscreen,
     toggleFullscreen,
+    exitFullscreen,
   };
 }
