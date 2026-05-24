@@ -91,6 +91,7 @@ function serializePlayer(player, room = null) {
     name: player.name,
     isHost: player.isHost,
     connected: player.connected,
+    returnedToLobby: Boolean(player.returnedToLobby),
     joinedAt: player.joinedAt,
     lastSeenAt: player.lastSeenAt,
     submitted: player.submitted,
@@ -226,6 +227,7 @@ export function createRoom(payload) {
     submitted: false,
     inactive: false,
     kicked: false,
+    returnedToLobby: false,
     results: [],
     totalScore: 0,
   });
@@ -334,6 +336,7 @@ export function joinRoom(payload) {
     submitted: false,
     inactive: false,
     kicked: false,
+    returnedToLobby: false,
     results: [],
     totalScore: 0,
   };
@@ -388,11 +391,50 @@ export function returnRoomToLobby(payload) {
 
   const room = getRoom(roomCode.data.roomCode);
   if (!room) return fail("Lobby not found or expired.");
+  if (room.status === ROOM_STATUSES.LOBBY) {
+    return ok({ room: getRoomSnapshot(room), returnedAll: true });
+  }
   if (room.status !== ROOM_STATUSES.COMPLETED) return fail("The match is still running.");
 
   const requester = room.players.get(playerId.data.playerId);
   if (!requester || requester.kicked) return fail("Player is not in this lobby.");
 
+  requester.returnedToLobby = true;
+  requester.lastSeenAt = now();
+
+  if (!haveAllConnectedPlayersReturnedToLobby(room)) {
+    touchRoom(room);
+
+    return ok({
+      room: getRoomSnapshot(room),
+      player: serializePlayer(requester, room),
+      leaderboard: room.leaderboard,
+      pendingLobbyReturn: true,
+    });
+  }
+
+  const resetResult = resetCompletedRoomToLobby(room);
+  return ok(resetResult);
+}
+
+function getConnectedRoomPlayers(room) {
+  return Array.from(room.players.values()).filter(
+    (player) => !player.kicked && player.connected,
+  );
+}
+
+function haveAllConnectedPlayersReturnedToLobby(room) {
+  if (!room || room.status !== ROOM_STATUSES.COMPLETED) return false;
+
+  const connectedPlayers = getConnectedRoomPlayers(room);
+
+  return (
+    connectedPlayers.length > 0 &&
+    connectedPlayers.every((player) => player.returnedToLobby)
+  );
+}
+
+function resetCompletedRoomToLobby(room) {
   clearTimer(room.timers.completed);
   room.timers.completed = null;
   room.status = ROOM_STATUSES.LOBBY;
@@ -408,6 +450,7 @@ export function returnRoomToLobby(payload) {
 
     player.submitted = false;
     player.inactive = false;
+    player.returnedToLobby = false;
     player.results = [];
     player.totalScore = 0;
     player.lastSeenAt = now();
@@ -417,7 +460,7 @@ export function returnRoomToLobby(payload) {
     const nextHost = Array.from(room.players.values())[0] || null;
     if (!nextHost) {
       closeRoom(room, "empty", true);
-      return ok({ room: null, closed: true });
+      return { room: null, closed: true };
     }
 
     room.hostPlayerId = nextHost.id;
@@ -428,7 +471,7 @@ export function returnRoomToLobby(payload) {
 
   touchRoom(room);
 
-  return ok({ room: getRoomSnapshot(room) });
+  return { room: getRoomSnapshot(room), returnedAll: true };
 }
 
 export function leaveRoom(payload) {
@@ -451,6 +494,19 @@ export function leaveRoom(payload) {
 
   if (room.status === ROOM_STATUSES.LOBBY) {
     room.players.delete(player.id);
+  } else if (room.status === ROOM_STATUSES.COMPLETED) {
+    player.connected = false;
+    player.inactive = true;
+
+    if (haveAllConnectedPlayersReturnedToLobby(room)) {
+      const resetResult = resetCompletedRoomToLobby(room);
+
+      return ok({
+        room: resetResult.room,
+        leaderboard: room.leaderboard,
+        closed: resetResult.closed,
+      });
+    }
   } else {
     player.connected = false;
     player.inactive = true;
@@ -600,6 +656,13 @@ export function handleSocketDisconnect(socketId) {
       );
       timer.unref?.();
       room.timers.playerDisconnects.set(player.id, timer);
+    }
+
+    if (
+      room.status === ROOM_STATUSES.COMPLETED &&
+      haveAllConnectedPlayersReturnedToLobby(room)
+    ) {
+      resetCompletedRoomToLobby(room);
     }
 
     callbacks.emitRoomState(room);

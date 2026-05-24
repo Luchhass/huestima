@@ -83,6 +83,11 @@ export const DICTIONARIES = {
         flash: "Everyone gets the same one-second flashes. Fast eyes win.",
         sequence: "Everyone studies the same five-color sequence, then rebuilds it in order.",
       },
+      difficultyCopy: {
+        easy: "Easy keeps saturation and brightness fixed, so you only tune hue.",
+        normal: "Normal adds saturation while brightness stays fixed.",
+        hard: "Hard unlocks hue, saturation, and brightness for the full match.",
+      },
     },
     room: {
       joinLobby: "join lobby",
@@ -101,6 +106,7 @@ export const DICTIONARIES = {
       linkCopied: "Link copied. Share it.",
       startGame: "Start game",
       starting: "Starting",
+      waitingLobbyReturn: "Waiting for everyone",
       waitingForHost: "Waiting for the host to start.",
       findingLobby: "Finding your private lobby.",
       lobbyNotFound: "Lobby not found or expired.",
@@ -247,6 +253,11 @@ export const DICTIONARIES = {
         flash: "Herkes aynı bir saniyelik parlamaları görür. Hızlı göz kazanır.",
         sequence: "Herkes aynı beş renkli diziyi çalışır, sonra sırayla yeniden kurar.",
       },
+      difficultyCopy: {
+        easy: "Kolayda saturation ve brightness sabit kalır; sadece hue ayarlanır.",
+        normal: "Normalde hue ve saturation ayarlanır, brightness sabit kalır.",
+        hard: "Zorda hue, saturation ve brightness tamamen açılır.",
+      },
     },
     room: {
       joinLobby: "lobiye katıl",
@@ -265,6 +276,7 @@ export const DICTIONARIES = {
       linkCopied: "Link kopyalandı. Paylaşabilirsin.",
       startGame: "Oyunu başlat",
       starting: "Başlatılıyor",
+      waitingLobbyReturn: "Herkesin lobiye dönmesi bekleniyor",
       waitingForHost: "Hostun oyunu başlatması bekleniyor.",
       findingLobby: "Özel lobin aranıyor.",
       lobbyNotFound: "Lobi bulunamadı ya da süresi doldu.",

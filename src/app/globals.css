@@ -150,6 +150,10 @@ input {
     display: none;
   }
 
+  [data-screen-reveal]:not([data-screen-reveal-ready="true"]) > * {
+    opacity: 0;
+  }
+
   .difficulty-burst {
     position: absolute;
     inset: 0;
@@ -546,10 +550,32 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .home-card
+  .difficulty-burst,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .game-card-shell
   .difficulty-burst {
-  position: fixed;
-  inset: 0;
-  border-radius: 0;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0 !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .lobby-card {
+  overflow: visible !important;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .lobby-actions {
+  overflow: visible;
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .lobby-primary-button.rgb-hover-button:not(:disabled):hover,
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .lobby-primary-button.rgb-hover-button:not(:disabled):focus-visible {
+  transform: none;
 }
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
@@ -589,12 +615,42 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   min-height: 0;
 }
 
-html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-  .home-card
-  .solo-close-button,
-html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
-  .game-card-shell
-  .solo-close-button {
-  top: 0 !important;
-  right: calc(0px - var(--fullscreen-close-offset)) !important;
+html[data-fullscreen-mode="on"] .lobby-card .difficulty-burst {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  border-radius: 0 !important;
+}
+
+html[data-fullscreen-mode="on"] .game-card-shell:has(.lobby-card) {
+  overflow: visible !important;
+}
+
+html[data-fullscreen-mode="on"] .lobby-card .lobby-actions {
+  overflow: visible !important;
+}
+
+html[data-fullscreen-mode="on"] .lobby-card .lobby-primary-button.rgb-hover-button {
+  transform: none !important;
+}
+
+html[data-fullscreen-mode="on"]
+  .lobby-card
+  .lobby-primary-button.rgb-hover-button:not(:disabled):hover,
+html[data-fullscreen-mode="on"]
+  .lobby-card
+  .lobby-primary-button.rgb-hover-button:not(:disabled):focus-visible {
+  transform: none !important;
+}
+
+html[data-fullscreen-mode="on"] .solo-close-button {
+  position: fixed !important;
+  top: var(--fullscreen-page-y, var(--app-page-padding)) !important;
+  right: var(--fullscreen-page-x, var(--app-page-padding)) !important;
+  z-index: 120 !important;
+  display: grid !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }

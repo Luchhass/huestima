@@ -14,6 +14,10 @@ import MultiplayerGame from "./MultiplayerGame";
 
 const ROOM_CODE_PATTERN = /^\d{6}$/;
 
+function findRoomPlayer(room, playerId) {
+  return room?.players?.find((roomPlayer) => roomPlayer.id === playerId) || null;
+}
+
 async function copyInviteLink(roomCode) {
   const inviteUrl = `${window.location.origin}/${roomCode}`;
   if (!navigator.clipboard) {
@@ -76,9 +80,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
         return;
       }
 
-      const isParticipant =
-        session?.playerId &&
-        response.room.players.some((roomPlayer) => roomPlayer.id === session.playerId);
+      const sessionRoomPlayer = findRoomPlayer(response.room, session?.playerId);
+      const isParticipant = session?.playerId && sessionRoomPlayer;
 
       if (isParticipant) {
         setPlayer(session);
@@ -87,7 +90,9 @@ export default function MultiplayerRoomClient({ roomCode }) {
 
         const responseGame = response.game || response.room.game;
 
-        if (response.leaderboard || response.room.status === "completed") {
+        if (response.room.status === "completed" && sessionRoomPlayer.returnedToLobby) {
+          setView("lobby");
+        } else if (response.leaderboard || response.room.status === "completed") {
           setView("leaderboard");
         } else if (responseGame || response.room.status === "in_game") {
           setView("game");
@@ -142,6 +147,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
 
   const handleStartGame = async () => {
     if (!player) return;
+    if (room?.status !== "lobby") return;
 
     setIsStarting(true);
     setError("");
@@ -227,8 +233,15 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setView("lobby");
   };
 
+  const currentRoomPlayer = findRoomPlayer(room, player?.playerId);
+  const isWaitingForLobbyReturn = room?.status === "completed";
+  const canStartGame = room?.status === "lobby";
+
   const handleBackHome = async () => {
-    if (player?.playerId && room?.status === "lobby") {
+    if (
+      player?.playerId &&
+      (room?.status === "lobby" || currentRoomPlayer?.returnedToLobby)
+    ) {
       await leaveRoom(player.playerId);
     }
 
@@ -240,6 +253,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
       ? "kicked"
       : closedMessage
         ? "closed"
+        : player && room?.status === "completed" && currentRoomPlayer?.returnedToLobby
+          ? "lobby"
         : player && room?.status === "lobby"
           ? "lobby"
           : player && leaderboard && room?.status === "completed"
@@ -319,6 +334,10 @@ export default function MultiplayerRoomClient({ roomCode }) {
           onDifficultyChange={handleUpdateDifficulty}
           onBackHome={handleBackHome}
           isStarting={isStarting}
+          canStartGame={canStartGame}
+          startDisabledLabel={
+            isWaitingForLobbyReturn ? t("room.waitingLobbyReturn") : ""
+          }
           isUpdatingSettings={isUpdatingSettings}
           error={error || connectionError}
         />

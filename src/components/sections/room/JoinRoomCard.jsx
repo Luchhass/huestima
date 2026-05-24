@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 
 function difficultyLabel(id, t) {
   return t(`difficulty.${id || "normal"}`).toLowerCase();
@@ -25,10 +26,13 @@ export default function JoinRoomCard({
   error,
 }) {
   const { t } = useTranslation();
+  const scopeRef = useRef(null);
   const [playerName, setPlayerName] = useState("");
   const [nameError, setNameError] = useState("");
   const [hiddenRemoteError, setHiddenRemoteError] = useState("");
   const actionError = nameError || (error !== hiddenRemoteError ? error : "");
+
+  useScreenReveal(scopeRef, [roomCode]);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -57,7 +61,7 @@ export default function JoinRoomCard({
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-black p-6 text-white sm:p-8">
+    <div ref={scopeRef} className="relative flex h-full flex-col bg-black p-6 text-white sm:p-8">
       <Link
         href="/"
         aria-label={t("common.backHome")}
@@ -66,7 +70,7 @@ export default function JoinRoomCard({
         <X size={26} strokeWidth={1.7} />
       </Link>
 
-      <div className="max-w-100 pr-10">
+      <div data-screen-reveal className="max-w-100 pr-10">
         <h1 className="text-[clamp(3rem,10.5vw,4.2rem)] font-semibold lowercase leading-[0.98] tracking-normal text-white">
           {t("room.joinLobby")}
         </h1>
@@ -80,39 +84,41 @@ export default function JoinRoomCard({
         </p>
       </div>
 
-      <div className="mt-auto grid w-full grid-cols-[1.08fr_1fr] items-center gap-3 max-[520px]:grid-cols-1">
-        <PlayerNameField
-          value={playerName}
-          onChange={(value) => {
-            setPlayerName(value);
-            if (nameError) setNameError("");
-            if (error) setHiddenRemoteError(error);
-          }}
-          disabled={isJoining}
-        />
+      <div data-screen-reveal className="mt-auto w-full">
+        <div className="grid w-full grid-cols-[1.08fr_1fr] items-center gap-3 max-[520px]:grid-cols-1">
+          <PlayerNameField
+            value={playerName}
+            onChange={(value) => {
+              setPlayerName(value);
+              if (nameError) setNameError("");
+              if (error) setHiddenRemoteError(error);
+            }}
+            disabled={isJoining}
+          />
 
-        <button
-          type="button"
-          disabled={isJoining}
-          onClick={handleJoin}
-          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base ${
-            actionError
-              ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-              : "rgb-hover-button bg-white text-zinc-950"
-          }`}
-        >
-          {actionError && (
-            <X
-              className="relative z-10 shrink-0"
-              size={17}
-              strokeWidth={2.4}
-            />
-          )}
+          <button
+            type="button"
+            disabled={isJoining}
+            onClick={handleJoin}
+            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base ${
+              actionError
+                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                : "rgb-hover-button bg-white text-zinc-950"
+            }`}
+          >
+            {actionError && (
+              <X
+                className="relative z-10 shrink-0"
+                size={17}
+                strokeWidth={2.4}
+              />
+            )}
 
-          <span className="relative z-10 min-w-0 truncate">
-            {actionError || (isJoining ? t("room.joining") : t("room.join"))}
-          </span>
-        </button>
+            <span className="relative z-10 min-w-0 truncate">
+              {actionError || (isJoining ? t("room.joining") : t("room.join"))}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );

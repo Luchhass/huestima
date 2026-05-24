@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { readableTone } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
 
@@ -41,10 +42,12 @@ export default function LeaderboardCard({
   error = "",
 }) {
   const { t } = useTranslation();
+  const scopeRef = useRef(null);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
 
   useAppChromeHidden(true);
+  useScreenReveal(scopeRef, [leaderboard?.completedAt]);
 
   const rows = leaderboard?.leaderboard || [];
   const winner = rows[0];
@@ -81,7 +84,7 @@ export default function LeaderboardCard({
   };
 
   return (
-    <div className="leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+    <div ref={scopeRef} className="leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       <button
         type="button"
         onClick={handleBackHome}
@@ -92,7 +95,7 @@ export default function LeaderboardCard({
       </button>
 
       {winner && (
-        <div className="max-w-100 pr-10">
+        <div data-screen-reveal className="max-w-100 pr-10">
           <h1 className="text-[clamp(3rem,11vw,4.35rem)] font-semibold leading-[0.95] tracking-normal text-white">
             {winner.playerName}
           </h1>
@@ -110,7 +113,7 @@ export default function LeaderboardCard({
           const roundResults = row.roundResults || [];
 
           return (
-            <article key={row.playerId} className="shrink-0">
+            <article key={row.playerId} data-screen-reveal className="shrink-0">
               <div className="mb-3 flex items-end justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span className="shrink-0 text-sm font-semibold leading-none text-white/42">
@@ -168,42 +171,44 @@ export default function LeaderboardCard({
         })}
       </div>
 
-      <div className="mt-4 grid w-full grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={handleBackHome}
-          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 px-3 text-center text-[0.78rem] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
-            homeActionError
-              ? "border-red-500 bg-red-500 text-white"
-              : "border-white/95 bg-transparent text-white hover:bg-white/10"
-          }`}
-        >
-          {homeActionError && (
-            <X className="shrink-0" size={16} strokeWidth={2.35} />
-          )}
-          <span className="min-w-0 truncate">
-            {homeActionError || t("common.backHome")}
-          </span>
-        </button>
+      <div data-screen-reveal className="mt-4 w-full">
+        <div className="grid w-full grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={handleBackHome}
+            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 px-3 text-center text-[0.78rem] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
+              homeActionError
+                ? "border-red-500 bg-red-500 text-white"
+                : "border-white/95 bg-transparent text-white hover:bg-white/10"
+            }`}
+          >
+            {homeActionError && (
+              <X className="shrink-0" size={16} strokeWidth={2.35} />
+            )}
+            <span className="min-w-0 truncate">
+              {homeActionError || t("common.backHome")}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={handleBackLobby}
-          disabled={isReturningLobby}
-          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[0.78rem] font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-            lobbyActionError
-              ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-              : "rgb-hover-button bg-white text-zinc-950"
-          }`}
-        >
-          {lobbyActionError && (
-            <X className="relative z-10 shrink-0" size={16} strokeWidth={2.35} />
-          )}
-          <span className="relative z-10 min-w-0 truncate">
-            {lobbyActionError ||
-              (isReturningLobby ? t("room.returningLobby") : t("room.backLobby"))}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={handleBackLobby}
+            disabled={isReturningLobby}
+            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[0.78rem] font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
+              lobbyActionError
+                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                : "rgb-hover-button bg-white text-zinc-950"
+            }`}
+          >
+            {lobbyActionError && (
+              <X className="relative z-10 shrink-0" size={16} strokeWidth={2.35} />
+            )}
+            <span className="relative z-10 min-w-0 truncate">
+              {lobbyActionError ||
+                (isReturningLobby ? t("room.returningLobby") : t("room.backLobby"))}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );

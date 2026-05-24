@@ -44,7 +44,7 @@ export function validatePlayerName(playerName) {
 }
 
 export function validateDifficulty(difficulty) {
-  const cleanDifficulty = cleanString(difficulty) || DIFFICULTIES.NORMAL;
+  const cleanDifficulty = cleanString(difficulty) || DIFFICULTIES.EASY;
   if (!Object.values(DIFFICULTIES).includes(cleanDifficulty)) {
     return fail("Invalid difficulty.");
   }

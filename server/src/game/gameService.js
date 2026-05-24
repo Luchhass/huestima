@@ -11,8 +11,8 @@ import {
 } from "./colorGenerator.js";
 import {
   calculateColorScore,
+  ciede2000Distance,
   getGradeLabel,
-  oklabDistance,
 } from "./scoring.js";
 import {
   fail,
@@ -72,6 +72,7 @@ export function startGameForRoom(room) {
   for (const player of room.players.values()) {
     player.submitted = false;
     player.inactive = false;
+    player.returnedToLobby = false;
     player.results = [];
     player.totalScore = 0;
   }
@@ -144,7 +145,7 @@ export function submitRoundGuess(room, payload) {
     score,
     grade: getGradeLabel(score),
     difference: {
-      oklabDistance: roundScore(oklabDistance(targetColor.hex, guessColor.hex)),
+      deltaE2000: roundScore(ciede2000Distance(targetColor.hex, guessColor.hex)),
     },
   };
 

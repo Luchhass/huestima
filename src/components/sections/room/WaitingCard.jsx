@@ -1,13 +1,18 @@
 "use client";
 
+import { useRef } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 
 export default function WaitingCard({ message }) {
   const { t } = useTranslation();
+  const scopeRef = useRef(null);
+
+  useScreenReveal(scopeRef, []);
 
   return (
-    <div className="flex h-full flex-col bg-black p-6 text-white sm:p-8">
-      <div className="max-w-92">
+    <div ref={scopeRef} className="flex h-full flex-col bg-black p-6 text-white sm:p-8">
+      <div data-screen-reveal className="max-w-92">
         <h1 className="text-5xl font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.3rem]">
           {t("room.doneTitleA")}
           <br />
@@ -18,8 +23,8 @@ export default function WaitingCard({ message }) {
         </p>
       </div>
 
-      <p className="mt-auto min-h-5 text-sm font-semibold text-white/52">
-        {message}
+      <p data-screen-reveal className="mt-auto min-h-5 text-sm font-semibold text-white/52">
+        <span className="block">{message}</span>
       </p>
     </div>
   );

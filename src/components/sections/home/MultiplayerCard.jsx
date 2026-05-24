@@ -47,9 +47,9 @@ export default function MultiplayerCard({ onDifficultyFeedback }) {
   const [submitError, setSubmitError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const actionError = nameError || submitError;
-  const description = t(
+  const description = `${t(
     `setup.multiCopy.${gameMode || DEFAULT_GAME_MODE_ID}`,
-  );
+  )} ${t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`)}`;
 
   useGameModeShock(scopeRef, gameMode);
 
@@ -112,7 +112,7 @@ export default function MultiplayerCard({ onDifficultyFeedback }) {
 
   return (
     <div ref={scopeRef} className="home-view-panel flex h-full flex-col">
-      <div className="home-view-copy max-w-[23rem] pr-10">
+      <div data-screen-reveal className="home-view-copy max-w-[23rem] pr-10">
         <h1
           data-game-mode-shock-target
           className="text-[clamp(2.15rem,10.5vw,3.15rem)] font-semibold lowercase leading-[0.88] tracking-normal text-white sm:text-[4.05rem]"
@@ -128,66 +128,70 @@ export default function MultiplayerCard({ onDifficultyFeedback }) {
         </p>
       </div>
 
-      <div className="home-view-actions mt-auto grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
-        <div data-game-mode-shock-target className="min-w-0">
-          <GameModeSwitch
-            value={gameMode}
-            onChange={(value) => {
-              setGameMode(value);
-              clearActionError();
-            }}
-            disabled={isCreating}
-          />
-        </div>
+      <div data-screen-reveal className="home-view-actions mt-auto w-full">
+        <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+          <div data-game-mode-shock-target className="min-w-0">
+            <GameModeSwitch
+              value={gameMode}
+              onChange={(value) => {
+                setGameMode(value);
+                clearActionError();
+              }}
+              disabled={isCreating}
+            />
+          </div>
 
-        <div data-game-mode-shock-target className="min-w-0">
-          <DifficultySwitch
-            value={difficulty}
-            onChange={(value) => {
-              setDifficulty(value);
-              clearActionError();
-            }}
-            onSelectFeedback={onDifficultyFeedback}
-            disabled={isCreating}
-          />
+          <div data-game-mode-shock-target className="min-w-0">
+            <DifficultySwitch
+              value={difficulty}
+              onChange={(value) => {
+                setDifficulty(value);
+                clearActionError();
+              }}
+              onSelectFeedback={onDifficultyFeedback}
+              disabled={isCreating}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="home-view-actions mt-3 grid w-full grid-cols-[1.08fr_1fr] items-center gap-2 sm:grid-cols-2 sm:gap-3">
-        <div data-game-mode-shock-target className="min-w-0">
-          <PlayerNameField
-            value={playerName}
-            onChange={(value) => {
-              setPlayerName(value);
-              clearActionError();
-            }}
-            disabled={isCreating}
-          />
-        </div>
-
-        <button
-          data-game-mode-shock-target
-          type="button"
-          onClick={handleCreate}
-          disabled={isCreating}
-          className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-            actionError
-              ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-              : "rgb-hover-button bg-white text-zinc-950"
-          }`}
-        >
-          {actionError && (
-            <X
-              className="relative z-10 shrink-0"
-              size={17}
-              strokeWidth={2.4}
+      <div data-screen-reveal className="home-view-actions mt-3 w-full">
+        <div className="grid w-full grid-cols-[1.08fr_1fr] items-center gap-2 sm:grid-cols-2 sm:gap-3">
+          <div data-game-mode-shock-target className="min-w-0">
+            <PlayerNameField
+              value={playerName}
+              onChange={(value) => {
+                setPlayerName(value);
+                clearActionError();
+              }}
+              disabled={isCreating}
             />
-          )}
+          </div>
 
-          <span className="relative z-10">
-            {actionError || (isCreating ? t("setup.creating") : t("setup.createLobby"))}
-          </span>
-        </button>
+          <button
+            data-game-mode-shock-target
+            type="button"
+            onClick={handleCreate}
+            disabled={isCreating}
+            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
+              actionError
+                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                : "rgb-hover-button bg-white text-zinc-950"
+            }`}
+          >
+            {actionError && (
+              <X
+                className="relative z-10 shrink-0"
+                size={17}
+                strokeWidth={2.4}
+              />
+            )}
+
+            <span className="relative z-10">
+              {actionError || (isCreating ? t("setup.creating") : t("setup.createLobby"))}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );

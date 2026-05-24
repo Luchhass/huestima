@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { X } from "lucide-react";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
+import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import {
   APP_NAME,
   DEFAULT_DIFFICULTY_ID,
@@ -35,11 +36,23 @@ export default function HomeCard({ initialView = "home" }) {
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
   const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
+  const contentRef = useRef(null);
+  const isChangingViewRef = useRef(false);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
+  useScreenReveal(contentRef, [view]);
+
+  const changeView = async (nextView) => {
+    if (nextView === view || isChangingViewRef.current) return;
+
+    isChangingViewRef.current = true;
+    await playScreenFadeOut(contentRef);
+    setView(nextView);
+    isChangingViewRef.current = false;
+  };
 
   const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
     const burst =
@@ -78,7 +91,7 @@ export default function HomeCard({ initialView = "home" }) {
             data-game-mode-shock-target
             type="button"
             aria-label={t("common.backHome")}
-            onClick={() => setView("home")}
+            onClick={() => changeView("home")}
             className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
           >
             <X className="size-6 sm:size-[26px]" strokeWidth={1.7} />
@@ -86,32 +99,37 @@ export default function HomeCard({ initialView = "home" }) {
         )}
 
         <div
+          ref={contentRef}
           className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
         >
           {view === "home" ? (
             <>
-              <div className="home-copy max-w-[23.5rem]">
+              <div data-screen-reveal className="home-copy max-w-[23.5rem]">
                 <h1
                   className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]"
                 >
                   {APP_NAME}
                 </h1>
 
-                <div
-                  className="mt-5 space-y-4 text-[0.95rem] font-medium leading-[1.22] text-white/82 sm:text-base"
-                >
-                  {t("home.paragraphs").map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </div>
+                {t("home.paragraphs").map((paragraph, index) => (
+                  <p
+                    key={paragraph}
+                    className={`${
+                      index === 0 ? "mt-5" : "mt-4"
+                    } text-[0.95rem] font-medium leading-[1.22] text-white/82 sm:text-base`}
+                  >
+                    {paragraph}
+                  </p>
+                ))}
               </div>
 
               <div
+                data-screen-reveal
                 className="home-actions mt-auto self-start"
               >
                 <ModeSelector
-                  onSingleplayer={() => setView("singleplayer")}
-                  onMultiplayer={() => setView("multiplayer")}
+                  onSingleplayer={() => changeView("singleplayer")}
+                  onMultiplayer={() => changeView("multiplayer")}
                 />
               </div>
             </>

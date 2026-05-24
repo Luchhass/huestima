@@ -119,33 +119,34 @@ export default function SequenceMemorizePhase({
         </p>
       </div>
 
-      <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-5 sm:bottom-8 sm:left-8 sm:right-8">
-        <div className="min-w-0 space-y-3">
-          {progressItems.length > 0 && (
-            <MultiplayerProgressList items={progressItems} />
-          )}
+      {progressItems.length > 0 && (
+        <div className="absolute bottom-[5.25rem] left-6 z-10 sm:bottom-[5.85rem] sm:left-8">
+          <MultiplayerProgressList items={progressItems} />
+        </div>
+      )}
 
-          <div className="flex gap-2">
+      <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-5 sm:bottom-8 sm:left-8 sm:right-8">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
             {visibleColors.map((color, index) => {
               const hasAppeared = index <= activeIndex;
+              const isActive = index === activeIndex;
 
               return (
                 <span
                   key={`${color.hex}-${index}`}
-                  className={`grid size-4 place-items-center rounded-full text-[0.55rem] font-bold leading-none ring-1 transition-transform ${
-                    index === activeIndex
-                      ? "scale-125 ring-white/80"
-                      : "ring-white/24"
+                  className={`block size-7 shrink-0 rounded-full border transition duration-300 ${
+                    isActive
+                      ? "border-2 border-white"
+                      : "border-white/22"
                   } ${
                     hasAppeared
-                      ? "text-transparent"
-                      : "bg-black text-white/62"
+                      ? ""
+                      : "bg-white/32"
                   }`}
                   style={hasAppeared ? { backgroundColor: color.hex } : undefined}
                   aria-hidden="true"
-                >
-                  {hasAppeared ? "" : "?"}
-                </span>
+                />
               );
             })}
           </div>

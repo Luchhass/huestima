@@ -23,7 +23,7 @@ export const DIFFICULTY_IDS = {
   HARD: "hard",
 };
 
-export const DEFAULT_DIFFICULTY_ID = DIFFICULTY_IDS.NORMAL;
+export const DEFAULT_DIFFICULTY_ID = DIFFICULTY_IDS.EASY;
 
 export const DIFFICULTY_OPTIONS = [
   {

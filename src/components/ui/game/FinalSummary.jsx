@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
 import { readableTone } from "@/lib/color";
@@ -37,6 +38,7 @@ export default function FinalSummary({
   const scopeRef = useRef(null);
 
   useAppChromeHidden(true);
+  useScreenReveal(scopeRef, [results.length]);
 
   const closeRef = useRef(null);
   const scoreRef = useRef(null);
@@ -312,105 +314,111 @@ export default function FinalSummary({
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
       </Link>
 
-      <div className="max-w-100 pr-10">
-        <div className="flex items-end gap-2">
-          <div className="overflow-hidden pb-[0.08em]">
-            <p
-              ref={scoreRef}
-              className="text-[clamp(3.6rem,13vw,4.95rem)] leading-[0.82] font-semibold tracking-normal"
-              style={{ color: scoreColor }}
-            >
-              {formatScore(totalScore)}
-            </p>
+      <div data-screen-reveal className="max-w-100 pr-10">
+        <div>
+          <div className="flex items-end gap-2">
+            <div className="overflow-hidden pb-[0.08em]">
+              <p
+                ref={scoreRef}
+                className="text-[clamp(3.6rem,13vw,4.95rem)] leading-[0.82] font-semibold tracking-normal"
+                style={{ color: scoreColor }}
+              >
+                {formatScore(totalScore)}
+              </p>
+            </div>
+
+            <div className="overflow-hidden">
+              <p
+                ref={maxScoreRef}
+                className="pb-1 text-[clamp(1.15rem,4vw,1.5rem)] leading-none font-semibold text-white/35"
+              >
+                / {maxScore}
+              </p>
+            </div>
           </div>
 
-          <div className="overflow-hidden">
-            <p
-              ref={maxScoreRef}
-              className="pb-1 text-[clamp(1.15rem,4vw,1.5rem)] leading-none font-semibold text-white/35"
-            >
-              / {maxScore}
-            </p>
-          </div>
-        </div>
-
-        <p
-          ref={assessmentRef}
-          className="mt-4 max-w-[24rem] text-[0.95rem] leading-[1.22] font-medium text-white/84 sm:text-base"
-          style={{ opacity: 0, visibility: "hidden" }}
-        >
-          {assessmentWords.map((word, wordIndex) => (
-            <span
-              key={`${word}-${wordIndex}`}
-              className="inline-block whitespace-nowrap"
-            >
-              {Array.from(word).map((char, charIndex) => (
-                <span
-                  key={`${wordIndex}-${charIndex}-${char}`}
-                  data-summary-assessment-char
-                  className="inline-block will-change-transform"
-                >
-                  {char}
-                </span>
-              ))}
-
-              {wordIndex < assessmentWords.length - 1 && (
-                <span
-                  data-summary-assessment-char
-                  className="inline-block w-[0.28em]"
-                  aria-hidden="true"
-                />
-              )}
-            </span>
-          ))}
-        </p>
-      </div>
-
-      <div className="mt-7 grid h-19.5 w-full max-w-[32rem] grid-cols-5 overflow-hidden sm:h-21.5">
-        {results.map((result) => (
-          <div
-            key={result.round}
-            data-summary-tile
-            className="relative overflow-hidden"
-            style={{ backgroundColor: result.target.hex }}
-            title={t("room.roundTitle", {
-              round: result.round,
-              target: result.target.hex,
-              guess: result.guess.hex,
-            })}
+          <p
+            ref={assessmentRef}
+            className="mt-4 max-w-[24rem] text-[0.95rem] leading-[1.22] font-medium text-white/84 sm:text-base"
+            style={{ opacity: 0, visibility: "hidden" }}
           >
-            <span
-              data-summary-guess-layer
-              className="pointer-events-none absolute inset-0"
-              style={{ background: tileGradient(result) }}
-            />
+            {assessmentWords.map((word, wordIndex) => (
+              <span
+                key={`${word}-${wordIndex}`}
+                className="inline-block whitespace-nowrap"
+              >
+                {Array.from(word).map((char, charIndex) => (
+                  <span
+                    key={`${wordIndex}-${charIndex}-${char}`}
+                    data-summary-assessment-char
+                    className="inline-block will-change-transform"
+                  >
+                    {char}
+                  </span>
+                ))}
 
-            <span
-              data-summary-tile-score
-              className={`absolute top-2 left-2 z-10 text-[0.95rem] leading-none font-semibold sm:text-base ${tileScoreTone(
-                result.target.hex
-              )}`}
-            >
-              {formatScore(result.score)}
-            </span>
-          </div>
-        ))}
+                {wordIndex < assessmentWords.length - 1 && (
+                  <span
+                    data-summary-assessment-char
+                    className="inline-block w-[0.28em]"
+                    aria-hidden="true"
+                  />
+                )}
+              </span>
+            ))}
+          </p>
+        </div>
       </div>
 
-      <div className="relative mt-auto w-full max-w-[32rem]">
-        <span
-          ref={playAgainRingRef}
-          className="pointer-events-none absolute inset-0 rounded-full border border-white/28"
-        />
+      <div data-screen-reveal className="mt-7 w-full max-w-[32rem]">
+        <div className="grid h-19.5 w-full grid-cols-5 overflow-hidden sm:h-21.5">
+          {results.map((result) => (
+            <div
+              key={result.round}
+              data-summary-tile
+              className="relative overflow-hidden"
+              style={{ backgroundColor: result.target.hex }}
+              title={t("room.roundTitle", {
+                round: result.round,
+                target: result.target.hex,
+                guess: result.guess.hex,
+              })}
+            >
+              <span
+                data-summary-guess-layer
+                className="pointer-events-none absolute inset-0"
+                style={{ background: tileGradient(result) }}
+              />
 
-        <button
-          ref={playAgainRef}
-          type="button"
-          onClick={onPlayAgain}
-          className="rgb-hover-button card-action-height w-full rounded-full bg-white px-6 text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-        >
-          <span className="relative z-10">{t("game.playAgain")}</span>
-        </button>
+              <span
+                data-summary-tile-score
+                className={`absolute top-2 left-2 z-10 text-[0.95rem] leading-none font-semibold sm:text-base ${tileScoreTone(
+                  result.target.hex
+                )}`}
+              >
+                {formatScore(result.score)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div data-screen-reveal className="mt-auto w-full max-w-[32rem]">
+        <div className="relative w-full">
+          <span
+            ref={playAgainRingRef}
+            className="pointer-events-none absolute inset-0 rounded-full border border-white/28"
+          />
+
+          <button
+            ref={playAgainRef}
+            type="button"
+            onClick={onPlayAgain}
+            className="rgb-hover-button card-action-height w-full rounded-full bg-white px-6 text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            <span className="relative z-10">{t("game.playAgain")}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
