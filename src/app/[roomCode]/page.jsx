@@ -1,3 +1,4 @@
+import PageIntro from "@/components/layout/PageIntro";
 import MultiplayerRoomClient from "@/components/sections/room/MultiplayerRoomClient";
 import { APP_NAME } from "@/lib/constants";
 
@@ -14,5 +15,10 @@ export const metadata = {
 export default async function RoomPage({ params }) {
   const { roomCode } = await params;
 
-  return <MultiplayerRoomClient roomCode={roomCode} />;
+  return (
+    <>
+      <PageIntro />
+      <MultiplayerRoomClient roomCode={roomCode} />
+    </>
+  );
 }

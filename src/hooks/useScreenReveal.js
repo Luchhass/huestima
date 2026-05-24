@@ -5,6 +5,10 @@ import gsap from "gsap";
 
 const REVEAL_SELECTOR = "[data-screen-reveal]";
 export const SCREEN_REVEAL_REPLAY_EVENT = "huestima-screen-reveal-replay";
+export const SCREEN_REVEAL_PREPARE_EVENT = "huestima-screen-reveal-prepare";
+export const SCREEN_REVEAL_START_EVENT = "huestima-screen-reveal-start";
+export const SCREEN_REVEAL_COMPLETE_EVENT = "huestima-screen-reveal-complete";
+export const SCREEN_FADE_OUT_EVENT = "huestima-screen-fade-out";
 const INTRO_SETTLE_DELAY = 220;
 const INTRO_TIMEOUT = 7200;
 const INTRO_APPEAR_WAIT = 240;
@@ -18,6 +22,12 @@ const FINAL_LEFT = "0px";
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function dispatchScreenLifecycleEvent(eventName) {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new Event(eventName));
 }
 
 function waitForIntro(callback) {
@@ -99,6 +109,8 @@ export function playScreenFadeOut(scopeRef, options = {}) {
   const scope = scopeRef?.current || scopeRef;
   if (!scope || prefersReducedMotion()) return Promise.resolve();
 
+  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT);
+
   return new Promise((resolve) => {
     gsap.to(scope, {
       autoAlpha: 0,
@@ -147,10 +159,13 @@ export function useScreenReveal(scopeRef, dependencies = []) {
 
     const playReveal = ({ waitForPageIntro = true, delay = 0 } = {}) => {
       clearActiveAnimation();
+      dispatchScreenLifecycleEvent(SCREEN_REVEAL_PREPARE_EVENT);
 
       const items = gsap.utils.toArray(REVEAL_SELECTOR, scope);
       if (!items.length) {
         gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+        dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
+        dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
         return;
       }
 
@@ -194,6 +209,8 @@ export function useScreenReveal(scopeRef, dependencies = []) {
         items.forEach((item) => {
           item.dataset[READY_ATTR] = "true";
         });
+        dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
+        dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
         return;
       }
 
@@ -237,8 +254,13 @@ export function useScreenReveal(scopeRef, dependencies = []) {
 
       const startTimeline = () => {
         const revealDelayId = window.setTimeout(() => {
+          dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
+
           timeline = gsap.timeline({
             defaults: { overwrite: "auto" },
+            onComplete: () => {
+              dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
+            },
           });
 
           groups.forEach((group, groupIndex) => {

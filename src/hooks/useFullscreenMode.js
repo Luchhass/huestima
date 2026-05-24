@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { SCREEN_REVEAL_REPLAY_EVENT } from "@/hooks/useScreenReveal";
 import { FULLSCREEN_STORAGE_KEY } from "@/lib/constants";
 
-const FULLSCREEN_CHANGE_EVENT = "huestima-fullscreen-change";
+export const FULLSCREEN_CHANGE_EVENT = "huestima-fullscreen-change";
 const FULLSCREEN_TRANSITION_COVER_SELECTOR = "[data-fullscreen-transition-cover]";
 const FULLSCREEN_CARD_SELECTOR =
   "[data-intro-card-target], .game-card-shell, .home-card";

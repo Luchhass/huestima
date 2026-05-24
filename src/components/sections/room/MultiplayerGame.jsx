@@ -81,7 +81,8 @@ export default function MultiplayerGame({
     phase === GAME_PHASES.INTRO ||
     phase === GAME_PHASES.MEMORIZE ||
     phase === GAME_PHASES.GUESS ||
-    phase === GAME_PHASES.RESULT;
+    phase === GAME_PHASES.RESULT ||
+    phase === "waiting";
 
   useGameChrome(isImmersivePhase);
 

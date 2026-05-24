@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
+import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import StructuredData from "@/components/seo/StructuredData";
 import {
   APP_NAME,
@@ -168,6 +169,7 @@ export default function RootLayout({ children }) {
         <StructuredData />
         <InteractionAudio />
         <AppHeader />
+        <FullscreenEscapeButton />
         {children}
         <AppFooter />
       </body>
