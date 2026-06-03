@@ -1,12 +1,24 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 
 let hasPlayedEntryIntro = false;
+
+function subscribeToClientReady() {
+  return () => {};
+}
+
+function getClientReadySnapshot() {
+  return true;
+}
+
+function getServerReadySnapshot() {
+  return false;
+}
 
 function isInviteRoomPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
@@ -50,10 +62,15 @@ export default function PageIntro() {
   const brandTextMaskRef = useRef(null);
   const brandTextRef = useRef(null);
   const timelineRef = useRef(null);
+  const isMounted = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
   const [dismissed, setDismissed] = useState(false);
 
   const shouldRender =
-    shouldPlayEntryIntro(pathname) && !hasPlayedEntryIntro && !dismissed;
+    isMounted && shouldPlayEntryIntro(pathname) && !hasPlayedEntryIntro && !dismissed;
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined;
@@ -85,6 +102,9 @@ export default function PageIntro() {
     let targetSnapshot = null;
     let targetObserver = null;
     let targetTimeoutId = null;
+    let fontReadyTimeoutId = null;
+    let introHardTimeoutId = null;
+    let timelineStarted = false;
 
     const dispatchIntroEvent = (name) => {
       window.dispatchEvent(
@@ -104,6 +124,13 @@ export default function PageIntro() {
       if (completed) return;
 
       completed = true;
+      delete document.documentElement.dataset.pageIntroPending;
+
+      if (introHardTimeoutId) {
+        window.clearTimeout(introHardTimeoutId);
+        introHardTimeoutId = null;
+      }
+
       hasPlayedEntryIntro = true;
       timelineRef.current = null;
       clearTargetCard();
@@ -112,6 +139,8 @@ export default function PageIntro() {
       dispatchIntroEvent("complete");
       setDismissed(true);
     };
+
+    introHardTimeoutId = window.setTimeout(finishIntro, 6800);
 
     const readTargetSnapshot = () => {
       if (!targetCard) return null;
@@ -135,6 +164,8 @@ export default function PageIntro() {
       autoAlpha: 1,
       pointerEvents: "auto",
     });
+
+    delete document.documentElement.dataset.pageIntroPending;
 
     gsap.set(blackLayer, {
       position: "fixed",
@@ -306,6 +337,19 @@ export default function PageIntro() {
         });
     };
 
+    const buildTimelineOnce = () => {
+      if (cancelled || completed || timelineStarted) return;
+
+      timelineStarted = true;
+
+      if (fontReadyTimeoutId) {
+        window.clearTimeout(fontReadyTimeoutId);
+        fontReadyTimeoutId = null;
+      }
+
+      buildTimeline();
+    };
+
     const startIntroForTarget = (card) => {
       if (cancelled || targetCard) return;
 
@@ -329,9 +373,10 @@ export default function PageIntro() {
       }
 
       if (document.fonts?.ready) {
-        document.fonts.ready.then(buildTimeline).catch(buildTimeline);
+        fontReadyTimeoutId = window.setTimeout(buildTimelineOnce, 900);
+        document.fonts.ready.then(buildTimelineOnce).catch(buildTimelineOnce);
       } else {
-        buildTimeline();
+        buildTimelineOnce();
       }
     };
 
@@ -375,6 +420,16 @@ export default function PageIntro() {
       if (targetTimeoutId) {
         window.clearTimeout(targetTimeoutId);
         targetTimeoutId = null;
+      }
+
+      if (fontReadyTimeoutId) {
+        window.clearTimeout(fontReadyTimeoutId);
+        fontReadyTimeoutId = null;
+      }
+
+      if (introHardTimeoutId) {
+        window.clearTimeout(introHardTimeoutId);
+        introHardTimeoutId = null;
       }
 
       timelineRef.current?.kill();

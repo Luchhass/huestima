@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
@@ -151,6 +152,16 @@ export default function RootLayout({ children }) {
         document.documentElement.dataset.locale = language;
         const fullscreen = window.localStorage.getItem("${FULLSCREEN_STORAGE_KEY}");
         document.documentElement.dataset.fullscreenMode = fullscreen === "on" || fullscreen === "true" ? "on" : "off";
+        const pathSegments = window.location.pathname.split("/").filter(Boolean);
+        const shouldPlayIntro = window.location.pathname === "/" || pathSegments.length === 1;
+        if (shouldPlayIntro) {
+          document.documentElement.dataset.pageIntroPending = "true";
+          window.setTimeout(() => {
+            if (document.documentElement.dataset.pageIntroPending === "true") {
+              delete document.documentElement.dataset.pageIntroPending;
+            }
+          }, 8200);
+        }
       } catch (error) {}
     })();
   `;
@@ -166,6 +177,7 @@ export default function RootLayout({ children }) {
         className="h-full overflow-hidden bg-background text-foreground"
       >
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <GoogleAnalytics />
         <StructuredData />
         <InteractionAudio />
         <AppHeader />

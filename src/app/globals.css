@@ -41,6 +41,15 @@ body {
   user-select: none;
 }
 
+html[data-page-intro-pending="true"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: #000000;
+}
+
 input,
 textarea {
   user-select: text;
@@ -148,10 +157,6 @@ input {
 
   .scrollbar-hidden::-webkit-scrollbar {
     display: none;
-  }
-
-  [data-screen-reveal]:not([data-screen-reveal-ready="true"]) {
-    opacity: 0;
   }
 
   .difficulty-burst {

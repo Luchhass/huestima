@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
+import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
 import MemorizePhase from "@/components/ui/game/MemorizePhase";
@@ -64,6 +65,8 @@ export default function MultiplayerGame({
   error = "",
 }) {
   const { t } = useTranslation();
+  const startTrackedRef = useRef(false);
+  const completionTrackedRef = useRef(false);
   const game = useMultiplayerGame({
     roomCode,
     playerId,
@@ -87,10 +90,52 @@ export default function MultiplayerGame({
   useGameChrome(isImmersivePhase);
 
   useEffect(() => {
+    if (startTrackedRef.current) return;
+
+    startTrackedRef.current = true;
+    trackMatchStart({
+      gameType: "multiplayer",
+      difficulty: game.difficulty.id,
+      gameMode: game.gameMode.id,
+    });
+  }, [game.difficulty.id, game.gameMode.id]);
+
+  useEffect(() => {
     if (phase === "waiting" && gameLeaderboard) {
       showLeaderboard();
     }
   }, [gameLeaderboard, phase, showLeaderboard]);
+
+  useEffect(() => {
+    if (
+      completionTrackedRef.current ||
+      phase !== "leaderboard" ||
+      !game.leaderboard
+    ) {
+      return;
+    }
+
+    const rows = game.leaderboard.leaderboard || [];
+    const currentRow = rows.find((row) => row.playerId === playerId);
+    const totalRounds = game.leaderboard.totalRounds || ROUND_COUNT;
+    const totalScore = currentRow?.totalScore || 0;
+
+    completionTrackedRef.current = true;
+    trackMatchEnd({
+      gameType: "multiplayer",
+      difficulty: game.difficulty.id,
+      gameMode: game.gameMode.id,
+      totalScore,
+      averageScore: totalRounds ? totalScore / totalRounds : 0,
+      rounds: totalRounds,
+    });
+  }, [
+    game.difficulty.id,
+    game.gameMode.id,
+    game.leaderboard,
+    phase,
+    playerId,
+  ]);
 
   const shellColor =
     game.phase === GAME_PHASES.INTRO

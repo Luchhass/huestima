@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
+import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
 import MemorizePhase from "@/components/ui/game/MemorizePhase";
@@ -13,10 +15,55 @@ import FinalSummary from "@/components/ui/game/FinalSummary";
 
 export default function SingleplayerGame({ initialDifficulty, initialGameMode }) {
   const game = useSingleplayerGame(initialDifficulty, initialGameMode);
+  const startTrackedRef = useRef(false);
+  const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
   const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
 
   useGameChrome(isImmersivePhase);
+
+  useEffect(() => {
+    if (startTrackedRef.current) return;
+
+    startTrackedRef.current = true;
+    trackMatchStart({
+      gameType: "singleplayer",
+      difficulty: game.difficulty.id,
+      gameMode: game.gameMode.id,
+    });
+  }, [game.difficulty.id, game.gameMode.id]);
+
+  useEffect(() => {
+    if (game.phase !== GAME_PHASES.FINAL || completionTrackedRef.current) return;
+
+    completionTrackedRef.current = true;
+    trackMatchEnd({
+      gameType: "singleplayer",
+      difficulty: game.difficulty.id,
+      gameMode: game.gameMode.id,
+      totalScore: game.summary.totalScore,
+      averageScore: game.summary.averageScore,
+      rounds: game.results.length,
+    });
+  }, [
+    game.difficulty.id,
+    game.gameMode.id,
+    game.phase,
+    game.results.length,
+    game.summary.averageScore,
+    game.summary.totalScore,
+  ]);
+
+  const handlePlayAgain = () => {
+    startTrackedRef.current = true;
+    completionTrackedRef.current = false;
+    trackMatchStart({
+      gameType: "singleplayer",
+      difficulty: game.difficulty.id,
+      gameMode: game.gameMode.id,
+    });
+    game.playAgain();
+  };
 
   const shellColor =
     game.phase === GAME_PHASES.INTRO
@@ -82,7 +129,7 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
               results={game.results}
               totalScore={game.summary.totalScore}
               averageScore={game.summary.averageScore}
-              onPlayAgain={game.playAgain}
+              onPlayAgain={handlePlayAgain}
             />
           )}
         </div>

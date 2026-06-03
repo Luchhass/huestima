@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPlayerId, consumeInviteCopied, useRoomSession } from "@/hooks/useRoomSession";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
+import { trackEvent } from "@/lib/analytics";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
 import LobbyCard from "./LobbyCard";
@@ -130,6 +131,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
 
     saveSession(nextPlayer);
     setPlayer(nextPlayer);
+    trackEvent("lobby_join", {
+      game_type: "multiplayer",
+      difficulty: response.room?.difficulty,
+      game_mode: response.room?.gameMode,
+    });
     setView(response.room.status === "in_game" ? "game" : "lobby");
   };
 
@@ -159,6 +165,13 @@ export default function MultiplayerRoomClient({ roomCode }) {
       setError(response.error || t("room.couldNotStart"));
       return;
     }
+
+    trackEvent("multiplayer_game_start", {
+      game_type: "multiplayer",
+      difficulty: room.difficulty,
+      game_mode: room.gameMode,
+      player_count: room.players?.length || 0,
+    });
 
     setView("game");
   };

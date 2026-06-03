@@ -31,8 +31,8 @@ export const DICTIONARIES = {
     },
     home: {
       paragraphs: [
-        "A color appears for five seconds. Memorize the exact shade before it disappears.",
-        "Recreate it from memory with hue, saturation, and brightness controls. You get five rounds to prove your eye.",
+        "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
+        "Recreate it from memory with hue, saturation, and brightness controls. Play five rounds of this free color guessing game to test your eye.",
       ],
       modeDefault: "Solo or multiplayer",
       modeSingle: "Lets go it alone",
@@ -201,8 +201,8 @@ export const DICTIONARIES = {
     },
     home: {
       paragraphs: [
-        "Bir renk beş saniye görünür. Kaybolmadan önce tonu aklında tut.",
-        "Rengi hue, saturation ve brightness kontrolleriyle hafızandan yeniden kur. Gözünü test etmek için beş turun var.",
+        "Bir renk beş saniye görünür. Kaybolmadan önce tonu ezberle, hue değerini tahmin et ve aklında tut.",
+        "Rengi hue, saturation ve brightness kontrolleriyle hafızandan yeniden kur. Gözünü test etmek için beş turluk bu renk tahmin oyununu oyna.",
       ],
       modeDefault: "Solo ya da multiplayer",
       modeSingle: "Tek başına başla",

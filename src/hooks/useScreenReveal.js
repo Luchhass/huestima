@@ -288,7 +288,52 @@ export function useScreenReveal(scopeRef, dependencies = []) {
         return () => window.clearTimeout(revealDelayId);
       };
 
-      cancelIntroWait = waitForPageIntro ? waitForIntro(startTimeline) : startTimeline();
+      let revealStarted = false;
+      let cancelRevealDelay = null;
+      let cancelIntroListener = null;
+      let forceRevealId = null;
+
+      const startTimelineOnce = () => {
+        if (revealStarted) return;
+
+        revealStarted = true;
+        cancelIntroListener?.();
+        cancelIntroListener = null;
+
+        if (forceRevealId) {
+          window.clearTimeout(forceRevealId);
+          forceRevealId = null;
+        }
+
+        cancelRevealDelay = startTimeline();
+      };
+
+      if (waitForPageIntro) {
+        cancelIntroListener = waitForIntro(startTimelineOnce);
+        forceRevealId = window.setTimeout(
+          startTimelineOnce,
+          INTRO_TIMEOUT + INTRO_SETTLE_DELAY + 900,
+        );
+
+        cancelIntroWait = () => {
+          cancelIntroListener?.();
+          cancelIntroListener = null;
+
+          if (forceRevealId) {
+            window.clearTimeout(forceRevealId);
+            forceRevealId = null;
+          }
+
+          cancelRevealDelay?.();
+          cancelRevealDelay = null;
+        };
+      } else {
+        startTimelineOnce();
+        cancelIntroWait = () => {
+          cancelRevealDelay?.();
+          cancelRevealDelay = null;
+        };
+      }
     };
 
     const handleReplay = () => {

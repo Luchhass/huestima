@@ -1,7 +1,7 @@
-import { absoluteUrl } from "@/lib/seo";
+import { absoluteUrl, SITE_LAST_MODIFIED } from "@/lib/seo";
 
 export default function sitemap() {
-  const lastModified = new Date();
+  const lastModified = new Date(SITE_LAST_MODIFIED);
 
   return [
     {

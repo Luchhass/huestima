@@ -1,8 +1,8 @@
 export const APP_NAME = "Huestima";
 
 export const HOME_PARAGRAPHS = [
-  "A color appears for five seconds. Memorize the exact shade before it disappears.",
-  "Recreate it from memory with hue, saturation, and brightness controls. You get five rounds to prove your eye.",
+  "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
+  "Recreate it from memory with hue, saturation, and brightness controls. Play five rounds of this free color guessing game to test your eye.",
 ];
 
 export const ROUND_COUNT = 5;

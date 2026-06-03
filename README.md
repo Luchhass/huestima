@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Huestima
 
-## Getting Started
+Huestima is a free online hue estimate and color guessing game built with
+Next.js. Players memorize a shade, rebuild it with hue, saturation, and
+brightness controls, then compare their score across singleplayer or private
+multiplayer rounds.
 
-First, run the development server:
+## Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and fill the values that apply to the
+deployment.
 
-## Learn More
+```bash
+NEXT_PUBLIC_SITE_URL=https://www.huestima.com
+NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
+NEXT_PUBLIC_SOCKET_URL=http://localhost:4000
+```
 
-To learn more about Next.js, take a look at the following resources:
+`NEXT_PUBLIC_SITE_URL` drives canonical URLs, Open Graph URLs, `robots.txt`,
+and `sitemap.xml`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` renders the Google Search Console
+verification meta tag when the value is present.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` enables the GA4 Google tag and client-side
+route tracking. Leave it empty in local development if you do not want test
+traffic in Analytics.
 
-## Deploy on Vercel
+## SEO
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app uses the Next.js App Router metadata API:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/lib/seo.js` owns titles, descriptions, canonical URLs, Open Graph data,
+  Twitter card data, keywords, and JSON-LD.
+- `src/app/sitemap.js` lists the public canonical pages.
+- `src/app/robots.js` allows crawling and points crawlers to the sitemap.
+- `src/app/[roomCode]/page.jsx` marks private lobby URLs as `noindex`.
+
+Public Search Console sitemap URL:
+
+```text
+https://www.huestima.com/sitemap.xml
+```
+
+## Analytics Events
+
+GA4 is enabled by `src/components/analytics/GoogleAnalytics.jsx`. Game actions
+are tracked through `src/lib/analytics.js`.
+
+Tracked events:
+
+- `level_start`: singleplayer and multiplayer match starts.
+- `level_end`: match completion.
+- `post_score`: final score submission.
+- `lobby_create`: multiplayer lobby creation.
+- `lobby_join`: multiplayer lobby join.
+- `multiplayer_game_start`: host starts a multiplayer match.
+
+No player names, room codes, or personal identifiers are sent to Analytics.
+
+## Checks
+
+```bash
+npm run lint
+npm run build
+```

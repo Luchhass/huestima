@@ -21,6 +21,7 @@ import {
   markInviteCopied,
   saveRoomSession,
 } from "@/hooks/useRoomSession";
+import { trackEvent } from "@/lib/analytics";
 
 async function copyInviteLink(roomCode) {
   const inviteUrl = `${window.location.origin}/${roomCode}`;
@@ -104,6 +105,12 @@ export default function MultiplayerCard({ onDifficultyFeedback }) {
       playerId,
       playerName: cleanName,
       isHost: true,
+    });
+
+    trackEvent("lobby_create", {
+      game_type: "multiplayer",
+      difficulty,
+      game_mode: gameMode,
     });
 
     void copyInviteLink(response.room.code);
