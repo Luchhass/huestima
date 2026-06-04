@@ -9,6 +9,7 @@ import { readableTone } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
+const EXPANDED_REVEAL_DELAY = 320;
 
 function formatTotal(score) {
   return formatScore(score);
@@ -47,7 +48,9 @@ export default function LeaderboardCard({
   const [hiddenActionError, setHiddenActionError] = useState("");
 
   useAppChromeHidden(true);
-  useScreenReveal(scopeRef, [leaderboard?.completedAt]);
+  useScreenReveal(scopeRef, [leaderboard?.completedAt], {
+    delay: EXPANDED_REVEAL_DELAY,
+  });
 
   const rows = leaderboard?.leaderboard || [];
   const winner = rows[0];

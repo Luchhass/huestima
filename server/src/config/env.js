@@ -2,16 +2,30 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const DEFAULT_CLIENT_ORIGINS = ["http://localhost:3000"];
+const DEVELOPMENT_CLIENT_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
+  "http://localhost:3020",
+  "http://127.0.0.1:3020",
+];
+const nodeEnv = process.env.NODE_ENV || "development";
+
 function parseInteger(name, fallback) {
   const value = Number.parseInt(process.env[name], 10);
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function parseOrigins() {
-  const raw =
-    process.env.CLIENT_ORIGINS ||
-    process.env.CLIENT_ORIGIN ||
-    "http://localhost:3000";
+  const raw = process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN;
+
+  if (!raw) {
+    return nodeEnv === "production"
+      ? DEFAULT_CLIENT_ORIGINS
+      : DEVELOPMENT_CLIENT_ORIGINS;
+  }
 
   return raw
     .split(",")
@@ -20,7 +34,7 @@ function parseOrigins() {
 }
 
 export const env = {
-  nodeEnv: process.env.NODE_ENV || "development",
+  nodeEnv,
   port: parseInteger("PORT", 4000),
   clientOrigins: parseOrigins(),
   roomTtlMs: parseInteger("ROOM_TTL_MS", 60 * 60 * 1000),

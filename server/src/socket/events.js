@@ -4,6 +4,7 @@ import {
   getRoomSnapshot,
   handleSocketDisconnect,
   joinRoom,
+  listJoinableRooms,
   kickPlayer,
   leaveRoom,
   requestRoomState,
@@ -77,6 +78,17 @@ export function registerSocketEvents(io) {
         ackOk(ack, result.data);
         socket.emit("room:created", result.data);
         emitters.emitRoomState(getRoom(result.data.room.code));
+        emitters.emitRoomList();
+      }),
+    );
+
+    socket.on(
+      "room:list",
+      safeEvent((payload, ack) => {
+        const result = listJoinableRooms(payload);
+        if (!result.ok) return ackFail(ack, result.error);
+
+        ackOk(ack, result.data);
       }),
     );
 
@@ -88,6 +100,7 @@ export function registerSocketEvents(io) {
       ackOk(ack, result.data);
       socket.emit("room:joined", result.data);
       emitters.emitRoomState(getRoom(result.data.room.code));
+      emitters.emitRoomList();
     });
 
     socket.on("room:join", handleJoin);
@@ -117,6 +130,7 @@ export function registerSocketEvents(io) {
         leaveSocketFromRoom(socket, payload.roomCode);
         ackOk(ack, result.data);
         if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+        emitters.emitRoomList();
       }),
     );
 
@@ -128,6 +142,7 @@ export function registerSocketEvents(io) {
 
         ackOk(ack, result.data);
         if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+        emitters.emitRoomList();
       }),
     );
 
@@ -139,6 +154,7 @@ export function registerSocketEvents(io) {
 
         ackOk(ack, result.data);
         if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+        emitters.emitRoomList();
       }),
     );
 
@@ -150,6 +166,7 @@ export function registerSocketEvents(io) {
 
         ackOk(ack, result.data);
         if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+        emitters.emitRoomList();
       }),
     );
 
@@ -160,6 +177,7 @@ export function registerSocketEvents(io) {
       const room = getRoom(result.data.room.code);
       ackOk(ack, result.data);
       emitters.emitRoomState(room);
+      emitters.emitRoomList();
       io.to(room.code).emit("game:started", {
         roomCode: room.code,
         room: getRoomSnapshot(room),

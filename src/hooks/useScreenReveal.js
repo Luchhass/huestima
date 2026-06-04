@@ -122,10 +122,11 @@ export function playScreenFadeOut(scopeRef, options = {}) {
   });
 }
 
-export function useScreenReveal(scopeRef, dependencies = []) {
+export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
   useLayoutEffect(() => {
     const scope = scopeRef.current;
     if (!scope) return undefined;
+    const initialDelay = options.delay ?? 0;
 
     let timeline = null;
     let cancelIntroWait = null;
@@ -340,7 +341,7 @@ export function useScreenReveal(scopeRef, dependencies = []) {
       playReveal({ waitForPageIntro: false, delay: 80 });
     };
 
-    playReveal({ waitForPageIntro: true });
+    playReveal({ waitForPageIntro: true, delay: initialDelay });
     window.addEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
 
     return () => {

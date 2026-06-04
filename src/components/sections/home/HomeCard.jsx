@@ -7,6 +7,7 @@ import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import {
   APP_NAME,
@@ -29,18 +30,28 @@ const DIFFICULTY_BURST_COLORS = {
     rgb: "255 63 70",
   },
 };
+const CARD_RESIZE_DURATION_MS = 700;
+
+function waitForCardResize() {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+  });
+}
 
 export default function HomeCard({ initialView = "home" }) {
   const { t } = useTranslation();
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
   const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
+  const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const contentRef = useRef(null);
   const isChangingViewRef = useRef(false);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
+  const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
+  const cardHeight = useResponsiveCardHeight(isExpandedCard);
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useScreenReveal(contentRef, [view]);
@@ -50,6 +61,12 @@ export default function HomeCard({ initialView = "home" }) {
 
     isChangingViewRef.current = true;
     await playScreenFadeOut(contentRef);
+
+    if (isExpandedCard) {
+      setIsMultiplayerTallStep(false);
+      await waitForCardResize();
+    }
+
     setView(nextView);
     isChangingViewRef.current = false;
   };
@@ -71,8 +88,8 @@ export default function HomeCard({ initialView = "home" }) {
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
-        className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8"
-        style={{ height: "min(calc(100dvh - 132px), 390px)" }}
+        className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8"
+        style={{ height: cardHeight }}
       >
         {difficultyBurst && (
           <span
@@ -142,7 +159,9 @@ export default function HomeCard({ initialView = "home" }) {
               onGameModeChange={setGameMode}
             />
           ) : (
-            <MultiplayerCard onDifficultyFeedback={triggerDifficultyFeedback} />
+            <MultiplayerCard
+              onTallStepChange={setIsMultiplayerTallStep}
+            />
           )}
         </div>
       </section>

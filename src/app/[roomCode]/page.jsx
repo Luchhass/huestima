@@ -4,7 +4,7 @@ import { APP_NAME } from "@/lib/constants";
 
 export const metadata = {
   title: {
-    absolute: `Private Lobby | ${APP_NAME}`,
+    absolute: `Multiplayer Lobby | ${APP_NAME}`,
   },
   robots: {
     index: false,

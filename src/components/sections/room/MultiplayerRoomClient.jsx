@@ -14,6 +14,11 @@ import LeaderboardCard from "./LeaderboardCard";
 import MultiplayerGame from "./MultiplayerGame";
 
 const ROOM_CODE_PATTERN = /^\d{6}$/;
+const CARD_RESIZE_DURATION_MS = 700;
+
+function isExpandedRoomView(view) {
+  return view === "lobby" || view === "leaderboard";
+}
 
 function findRoomPlayer(room, playerId) {
   return room?.players?.find((roomPlayer) => roomPlayer.id === playerId) || null;
@@ -55,6 +60,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   const [isReturningLobby, setIsReturningLobby] = useState(false);
   const [error, setError] = useState("");
+  const [renderedView, setRenderedView] = useState("loading");
+  const [isRenderedShellExpanded, setIsRenderedShellExpanded] = useState(false);
 
   useEffect(() => {
     if (!session || (!kickedMessage && !closedMessage)) return;
@@ -110,7 +117,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     bootstrap();
   }, [isLoaded, requestState, roomCode, session, t]);
 
-  const handleJoin = async (playerName) => {
+  const handleJoin = async (playerName, password = "") => {
     setIsJoining(true);
     setError("");
 
@@ -120,7 +127,10 @@ export default function MultiplayerRoomClient({ roomCode }) {
       playerName,
       isHost: false,
     };
-    const response = await joinRoom(nextPlayer);
+    const response = await joinRoom({
+      ...nextPlayer,
+      password,
+    });
 
     setIsJoining(false);
 
@@ -284,7 +294,51 @@ export default function MultiplayerRoomClient({ roomCode }) {
     effectiveView = "game";
   }
 
-  if (effectiveView === "game" && player && room && activeGame) {
+  useEffect(() => {
+    const nextExpanded = isExpandedRoomView(effectiveView);
+    const currentExpanded = isExpandedRoomView(renderedView);
+    let timeoutId = null;
+    let frameId = null;
+    let nextFrameId = null;
+
+    if (effectiveView === renderedView) {
+      frameId = window.requestAnimationFrame(() => {
+        setIsRenderedShellExpanded(nextExpanded);
+      });
+
+      return () => window.cancelAnimationFrame(frameId);
+    }
+
+    if (currentExpanded && !nextExpanded) {
+      frameId = window.requestAnimationFrame(() => {
+        setIsRenderedShellExpanded(false);
+      });
+
+      timeoutId = window.setTimeout(() => {
+        setRenderedView(effectiveView);
+        setIsRenderedShellExpanded(false);
+      }, CARD_RESIZE_DURATION_MS);
+    } else {
+      frameId = window.requestAnimationFrame(() => {
+        setRenderedView(effectiveView);
+        setIsRenderedShellExpanded(false);
+
+        if (nextExpanded) {
+          nextFrameId = window.requestAnimationFrame(() => {
+            setIsRenderedShellExpanded(true);
+          });
+        }
+      });
+    }
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (frameId) window.cancelAnimationFrame(frameId);
+      if (nextFrameId) window.cancelAnimationFrame(nextFrameId);
+    };
+  }, [effectiveView, renderedView]);
+
+  if (renderedView === "game" && player && room && activeGame) {
     return (
       <MultiplayerGame
         roomCode={roomCode}
@@ -303,36 +357,38 @@ export default function MultiplayerRoomClient({ roomCode }) {
   }
 
   return (
-    <RoomCardShell>
-      {effectiveView === "loading" && (
+    <RoomCardShell
+      isExpanded={isRenderedShellExpanded}
+    >
+      {renderedView === "loading" && (
         <RoomMessageCard
           title={t("common.loading")}
           message={connectionError || t("room.findingLobby")}
         />
       )}
 
-      {effectiveView === "not-found" && (
+      {renderedView === "not-found" && (
         <RoomMessageCard
           title={t("common.lobby")}
           message={error || t("room.lobbyNotFound")}
         />
       )}
 
-      {effectiveView === "kicked" && (
+      {renderedView === "kicked" && (
         <RoomMessageCard
           title={t("room.kicked")}
           message={kickedMessage || t("room.kickedMessage")}
         />
       )}
 
-      {effectiveView === "closed" && (
+      {renderedView === "closed" && (
         <RoomMessageCard
           title={t("common.lobby")}
           message={closedMessage || t("room.closedMessage")}
         />
       )}
 
-      {effectiveView === "join" && (
+      {renderedView === "join" && (
         <JoinRoomCard
           room={room}
           roomCode={roomCode}
@@ -342,7 +398,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
         />
       )}
 
-      {effectiveView === "lobby" && room && player && (
+      {renderedView === "lobby" && room && player && (
         <LobbyCard
           room={room}
           currentPlayerId={player.playerId}
@@ -362,7 +418,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
         />
       )}
 
-      {effectiveView === "leaderboard" && (
+      {renderedView === "leaderboard" && (
         <LeaderboardCard
           leaderboard={leaderboard}
           currentPlayerId={player?.playerId}

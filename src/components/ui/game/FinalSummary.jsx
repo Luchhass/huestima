@@ -13,6 +13,8 @@ import { getFinalAssessmentKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playFinalScore } from "@/lib/sound";
 
+const EXPANDED_REVEAL_DELAY = 320;
+
 function tileGradient(result) {
   return `linear-gradient(135deg, ${result.target.hex} 0 50%, ${result.guess.hex} 50% 100%)`;
 }
@@ -38,7 +40,9 @@ export default function FinalSummary({
   const scopeRef = useRef(null);
 
   useAppChromeHidden(true);
-  useScreenReveal(scopeRef, [results.length]);
+  useScreenReveal(scopeRef, [results.length], {
+    delay: EXPANDED_REVEAL_DELAY,
+  });
 
   const closeRef = useRef(null);
   const scoreRef = useRef(null);

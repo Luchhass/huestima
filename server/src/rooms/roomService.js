@@ -1,5 +1,6 @@
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { env } from "../config/env.js";
-import { ROOM_STATUSES, ROUND_COUNT } from "../constants.js";
+import { ROOM_STATUSES, ROOM_VISIBILITIES, ROUND_COUNT } from "../constants.js";
 import {
   buildGamePayload,
   markPlayerInactiveForGame,
@@ -21,7 +22,10 @@ import {
   validateGameMode,
   validatePlayerId,
   validatePlayerName,
+  validateRoomName,
+  validateRoomPassword,
   validateRoomCode,
+  validateRoomVisibility,
 } from "./roomValidation.js";
 
 let callbacks = {
@@ -29,8 +33,37 @@ let callbacks = {
   emitRoomClosed: () => {},
   emitPlayerKicked: () => {},
   emitScoreboard: () => {},
+  emitRoomList: () => {},
   leaveSocketRoom: () => {},
 };
+
+function normalizeSearchQuery(query) {
+  return typeof query === "string" ? query.trim().toLowerCase().slice(0, 60) : "";
+}
+
+function createPasswordRecord(password) {
+  if (!password) return null;
+
+  const salt = randomBytes(16).toString("hex");
+  const hash = createHash("sha256").update(`${salt}:${password}`).digest("hex");
+
+  return { salt, hash };
+}
+
+function verifyPassword(password, record) {
+  if (!record) return true;
+  if (!password) return false;
+
+  const hash = createHash("sha256")
+    .update(`${record.salt}:${password}`)
+    .digest("hex");
+
+  return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(record.hash, "hex"));
+}
+
+function getRoomHost(room) {
+  return room.players.get(room.hostPlayerId) || null;
+}
 
 export function configureRoomService(nextCallbacks) {
   callbacks = {
@@ -108,6 +141,11 @@ export function getRoomSnapshot(room) {
   return {
     code: room.code,
     roomCode: room.code,
+    name: room.name,
+    lobbyName: room.name,
+    visibility: room.visibility,
+    isPrivate: room.visibility === ROOM_VISIBILITIES.PRIVATE,
+    hasPassword: Boolean(room.password),
     hostPlayerId: room.hostPlayerId,
     status: room.status,
     mode: room.gameMode,
@@ -127,6 +165,60 @@ export function getRoomSnapshot(room) {
         ? buildGamePayload(room)
         : null,
   };
+}
+
+function getRoomListSnapshot(room) {
+  const host = getRoomHost(room);
+
+  return {
+    code: room.code,
+    roomCode: room.code,
+    name: room.name,
+    lobbyName: room.name,
+    visibility: room.visibility,
+    isPrivate: room.visibility === ROOM_VISIBILITIES.PRIVATE,
+    hasPassword: Boolean(room.password),
+    gameMode: room.gameMode,
+    difficulty: room.difficulty,
+    status: room.status,
+    playerCount: Array.from(room.players.values()).filter(
+      (player) => !player.kicked,
+    ).length,
+    maxPlayers: room.maxPlayers,
+    hostName: host?.name || "",
+    createdAt: room.createdAt,
+    updatedAt: room.updatedAt,
+    expiresAt: room.expiresAt,
+  };
+}
+
+export function listJoinableRooms(payload = {}) {
+  const query = normalizeSearchQuery(payload.query);
+  const currentTime = now();
+
+  const rooms = listRooms()
+    .filter((room) => room.status === ROOM_STATUSES.LOBBY)
+    .filter((room) => room.expiresAt > currentTime)
+    .map(getRoomListSnapshot)
+    .filter((room) => {
+      if (!query) return true;
+
+      return [
+        room.code,
+        room.name,
+        room.hostName,
+        room.gameMode,
+        room.difficulty,
+        room.visibility,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    })
+    .sort((first, second) => second.updatedAt - first.updatedAt)
+    .slice(0, 50);
+
+  return ok({ rooms });
 }
 
 function scheduleRoomDeletion(room, delayMs, reason, notify = false) {
@@ -159,6 +251,7 @@ export function closeRoom(room, reason = "closed", notify = true) {
   deleteRoom(room.code);
 
   if (notify) callbacks.emitRoomClosed(room, reason);
+  callbacks.emitRoomList();
   logger.info("room closed", { roomCode: room.code, reason });
 }
 
@@ -185,11 +278,28 @@ function validateRoomCreatePayload(payload) {
   const gameMode = validateGameMode(payload.gameMode || payload.mode);
   if (!gameMode.ok) return gameMode;
 
+  const roomName = validateRoomName(
+    payload.roomName || payload.lobbyName,
+    `${playerName.data.playerName}'s lobby`,
+  );
+  if (!roomName.ok) return roomName;
+
+  const visibility = validateRoomVisibility(payload.visibility);
+  if (!visibility.ok) return visibility;
+
+  const password = validateRoomPassword(payload.password, {
+    required: visibility.data.visibility === ROOM_VISIBILITIES.PRIVATE,
+  });
+  if (!password.ok) return password;
+
   return ok({
     playerId: playerId.data.playerId,
     playerName: playerName.data.playerName,
     difficulty: difficulty.data.difficulty,
     gameMode: gameMode.data.gameMode,
+    roomName: roomName.data.roomName,
+    visibility: visibility.data.visibility,
+    password: password.data.password,
   });
 }
 
@@ -200,6 +310,12 @@ export function createRoom(payload) {
   const createdAt = now();
   const room = {
     code: generateRoomCode(),
+    name: validation.data.roomName,
+    visibility: validation.data.visibility,
+    password:
+      validation.data.visibility === ROOM_VISIBILITIES.PRIVATE
+        ? createPasswordRecord(validation.data.password)
+        : null,
     hostPlayerId: validation.data.playerId,
     status: ROOM_STATUSES.LOBBY,
     gameMode: validation.data.gameMode,
@@ -314,6 +430,15 @@ export function joinRoom(payload) {
       game: buildGamePayload(room),
       leaderboard: room.leaderboard,
     });
+  }
+
+  if (room.visibility === ROOM_VISIBILITIES.PRIVATE && room.password) {
+    const password = validateRoomPassword(payload.password, { required: true });
+    if (!password.ok) return password;
+
+    if (!verifyPassword(password.data.password, room.password)) {
+      return fail("Invalid lobby password.");
+    }
   }
 
   if (room.status !== ROOM_STATUSES.LOBBY) {

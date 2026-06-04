@@ -76,7 +76,10 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
 
   return (
     <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
-      <GameCardShell color={shellColor}>
+      <GameCardShell
+        color={shellColor}
+        isExpanded={game.phase === GAME_PHASES.FINAL}
+      >
         <div className="h-full min-h-[inherit]">
           {game.phase === GAME_PHASES.INTRO && (
             <IntroPhase

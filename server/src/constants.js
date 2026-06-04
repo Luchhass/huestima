@@ -21,7 +21,16 @@ export const DIFFICULTIES = {
 export const ROUND_COUNT = 5;
 export const PLAYER_NAME_MIN_LENGTH = 2;
 export const PLAYER_NAME_MAX_LENGTH = 18;
+export const ROOM_NAME_MIN_LENGTH = 2;
+export const ROOM_NAME_MAX_LENGTH = 28;
+export const ROOM_PASSWORD_MIN_LENGTH = 3;
+export const ROOM_PASSWORD_MAX_LENGTH = 32;
 export const MAX_ROUND_SCORE = 10;
+
+export const ROOM_VISIBILITIES = {
+  PUBLIC: "public",
+  PRIVATE: "private",
+};
 
 export const GAME_MODE_CONFIG = {
   [GAME_MODES.NORMAL]: {

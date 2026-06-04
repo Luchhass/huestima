@@ -3,6 +3,11 @@ import {
   GAME_MODES,
   PLAYER_NAME_MAX_LENGTH,
   PLAYER_NAME_MIN_LENGTH,
+  ROOM_NAME_MAX_LENGTH,
+  ROOM_NAME_MIN_LENGTH,
+  ROOM_PASSWORD_MAX_LENGTH,
+  ROOM_PASSWORD_MIN_LENGTH,
+  ROOM_VISIBILITIES,
 } from "../constants.js";
 
 export function fail(error) {
@@ -59,6 +64,50 @@ export function validateGameMode(gameMode) {
   }
 
   return ok({ gameMode: cleanMode });
+}
+
+export function validateRoomName(roomName, fallback = "Huestima lobby") {
+  const cleanName = (cleanString(roomName) || fallback).replace(/\s+/g, " ");
+
+  if (cleanName.length < ROOM_NAME_MIN_LENGTH) {
+    return fail(`Lobby name must be at least ${ROOM_NAME_MIN_LENGTH} characters.`);
+  }
+
+  if (cleanName.length > ROOM_NAME_MAX_LENGTH) {
+    return fail(`Lobby name must be ${ROOM_NAME_MAX_LENGTH} characters or fewer.`);
+  }
+
+  return ok({ roomName: cleanName });
+}
+
+export function validateRoomVisibility(visibility) {
+  const cleanVisibility = cleanString(visibility) || ROOM_VISIBILITIES.PUBLIC;
+
+  if (!Object.values(ROOM_VISIBILITIES).includes(cleanVisibility)) {
+    return fail("Invalid lobby visibility.");
+  }
+
+  return ok({ visibility: cleanVisibility });
+}
+
+export function validateRoomPassword(password, { required = false } = {}) {
+  const cleanPassword = cleanString(password);
+
+  if (!cleanPassword) {
+    return required
+      ? fail(`Password must be at least ${ROOM_PASSWORD_MIN_LENGTH} characters.`)
+      : ok({ password: "" });
+  }
+
+  if (cleanPassword.length < ROOM_PASSWORD_MIN_LENGTH) {
+    return fail(`Password must be at least ${ROOM_PASSWORD_MIN_LENGTH} characters.`);
+  }
+
+  if (cleanPassword.length > ROOM_PASSWORD_MAX_LENGTH) {
+    return fail(`Password must be ${ROOM_PASSWORD_MAX_LENGTH} characters or fewer.`);
+  }
+
+  return ok({ password: cleanPassword });
 }
 
 export function validateRoundIndex(roundIndex, roundCount) {

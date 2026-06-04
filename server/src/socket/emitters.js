@@ -1,4 +1,4 @@
-import { getRoomSnapshot } from "../rooms/roomService.js";
+import { getRoomSnapshot, listJoinableRooms } from "../rooms/roomService.js";
 
 export function createEmitters(io) {
   return {
@@ -27,6 +27,11 @@ export function createEmitters(io) {
     emitScoreboard(room, leaderboard) {
       io.to(room.code).emit("game:scoreboard", leaderboard);
       io.to(room.code).emit("game:leaderboard", leaderboard);
+    },
+
+    emitRoomList() {
+      const result = listJoinableRooms();
+      io.emit("room:listUpdated", result.data);
     },
 
     leaveSocketRoom(roomCode, socketId) {

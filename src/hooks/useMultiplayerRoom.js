@@ -134,11 +134,12 @@ export function useMultiplayerRoom(roomCode) {
   );
 
   const joinRoom = useCallback(
-    async ({ playerId, playerName }) => {
+    async ({ playerId, playerName, password = "" }) => {
       const response = await emitWithAck("room:join", {
         roomCode,
         playerId,
         playerName,
+        password,
       });
 
       if (response.ok) {

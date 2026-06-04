@@ -28,9 +28,13 @@ export default function JoinRoomCard({
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const [playerName, setPlayerName] = useState("");
+  const [password, setPassword] = useState("");
   const [nameError, setNameError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [hiddenRemoteError, setHiddenRemoteError] = useState("");
-  const actionError = nameError || (error !== hiddenRemoteError ? error : "");
+  const requiresPassword = Boolean(room?.hasPassword);
+  const actionError =
+    nameError || passwordError || (error !== hiddenRemoteError ? error : "");
 
   useScreenReveal(scopeRef, [roomCode]);
 
@@ -39,11 +43,12 @@ export default function JoinRoomCard({
 
     const timeoutId = window.setTimeout(() => {
       if (nameError) setNameError("");
+      if (passwordError) setPasswordError("");
       if (error && actionError === error) setHiddenRemoteError(error);
     }, 2200);
 
     return () => window.clearTimeout(timeoutId);
-  }, [actionError, error, nameError]);
+  }, [actionError, error, nameError, passwordError]);
 
   const handleJoin = async () => {
     if (isJoining) return;
@@ -51,13 +56,22 @@ export default function JoinRoomCard({
     const validationError = validatePlayerName(playerName, t);
     if (validationError) {
       setNameError(validationError);
+      setPasswordError("");
+      setHiddenRemoteError(error);
+      return;
+    }
+
+    if (requiresPassword && !password.trim()) {
+      setNameError("");
+      setPasswordError(t("setup.lobbyPasswordRequired"));
       setHiddenRemoteError(error);
       return;
     }
 
     setNameError("");
+    setPasswordError("");
     setHiddenRemoteError("");
-    await onJoin(cleanPlayerName(playerName));
+    await onJoin(cleanPlayerName(playerName), password.trim());
   };
 
   return (
@@ -85,16 +99,40 @@ export default function JoinRoomCard({
       </div>
 
       <div data-screen-reveal className="mt-auto w-full">
-        <div className="grid w-full grid-cols-[1.08fr_1fr] items-center gap-3 max-[520px]:grid-cols-1">
+        <div
+          className={`grid w-full items-center gap-3 max-[520px]:grid-cols-1 ${
+            requiresPassword
+              ? "grid-cols-[1fr_1fr_0.9fr]"
+              : "grid-cols-[1.08fr_1fr]"
+          }`}
+        >
           <PlayerNameField
             value={playerName}
             onChange={(value) => {
               setPlayerName(value);
               if (nameError) setNameError("");
+              if (passwordError) setPasswordError("");
               if (error) setHiddenRemoteError(error);
             }}
             disabled={isJoining}
           />
+
+          {requiresPassword && (
+            <input
+              type="password"
+              value={password}
+              disabled={isJoining}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (passwordError) setPasswordError("");
+                if (error) setHiddenRemoteError(error);
+              }}
+              aria-label={t("setup.lobbyPasswordAria")}
+              className="card-control-frame card-action-height w-full appearance-none px-7 text-base font-semibold text-white outline-none transition placeholder:text-white/34 focus:ring-2 focus:ring-white/18 disabled:opacity-60"
+              placeholder={t("setup.lobbyPasswordPlaceholder")}
+              autoComplete="off"
+            />
+          )}
 
           <button
             type="button"

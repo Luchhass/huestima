@@ -23,6 +23,7 @@ const DIFFICULTY_BURST_COLORS = {
     rgb: "255 63 70",
   },
 };
+const EXPANDED_REVEAL_DELAY = 320;
 
 export default function LobbyCard({
   room,
@@ -67,7 +68,9 @@ export default function LobbyCard({
       : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
-  useScreenReveal(scopeRef, [room?.code]);
+  useScreenReveal(scopeRef, [room?.code], {
+    delay: EXPANDED_REVEAL_DELAY,
+  });
 
   const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
     const burst =
