@@ -54,6 +54,7 @@ export default function DifficultySwitch({
             type="button"
             disabled={disabled}
             aria-pressed={selected}
+            aria-label={t(`difficulty.${option.id}`)}
             onPointerEnter={() => setHoverIndex(optionIndex)}
             onFocus={() => setHoverIndex(optionIndex)}
             onBlur={() => setHoverIndex(null)}
@@ -67,13 +68,14 @@ export default function DifficultySwitch({
             } ${disabled ? "cursor-not-allowed" : ""}`}
           >
             <span className="inline-flex items-center justify-center gap-1">
-              <span>{t(`difficulty.${option.id}`)}</span>
-              {disabled && selected && (
+              {disabled && selected ? (
                 <Lock
-                  className="size-2.5 shrink-0 sm:size-3"
+                  className="size-4 shrink-0"
                   strokeWidth={2.4}
                   aria-hidden="true"
                 />
+              ) : (
+                <span>{t(`difficulty.${option.id}`)}</span>
               )}
             </span>
           </button>

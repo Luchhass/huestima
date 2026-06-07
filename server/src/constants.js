@@ -48,7 +48,7 @@ export const GAME_MODE_CONFIG = {
   },
   [GAME_MODES.TIMED]: {
     revealDurationMs: 3000,
-    guessDurationMs: 2000,
+    guessDurationMs: 3000,
     lockedDifficulty: DIFFICULTIES.EASY,
   },
   [GAME_MODES.GRADIENT]: {

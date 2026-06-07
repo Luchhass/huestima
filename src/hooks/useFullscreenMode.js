@@ -17,6 +17,10 @@ const LEAF_FADE_SELECTOR =
 const RESIZE_DURATION = 0.72;
 const SHRINK_DURATION = 0.66;
 const CONTENT_FADE_DURATION = 0.26;
+const NORMAL_CARD_MAX_WIDTH = 500;
+const NORMAL_CARD_MAX_HEIGHT = 390;
+const NORMAL_CARD_MIN_HEIGHT = 320;
+const NORMAL_CARD_VIEWPORT_OFFSET = 132;
 
 let isTransitioningFullscreen = false;
 
@@ -359,14 +363,87 @@ function readElementBox(element) {
   };
 }
 
+function parsePixelValue(value) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function readNormalGameCardBox(element) {
+  const viewport = readViewportBox();
+  const styles = window.getComputedStyle(element);
+  const pagePadding =
+    parseFloat(
+      window.getComputedStyle(document.documentElement).getPropertyValue(
+        "--app-page-padding",
+      ),
+    ) || 24;
+  const availableWidth = Math.max(0, viewport.width - pagePadding * 2);
+  const availableHeight = Math.max(0, viewport.height - pagePadding * 2);
+  const width = Math.min(availableWidth, NORMAL_CARD_MAX_WIDTH);
+  const height = Math.max(
+    NORMAL_CARD_MIN_HEIGHT,
+    Math.min(viewport.height - NORMAL_CARD_VIEWPORT_OFFSET, NORMAL_CARD_MAX_HEIGHT),
+  );
+
+  return {
+    top: viewport.top + pagePadding + Math.max(0, (availableHeight - height) / 2),
+    left: viewport.left + pagePadding + Math.max(0, (availableWidth - width) / 2),
+    width,
+    height,
+    borderRadius: styles.borderRadius || "26px",
+    boxShadow: styles.boxShadow || "none",
+  };
+}
+
 function setCoverBox(cover, box) {
-  gsap.set(cover, {
-    top: box.top,
-    left: box.left,
-    width: box.width,
-    height: box.height,
-    borderRadius: box.borderRadius,
-    boxShadow: box.boxShadow,
+  setImportantStyle(cover, "top", `${box.top}px`);
+  setImportantStyle(cover, "left", `${box.left}px`);
+  setImportantStyle(cover, "width", `${box.width}px`);
+  setImportantStyle(cover, "height", `${box.height}px`);
+  setImportantStyle(cover, "border-radius", box.borderRadius || "0px");
+  setImportantStyle(cover, "box-shadow", box.boxShadow || "none");
+}
+
+function animateCoverToBox(cover, targetBox, vars) {
+  const currentBox = getCoverBox(cover);
+  const state = {
+    top: currentBox.top,
+    left: currentBox.left,
+    width: currentBox.width,
+    height: currentBox.height,
+    borderRadius: parsePixelValue(currentBox.borderRadius),
+  };
+  const targetRadius = parsePixelValue(targetBox.borderRadius);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+
+      settled = true;
+      setCoverBox(cover, targetBox);
+      resolve();
+    };
+
+    gsap.to(state, {
+      top: targetBox.top,
+      left: targetBox.left,
+      width: targetBox.width,
+      height: targetBox.height,
+      borderRadius: targetRadius,
+      duration: vars.duration,
+      ease: vars.ease,
+      overwrite: true,
+      onUpdate: () => {
+        setImportantStyle(cover, "top", `${state.top}px`);
+        setImportantStyle(cover, "left", `${state.left}px`);
+        setImportantStyle(cover, "width", `${state.width}px`);
+        setImportantStyle(cover, "height", `${state.height}px`);
+        setImportantStyle(cover, "border-radius", `${state.borderRadius}px`);
+      },
+      onComplete: finish,
+      onInterrupt: finish,
+    });
   });
 }
 
@@ -513,19 +590,16 @@ async function playFullscreenModeTransition(nextEnabled) {
 
       await waitForLayoutFrames();
 
-      const targetBox = targetCard
-        ? readElementBox(targetCard)
-        : readViewportBox();
+      const targetBox =
+        isImmersiveLayout && (targetCard || card)
+          ? readNormalGameCardBox(targetCard || card)
+          : targetCard
+            ? readElementBox(targetCard)
+            : readViewportBox();
 
       setCoverBox(cover, coverStartBox);
 
-      await animateTo(cover, {
-        top: targetBox.top,
-        left: targetBox.left,
-        width: targetBox.width,
-        height: targetBox.height,
-        borderRadius: targetBox.borderRadius || "24px",
-        boxShadow: targetBox.boxShadow || "none",
+      await animateCoverToBox(cover, targetBox, {
         duration: SHRINK_DURATION,
         ease: "expo.inOut",
       });

@@ -42,6 +42,7 @@ export default function ResultPhase({
   const continueButtonCoreRef = useRef(null);
   const continueButtonRingRef = useRef(null);
   const continueArrowRef = useRef(null);
+  const finishRunButtonRef = useRef(null);
 
   const selectionLabelRef = useRef(null);
   const selectionValueRef = useRef(null);
@@ -65,8 +66,9 @@ export default function ResultPhase({
     if (reduceMotion.matches) {
       scoreElement.textContent = formatScore(result.score);
 
-      gsap.set(resultLineElement, {
+      gsap.set([resultLineElement, finishRunButtonRef.current], {
         autoAlpha: 1,
+        scale: 1,
       });
 
       playScoreResolve(result.score);
@@ -155,6 +157,13 @@ export default function ResultPhase({
         autoAlpha: 0,
       });
 
+      gsap.set(finishRunButtonRef.current, {
+        scale: 0,
+        autoAlpha: 0,
+        transformOrigin: "center center",
+        force3D: true,
+      });
+
       gsap.set(continueButtonCoreRef.current, {
         scale: 0,
         rotation: -10,
@@ -231,11 +240,40 @@ export default function ResultPhase({
 
         // 3) Buton görünür hale gelir
         .set(
-          continueButtonRef.current,
+          [continueButtonRef.current, finishRunButtonRef.current],
           {
             autoAlpha: 1,
           },
           0.68
+        )
+
+        .to(
+          finishRunButtonRef.current,
+          {
+            scale: 1.045,
+            duration: 0.2,
+            ease: "expo.out",
+          },
+          0.68
+        )
+        .to(
+          finishRunButtonRef.current,
+          {
+            scale: 0.94,
+            duration: 0.09,
+            ease: "power3.out",
+          },
+          0.88
+        )
+        .to(
+          finishRunButtonRef.current,
+          {
+            scale: 1,
+            duration: 0.12,
+            ease: "expo.out",
+            clearProps: "transform,opacity,visibility",
+          },
+          0.97
         )
 
         // Fancy popup core
@@ -484,13 +522,13 @@ export default function ResultPhase({
 
         {canFinishRun && (
           <button
+            ref={finishRunButtonRef}
             type="button"
             aria-label={t("game.finishRun")}
             onClick={onFinishRun}
-            className="absolute top-6 left-6 inline-flex h-10 items-center gap-2 rounded-full border-2 border-current/70 bg-white/10 px-4 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/18 focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:top-8 sm:left-8"
+            className="soft-icon-button card-action-size group absolute right-[5.75rem] bottom-6 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
           >
-            <X size={16} strokeWidth={2.35} />
-            <span>{t("game.finishRun")}</span>
+            <X size={29} strokeWidth={2.15} />
           </button>
         )}
 

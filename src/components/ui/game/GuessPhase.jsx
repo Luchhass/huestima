@@ -9,6 +9,7 @@ import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
 import { isGradientColor } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
+import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
 export default function GuessPhase({
@@ -71,7 +72,6 @@ export default function GuessPhase({
     isRunning: isTimedGuess && timerRunning,
     onComplete: handleTimedSubmit,
   });
-  const timerSeconds = (Math.max(0, centiseconds) / 100).toFixed(2);
   const edgeTrackClassName =
     "guess-picker-track h-full w-[50px] rounded-none border-0 shadow-none sm:h-full sm:w-[50px]";
   const edgeHandleClassName =
@@ -108,7 +108,7 @@ export default function GuessPhase({
 
       if (timerRef.current) {
         gsap.set(timerRef.current, {
-          yPercent: -80,
+          yPercent: 80,
           autoAlpha: 0,
         });
       }
@@ -366,7 +366,7 @@ export default function GuessPhase({
             ease: "power4.out",
             clearProps: "transform,opacity,visibility",
           },
-          0.18,
+          0.26,
         );
       }
 
@@ -449,24 +449,6 @@ export default function GuessPhase({
         </p>
       </div>
 
-      {isTimedGuess && (
-        <div
-          className="absolute left-(--round-left) top-14 overflow-hidden sm:left-(--round-left-sm) sm:top-16"
-          style={{
-            "--round-left": `${contentLeft}px`,
-            "--round-left-sm": `${contentLeftSm}px`,
-          }}
-        >
-          <p
-            ref={timerRef}
-            aria-label={t("game.secondsToChoose")}
-            className="text-sm font-semibold tabular-nums text-current/64"
-          >
-            {timerSeconds}s
-          </p>
-        </div>
-      )}
-
       <div
         className="absolute right-(--guess-right) top-6 overflow-hidden sm:right-(--guess-right-sm) sm:top-8"
         style={{
@@ -485,13 +467,36 @@ export default function GuessPhase({
       {progressItems.length > 0 && (
         <div
           ref={progressRef}
-          className="absolute bottom-6 z-20 sm:bottom-8"
+          className={`absolute z-20 ${
+            isTimedGuess
+              ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
+              : "bottom-6 sm:bottom-8"
+          }`}
           style={{
             left: `${contentLeft}px`,
             maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - 88px)`,
           }}
         >
           <MultiplayerProgressList items={progressItems} />
+        </div>
+      )}
+
+      {isTimedGuess && (
+        <div
+          ref={timerRef}
+          className="absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"
+          style={{
+            "--round-left": `${contentLeft}px`,
+            "--round-left-sm": `${contentLeftSm}px`,
+          }}
+        >
+          <CountdownReel
+            key={`guess-countdown-${timedGuessDurationMs}`}
+            durationMs={timedGuessDurationMs}
+            currentCentiseconds={centiseconds}
+            sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
+            className="translate-y-[0.18em]"
+          />
         </div>
       )}
 

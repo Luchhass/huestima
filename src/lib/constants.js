@@ -11,7 +11,7 @@ export const MEMORIZE_DURATION_MS = 5000;
 export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_MEMORIZE_DURATION_MS = 3000;
-export const TIMED_GUESS_DURATION_MS = 2000;
+export const TIMED_GUESS_DURATION_MS = 3000;
 export const MAX_ROUND_SCORE = 10;
 
 export const DEFAULT_GUESS_HSV = {
@@ -94,7 +94,7 @@ export const GAME_MODE_OPTIONS = [
   {
     id: GAME_MODE_IDS.TIMED,
     label: "Timed",
-    description: "Three seconds to memorize, two seconds to choose.",
+    description: "Three seconds to memorize, three seconds to choose.",
     revealDurationMs: TIMED_MEMORIZE_DURATION_MS,
     guessDurationMs: TIMED_GUESS_DURATION_MS,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
@@ -127,7 +127,7 @@ export const GAME_MODE_CARD_COPY = {
     [GAME_MODE_IDS.SEQUENCE]:
       "Study five colors in order, then recreate the sequence one by one.",
     [GAME_MODE_IDS.TIMED]:
-      "Memorize each color for three seconds, then lock your guess in two seconds.",
+      "Memorize each color for three seconds, then lock your guess in three seconds.",
     [GAME_MODE_IDS.GRADIENT]:
       "Match both sides of a two-color gradient using the left and right hue bars.",
     [GAME_MODE_IDS.DUEL]:
@@ -143,7 +143,7 @@ export const GAME_MODE_CARD_COPY = {
     [GAME_MODE_IDS.SEQUENCE]:
       "Everyone studies the same five-color sequence, then rebuilds it in order.",
     [GAME_MODE_IDS.TIMED]:
-      "Everyone gets three seconds to memorize and two seconds to choose.",
+      "Everyone gets three seconds to memorize and three seconds to choose.",
     [GAME_MODE_IDS.GRADIENT]:
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
     [GAME_MODE_IDS.DUEL]:

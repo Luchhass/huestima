@@ -60,6 +60,8 @@ export default function CountdownReel({
   durationMs,
   currentCentiseconds,
   onSecondTick,
+  sizeClassName = "text-7xl sm:text-[7rem]",
+  className = "",
 }) {
   const reelTrackRefs = useRef([]);
   const totalCentiseconds = Math.max(0, Math.round(durationMs / 10));
@@ -139,7 +141,7 @@ export default function CountdownReel({
 
   return (
     <div
-      className="inline-grid w-[2.08em] grid-cols-3 justify-end font-mono text-7xl font-semibold tracking-normal tabular-nums sm:text-[7rem]"
+      className={`inline-grid w-[2.08em] grid-cols-3 justify-end font-mono font-semibold tracking-normal tabular-nums ${sizeClassName} ${className}`}
       aria-label={timerDigits}
     >
       <span className="sr-only">{timerDigits}</span>

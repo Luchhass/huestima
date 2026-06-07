@@ -388,15 +388,15 @@ export default function FinalSummary({
         <div
           className={`grid w-full grid-cols-5 overflow-hidden ${
             hasWrappedTiles
-              ? "scrollbar-hidden max-h-[13.5rem] auto-rows-[4.875rem] overflow-y-auto sm:auto-rows-[5.375rem]"
-              : "h-19.5 sm:h-21.5"
+              ? "scrollbar-hidden max-h-[13.5rem] overflow-y-auto"
+              : ""
           }`}
         >
           {results.map((result) => (
             <div
               key={result.round}
               data-summary-tile
-              className="relative overflow-hidden"
+              className="relative aspect-square min-w-0 overflow-hidden"
               style={{ background: gradientBackground(result.target) }}
               title={t("room.roundTitle", {
                 round: result.round,
@@ -415,7 +415,7 @@ export default function FinalSummary({
 
               <span
                 data-summary-tile-score
-                className={`absolute top-2 left-2 z-10 text-[0.95rem] leading-none font-semibold sm:text-base ${tileScoreTone(
+                className={`absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[0.72rem] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-base ${tileScoreTone(
                   colorToneHex(result.target)
                 )}`}
               >

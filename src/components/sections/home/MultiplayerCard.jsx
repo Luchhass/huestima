@@ -36,6 +36,7 @@ const MAX_LOBBY_NAME_LENGTH = 28;
 const MIN_LOBBY_NAME_LENGTH = 2;
 const MIN_LOBBY_PASSWORD_LENGTH = 3;
 const EXPANDED_REVEAL_DELAY = 320;
+const PLAYER_NAME_SESSION_KEY = "huestima-player-name";
 
 function responseData(response) {
   return response?.data || response || {};
@@ -69,6 +70,33 @@ function validateLobbyPassword(value, t) {
   }
 
   return "";
+}
+
+function readStoredPlayerName() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    return sessionStorage.getItem(PLAYER_NAME_SESSION_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeStoredPlayerName(value) {
+  if (typeof window === "undefined") return;
+
+  try {
+    const cleanName = cleanPlayerName(value);
+
+    if (cleanName) {
+      sessionStorage.setItem(PLAYER_NAME_SESSION_KEY, cleanName);
+      return;
+    }
+
+    sessionStorage.removeItem(PLAYER_NAME_SESSION_KEY);
+  } catch {
+    // Ignore unavailable sessionStorage.
+  }
 }
 
 async function copyInviteLink(roomCode) {
@@ -279,7 +307,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
   const [lobbyName, setLobbyName] = useState("");
-  const [playerName, setPlayerName] = useState("");
+  const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
   const [password, setPassword] = useState("");
   const [rooms, setRooms] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -324,6 +352,12 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const clearActionError = () => {
     if (formError) setFormError("");
     if (submitError) setSubmitError("");
+  };
+
+  const updatePlayerName = (value) => {
+    setPlayerName(value);
+    writeStoredPlayerName(value);
+    clearActionError();
   };
 
   const loadRooms = useCallback(async () => {
@@ -435,6 +469,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
     setIsCreating(true);
 
     const cleanName = cleanPlayerName(playerName);
+    writeStoredPlayerName(cleanName);
     const playerId = createPlayerId();
 
     const response = await emitWithAck("room:create", {
@@ -500,6 +535,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
     setIsJoining(true);
 
     const cleanName = cleanPlayerName(playerName);
+    writeStoredPlayerName(cleanName);
     const playerId = createPlayerId();
 
     const response = await emitWithAck("room:join", {
@@ -559,10 +595,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
           <div className="mb-3 w-full">
             <PlayerNameField
               value={playerName}
-              onChange={(value) => {
-                setPlayerName(value);
-                clearActionError();
-              }}
+              onChange={updatePlayerName}
             />
           </div>
 

@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
-import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import GameCardShell from "@/components/ui/game/GameCardShell";
@@ -15,18 +14,17 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
 
 export default function SingleplayerGame({ initialDifficulty, initialGameMode }) {
-  const { t } = useTranslation();
   const game = useSingleplayerGame(initialDifficulty, initialGameMode);
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
   const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
   const currentRoundLabel = game.isEndlessMode
-    ? `${t("game.level")} ${game.roundIndex + 1}`
+    ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
     : undefined;
   const latestResultRoundLabel =
     game.isEndlessMode && latestResult
-      ? `${t("game.level")} ${latestResult.round}`
+      ? `${latestResult.round}/${latestResult.round}`
       : undefined;
 
   useGameChrome(isImmersivePhase);

@@ -30,6 +30,21 @@ const WHEEL_DELTA_THRESHOLD = 90;
 const WHEEL_GESTURE_GAP = 180;
 const WHEEL_STEP_GUARD = 115;
 const DRAG_START_THRESHOLD = 5;
+const WHEEL_COPY_COUNT = 3;
+const WHEEL_CENTER_COPY = 1;
+
+function wrapIndex(index, length) {
+  if (length <= 0) return 0;
+
+  return ((index % length) + length) % length;
+}
+
+function getCircularDistance(firstIndex, secondIndex, length) {
+  if (length <= 1) return Math.abs(firstIndex - secondIndex);
+
+  const directDistance = Math.abs(firstIndex - secondIndex);
+  return Math.min(directDistance, length - directDistance);
+}
 
 export default function GameModePicker({
   value,
@@ -47,6 +62,7 @@ export default function GameModePicker({
   const wheelRef = useRef(null);
   const optionRefs = useRef([]);
   const wheelCommitTimerRef = useRef(null);
+  const wheelRecenterTimerRef = useRef(null);
   const wheelHandlerRef = useRef(null);
   const selectedValueRef = useRef(value);
   const wheelIndexRef = useRef(0);
@@ -73,6 +89,26 @@ export default function GameModePicker({
   const selectedLabel = selectedOption
     ? t(`gameMode.${selectedOption.id}`)
     : t("gameMode.label");
+  const optionCount = options.length;
+  const loopWheel = optionCount > 1;
+  const wheelItems = loopWheel
+    ? Array.from({ length: optionCount * WHEEL_COPY_COUNT }, (_, renderIndex) => {
+        const optionIndex = renderIndex % optionCount;
+
+        return {
+          option: options[optionIndex],
+          optionIndex,
+          renderIndex,
+        };
+      })
+    : options.map((option, optionIndex) => ({
+        option,
+        optionIndex,
+        renderIndex: optionIndex,
+      }));
+
+  const getLoopRenderIndex = (optionIndex) =>
+    loopWheel ? optionCount * WHEEL_CENTER_COPY + optionIndex : optionIndex;
 
   useEffect(() => {
     selectedValueRef.current = value;
@@ -85,6 +121,7 @@ export default function GameModePicker({
   useEffect(() => {
     return () => {
       window.clearTimeout(wheelCommitTimerRef.current);
+      window.clearTimeout(wheelRecenterTimerRef.current);
     };
   }, []);
 
@@ -114,14 +151,18 @@ export default function GameModePicker({
     if (!open) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
-      optionRefs.current[selectedIndex]?.scrollIntoView({
+      const renderIndex = loopWheel
+        ? optionCount * WHEEL_CENTER_COPY + selectedIndex
+        : selectedIndex;
+
+      optionRefs.current[renderIndex]?.scrollIntoView({
         block: "center",
         inline: "nearest",
       });
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [open, selectedIndex]);
+  }, [loopWheel, open, optionCount, selectedIndex]);
 
   const commitMode = (optionId, optionIndex) => {
     if (disabled) return;
@@ -133,32 +174,34 @@ export default function GameModePicker({
     onChange(optionId);
   };
 
-  const getNearestWheelIndex = () => {
+  const getNearestWheelRenderIndex = () => {
     const wheelElement = wheelRef.current;
     if (!wheelElement) return selectedIndex;
 
     const wheelBounds = wheelElement.getBoundingClientRect();
     const wheelCenter = wheelBounds.top + wheelBounds.height / 2;
 
-    return optionRefs.current
-      .slice(0, options.length)
-      .reduce((nearestIndex, optionElement, optionIndex) => {
+    return optionRefs.current.reduce((nearestIndex, optionElement, renderIndex) => {
         if (!optionElement) return nearestIndex;
 
         const optionBounds = optionElement.getBoundingClientRect();
         const optionCenter = optionBounds.top + optionBounds.height / 2;
         const nearestElement = optionRefs.current[nearestIndex];
 
-        if (!nearestElement) return optionIndex;
+        if (!nearestElement) return renderIndex;
 
         const nearestBounds = nearestElement.getBoundingClientRect();
         const nearestCenter = nearestBounds.top + nearestBounds.height / 2;
 
         return Math.abs(optionCenter - wheelCenter) <
           Math.abs(nearestCenter - wheelCenter)
-          ? optionIndex
+          ? renderIndex
           : nearestIndex;
-      }, selectedIndex);
+      }, getLoopRenderIndex(selectedIndex));
+  };
+
+  const getNearestWheelIndex = () => {
+    return wrapIndex(getNearestWheelRenderIndex(), optionCount);
   };
 
   const scheduleWheelCommit = (optionIndex) => {
@@ -172,16 +215,38 @@ export default function GameModePicker({
     }, WHEEL_COMMIT_DELAY);
   };
 
-  const scrollOptionIntoView = (optionIndex, behavior = "smooth") => {
-    optionRefs.current[optionIndex]?.scrollIntoView({
+  const scrollRenderOptionIntoView = (renderIndex, behavior = "smooth") => {
+    const wheelElement = wheelRef.current;
+    const optionElement = optionRefs.current[renderIndex];
+    if (!wheelElement || !optionElement) return;
+
+    const targetScrollTop =
+      optionElement.offsetTop -
+      (wheelElement.clientHeight - optionElement.offsetHeight) / 2;
+
+    wheelElement.scrollTo({
+      top: targetScrollTop,
       behavior,
-      block: "center",
-      inline: "nearest",
     });
   };
 
+  const scrollOptionIntoView = (optionIndex, behavior = "smooth") => {
+    scrollRenderOptionIntoView(getLoopRenderIndex(optionIndex), behavior);
+  };
+
+  const scheduleWheelRecenter = (optionIndex, delay = 340) => {
+    if (!loopWheel) return;
+
+    window.clearTimeout(wheelRecenterTimerRef.current);
+    wheelRecenterTimerRef.current = window.setTimeout(() => {
+      scrollOptionIntoView(optionIndex, "auto");
+    }, delay);
+  };
+
   const selectWheelIndex = (optionIndex, behavior = "smooth") => {
-    const nextIndex = Math.min(Math.max(optionIndex, 0), options.length - 1);
+    const nextIndex = loopWheel
+      ? wrapIndex(optionIndex, optionCount)
+      : Math.min(Math.max(optionIndex, 0), options.length - 1);
     const option = options[nextIndex];
     if (!option) return;
 
@@ -217,7 +282,7 @@ export default function GameModePicker({
     const direction = Math.sign(normalizedDelta);
     if (direction === 0) return;
 
-    const now = performance.now();
+    const now = event.timeStamp;
     const wheelState = wheelStateRef.current;
 
     if (
@@ -234,18 +299,28 @@ export default function GameModePicker({
     if (Math.abs(wheelState.accumulator) < WHEEL_DELTA_THRESHOLD) return;
     if (now - wheelState.lastStepAt < WHEEL_STEP_GUARD) return;
 
-    const nextIndex = Math.min(
-      Math.max(wheelIndexRef.current + direction, 0),
-      options.length - 1,
-    );
+    const currentRenderIndex = getNearestWheelRenderIndex();
+    let nextRenderIndex = currentRenderIndex + direction;
 
     wheelState.accumulator = 0;
     wheelState.lastStepAt = now;
 
-    if (nextIndex === wheelIndexRef.current) return;
+    if (!loopWheel && (nextRenderIndex < 0 || nextRenderIndex >= optionCount)) {
+      return;
+    }
+
+    if (loopWheel && (nextRenderIndex < 0 || nextRenderIndex >= wheelItems.length)) {
+      const centeredRenderIndex = getLoopRenderIndex(
+        wrapIndex(currentRenderIndex, optionCount),
+      );
+
+      scrollRenderOptionIntoView(centeredRenderIndex, "auto");
+      nextRenderIndex = centeredRenderIndex + direction;
+    }
 
     window.clearTimeout(wheelCommitTimerRef.current);
-    selectWheelIndex(nextIndex, "auto");
+    scrollRenderOptionIntoView(nextRenderIndex, "smooth");
+    scheduleWheelRecenter(wrapIndex(nextRenderIndex, optionCount));
   };
 
   useEffect(() => {
@@ -328,18 +403,21 @@ export default function GameModePicker({
       event.currentTarget.releasePointerCapture(dragState.pointerId);
     }
 
-    const nextIndex = getNearestWheelIndex();
+    const nextRenderIndex = getNearestWheelRenderIndex();
+    const nextIndex = wrapIndex(nextRenderIndex, optionCount);
     wheelIndexRef.current = nextIndex;
     setWheelIndex(nextIndex);
     scheduleWheelCommit(nextIndex);
-    scrollOptionIntoView(nextIndex);
+    scrollRenderOptionIntoView(nextRenderIndex);
+
+    scheduleWheelRecenter(nextIndex, 320);
 
     window.setTimeout(() => {
       dragStartedRef.current = false;
     }, 0);
   };
 
-  const handleOptionClick = (optionId, optionIndex) => {
+  const handleOptionClick = (optionId, optionIndex, renderIndex) => {
     if (disabled) return;
 
     if (dragStartedRef.current) {
@@ -351,7 +429,7 @@ export default function GameModePicker({
 
     wheelIndexRef.current = optionIndex;
     setWheelIndex(optionIndex);
-    scrollOptionIntoView(optionIndex);
+    scrollRenderOptionIntoView(renderIndex);
     commitMode(optionId, optionIndex);
 
     if (optionIndex === wheelIndex) {
@@ -363,7 +441,10 @@ export default function GameModePicker({
     if (disabled) return;
 
     const nextOpen = !open;
-    if (nextOpen) setWheelIndex(selectedIndex);
+    if (nextOpen) {
+      wheelIndexRef.current = selectedIndex;
+      setWheelIndex(selectedIndex);
+    }
     setOpen(nextOpen);
   };
 
@@ -383,7 +464,7 @@ export default function GameModePicker({
         data-game-mode-index={selectedIndex}
         disabled={disabled}
         onClick={handleTriggerClick}
-        className={`card-control-frame card-action-height group flex w-full min-w-0 items-center gap-3 overflow-hidden p-1 pr-3 text-left text-white transition hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-default disabled:opacity-60 sm:gap-3.5 sm:pr-4 ${
+        className={`card-control-frame card-action-height group flex w-full min-w-0 items-center gap-2 overflow-hidden p-1 pr-2 text-left text-white transition hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-default disabled:opacity-60 sm:gap-3.5 sm:pr-4 ${
           open ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
@@ -392,16 +473,16 @@ export default function GameModePicker({
         </span>
 
         <span className="flex min-w-0 flex-1 flex-col justify-center">
-          <span className="block text-[0.56rem] font-bold uppercase leading-none tracking-[0.16em] text-white/42">
+          <span className="block text-[0.48rem] font-bold uppercase leading-[0.92] tracking-[0.1em] text-white/42 sm:text-[0.56rem] sm:leading-none sm:tracking-[0.16em]">
             {t("gameMode.label")}
           </span>
-          <span className="mt-1.5 block truncate text-[0.95rem] font-semibold leading-none text-white sm:text-base">
+          <span className="mt-1 block truncate text-[0.9rem] font-semibold leading-none text-white sm:mt-1.5 sm:text-base">
             {selectedLabel}
           </span>
         </span>
 
         <ChevronDown
-          className={`size-4.5 shrink-0 text-white/62 transition-transform duration-300 ${
+          className={`hidden size-4.5 shrink-0 text-white/62 transition-transform duration-300 sm:block ${
             open ? "rotate-180" : ""
           }`}
           strokeWidth={2.2}
@@ -423,7 +504,7 @@ export default function GameModePicker({
               event.stopPropagation();
               setOpen(false);
             }}
-            className="absolute right-3 top-1/2 z-30 grid size-9 -translate-y-1/2 place-items-center rounded-full text-white/66 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="absolute right-3 top-1/2 z-30 hidden size-9 -translate-y-1/2 place-items-center rounded-full text-white/66 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:grid"
           >
             <ChevronDown
               className="size-4.5 rotate-180"
@@ -446,24 +527,30 @@ export default function GameModePicker({
               dragging ? "snap-none" : "snap-y snap-mandatory"
             }`}
           >
-            {options.map((option, optionIndex) => {
+            {wheelItems.map(({ option, optionIndex, renderIndex }) => {
               const active = wheelIndex === optionIndex;
-              const distance = Math.abs(wheelIndex - optionIndex);
+              const distance = getCircularDistance(
+                wheelIndex,
+                optionIndex,
+                optionCount,
+              );
               const Icon = GAME_MODE_ICONS[option.id] || Eye;
               const label = t(`gameMode.${option.id}`);
 
               return (
                 <button
-                  key={option.id}
+                  key={`${option.id}-${renderIndex}`}
                   ref={(element) => {
-                    optionRefs.current[optionIndex] = element;
+                    optionRefs.current[renderIndex] = element;
                   }}
                   type="button"
                   role="option"
                   aria-selected={active}
                   data-game-mode-index={optionIndex}
-                  onClick={() => handleOptionClick(option.id, optionIndex)}
-                  className={`relative z-10 flex h-[58px] w-full snap-center items-center gap-3 rounded-full p-1 pr-10 text-left transition-[opacity,transform,color] duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:gap-3.5 ${
+                  onClick={() =>
+                    handleOptionClick(option.id, optionIndex, renderIndex)
+                  }
+                  className={`relative z-10 flex h-[58px] w-full snap-center items-center gap-3 rounded-full p-1 text-left transition-[opacity,transform,color] duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:gap-3.5 sm:pr-10 ${
                     active
                       ? "scale-100 text-white opacity-100"
                       : distance === 1
@@ -475,7 +562,7 @@ export default function GameModePicker({
                     className={`grid h-full aspect-square shrink-0 place-items-center rounded-full transition-colors duration-300 ${
                       active
                         ? "bg-white text-zinc-950 shadow-[0_10px_24px_rgba(0,0,0,0.24)]"
-                        : "bg-white/12 text-white/72"
+                        : "bg-transparent text-white/72"
                     }`}
                   >
                     <Icon className="size-4.5" strokeWidth={2.15} />
@@ -483,7 +570,7 @@ export default function GameModePicker({
 
                   <span className="flex min-w-0 flex-1 flex-col justify-center">
                     <span
-                      className={`block text-[0.56rem] font-bold uppercase leading-none tracking-[0.16em] ${
+                      className={`block text-[0.48rem] font-bold uppercase leading-[0.92] tracking-[0.1em] sm:text-[0.56rem] sm:leading-none sm:tracking-[0.16em] ${
                         active ? "text-white/42" : "text-white/32"
                       }`}
                     >
@@ -492,8 +579,8 @@ export default function GameModePicker({
                     <span
                       className={`mt-1.5 block truncate font-semibold leading-none ${
                         active
-                          ? "text-[0.95rem] text-white sm:text-base"
-                          : "text-[0.9rem] text-white/72 sm:text-[0.95rem]"
+                          ? "text-[0.9rem] text-white sm:text-base"
+                          : "text-[0.86rem] text-white/72 sm:text-[0.95rem]"
                       }`}
                     >
                       {label}
