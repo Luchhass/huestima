@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
-import { readableTone } from "@/lib/color";
+import { colorToneHex, gradientBackground, readableTone } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
@@ -20,7 +20,15 @@ function formatRoundScore(score) {
 }
 
 function tileGradient(result) {
-  return `linear-gradient(135deg, ${result.target.hex} 0 50%, ${result.guess.hex} 50% 100%)`;
+  return gradientBackground(result.guess);
+}
+
+function colorTitleLabel(color) {
+  if (color?.left && color?.right) {
+    return `${color.left.hex} / ${color.right.hex}`;
+  }
+
+  return color?.hex || "";
 }
 
 function getScoreColor(score, maxScore) {
@@ -151,17 +159,25 @@ export default function LeaderboardCard({
                 {roundResults.map((result) => (
                   <div
                     key={`${row.playerId}-${result.round}`}
-                    className="relative"
-                    style={{ background: tileGradient(result) }}
+                    className="relative overflow-hidden"
+                    style={{ background: gradientBackground(result.target) }}
                     title={t("room.roundTitle", {
                       round: result.round,
-                      target: result.target.hex,
-                      guess: result.guess.hex,
+                      target: colorTitleLabel(result.target),
+                      guess: colorTitleLabel(result.guess),
                     })}
                   >
                     <span
-                      className={`absolute left-2 top-2 text-[0.9rem] font-semibold leading-none sm:text-[0.95rem] ${tileScoreTone(
-                        result.target.hex,
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background: tileGradient(result),
+                        clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
+                      }}
+                    />
+
+                    <span
+                      className={`absolute left-2 top-2 z-10 text-[0.9rem] font-semibold leading-none sm:text-[0.95rem] ${tileScoreTone(
+                        colorToneHex(result.target),
                       )}`}
                     >
                       {formatRoundScore(result.score)}

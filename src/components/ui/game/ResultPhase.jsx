@@ -2,9 +2,9 @@
 
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
-import { readableTone } from "@/lib/color";
+import { colorToneHex, gradientBackground, isGradientColor, readableTone } from "@/lib/color";
 import { getResultLineKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playScoreResolve, startScoreCountSound } from "@/lib/sound";
@@ -15,11 +15,23 @@ function swatchToneClasses(hex) {
   return readableTone(hex) === "dark" ? "text-zinc-950" : "text-white";
 }
 
-function formatHsb({ h, s, v }) {
+function formatHsb(color) {
+  if (isGradientColor(color)) {
+    return `H${Math.round(color.left.h)} -> H${Math.round(color.right.h)}`;
+  }
+
+  const { h, s, v } = color;
   return `H${Math.round(h)} S${Math.round(s)} B${Math.round(v)}`;
 }
 
-export default function ResultPhase({ result, hasNextRound, onContinue }) {
+export default function ResultPhase({
+  result,
+  hasNextRound,
+  onContinue,
+  canFinishRun = false,
+  onFinishRun,
+  roundLabel = result ? `${result.round}/5` : "",
+}) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
 
@@ -376,8 +388,8 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
 
   if (!result) return null;
 
-  const guessTone = swatchToneClasses(result.guess.hex);
-  const targetTone = swatchToneClasses(result.target.hex);
+  const guessTone = swatchToneClasses(colorToneHex(result.guess));
+  const targetTone = swatchToneClasses(colorToneHex(result.target));
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
 
   return (
@@ -387,14 +399,14 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
     >
       <section
         className={`relative p-6 sm:p-8 ${guessTone}`}
-        style={{ backgroundColor: result.guess.hex }}
+        style={{ background: gradientBackground(result.guess) }}
       >
         <div className="overflow-hidden">
           <p
             ref={roundRef}
             className="text-base font-semibold opacity-72"
           >
-            {result.round}/5
+            {roundLabel}
           </p>
         </div>
 
@@ -448,7 +460,7 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
 
       <section
         className={`relative p-6 sm:p-8 ${targetTone}`}
-        style={{ backgroundColor: result.target.hex }}
+        style={{ background: gradientBackground(result.target) }}
       >
         <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
           <div className="overflow-hidden">
@@ -469,6 +481,18 @@ export default function ResultPhase({ result, hasNextRound, onContinue }) {
             </p>
           </div>
         </div>
+
+        {canFinishRun && (
+          <button
+            type="button"
+            aria-label={t("game.finishRun")}
+            onClick={onFinishRun}
+            className="absolute top-6 left-6 inline-flex h-10 items-center gap-2 rounded-full border-2 border-current/70 bg-white/10 px-4 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/18 focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:top-8 sm:left-8"
+          >
+            <X size={16} strokeWidth={2.35} />
+            <span>{t("game.finishRun")}</span>
+          </button>
+        )}
 
         <button
           ref={continueButtonRef}

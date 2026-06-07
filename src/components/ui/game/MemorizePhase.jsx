@@ -14,6 +14,7 @@ import MultiplayerProgressList from "./MultiplayerProgressList";
 
 export default function MemorizePhase({
   round,
+  roundLabel = `${round}/5`,
   onComplete,
   durationMs = MEMORIZE_DURATION_MS,
   progressItems = [],
@@ -102,7 +103,7 @@ export default function MemorizePhase({
           ref={roundRef}
           className="text-base font-semibold text-current/88"
         >
-          {round}/5
+          {roundLabel}
         </p>
       </div>
 

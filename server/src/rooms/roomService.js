@@ -1,6 +1,12 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { env } from "../config/env.js";
-import { ROOM_STATUSES, ROOM_VISIBILITIES, ROUND_COUNT } from "../constants.js";
+import {
+  GAME_MODE_CONFIG,
+  GAME_MODES,
+  ROOM_STATUSES,
+  ROOM_VISIBILITIES,
+  ROUND_COUNT,
+} from "../constants.js";
 import {
   buildGamePayload,
   markPlayerInactiveForGame,
@@ -36,6 +42,10 @@ let callbacks = {
   emitRoomList: () => {},
   leaveSocketRoom: () => {},
 };
+
+function resolveModeDifficulty(gameMode, difficulty) {
+  return GAME_MODE_CONFIG[gameMode]?.lockedDifficulty || difficulty;
+}
 
 function normalizeSearchQuery(query) {
   return typeof query === "string" ? query.trim().toLowerCase().slice(0, 60) : "";
@@ -102,10 +112,13 @@ function touchRoom(room) {
 
 function getPlayerProgress(player, room) {
   const completedRounds = player.results?.filter(Boolean).length || 0;
-  const totalRounds = room?.game?.roundCount || ROUND_COUNT;
+  const isElimination = Boolean(room?.game?.isElimination);
+  const totalRounds = isElimination ? null : room?.game?.roundCount || ROUND_COUNT;
   const currentRound =
     room?.status === ROOM_STATUSES.IN_GAME
-      ? Math.min(completedRounds + (player.submitted ? 0 : 1), totalRounds)
+      ? isElimination
+        ? (room.game.currentRoundIndex || 0) + 1
+        : Math.min(completedRounds + (player.submitted ? 0 : 1), totalRounds)
       : completedRounds;
 
   return {
@@ -128,6 +141,9 @@ function serializePlayer(player, room = null) {
     joinedAt: player.joinedAt,
     lastSeenAt: player.lastSeenAt,
     submitted: player.submitted,
+    eliminated: Boolean(player.eliminated),
+    eliminatedRound: player.eliminatedRound || null,
+    elimination: player.elimination || null,
     progress,
     completedRounds: progress.completedRounds,
     currentRound: progress.currentRound,
@@ -295,8 +311,11 @@ function validateRoomCreatePayload(payload) {
   return ok({
     playerId: playerId.data.playerId,
     playerName: playerName.data.playerName,
-    difficulty: difficulty.data.difficulty,
     gameMode: gameMode.data.gameMode,
+    difficulty: resolveModeDifficulty(
+      gameMode.data.gameMode,
+      difficulty.data.difficulty,
+    ),
     roomName: roomName.data.roomName,
     visibility: visibility.data.visibility,
     password: password.data.password,
@@ -343,6 +362,9 @@ export function createRoom(payload) {
     submitted: false,
     inactive: false,
     kicked: false,
+    eliminated: false,
+    eliminatedRound: null,
+    elimination: null,
     returnedToLobby: false,
     results: [],
     totalScore: 0,
@@ -461,6 +483,9 @@ export function joinRoom(payload) {
     submitted: false,
     inactive: false,
     kicked: false,
+    eliminated: false,
+    eliminatedRound: null,
+    elimination: null,
     returnedToLobby: false,
     results: [],
     totalScore: 0,
@@ -493,14 +518,17 @@ export function updateRoomSettings(payload) {
     if (!gameMode.ok) return gameMode;
 
     room.gameMode = gameMode.data.gameMode;
+    room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);
   }
 
   if (payload.difficulty !== undefined) {
     const difficulty = validateDifficulty(payload.difficulty);
     if (!difficulty.ok) return difficulty;
 
-    room.difficulty = difficulty.data.difficulty;
+    room.difficulty = resolveModeDifficulty(room.gameMode, difficulty.data.difficulty);
   }
+
+  room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);
 
   touchRoom(room);
 
@@ -575,6 +603,9 @@ function resetCompletedRoomToLobby(room) {
 
     player.submitted = false;
     player.inactive = false;
+    player.eliminated = false;
+    player.eliminatedRound = null;
+    player.elimination = null;
     player.returnedToLobby = false;
     player.results = [];
     player.totalScore = 0;
@@ -693,6 +724,12 @@ export function startRoomGame(payload) {
   if (room.status !== ROOM_STATUSES.LOBBY) return fail("Game already started.");
   if (room.hostPlayerId !== playerId.data.playerId) return fail("Only the host can start the game.");
   if (room.players.size < 1) return fail("Lobby has no players.");
+  if (
+    room.gameMode === GAME_MODES.DUEL &&
+    Array.from(room.players.values()).filter((player) => !player.kicked).length < 2
+  ) {
+    return fail("Duel mode needs at least two players.");
+  }
 
   room.status = ROOM_STATUSES.STARTING;
   touchRoom(room);

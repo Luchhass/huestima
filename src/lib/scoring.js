@@ -1,4 +1,4 @@
-import { hexToRgb } from "./color";
+import { hexToRgb, isGradientColor } from "./color";
 import { MAX_ROUND_SCORE } from "./constants";
 
 export const SCORE_TUNING = {
@@ -154,6 +154,28 @@ export function calculateColorScore(targetHex, guessHex) {
     0,
     Math.min(MAX_ROUND_SCORE, Math.round(score * precision) / precision),
   );
+}
+
+export function calculateColorMatchScore(target, guess) {
+  if (isGradientColor(target) && isGradientColor(guess)) {
+    return (
+      calculateColorScore(target.left.hex, guess.left.hex) +
+      calculateColorScore(target.right.hex, guess.right.hex)
+    ) / 2;
+  }
+
+  return calculateColorScore(target.hex, guess.hex);
+}
+
+export function calculateColorMatchDistance(target, guess) {
+  if (isGradientColor(target) && isGradientColor(guess)) {
+    return (
+      ciede2000Distance(target.left.hex, guess.left.hex) +
+      ciede2000Distance(target.right.hex, guess.right.hex)
+    ) / 2;
+  }
+
+  return ciede2000Distance(target.hex, guess.hex);
 }
 
 export function getGradeLabel(score) {

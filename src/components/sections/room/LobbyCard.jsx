@@ -6,8 +6,8 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
-import GameModeSwitch from "@/components/ui/GameModeSwitch";
-import { DIFFICULTY_IDS } from "@/lib/constants";
+import GameModePicker from "@/components/ui/GameModePicker";
+import { DIFFICULTY_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -24,6 +24,9 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const EXPANDED_REVEAL_DELAY = 320;
+const MULTIPLAYER_GAME_MODE_OPTIONS = GAME_MODE_OPTIONS.filter(
+  (option) => !option.singleplayerOnly,
+);
 
 export default function LobbyCard({
   room,
@@ -50,6 +53,10 @@ export default function LobbyCard({
   const copiedTimerRef = useRef(null);
 
   const isHost = room?.hostPlayerId === currentPlayerId;
+  const isDifficultyLocked = Boolean(
+    GAME_MODE_OPTIONS.find((option) => option.id === room?.gameMode)
+      ?.lockedDifficultyId,
+  );
   const players = room?.players || [];
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
@@ -277,11 +284,12 @@ export default function LobbyCard({
         {isSettingsOpen && (
           <div
             data-game-mode-shock-target
-            className="mt-4 grid w-full grid-cols-2 gap-3"
+            className="lobby-settings-controls mt-4 grid w-full grid-cols-2 gap-3"
           >
-            <GameModeSwitch
+            <GameModePicker
               value={room?.gameMode}
               onChange={handleGameModeChange}
+              options={MULTIPLAYER_GAME_MODE_OPTIONS}
               disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
               className="w-full"
             />
@@ -290,7 +298,12 @@ export default function LobbyCard({
               value={room?.difficulty}
               onChange={handleDifficultyChange}
               onSelectFeedback={triggerDifficultyFeedback}
-              disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+              disabled={
+                isDifficultyLocked ||
+                !isHost ||
+                isUpdatingSettings ||
+                room?.status !== "lobby"
+              }
               className="w-full"
             />
           </div>

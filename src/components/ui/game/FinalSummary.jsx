@@ -8,7 +8,7 @@ import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
-import { readableTone } from "@/lib/color";
+import { colorToneHex, gradientBackground, readableTone } from "@/lib/color";
 import { getFinalAssessmentKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playFinalScore } from "@/lib/sound";
@@ -16,7 +16,15 @@ import { playFinalScore } from "@/lib/sound";
 const EXPANDED_REVEAL_DELAY = 320;
 
 function tileGradient(result) {
-  return `linear-gradient(135deg, ${result.target.hex} 0 50%, ${result.guess.hex} 50% 100%)`;
+  return gradientBackground(result.guess);
+}
+
+function colorTitleLabel(color) {
+  if (color?.left && color?.right) {
+    return `${color.left.hex} / ${color.right.hex}`;
+  }
+
+  return color?.hex || "";
 }
 
 function getScoreColor(score, maxScore) {
@@ -34,6 +42,7 @@ export default function FinalSummary({
   results,
   totalScore,
   averageScore,
+  maxScore: providedMaxScore,
   onPlayAgain,
 }) {
   const { t } = useTranslation();
@@ -52,10 +61,11 @@ export default function FinalSummary({
   const playAgainRef = useRef(null);
   const playAgainRingRef = useRef(null);
 
-  const maxScore = ROUND_COUNT * MAX_ROUND_SCORE;
+  const maxScore = providedMaxScore || ROUND_COUNT * MAX_ROUND_SCORE;
   const scoreColor = getScoreColor(totalScore, maxScore);
   const assessment = t(`game.assessment.${getFinalAssessmentKey(averageScore)}`);
   const assessmentWords = assessment.split(" ");
+  const hasWrappedTiles = results.length > ROUND_COUNT;
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia(
@@ -375,29 +385,38 @@ export default function FinalSummary({
       </div>
 
       <div data-screen-reveal className="mt-7 w-full max-w-[32rem]">
-        <div className="grid h-19.5 w-full grid-cols-5 overflow-hidden sm:h-21.5">
+        <div
+          className={`grid w-full grid-cols-5 overflow-hidden ${
+            hasWrappedTiles
+              ? "scrollbar-hidden max-h-[13.5rem] auto-rows-[4.875rem] overflow-y-auto sm:auto-rows-[5.375rem]"
+              : "h-19.5 sm:h-21.5"
+          }`}
+        >
           {results.map((result) => (
             <div
               key={result.round}
               data-summary-tile
               className="relative overflow-hidden"
-              style={{ backgroundColor: result.target.hex }}
+              style={{ background: gradientBackground(result.target) }}
               title={t("room.roundTitle", {
                 round: result.round,
-                target: result.target.hex,
-                guess: result.guess.hex,
+                target: colorTitleLabel(result.target),
+                guess: colorTitleLabel(result.guess),
               })}
             >
               <span
                 data-summary-guess-layer
                 className="pointer-events-none absolute inset-0"
-                style={{ background: tileGradient(result) }}
+                style={{
+                  background: tileGradient(result),
+                  clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
+                }}
               />
 
               <span
                 data-summary-tile-score
                 className={`absolute top-2 left-2 z-10 text-[0.95rem] leading-none font-semibold sm:text-base ${tileScoreTone(
-                  result.target.hex
+                  colorToneHex(result.target)
                 )}`}
               >
                 {formatScore(result.score)}

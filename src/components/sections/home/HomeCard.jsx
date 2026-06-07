@@ -14,6 +14,7 @@ import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
   DIFFICULTY_IDS,
+  GAME_MODE_OPTIONS,
 } from "@/lib/constants";
 
 const DIFFICULTY_BURST_COLORS = {
@@ -31,6 +32,13 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const CARD_RESIZE_DURATION_MS = 700;
+const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
+  if (option.lockedDifficultyId) {
+    locks[option.id] = option.lockedDifficultyId;
+  }
+
+  return locks;
+}, {});
 
 function waitForCardResize() {
   return new Promise((resolve) => {
@@ -52,6 +60,7 @@ export default function HomeCard({ initialView = "home" }) {
   const isMultiplayer = view === "multiplayer";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard);
+  const cardStyle = cardHeight ? { height: cardHeight } : undefined;
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useScreenReveal(contentRef, [view]);
@@ -84,12 +93,29 @@ export default function HomeCard({ initialView = "home" }) {
     });
   };
 
+  const handleGameModeChange = (nextGameMode) => {
+    setGameMode(nextGameMode);
+
+    const lockedDifficulty = GAME_MODE_LOCKED_DIFFICULTIES[nextGameMode];
+
+    if (lockedDifficulty && difficulty !== lockedDifficulty) {
+      setDifficulty(lockedDifficulty);
+      triggerDifficultyFeedback(lockedDifficulty, 0);
+    }
+  };
+
+  const handleDifficultyChange = (nextDifficulty) => {
+    if (GAME_MODE_LOCKED_DIFFICULTIES[gameMode]) return;
+
+    setDifficulty(nextDifficulty);
+  };
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
         className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8"
-        style={{ height: cardHeight }}
+        style={cardStyle}
       >
         {difficultyBurst && (
           <span
@@ -154,9 +180,9 @@ export default function HomeCard({ initialView = "home" }) {
             <SingleplayerCard
               difficulty={difficulty}
               gameMode={gameMode}
-              onDifficultyChange={setDifficulty}
+              onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
-              onGameModeChange={setGameMode}
+              onGameModeChange={handleGameModeChange}
             />
           ) : (
             <MultiplayerCard

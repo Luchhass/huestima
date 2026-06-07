@@ -17,17 +17,19 @@ export default async function SingleplayerPage({ searchParams }) {
   const requestedGameMode =
     typeof params?.gameMode === "string" ? params.gameMode : legacyMode;
 
-  const difficulty = DIFFICULTY_OPTIONS.some(
+  const validatedDifficulty = DIFFICULTY_OPTIONS.some(
     (option) => option.id === requestedDifficulty,
   )
     ? requestedDifficulty
     : DEFAULT_DIFFICULTY_ID;
 
   const gameMode = GAME_MODE_OPTIONS.some(
-    (option) => option.id === requestedGameMode,
+    (option) => option.id === requestedGameMode && !option.multiplayerOnly,
   )
     ? requestedGameMode
     : DEFAULT_GAME_MODE_ID;
+  const gameModeOption = GAME_MODE_OPTIONS.find((option) => option.id === gameMode);
+  const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
 
   return (
     <SingleplayerGame

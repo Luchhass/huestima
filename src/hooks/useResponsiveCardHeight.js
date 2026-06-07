@@ -7,6 +7,7 @@ const EXPANDED_MAX_HEIGHT = 520;
 const NORMAL_VIEWPORT_OFFSET = 132;
 const EXPANDED_VIEWPORT_OFFSET = 88;
 const MIN_CARD_HEIGHT = 320;
+const FULLSCREEN_CHANGE_EVENT = "huestima-fullscreen-change";
 
 function getViewportHeight() {
   if (typeof window === "undefined") return null;
@@ -19,6 +20,13 @@ function getViewportHeight() {
 }
 
 function readCardHeight(isExpanded) {
+  if (
+    typeof document !== "undefined" &&
+    document.documentElement.dataset.fullscreenMode === "on"
+  ) {
+    return undefined;
+  }
+
   const viewportHeight = getViewportHeight();
   const maxHeight = isExpanded ? EXPANDED_MAX_HEIGHT : NORMAL_MAX_HEIGHT;
   const offset = isExpanded
@@ -42,10 +50,12 @@ export function useResponsiveCardHeight(isExpanded) {
 
     updateHeight();
     window.addEventListener("resize", updateHeight);
+    window.addEventListener(FULLSCREEN_CHANGE_EVENT, updateHeight);
     viewport?.addEventListener("resize", updateHeight);
 
     return () => {
       window.removeEventListener("resize", updateHeight);
+      window.removeEventListener(FULLSCREEN_CHANGE_EVENT, updateHeight);
       viewport?.removeEventListener("resize", updateHeight);
     };
   }, [isExpanded]);

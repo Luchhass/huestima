@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Lock } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { DIFFICULTY_OPTIONS } from "@/lib/constants";
 import { playDifficultySelect } from "@/lib/sound";
@@ -34,8 +35,11 @@ export default function DifficultySwitch({
 
   return (
     <div
-      className={`difficulty-switch card-control-frame card-action-height grid min-w-0 grid-cols-3 overflow-hidden p-1 ${className}`}
+      className={`difficulty-switch card-control-frame card-action-height grid min-w-0 grid-cols-3 overflow-hidden p-1 ${
+        disabled ? "difficulty-switch--locked" : ""
+      } ${className}`}
       aria-label={ariaLabel || t("difficulty.label")}
+      aria-disabled={disabled}
       onPointerLeave={() => setHoverIndex(null)}
       style={{ "--difficulty-index": visualIndex }}
     >
@@ -55,10 +59,23 @@ export default function DifficultySwitch({
             onBlur={() => setHoverIndex(null)}
             onClick={() => handleSelect(option.id, optionIndex)}
             className={`relative z-10 min-w-0 rounded-full px-0 text-[9px] font-semibold uppercase tracking-[0.035em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-2 sm:text-[11px] sm:tracking-[0.08em] ${
-              visuallyActive ? "text-zinc-950" : "text-white/62"
-            } ${disabled ? "cursor-default" : ""}`}
+              visuallyActive
+                ? "text-zinc-950"
+                : disabled
+                  ? "text-white/24"
+                  : "text-white/62"
+            } ${disabled ? "cursor-not-allowed" : ""}`}
           >
-            {t(`difficulty.${option.id}`)}
+            <span className="inline-flex items-center justify-center gap-1">
+              <span>{t(`difficulty.${option.id}`)}</span>
+              {disabled && selected && (
+                <Lock
+                  className="size-2.5 shrink-0 sm:size-3"
+                  strokeWidth={2.4}
+                  aria-hidden="true"
+                />
+              )}
+            </span>
           </button>
         );
       })}

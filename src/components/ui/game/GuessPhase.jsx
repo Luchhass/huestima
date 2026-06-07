@@ -1,38 +1,103 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Check } from "lucide-react";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
+import HueSlider from "@/components/ui/color-picker/HueSlider";
+import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
+import { isGradientColor } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
 export default function GuessPhase({
   round,
+  roundLabel = `${round}/5`,
   difficulty,
   guessColor,
   onGuessChange,
   onSubmit,
+  guessDurationMs = null,
   progressItems = [],
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const roundRef = useRef(null);
+  const timerRef = useRef(null);
   const brandRef = useRef(null);
   const progressRef = useRef(null);
+  const timedSubmitRef = useRef(false);
 
   const submitButtonRef = useRef(null);
   const submitButtonCoreRef = useRef(null);
   const submitButtonRingRef = useRef(null);
   const submitIconRef = useRef(null);
+  const [timerRunning, setTimerRunning] = useState(false);
 
-  const pickerWidth = difficulty.controls.length * 50;
+  const isGradientGuess = isGradientColor(guessColor);
+  const sidePickerWidth = 50;
+  const pickerWidth = isGradientGuess
+    ? sidePickerWidth
+    : difficulty.controls.length * sidePickerWidth;
+  const rightPickerWidth = isGradientGuess ? sidePickerWidth : 0;
+  const contentLeft = pickerWidth + 24;
+  const contentLeftSm = pickerWidth + 32;
+  const contentRight = rightPickerWidth + 24;
+  const contentRightSm = rightPickerWidth + 32;
   const controlsKey = difficulty.controls.join("-");
+  const timedGuessDurationMs =
+    Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
+  const isTimedGuess = timedGuessDurationMs > 0;
+
+  const handleTimedSubmit = useCallback(() => {
+    if (timedSubmitRef.current) return;
+
+    timedSubmitRef.current = true;
+    onSubmit();
+  }, [onSubmit]);
+
+  const handleSubmitClick = useCallback(() => {
+    if (!isTimedGuess) {
+      onSubmit();
+      return;
+    }
+
+    handleTimedSubmit();
+  }, [handleTimedSubmit, isTimedGuess, onSubmit]);
+
+  const { centiseconds } = useCountdown({
+    durationMs: timedGuessDurationMs,
+    isRunning: isTimedGuess && timerRunning,
+    onComplete: handleTimedSubmit,
+  });
+  const timerSeconds = (Math.max(0, centiseconds) / 100).toFixed(2);
+  const edgeTrackClassName =
+    "guess-picker-track h-full w-[50px] rounded-none border-0 shadow-none sm:h-full sm:w-[50px]";
+  const edgeHandleClassName =
+    "guess-picker-thumb size-5 shadow-[0_5px_14px_rgba(0,0,0,0.24)]";
+
+  const handleGradientHueChange = useCallback(
+    (side, h) => {
+      onGuessChange({
+        ...guessColor,
+        [side]: {
+          ...guessColor[side],
+          h,
+        },
+      });
+    },
+    [guessColor, onGuessChange],
+  );
 
   useLayoutEffect(() => {
+    timedSubmitRef.current = false;
+
     const ctx = gsap.context(() => {
-      const pickerTracks = gsap.utils.toArray(".guess-picker-track");
+      const pickerTracks = gsap.utils.toArray(
+        ".guess-picker-track:not(.guess-picker-track--right)",
+      );
+      const rightPickerTracks = gsap.utils.toArray(".guess-picker-track--right");
       const pickerThumbs = gsap.utils.toArray(".guess-picker-thumb");
       const checkPath = submitIconRef.current?.querySelector("path");
 
@@ -40,6 +105,13 @@ export default function GuessPhase({
         yPercent: -120,
         autoAlpha: 0,
       });
+
+      if (timerRef.current) {
+        gsap.set(timerRef.current, {
+          yPercent: -80,
+          autoAlpha: 0,
+        });
+      }
 
       gsap.set(brandRef.current, {
         yPercent: 120,
@@ -55,6 +127,12 @@ export default function GuessPhase({
 
       gsap.set(pickerTracks, {
         xPercent: -104,
+        autoAlpha: 0,
+        force3D: true,
+      });
+
+      gsap.set(rightPickerTracks, {
+        xPercent: 104,
         autoAlpha: 0,
         force3D: true,
       });
@@ -114,6 +192,18 @@ export default function GuessPhase({
           stagger: 0.075,
           clearProps: "transform,opacity,visibility",
         })
+        .to(
+          rightPickerTracks,
+          {
+            xPercent: 0,
+            autoAlpha: 1,
+            duration: 0.76,
+            ease: "expo.out",
+            stagger: 0.075,
+            clearProps: "transform,opacity,visibility",
+          },
+          0,
+        )
 
         // 1/5
         .to(
@@ -266,6 +356,24 @@ export default function GuessPhase({
         );
       }
 
+      if (timerRef.current) {
+        timeline.to(
+          timerRef.current,
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 0.62,
+            ease: "power4.out",
+            clearProps: "transform,opacity,visibility",
+          },
+          0.18,
+        );
+      }
+
+      if (isTimedGuess) {
+        timeline.call(() => setTimerRunning(true), [], 0.86);
+      }
+
       if (checkPath) {
         timeline.to(
           checkPath,
@@ -281,35 +389,91 @@ export default function GuessPhase({
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [controlsKey]);
+  }, [controlsKey, isGradientGuess, isTimedGuess]);
 
   return (
     <div ref={scopeRef} className="relative h-full overflow-hidden">
       <div className="absolute inset-y-0 left-0 z-10">
-        <HSVColorPicker
-          value={guessColor}
-          controls={difficulty.controls}
-          onChange={onGuessChange}
-          edge
-        />
+        {isGradientGuess ? (
+          <div
+            className="flex h-full items-stretch gap-0"
+            aria-label={t("colorPicker.controls")}
+          >
+            <HueSlider
+              value={guessColor.left.h}
+              onChange={(h) => handleGradientHueChange("left", h)}
+              trackClassName={`${edgeTrackClassName} rounded-l-[26px]`}
+              handleClassName={edgeHandleClassName}
+              showLabel={false}
+            />
+          </div>
+        ) : (
+          <HSVColorPicker
+            value={guessColor}
+            controls={difficulty.controls}
+            onChange={onGuessChange}
+            edge
+          />
+        )}
       </div>
+
+      {isGradientGuess && (
+        <div className="absolute inset-y-0 right-0 z-10">
+          <div
+            className="flex h-full items-stretch gap-0"
+            aria-label={t("colorPicker.controls")}
+          >
+            <HueSlider
+              value={guessColor.right.h}
+              onChange={(h) => handleGradientHueChange("right", h)}
+              trackClassName={`${edgeTrackClassName} guess-picker-track--right rounded-r-[26px]`}
+              handleClassName={edgeHandleClassName}
+              showLabel={false}
+            />
+          </div>
+        </div>
+      )}
 
       <div
         className="absolute left-(--round-left) top-6 overflow-hidden sm:left-(--round-left-sm) sm:top-8"
         style={{
-          "--round-left": `${pickerWidth + 24}px`,
-          "--round-left-sm": `${pickerWidth + 32}px`,
+          "--round-left": `${contentLeft}px`,
+          "--round-left-sm": `${contentLeftSm}px`,
         }}
       >
         <p
           ref={roundRef}
           className="text-base font-semibold text-current/64"
         >
-          {round}/5
+          {roundLabel}
         </p>
       </div>
 
-      <div className="absolute right-6 top-6 overflow-hidden sm:right-8 sm:top-8">
+      {isTimedGuess && (
+        <div
+          className="absolute left-(--round-left) top-14 overflow-hidden sm:left-(--round-left-sm) sm:top-16"
+          style={{
+            "--round-left": `${contentLeft}px`,
+            "--round-left-sm": `${contentLeftSm}px`,
+          }}
+        >
+          <p
+            ref={timerRef}
+            aria-label={t("game.secondsToChoose")}
+            className="text-sm font-semibold tabular-nums text-current/64"
+          >
+            {timerSeconds}s
+          </p>
+        </div>
+      )}
+
+      <div
+        className="absolute right-(--guess-right) top-6 overflow-hidden sm:right-(--guess-right-sm) sm:top-8"
+        style={{
+          "--guess-right": `${contentRight}px`,
+          "--guess-right-sm": `${contentRightSm}px`,
+        }}
+      >
         <p
           ref={brandRef}
           className="text-lg font-semibold text-current/42"
@@ -323,8 +487,8 @@ export default function GuessPhase({
           ref={progressRef}
           className="absolute bottom-6 z-20 sm:bottom-8"
           style={{
-            left: `${pickerWidth + 24}px`,
-            maxWidth: `calc(100% - ${pickerWidth + 24}px - 112px)`,
+            left: `${contentLeft}px`,
+            maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - 88px)`,
           }}
         >
           <MultiplayerProgressList items={progressItems} />
@@ -335,8 +499,12 @@ export default function GuessPhase({
         ref={submitButtonRef}
         type="button"
         aria-label={t("game.submitColorGuess")}
-        onClick={onSubmit}
-        className="soft-icon-button card-action-size absolute bottom-6 right-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:bottom-8 sm:right-8"
+        onClick={handleSubmitClick}
+        className="soft-icon-button card-action-size absolute right-(--guess-right) bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--guess-right-sm) sm:bottom-8"
+        style={{
+          "--guess-right": `${contentRight}px`,
+          "--guess-right-sm": `${contentRightSm}px`,
+        }}
       >
         <span
           ref={submitButtonRingRef}

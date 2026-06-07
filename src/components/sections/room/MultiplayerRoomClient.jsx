@@ -6,6 +6,7 @@ import { createPlayerId, consumeInviteCopied, useRoomSession } from "@/hooks/use
 import { useTranslation } from "@/hooks/useLanguage";
 import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
 import { trackEvent } from "@/lib/analytics";
+import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
 import LobbyCard from "./LobbyCard";
@@ -15,6 +16,13 @@ import MultiplayerGame from "./MultiplayerGame";
 
 const ROOM_CODE_PATTERN = /^\d{6}$/;
 const CARD_RESIZE_DURATION_MS = 700;
+const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
+  if (option.lockedDifficultyId) {
+    locks[option.id] = option.lockedDifficultyId;
+  }
+
+  return locks;
+}, {});
 
 function isExpandedRoomView(view) {
   return view === "lobby" || view === "leaderboard";
@@ -211,6 +219,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     const response = await updateSettings({
       playerId: player.playerId,
       gameMode,
+      difficulty: GAME_MODE_LOCKED_DIFFICULTIES[gameMode],
     });
 
     setIsUpdatingSettings(false);
@@ -258,7 +267,9 @@ export default function MultiplayerRoomClient({ roomCode }) {
 
   const currentRoomPlayer = findRoomPlayer(room, player?.playerId);
   const isWaitingForLobbyReturn = room?.status === "completed";
-  const canStartGame = room?.status === "lobby";
+  const duelNeedsPlayers =
+    room?.gameMode === GAME_MODE_IDS.DUEL && (room?.players?.length || 0) < 2;
+  const canStartGame = room?.status === "lobby" && !duelNeedsPlayers;
 
   const handleBackHome = async () => {
     if (
@@ -411,7 +422,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
           isStarting={isStarting}
           canStartGame={canStartGame}
           startDisabledLabel={
-            isWaitingForLobbyReturn ? t("room.waitingLobbyReturn") : ""
+            isWaitingForLobbyReturn
+              ? t("room.waitingLobbyReturn")
+              : duelNeedsPlayers
+                ? t("room.duelNeedsPlayers")
+                : ""
           }
           isUpdatingSettings={isUpdatingSettings}
           error={error || connectionError}

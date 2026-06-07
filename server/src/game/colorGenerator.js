@@ -1,4 +1,9 @@
-import { DIFFICULTY_CONFIG } from "../constants.js";
+import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
+
+const GRADIENT_FIXED_COLOR = {
+  s: 82,
+  v: 78,
+};
 
 export function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -91,7 +96,46 @@ export function withHex(hsv) {
   };
 }
 
+export function isGradientColor(color) {
+  return Boolean(color?.left && color?.right);
+}
+
+function averageRgbHex(firstHex, secondHex) {
+  const first = hexToRgb(firstHex);
+  const second = hexToRgb(secondHex);
+
+  return rgbToHex({
+    r: (first.r + second.r) / 2,
+    g: (first.g + second.g) / 2,
+    b: (first.b + second.b) / 2,
+  });
+}
+
+export function withGradientHex(color) {
+  const left = withHex({
+    ...GRADIENT_FIXED_COLOR,
+    ...(color?.left || {}),
+  });
+  const right = withHex({
+    ...GRADIENT_FIXED_COLOR,
+    ...(color?.right || {}),
+  });
+
+  return {
+    type: GAME_MODES.GRADIENT,
+    left,
+    right,
+    hex: left.hex,
+    gradient: `linear-gradient(90deg, ${left.hex}, ${right.hex})`,
+    toneHex: averageRgbHex(left.hex, right.hex),
+  };
+}
+
 export function applyDifficultyConstraints(hsv, difficultyId) {
+  if (isGradientColor(hsv)) {
+    return withGradientHex(hsv);
+  }
+
   const difficulty = DIFFICULTY_CONFIG[difficultyId] || DIFFICULTY_CONFIG.normal;
   return {
     ...hsv,
@@ -121,9 +165,18 @@ export function createSeededRandom(seed) {
   return mulberry32(hashSeed(seed));
 }
 
-export function generateTargetColors({ seed, difficulty, roundCount }) {
+export function generateTargetColors({ seed, difficulty, roundCount, gameMode }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
+
+  if (gameMode === GAME_MODES.GRADIENT) {
+    return Array.from({ length: roundCount }, () =>
+      withGradientHex({
+        left: { h: Math.floor(random() * 360) },
+        right: { h: Math.floor(random() * 360) },
+      }),
+    );
+  }
 
   return Array.from({ length: roundCount }, () =>
     withHex({

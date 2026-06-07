@@ -249,6 +249,7 @@ export function registerSocketEvents(io) {
             targetColor,
             targetColors,
             revealDurationMs: room.game.revealDurationMs,
+            guessDurationMs: room.game.guessDurationMs || null,
           },
         });
       }),

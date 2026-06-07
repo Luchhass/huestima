@@ -31,7 +31,7 @@ function getInteractiveElement(event) {
 function getSoundKind(element) {
   if (element.closest(".solo-close-button")) return "close";
   if (element.closest(".difficulty-switch")) return "difficulty";
-  if (element.closest(".game-mode-switch")) return "game-mode";
+  if (element.closest(".game-mode-picker")) return "game-mode";
   return "default";
 }
 
@@ -44,10 +44,13 @@ function getDifficultyIndex(element) {
 }
 
 function getGameModeIndex(element) {
-  const switchElement = element.closest(".game-mode-switch");
-  if (!switchElement) return 0;
+  const explicitIndex = Number(element.getAttribute("data-game-mode-index"));
+  if (Number.isInteger(explicitIndex)) return Math.max(0, explicitIndex);
 
-  const buttons = Array.from(switchElement.querySelectorAll("button"));
+  const pickerElement = element.closest(".game-mode-picker");
+  if (!pickerElement) return 0;
+
+  const buttons = Array.from(pickerElement.querySelectorAll("[data-game-mode-index]"));
   return Math.max(0, buttons.indexOf(element));
 }
 

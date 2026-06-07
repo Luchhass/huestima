@@ -45,6 +45,17 @@ function notifyFullscreenModeChange() {
   window.dispatchEvent(new Event(FULLSCREEN_CHANGE_EVENT));
 }
 
+function applyFullscreenTransitioning(isTransitioning) {
+  if (typeof document === "undefined") return;
+
+  if (isTransitioning) {
+    document.documentElement.dataset.fullscreenTransitioning = "true";
+    return;
+  }
+
+  delete document.documentElement.dataset.fullscreenTransitioning;
+}
+
 function readViewportBox() {
   const visualViewport = window.visualViewport;
   const width =
@@ -213,6 +224,7 @@ function createTransitionCover(card) {
   setImportantStyle(cover, "box-shadow", styles.boxShadow || "none");
   setImportantStyle(cover, "transform", "none");
   setImportantStyle(cover, "transform-origin", "top left");
+  setImportantStyle(cover, "transition", "none");
   setImportantStyle(cover, "opacity", "1");
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
@@ -249,6 +261,7 @@ function createSurfaceTransitionCover(card) {
   setImportantStyle(cover, "box-shadow", styles.boxShadow || "none");
   setImportantStyle(cover, "transform", "none");
   setImportantStyle(cover, "transform-origin", "top left");
+  setImportantStyle(cover, "transition", "none");
   setImportantStyle(cover, "opacity", "1");
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
@@ -290,6 +303,7 @@ function createViewportSurfaceCover() {
   setImportantStyle(cover, "border-radius", "0px");
   setImportantStyle(cover, "background", "#000000");
   setImportantStyle(cover, "box-shadow", "none");
+  setImportantStyle(cover, "transition", "none");
   setImportantStyle(cover, "opacity", "1");
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
@@ -417,15 +431,19 @@ async function playFullscreenModeTransition(nextEnabled) {
     .forEach((cover) => cover.remove());
 
   isTransitioningFullscreen = true;
+  applyFullscreenTransitioning(true);
 
   const wasScreenRevealDriven = hasScreenRevealTargets(card);
   const isImmersiveLayout = isGameImmersiveLayout();
   let cover = null;
+  let hiddenSourceCard = null;
   let hiddenTargetCard = null;
 
   try {
     if (nextEnabled) {
       cover = createFullscreenTransitionCover(card);
+      hiddenSourceCard = card;
+      gsap.set(hiddenSourceCard, { autoAlpha: 0 });
       await fadeCoverContent(cover);
 
       const viewport = readViewportBox();
@@ -443,6 +461,14 @@ async function playFullscreenModeTransition(nextEnabled) {
 
       applyAndNotifyFullscreenMode(nextEnabled);
       await waitForLayoutFrames();
+
+      if (hiddenSourceCard) {
+        gsap.set(hiddenSourceCard, {
+          autoAlpha: 1,
+          clearProps: "opacity,visibility",
+        });
+        hiddenSourceCard = null;
+      }
 
       if (!isImmersiveLayout) {
         replayVisibleScreenReveals(30);
@@ -534,6 +560,13 @@ async function playFullscreenModeTransition(nextEnabled) {
       });
     }
 
+    if (hiddenSourceCard) {
+      gsap.set(hiddenSourceCard, {
+        autoAlpha: 1,
+        clearProps: "opacity,visibility",
+      });
+    }
+
     const activeCard = findTransitionCard();
     if (!isImmersiveLayout && activeCard) {
       gsap.to(getExtraFadeTargets(activeCard), {
@@ -557,6 +590,7 @@ async function playFullscreenModeTransition(nextEnabled) {
     }
 
     isTransitioningFullscreen = false;
+    applyFullscreenTransitioning(false);
   }
 }
 

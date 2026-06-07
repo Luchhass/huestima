@@ -3,13 +3,19 @@
 import { useRef } from "react";
 import Link from "next/link";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
-import GameModeSwitch from "@/components/ui/GameModeSwitch";
+import GameModePicker from "@/components/ui/GameModePicker";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
+  GAME_MODE_OPTIONS,
 } from "@/lib/constants";
+import { getGameModeOption } from "@/lib/gameMode";
+
+const SINGLEPLAYER_GAME_MODE_OPTIONS = GAME_MODE_OPTIONS.filter(
+  (option) => !option.multiplayerOnly,
+);
 
 export default function SingleplayerCard({
   difficulty,
@@ -23,6 +29,7 @@ export default function SingleplayerCard({
   const description = `${t(
     `setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`,
   )} ${t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`)}`;
+  const difficultyLocked = Boolean(getGameModeOption(gameMode)?.lockedDifficultyId);
 
   useGameModeShock(scopeRef, gameMode);
 
@@ -47,9 +54,10 @@ export default function SingleplayerCard({
       <div data-screen-reveal className="home-view-actions mt-auto w-full">
         <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
           <div data-game-mode-shock-target className="min-w-0">
-            <GameModeSwitch
+            <GameModePicker
               value={gameMode}
               onChange={onGameModeChange}
+              options={SINGLEPLAYER_GAME_MODE_OPTIONS}
             />
           </div>
 
@@ -58,6 +66,7 @@ export default function SingleplayerCard({
               value={difficulty}
               onChange={onDifficultyChange}
               onSelectFeedback={onDifficultyFeedback}
+              disabled={difficultyLocked}
             />
           </div>
         </div>

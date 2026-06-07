@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { ROUND_COUNT } from "@/lib/constants";
+import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
@@ -17,15 +17,21 @@ import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 
 function buildProgressItems(room, currentPlayerId) {
+  const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
   const totalRounds = room?.game?.roundCount || ROUND_COUNT;
+  const currentDuelRound = (room?.game?.currentRoundIndex ?? 0) + 1;
 
   return (room?.players || [])
+    .filter((player) => !isDuelMode || !player.eliminated)
     .map((player, index) => {
       const progress = player.progress || {};
       const completedRounds = progress.completedRounds ?? player.completedRounds ?? 0;
       const currentRound =
-        progress.currentRound ?? player.currentRound ?? Math.min(completedRounds + 1, totalRounds);
-      const roundsTotal = progress.totalRounds || player.totalRounds || totalRounds;
+        progress.currentRound ??
+        player.currentRound ??
+        (isDuelMode ? currentDuelRound : Math.min(completedRounds + 1, totalRounds));
+      const roundsTotal =
+        progress.totalRounds || player.totalRounds || (isDuelMode ? null : totalRounds);
 
       return {
         id: player.id,
@@ -33,9 +39,13 @@ function buildProgressItems(room, currentPlayerId) {
         joinedAt: player.joinedAt || index,
         isCurrent: player.id === currentPlayerId,
         completedRounds,
-        currentRound: Math.max(0, Math.min(currentRound, roundsTotal)),
+        currentRound: isDuelMode
+          ? Math.max(0, currentRound)
+          : Math.max(0, Math.min(currentRound, roundsTotal)),
         totalRounds: roundsTotal,
-        label: `${Math.max(0, Math.min(currentRound, roundsTotal))}/${roundsTotal}`,
+        label: isDuelMode
+          ? `R${Math.max(1, currentRound)}`
+          : `${Math.max(0, Math.min(currentRound, roundsTotal))}/${roundsTotal}`,
       };
     })
     .sort((first, second) => {
@@ -73,6 +83,7 @@ export default function MultiplayerGame({
     difficultyId,
     gameModeId,
     gamePayload,
+    room,
     incomingLeaderboard: leaderboard,
   });
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
@@ -141,9 +152,9 @@ export default function MultiplayerGame({
     game.phase === GAME_PHASES.INTRO
       ? "#000000"
       : game.phase === GAME_PHASES.MEMORIZE
-        ? game.targetColor?.hex
+        ? game.targetColor
         : game.phase === GAME_PHASES.GUESS
-          ? game.guessColor.hex
+          ? game.guessColor
           : null;
 
   return (
@@ -171,6 +182,9 @@ export default function MultiplayerGame({
               <MemorizePhase
                 key={`memorize-${game.roundIndex}`}
                 round={game.roundIndex + 1}
+                roundLabel={
+                  game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
+                }
                 durationMs={game.revealDurationMs || undefined}
                 onComplete={game.finishMemorize}
                 progressItems={progressItems}
@@ -182,10 +196,14 @@ export default function MultiplayerGame({
             <GuessPhase
               key={`guess-${game.roundIndex}`}
               round={game.roundIndex + 1}
+              roundLabel={
+                game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
+              }
               difficulty={game.difficulty}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
+              guessDurationMs={game.guessDurationMs}
               progressItems={progressItems}
             />
           )}
@@ -194,13 +212,27 @@ export default function MultiplayerGame({
             <ResultPhase
               key={`result-${game.roundIndex}`}
               result={game.latestResult}
-              hasNextRound={game.roundIndex + 1 < ROUND_COUNT}
+              roundLabel={
+                game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
+              }
+              hasNextRound={
+                game.isDuelMode
+                  ? !game.leaderboard && !game.isCurrentPlayerEliminated
+                  : game.roundIndex + 1 < ROUND_COUNT
+              }
               onContinue={game.continueFromResult}
             />
           )}
 
           {game.phase === "waiting" && (
-            <WaitingCard message={game.error || t("room.automaticResults")} />
+            <WaitingCard
+              message={
+                game.error ||
+                (game.isCurrentPlayerEliminated
+                  ? t("room.eliminatedWaiting")
+                  : t("room.automaticResults"))
+              }
+            />
           )}
 
           {game.phase === "leaderboard" && (

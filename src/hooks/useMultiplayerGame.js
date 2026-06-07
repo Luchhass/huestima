@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import {
@@ -11,15 +11,32 @@ import {
 } from "@/lib/constants";
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
-import { withHex } from "@/lib/color";
+import {
+  createDefaultGradientGuess,
+  isGradientColor,
+  withGradientHex,
+  withHex,
+} from "@/lib/color";
 import { emitWithAck } from "@/lib/socket";
 
 function responseData(response) {
   return response?.data || response || {};
 }
 
-function createDefaultGuess(difficulty) {
+function createDefaultGuess(difficulty, gameMode) {
+  if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
+    return createDefaultGradientGuess();
+  }
+
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
+}
+
+function constrainGuessColor(guessColor, difficulty, gameMode) {
+  if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
+    return withGradientHex(guessColor);
+  }
+
+  return withHex(applyDifficultyConstraints(guessColor, difficulty));
 }
 
 function toResultPhaseShape(serverResult) {
@@ -41,25 +58,43 @@ export function useMultiplayerGame({
   difficultyId = DEFAULT_DIFFICULTY_ID,
   gameModeId = DEFAULT_GAME_MODE_ID,
   gamePayload,
+  room,
   incomingLeaderboard,
 }) {
   const { t } = useTranslation();
   const difficulty = useMemo(() => getDifficultyOption(difficultyId), [difficultyId]);
   const gameMode = useMemo(() => getGameModeOption(gameModeId), [gameModeId]);
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
+  const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
+  const lockedDifficultyId = gameMode.lockedDifficultyId || null;
+  const effectiveDifficulty = useMemo(
+    () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
+    [difficulty, lockedDifficultyId],
+  );
   const serverTargetColors = gamePayload?.targetColors || [];
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
-  const [roundIndex, setRoundIndex] = useState(0);
+  const [roundIndex, setRoundIndex] = useState(() => gamePayload?.currentRoundIndex || 0);
   const [targetColor, setTargetColor] = useState(null);
   const [targetColors, setTargetColors] = useState(serverTargetColors);
   const [revealDurationMs, setRevealDurationMs] = useState(
     gamePayload?.revealDurationMs || gameMode.revealDurationMs,
   );
-  const [guessColor, setGuessColor] = useState(() => createDefaultGuess(difficulty));
+  const guessDurationMs =
+    gamePayload?.guessDurationMs || gameMode.guessDurationMs || null;
+  const [guessColor, setGuessColor] = useState(() =>
+    createDefaultGuess(effectiveDifficulty, gameMode),
+  );
   const [results, setResults] = useState([]);
   const [localLeaderboard, setLocalLeaderboard] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const currentRoomPlayer = useMemo(
+    () => room?.players?.find((player) => player.id === playerId) || null,
+    [playerId, room?.players],
+  );
+  const isCurrentPlayerEliminated = Boolean(currentRoomPlayer?.eliminated);
+  const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
 
   const prepareRound = useCallback(
     (nextRoundIndex) => {
@@ -73,7 +108,7 @@ export function useMultiplayerGame({
       setError("");
       setTargetColors(colors);
       setRevealDurationMs(gamePayload?.revealDurationMs || gameMode.revealDurationMs);
-      setGuessColor(createDefaultGuess(difficulty));
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
 
       if (isSequenceMode) {
         setTargetColor(colors[0]);
@@ -84,7 +119,14 @@ export function useMultiplayerGame({
       setPhase(GAME_PHASES.MEMORIZE);
       return true;
     },
-    [difficulty, gameMode.revealDurationMs, gamePayload, isSequenceMode, targetColors, t],
+    [
+      effectiveDifficulty,
+      gameMode,
+      gamePayload,
+      isSequenceMode,
+      targetColors,
+      t,
+    ],
   );
 
   const finishIntro = useCallback(() => {
@@ -101,9 +143,9 @@ export function useMultiplayerGame({
 
   const updateGuess = useCallback(
     (nextGuess) => {
-      setGuessColor(withHex(applyDifficultyConstraints(nextGuess, difficulty)));
+      setGuessColor(constrainGuessColor(nextGuess, effectiveDifficulty, gameMode));
     },
-    [difficulty],
+    [effectiveDifficulty, gameMode],
   );
 
   const submitGuess = useCallback(async () => {
@@ -116,7 +158,7 @@ export function useMultiplayerGame({
       roomCode,
       playerId,
       roundIndex,
-      guessColor,
+      guessColor: constrainGuessColor(guessColor, effectiveDifficulty, gameMode),
     });
 
     setIsSubmitting(false);
@@ -143,9 +185,23 @@ export function useMultiplayerGame({
     }
 
     setPhase(GAME_PHASES.RESULT);
-  }, [guessColor, isSubmitting, playerId, roomCode, roundIndex, t]);
+  }, [
+    effectiveDifficulty,
+    gameMode,
+    guessColor,
+    isSubmitting,
+    playerId,
+    roomCode,
+    roundIndex,
+    t,
+  ]);
 
   const continueFromResult = useCallback(() => {
+    if (isDuelMode) {
+      setPhase("waiting");
+      return;
+    }
+
     if (roundIndex + 1 >= ROUND_COUNT) {
       setPhase("waiting");
       return;
@@ -155,7 +211,7 @@ export function useMultiplayerGame({
 
     setRoundIndex(nextRoundIndex);
     setTargetColor(null);
-    setGuessColor(createDefaultGuess(difficulty));
+    setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
 
     if (isSequenceMode) {
       setTargetColor(targetColors[nextRoundIndex] || null);
@@ -164,21 +220,58 @@ export function useMultiplayerGame({
     }
 
     setPhase(GAME_PHASES.INTRO);
-  }, [difficulty, isSequenceMode, roundIndex, targetColors]);
+  }, [
+    effectiveDifficulty,
+    gameMode,
+    isDuelMode,
+    isSequenceMode,
+    roundIndex,
+    targetColors,
+  ]);
 
   const showLeaderboard = useCallback(() => {
     setPhase("leaderboard");
   }, []);
 
+  useEffect(() => {
+    if (!isDuelMode || phase !== "waiting") return undefined;
+    if (incomingLeaderboard || room?.status === "completed") return undefined;
+    if (isCurrentPlayerEliminated) return undefined;
+    if (serverRoundIndex <= roundIndex) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setRoundIndex(serverRoundIndex);
+      setTargetColor(null);
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
+      setPhase(GAME_PHASES.INTRO);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    effectiveDifficulty,
+    gameMode,
+    incomingLeaderboard,
+    isCurrentPlayerEliminated,
+    isDuelMode,
+    phase,
+    room?.status,
+    roundIndex,
+    serverRoundIndex,
+  ]);
+
   return {
-    difficulty,
+    difficulty: effectiveDifficulty,
     gameMode,
     isSequenceMode,
+    isGradientMode,
+    isDuelMode,
+    isCurrentPlayerEliminated,
     phase,
     roundIndex,
     targetColor,
     targetColors,
     revealDurationMs,
+    guessDurationMs,
     guessColor,
     results,
     latestResult: results[results.length - 1] || null,

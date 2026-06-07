@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ROUND_COUNT } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
+import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import GameCardShell from "@/components/ui/game/GameCardShell";
@@ -14,11 +15,19 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
 
 export default function SingleplayerGame({ initialDifficulty, initialGameMode }) {
+  const { t } = useTranslation();
   const game = useSingleplayerGame(initialDifficulty, initialGameMode);
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
   const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
+  const currentRoundLabel = game.isEndlessMode
+    ? `${t("game.level")} ${game.roundIndex + 1}`
+    : undefined;
+  const latestResultRoundLabel =
+    game.isEndlessMode && latestResult
+      ? `${t("game.level")} ${latestResult.round}`
+      : undefined;
 
   useGameChrome(isImmersivePhase);
 
@@ -69,9 +78,9 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
     game.phase === GAME_PHASES.INTRO
       ? "#000000"
       : game.phase === GAME_PHASES.MEMORIZE
-        ? game.targetColor?.hex
+        ? game.targetColor
         : game.phase === GAME_PHASES.GUESS
-          ? game.guessColor.hex
+          ? game.guessColor
           : null;
 
   return (
@@ -101,6 +110,7 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
               <MemorizePhase
                 key={`memorize-${game.roundIndex}`}
                 round={game.roundIndex + 1}
+                roundLabel={currentRoundLabel}
                 durationMs={game.revealDurationMs}
                 onComplete={game.finishMemorize}
               />
@@ -111,10 +121,12 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
             <GuessPhase
               key={`guess-${game.roundIndex}`}
               round={game.roundIndex + 1}
+              roundLabel={currentRoundLabel}
               difficulty={game.difficulty}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
+              guessDurationMs={game.guessDurationMs}
             />
           )}
 
@@ -122,7 +134,10 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
             <ResultPhase
               key={`result-${game.roundIndex}`}
               result={latestResult}
-              hasNextRound={game.roundIndex + 1 < ROUND_COUNT}
+              roundLabel={latestResultRoundLabel}
+              hasNextRound={game.isEndlessMode || game.roundIndex + 1 < ROUND_COUNT}
+              canFinishRun={game.isEndlessMode}
+              onFinishRun={game.finishRun}
               onContinue={game.continueFromResult}
             />
           )}
@@ -132,6 +147,7 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
               results={game.results}
               totalScore={game.summary.totalScore}
               averageScore={game.summary.averageScore}
+              maxScore={game.summary.maxScore}
               onPlayAgain={handlePlayAgain}
             />
           )}

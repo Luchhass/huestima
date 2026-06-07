@@ -1,4 +1,10 @@
+import { GAME_MODE_IDS } from "./constants";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
+
+const GRADIENT_FIXED_COLOR = {
+  s: 82,
+  v: 78,
+};
 
 export function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -92,7 +98,72 @@ export function withHex(hsv) {
   };
 }
 
-export function randomTargetColor(difficultyId) {
+export function isGradientColor(color) {
+  return Boolean(color?.left && color?.right);
+}
+
+function averageRgbHex(firstHex, secondHex) {
+  const first = hexToRgb(firstHex);
+  const second = hexToRgb(secondHex);
+
+  return rgbToHex({
+    r: (first.r + second.r) / 2,
+    g: (first.g + second.g) / 2,
+    b: (first.b + second.b) / 2,
+  });
+}
+
+export function gradientBackground(color) {
+  if (!isGradientColor(color)) return color?.hex || color;
+
+  return `linear-gradient(90deg, ${color.left.hex}, ${color.right.hex})`;
+}
+
+export function colorToneHex(color) {
+  if (!isGradientColor(color)) return color?.hex || color || "#000000";
+
+  return color.toneHex || averageRgbHex(color.left.hex, color.right.hex);
+}
+
+export function withGradientHex(color) {
+  const left = withHex({
+    ...GRADIENT_FIXED_COLOR,
+    ...(color?.left || {}),
+  });
+  const right = withHex({
+    ...GRADIENT_FIXED_COLOR,
+    ...(color?.right || {}),
+  });
+
+  return {
+    type: GAME_MODE_IDS.GRADIENT,
+    left,
+    right,
+    hex: left.hex,
+    gradient: `linear-gradient(90deg, ${left.hex}, ${right.hex})`,
+    toneHex: averageRgbHex(left.hex, right.hex),
+  };
+}
+
+export function createDefaultGradientGuess() {
+  return withGradientHex({
+    left: { h: 210 },
+    right: { h: 30 },
+  });
+}
+
+export function randomGradientTargetColor(random = Math.random) {
+  return withGradientHex({
+    left: { h: Math.floor(random() * 360) },
+    right: { h: Math.floor(random() * 360) },
+  });
+}
+
+export function randomTargetColor(difficultyId, gameModeId = GAME_MODE_IDS.NORMAL) {
+  if (gameModeId === GAME_MODE_IDS.GRADIENT) {
+    return randomGradientTargetColor();
+  }
+
   const difficulty = getDifficultyOption(difficultyId);
 
   return withHex({

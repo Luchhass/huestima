@@ -2,16 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Globe2,
-  Lock,
-  LogIn,
-  Plus,
-  RefreshCw,
-  Search,
-  X,
-} from "lucide-react";
+import { Eye, EyeOff, Globe2, Lock, LogIn, Plus, Search, Users, X } from "lucide-react";
 import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
@@ -34,16 +25,6 @@ const PANELS = {
   CHOICE: "choice",
   CREATE: "create",
   JOIN: "join",
-};
-
-const CREATE_STEPS = {
-  NAME: "name",
-  SETTINGS: "settings",
-};
-
-const JOIN_STEPS = {
-  NAME: "name",
-  LIST: "list",
 };
 
 const VISIBILITIES = {
@@ -112,6 +93,7 @@ function TextField({
   disabled = false,
   type = "text",
   icon = null,
+  endAdornment = null,
 }) {
   return (
     <div className="relative block min-w-0">
@@ -130,11 +112,50 @@ function TextField({
         aria-label={ariaLabel}
         className={`card-control-frame card-action-height w-full appearance-none text-base font-semibold text-white outline-none transition placeholder:text-white/34 focus:ring-2 focus:ring-white/18 disabled:opacity-60 ${
           icon ? "px-12 pr-6" : "px-7"
-        }`}
+        } ${endAdornment ? "pr-14" : ""}`}
         placeholder={placeholder}
         autoComplete="off"
       />
+
+      {endAdornment && (
+        <span className="absolute right-4 top-1/2 z-10 -translate-y-1/2">
+          {endAdornment}
+        </span>
+      )}
     </div>
+  );
+}
+
+function PasswordField({
+  value,
+  onChange,
+  placeholder,
+  ariaLabel,
+  disabled = false,
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const Icon = isVisible ? EyeOff : Eye;
+
+  return (
+    <TextField
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      type={isVisible ? "text" : "password"}
+      ariaLabel={ariaLabel}
+      placeholder={placeholder}
+      endAdornment={
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label={isVisible ? "Hide password" : "Show password"}
+          onClick={() => setIsVisible((current) => !current)}
+          className="grid size-9 place-items-center rounded-full text-white/46 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-40"
+        >
+          <Icon className="size-4" strokeWidth={2.2} />
+        </button>
+      }
+    />
   );
 }
 
@@ -201,41 +222,51 @@ function roomMatchesSearch(room, query) {
 }
 
 function RoomListRow({ room, selected, onSelect, disabled }) {
-  const { t } = useTranslation();
-  const privacyLabel = room.isPrivate
-    ? t("setup.privateLobby")
-    : t("setup.publicLobby");
+  const PrivacyIcon = room.isPrivate ? Lock : Globe2;
 
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={() => onSelect(room.code)}
-      className={`flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-full px-4 text-left ring-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-48 ${
+      className={`card-action-height group relative grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 rounded-full px-4 text-left ring-1 transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-48 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto] sm:px-5 ${
         selected
-          ? "bg-white text-zinc-950 ring-white"
-          : "bg-white/[0.055] text-white ring-white/12 hover:bg-white/10"
+          ? "bg-white text-zinc-950 shadow-[0_12px_24px_rgba(255,255,255,0.09)] ring-white"
+          : "bg-white/[0.045] text-white ring-white/10 hover:bg-white/[0.075] hover:ring-white/20"
       }`}
     >
+      <span
+        className={`grid size-8 place-items-center ${
+          selected ? "text-zinc-950" : "text-white/42"
+        }`}
+      >
+        <PrivacyIcon className="size-4.5" strokeWidth={2.15} />
+      </span>
+
       <span className="min-w-0">
-        <span className="block truncate text-[0.86rem] font-semibold leading-none sm:text-[0.95rem]">
+        <span className="block min-w-0 truncate text-[0.9rem] font-semibold leading-none sm:text-[0.98rem]">
           {room.name || `#${room.code}`}
         </span>
+
         <span
-          className={`mt-1 block truncate text-[0.62rem] font-bold uppercase leading-none tracking-normal ${
-            selected ? "text-zinc-950/48" : "text-white/34"
+          className={`mt-1 block truncate text-[0.62rem] font-bold uppercase leading-none tracking-normal sm:text-[0.65rem] ${
+            selected ? "text-zinc-950/48" : "text-white/32"
           }`}
         >
-          #{room.code} · {privacyLabel}
+          #{room.code}
+          {room.hostName ? ` - ${room.hostName}` : ""}
         </span>
       </span>
 
-      <span
-        className={`shrink-0 text-[0.72rem] font-bold leading-none ${
-          selected ? "text-zinc-950/58" : "text-white/42"
-        }`}
-      >
-        {room.playerCount}/{room.maxPlayers}
+      <span className="grid shrink-0 place-items-center">
+        <span
+          className={`inline-flex min-w-12 items-center justify-end gap-1.5 text-[0.76rem] font-bold leading-none sm:min-w-14 ${
+            selected ? "text-zinc-950" : "text-white/46"
+          }`}
+        >
+          <Users className="size-3.5 shrink-0" strokeWidth={2.2} />
+          {room.playerCount}/{room.maxPlayers}
+        </span>
       </span>
     </button>
   );
@@ -246,8 +277,6 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const [panel, setPanel] = useState(PANELS.CHOICE);
-  const [createStep, setCreateStep] = useState(CREATE_STEPS.NAME);
-  const [joinStep, setJoinStep] = useState(JOIN_STEPS.NAME);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
   const [lobbyName, setLobbyName] = useState("");
   const [playerName, setPlayerName] = useState("");
@@ -255,7 +284,6 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const [rooms, setRooms] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoomCode, setSelectedRoomCode] = useState("");
-  const [joinPlayerName, setJoinPlayerName] = useState("");
   const [joinPassword, setJoinPassword] = useState("");
   const [formError, setFormError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -263,25 +291,17 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const [isJoining, setIsJoining] = useState(false);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const actionError = formError || submitError;
-  const isCreateNameStep =
-    panel === PANELS.CREATE && createStep === CREATE_STEPS.NAME;
-  const isJoinNameStep = panel === PANELS.JOIN && joinStep === JOIN_STEPS.NAME;
-  const isJoinListStep = panel === PANELS.JOIN && joinStep === JOIN_STEPS.LIST;
+  const isPlayerNameReady = !validatePlayerName(playerName, t);
+  const isJoinListStep = panel === PANELS.JOIN;
   const isPrivate = visibility === VISIBILITIES.PRIVATE;
   const description =
     panel === PANELS.CREATE
-      ? t(
-          isCreateNameStep
-            ? "setup.createNameCopy"
-            : isPrivate
-              ? "setup.createPrivateCopy"
-              : "setup.createPublicCopy",
-        )
+      ? t(isPrivate ? "setup.createPrivateCopy" : "setup.createPublicCopy")
       : panel === PANELS.JOIN
-        ? t(isJoinNameStep ? "setup.joinNameCopy" : "setup.joinListCopy")
+        ? t("setup.joinListCopy")
       : t("setup.chooseMultiplayerAction");
 
-  useScreenReveal(scopeRef, [panel, createStep, joinStep], {
+  useScreenReveal(scopeRef, [panel], {
     delay: isJoinListStep ? EXPANDED_REVEAL_DELAY : 0,
   });
 
@@ -329,7 +349,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
   }, [t]);
 
   useEffect(() => {
-    if (panel !== PANELS.JOIN || joinStep !== JOIN_STEPS.LIST) return undefined;
+    if (panel !== PANELS.JOIN) return undefined;
 
     const loadTimerId = window.setTimeout(() => {
       void loadRooms();
@@ -358,7 +378,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
       window.clearTimeout(loadTimerId);
       socket.off("room:listUpdated", handleListUpdated);
     };
-  }, [joinStep, loadRooms, panel]);
+  }, [loadRooms, panel]);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -372,18 +392,6 @@ export default function MultiplayerCard({ onTallStepChange }) {
   }, [actionError]);
 
   const openPanel = (nextPanel) => {
-    setPanel(nextPanel);
-    if (nextPanel === PANELS.CREATE) {
-      setCreateStep(CREATE_STEPS.NAME);
-    }
-    if (nextPanel === PANELS.JOIN) {
-      setJoinStep(JOIN_STEPS.NAME);
-    }
-    setFormError("");
-    setSubmitError("");
-  };
-
-  const handleConfirmCreateName = () => {
     const playerNameError = validatePlayerName(playerName, t);
     if (playerNameError) {
       setFormError(playerNameError);
@@ -391,22 +399,9 @@ export default function MultiplayerCard({ onTallStepChange }) {
       return;
     }
 
+    setPanel(nextPanel);
     setFormError("");
     setSubmitError("");
-    setCreateStep(CREATE_STEPS.SETTINGS);
-  };
-
-  const handleConfirmJoinName = () => {
-    const playerNameError = validatePlayerName(joinPlayerName, t);
-    if (playerNameError) {
-      setFormError(playerNameError);
-      setSubmitError("");
-      return;
-    }
-
-    setFormError("");
-    setSubmitError("");
-    setJoinStep(JOIN_STEPS.LIST);
   };
 
   const handleCreate = async () => {
@@ -484,7 +479,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
       return;
     }
 
-    const playerNameError = validatePlayerName(joinPlayerName, t);
+    const playerNameError = validatePlayerName(playerName, t);
     if (playerNameError) {
       setFormError(playerNameError);
       setSubmitError("");
@@ -504,7 +499,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
     setSubmitError("");
     setIsJoining(true);
 
-    const cleanName = cleanPlayerName(joinPlayerName);
+    const cleanName = cleanPlayerName(playerName);
     const playerId = createPlayerId();
 
     const response = await emitWithAck("room:join", {
@@ -561,11 +556,22 @@ export default function MultiplayerCard({ onTallStepChange }) {
 
       {panel === PANELS.CHOICE && (
         <div data-screen-reveal className="home-view-actions mt-auto w-full">
+          <div className="mb-3 w-full">
+            <PlayerNameField
+              value={playerName}
+              onChange={(value) => {
+                setPlayerName(value);
+                clearActionError();
+              }}
+            />
+          </div>
+
           <div className="grid w-full grid-cols-2 items-center gap-3">
             <button
               type="button"
+              disabled={!isPlayerNameReady}
               onClick={() => openPanel(PANELS.JOIN)}
-              className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
+              className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
             >
               <LogIn className="relative z-10 size-5 shrink-0" strokeWidth={2.2} />
               <span className="relative z-10 min-w-0 truncate">
@@ -575,8 +581,9 @@ export default function MultiplayerCard({ onTallStepChange }) {
 
             <button
               type="button"
+              disabled={!isPlayerNameReady}
               onClick={() => openPanel(PANELS.CREATE)}
-              className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
+              className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
             >
               <Plus className="relative z-10 size-5 shrink-0" strokeWidth={2.25} />
               <span className="relative z-10 min-w-0 truncate">
@@ -589,266 +596,172 @@ export default function MultiplayerCard({ onTallStepChange }) {
 
       {panel === PANELS.CREATE && (
         <>
-          {createStep === CREATE_STEPS.NAME && (
-            <div data-screen-reveal className="home-view-actions mt-auto w-full">
-              <div className="grid w-full grid-cols-[1.06fr_0.94fr] items-center gap-2 sm:gap-3">
-                <PlayerNameField
-                  value={playerName}
+          <div data-screen-reveal className="home-view-actions mt-auto w-full">
+            <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+              <TextField
+                value={lobbyName}
+                onChange={(value) => {
+                  setLobbyName(value);
+                  clearActionError();
+                }}
+                disabled={isCreating}
+                ariaLabel={t("setup.lobbyNameAria")}
+                placeholder={t("setup.lobbyNamePlaceholder")}
+              />
+
+              <VisibilitySwitch
+                value={visibility}
+                onChange={(value) => {
+                  setVisibility(value);
+                  clearActionError();
+                }}
+                disabled={isCreating}
+              />
+            </div>
+          </div>
+
+          <div data-screen-reveal className="home-view-actions mt-3 w-full">
+            <div
+              className={`grid w-full items-center gap-2 sm:gap-3 ${
+                isPrivate ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
+              {isPrivate && (
+                <PasswordField
+                  value={password}
                   onChange={(value) => {
-                    setPlayerName(value);
+                    setPassword(value);
                     clearActionError();
                   }}
+                  disabled={isCreating}
+                  ariaLabel={t("setup.lobbyPasswordAria")}
+                  placeholder={t("setup.lobbyPasswordPlaceholder")}
                 />
+              )}
 
-                <button
-                  type="button"
-                  onClick={handleConfirmCreateName}
-                  className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
-                    actionError
-                      ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                      : "rgb-hover-button bg-white text-zinc-950"
-                  }`}
-                >
-                  {actionError ? (
-                    <X
-                      className="relative z-10 shrink-0"
-                      size={17}
-                      strokeWidth={2.4}
-                    />
-                  ) : (
-                    <ArrowRight
-                      className="relative z-10 shrink-0"
-                      size={18}
-                      strokeWidth={2.35}
-                    />
-                  )}
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={isCreating}
+                className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
+                  actionError
+                    ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                    : "rgb-hover-button bg-white text-zinc-950"
+                }`}
+              >
+                {actionError && (
+                  <X
+                    className="relative z-10 shrink-0"
+                    size={17}
+                    strokeWidth={2.4}
+                  />
+                )}
 
-                  <span className="relative z-10 min-w-0 truncate">
-                    {actionError || t("setup.continueSetup")}
-                  </span>
-                </button>
-              </div>
+                <span className="relative z-10 min-w-0 truncate">
+                  {actionError ||
+                    (isCreating ? t("setup.creating") : t("setup.createLobby"))}
+                </span>
+              </button>
             </div>
-          )}
-
-          {createStep === CREATE_STEPS.SETTINGS && (
-            <>
-              <div data-screen-reveal className="home-view-actions mt-auto w-full">
-                <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
-                  <TextField
-                    value={lobbyName}
-                    onChange={(value) => {
-                      setLobbyName(value);
-                      clearActionError();
-                    }}
-                    disabled={isCreating}
-                    ariaLabel={t("setup.lobbyNameAria")}
-                    placeholder={t("setup.lobbyNamePlaceholder")}
-                  />
-
-                  <VisibilitySwitch
-                    value={visibility}
-                    onChange={(value) => {
-                      setVisibility(value);
-                      clearActionError();
-                    }}
-                    disabled={isCreating}
-                  />
-                </div>
-              </div>
-
-              <div data-screen-reveal className="home-view-actions mt-3 w-full">
-                <div
-                  className={`grid w-full items-center gap-2 sm:gap-3 ${
-                    isPrivate ? "grid-cols-2" : "grid-cols-1"
-                  }`}
-                >
-                  {isPrivate && (
-                    <TextField
-                      value={password}
-                      onChange={(value) => {
-                        setPassword(value);
-                        clearActionError();
-                      }}
-                      disabled={isCreating}
-                      type="password"
-                      ariaLabel={t("setup.lobbyPasswordAria")}
-                      placeholder={t("setup.lobbyPasswordPlaceholder")}
-                    />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleCreate}
-                    disabled={isCreating}
-                    className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-                      actionError
-                        ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                        : "rgb-hover-button bg-white text-zinc-950"
-                    }`}
-                  >
-                    {actionError && (
-                      <X
-                        className="relative z-10 shrink-0"
-                        size={17}
-                        strokeWidth={2.4}
-                      />
-                    )}
-
-                    <span className="relative z-10 min-w-0 truncate">
-                      {actionError ||
-                        (isCreating
-                          ? t("setup.creating")
-                          : t("setup.createLobby"))}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+          </div>
         </>
       )}
 
       {panel === PANELS.JOIN && (
         <>
-          {joinStep === JOIN_STEPS.NAME && (
-            <div data-screen-reveal className="home-view-actions mt-auto w-full">
-              <div className="grid w-full grid-cols-[1.06fr_0.94fr] items-center gap-2 sm:gap-3">
-                <PlayerNameField
-                  value={joinPlayerName}
-                  onChange={(value) => {
-                    setJoinPlayerName(value);
-                    clearActionError();
-                  }}
-                />
-
-                <button
-                  type="button"
-                  onClick={handleConfirmJoinName}
-                  className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
-                    actionError
-                      ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                      : "rgb-hover-button bg-white text-zinc-950"
-                  }`}
-                >
-                  {actionError ? (
-                    <X
-                      className="relative z-10 shrink-0"
-                      size={17}
-                      strokeWidth={2.4}
-                    />
-                  ) : (
-                    <ArrowRight
-                      className="relative z-10 shrink-0"
-                      size={18}
-                      strokeWidth={2.35}
-                    />
-                  )}
-
-                  <span className="relative z-10 min-w-0 truncate">
-                    {actionError || t("setup.continueSetup")}
-                  </span>
-                </button>
+          <div
+            data-screen-reveal
+            className="join-lobby-region scrollbar-hidden mt-5 min-h-0 flex-1 overflow-y-auto px-0.5"
+          >
+            {visibleRooms.length ? (
+              <div className="space-y-2">
+                {visibleRooms.map((room) => (
+                  <RoomListRow
+                    key={room.code}
+                    room={room}
+                    selected={room.code === selectedRoomCode}
+                    disabled={isJoining || room.playerCount >= room.maxPlayers}
+                    onSelect={(roomCode) => {
+                      setSelectedRoomCode(roomCode);
+                      setJoinPassword("");
+                      clearActionError();
+                    }}
+                  />
+                ))}
               </div>
-            </div>
-          )}
-
-          {joinStep === JOIN_STEPS.LIST && (
-            <>
-              <div data-screen-reveal className="mt-4 w-full">
-                <TextField
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  disabled={isJoining}
-                  ariaLabel={t("setup.searchLobbyAria")}
-                  placeholder={t("setup.searchLobbyPlaceholder")}
-                  icon={<Search className="size-4" strokeWidth={2.3} />}
+            ) : (
+              <div className="flex h-full min-h-[10.5rem] flex-col items-center justify-center px-6 text-center">
+                <Search
+                  className="mb-3 size-8 text-white/18"
+                  strokeWidth={1.85}
+                  aria-hidden="true"
                 />
-              </div>
-
-              <div data-screen-reveal className="scrollbar-hidden mt-4 min-h-0 flex-1 overflow-y-auto pr-0.5">
-                {visibleRooms.length ? (
-                  <div className="space-y-2">
-                    {visibleRooms.map((room) => (
-                      <RoomListRow
-                        key={room.code}
-                        room={room}
-                        selected={room.code === selectedRoomCode}
-                        disabled={isJoining || room.playerCount >= room.maxPlayers}
-                        onSelect={(roomCode) => {
-                          setSelectedRoomCode(roomCode);
-                          setJoinPassword("");
-                          clearActionError();
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex h-full min-h-[8.5rem] flex-col items-center justify-center px-6 text-center">
-                    <Search
-                      className="mb-3 size-7 text-white/18"
-                      strokeWidth={1.85}
-                      aria-hidden="true"
-                    />
-                    <p className="text-sm font-semibold text-white/38">
-                      {isLoadingRooms ? t("common.loading") : t("setup.noLobbies")}
-                    </p>
-                    {!isLoadingRooms && (
-                      <p className="mt-1 max-w-[13.5rem] text-xs font-medium leading-snug text-white/20">
-                        {t("setup.noLobbiesHint")}
-                      </p>
-                    )}
-                  </div>
+                <p className="text-sm font-semibold text-white/44">
+                  {isLoadingRooms ? t("common.loading") : t("setup.noLobbies")}
+                </p>
+                {!isLoadingRooms && (
+                  <p className="mt-1.5 max-w-[13.5rem] text-xs font-medium leading-snug text-white/24">
+                    {t("setup.noLobbiesHint")}
+                  </p>
                 )}
               </div>
+            )}
+          </div>
 
-              <div data-screen-reveal className="home-view-actions relative mt-auto w-full pt-4">
-                <div
-                  className={`grid w-full items-center gap-2 sm:gap-3 ${
-                    selectedRoom?.hasPassword ? "grid-cols-2" : "grid-cols-1"
-                  }`}
-                >
-                  {selectedRoom?.hasPassword && (
-                    <TextField
-                      value={joinPassword}
-                      onChange={(value) => {
-                        setJoinPassword(value);
-                        clearActionError();
-                      }}
-                      disabled={isJoining}
-                      type="password"
-                      ariaLabel={t("setup.lobbyPasswordAria")}
-                      placeholder={t("setup.lobbyPasswordPlaceholder")}
-                    />
-                  )}
+          <div data-screen-reveal className="join-lobby-region mt-3 w-full">
+            <TextField
+              value={searchQuery}
+              onChange={setSearchQuery}
+              disabled={isJoining}
+              ariaLabel={t("setup.searchLobbyAria")}
+              placeholder={t("setup.searchLobbyPlaceholder")}
+              icon={<Search className="size-4" strokeWidth={2.3} />}
+            />
+          </div>
 
-                  <button
-                    type="button"
-                    disabled={isJoining}
-                    onClick={handleJoinSelectedRoom}
-                    className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-                      actionError
-                        ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                        : "rgb-hover-button bg-white text-zinc-950"
-                    }`}
-                  >
-                    {actionError && (
-                      <X
-                        className="relative z-10 shrink-0"
-                        size={17}
-                        strokeWidth={2.4}
-                      />
-                    )}
+          <div data-screen-reveal className="home-view-actions relative mt-3 w-full">
+            <div
+              className={`grid w-full items-center gap-2 sm:gap-3 ${
+                selectedRoom?.hasPassword ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
+              {selectedRoom?.hasPassword && (
+                <PasswordField
+                  value={joinPassword}
+                  onChange={(value) => {
+                    setJoinPassword(value);
+                    clearActionError();
+                  }}
+                  disabled={isJoining}
+                  ariaLabel={t("setup.lobbyPasswordAria")}
+                  placeholder={t("setup.lobbyPasswordPlaceholder")}
+                />
+              )}
 
-                    <span className="relative z-10 min-w-0 truncate">
-                      {actionError ||
-                        (isJoining ? t("room.joining") : t("room.join"))}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+              <button
+                type="button"
+                disabled={isJoining || !selectedRoom}
+                onClick={handleJoinSelectedRoom}
+                className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-55 sm:px-5 sm:text-base ${
+                  actionError
+                    ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                    : "rgb-hover-button bg-white text-zinc-950"
+                }`}
+              >
+                {actionError && (
+                  <X
+                    className="relative z-10 shrink-0"
+                    size={17}
+                    strokeWidth={2.4}
+                  />
+                )}
+
+                <span className="relative z-10 min-w-0 truncate">
+                  {actionError || (isJoining ? t("room.joining") : t("room.join"))}
+                </span>
+              </button>
+            </div>
+          </div>
         </>
       )}
     </div>

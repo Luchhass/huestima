@@ -131,6 +131,20 @@ input {
   }
 }
 
+@keyframes game-mode-picker-reveal {
+  from {
+    height: 58px;
+    border-radius: 29px;
+    transform: translateY(-50%);
+  }
+
+  to {
+    height: 8.75rem;
+    border-radius: 29px;
+    transform: translateY(-50%);
+  }
+}
+
 @layer utilities {
   .card-action-height {
     height: 58px;
@@ -346,21 +360,35 @@ input {
     transform: translateX(calc(var(--difficulty-index) * 100%));
   }
 
-  .game-mode-switch {
-    --game-mode-index: 0;
-    position: relative;
+  .difficulty-switch--locked {
+    border-color: rgb(255 255 255 / 0.86);
   }
 
-  .game-mode-switch__thumb {
-    position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc((100% - 8px) / 3);
-    border-radius: 999px;
-    background: #ffffff;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    transform: translateX(calc(var(--game-mode-index) * 100%));
+  .difficulty-switch--locked .difficulty-switch__thumb {
+    background:
+      linear-gradient(135deg, rgb(255 255 255) 0 58%, rgb(238 238 238) 58% 100%);
+    box-shadow:
+      inset 0 0 0 1px rgb(0 0 0 / 0.06),
+      0 10px 24px rgb(0 0 0 / 0.18);
+  }
+
+  .game-mode-picker__panel {
+    transform: translateY(-50%);
+    animation: game-mode-picker-reveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: center;
+    will-change: height, border-radius;
+  }
+
+  .home-view-actions:has(.game-mode-picker[data-open="true"]) {
+    position: relative;
+    z-index: 80;
+    overflow: visible;
+  }
+
+  .lobby-settings-controls:has(.game-mode-picker[data-open="true"]) {
+    position: relative;
+    z-index: 80;
+    overflow: visible;
   }
 
   .creator-link::after {
@@ -508,7 +536,7 @@ input {
   .creator-tag,
   .difficulty-burst,
   .difficulty-switch__thumb,
-  .game-mode-switch__thumb,
+  .game-mode-picker__panel,
   .creator-link::after {
     animation: none;
     transition: none;
@@ -584,6 +612,11 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   padding: 0 !important;
 }
 
+html[data-fullscreen-transitioning="true"] .home-card,
+html[data-fullscreen-transitioning="true"] .game-card-shell {
+  transition: none !important;
+}
+
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .game-card-shell
   > * {
@@ -609,6 +642,11 @@ html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
 
 html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
   .home-view-actions {
+  max-width: min(100%, 50rem);
+}
+
+html[data-fullscreen-mode="on"]:not([data-game-immersive="true"])
+  .join-lobby-region {
   max-width: min(100%, 50rem);
 }
 
