@@ -54,19 +54,19 @@ export default function SingleplayerCard({
       <div data-screen-reveal className="home-view-actions mt-auto w-full">
         <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
           <div data-game-mode-shock-target className="min-w-0">
-            <GameModePicker
-              value={gameMode}
-              onChange={onGameModeChange}
-              options={SINGLEPLAYER_GAME_MODE_OPTIONS}
-            />
-          </div>
-
-          <div data-game-mode-shock-target className="min-w-0">
             <DifficultySwitch
               value={difficulty}
               onChange={onDifficultyChange}
               onSelectFeedback={onDifficultyFeedback}
               disabled={difficultyLocked}
+            />
+          </div>
+
+          <div data-game-mode-shock-target className="min-w-0">
+            <GameModePicker
+              value={gameMode}
+              onChange={onGameModeChange}
+              options={SINGLEPLAYER_GAME_MODE_OPTIONS}
             />
           </div>
         </div>

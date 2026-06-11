@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
+import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
@@ -48,13 +50,16 @@ function waitForCardResize() {
 
 export default function HomeCard({ initialView = "home" }) {
   const { t } = useTranslation();
+  const { cancelUnlockRequest, enableAdmin, protectorRequestId } = useAdminMode();
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
   const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
+  const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
   const contentRef = useRef(null);
   const isChangingViewRef = useRef(false);
+  const lastProtectorRequestRef = useRef(0);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
@@ -63,9 +68,35 @@ export default function HomeCard({ initialView = "home" }) {
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
-  useScreenReveal(contentRef, [view]);
+  useScreenReveal(contentRef, [view, isAdminProtectorVisible], {
+    delay: isAdminProtectorVisible ? 90 : 0,
+  });
+
+  useEffect(() => {
+    if (!protectorRequestId) return;
+    if (lastProtectorRequestRef.current === protectorRequestId) return;
+
+    lastProtectorRequestRef.current = protectorRequestId;
+
+    if (isAdminProtectorVisible) return;
+
+    let isCancelled = false;
+
+    const showProtector = async () => {
+      await playScreenFadeOut(contentRef, { duration: 0.28 });
+      if (isCancelled) return;
+      setIsAdminProtectorVisible(true);
+    };
+
+    void showProtector();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isAdminProtectorVisible, protectorRequestId]);
 
   const changeView = async (nextView) => {
+    if (isAdminProtectorVisible) return;
     if (nextView === view || isChangingViewRef.current) return;
 
     isChangingViewRef.current = true;
@@ -110,6 +141,18 @@ export default function HomeCard({ initialView = "home" }) {
     setDifficulty(nextDifficulty);
   };
 
+  const handleAdminUnlock = async () => {
+    enableAdmin();
+    await playScreenFadeOut(contentRef, { duration: 0.24 });
+    setIsAdminProtectorVisible(false);
+  };
+
+  const handleAdminCancel = async () => {
+    cancelUnlockRequest();
+    await playScreenFadeOut(contentRef, { duration: 0.22 });
+    setIsAdminProtectorVisible(false);
+  };
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -129,7 +172,7 @@ export default function HomeCard({ initialView = "home" }) {
           />
         )}
 
-        {(isSingleplayer || isMultiplayer) && (
+        {(isSingleplayer || isMultiplayer) && !isAdminProtectorVisible && (
           <button
             data-game-mode-shock-target
             type="button"
@@ -145,7 +188,12 @@ export default function HomeCard({ initialView = "home" }) {
           ref={contentRef}
           className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
         >
-          {view === "home" ? (
+          {isAdminProtectorVisible ? (
+            <AdminProtectorCard
+              onCancel={handleAdminCancel}
+              onUnlock={handleAdminUnlock}
+            />
+          ) : view === "home" ? (
             <>
               <div data-screen-reveal className="home-copy max-w-[23.5rem]">
                 <h1

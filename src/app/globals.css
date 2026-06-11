@@ -131,20 +131,6 @@ input {
   }
 }
 
-@keyframes game-mode-picker-reveal {
-  from {
-    height: 58px;
-    border-radius: 29px;
-    transform: translateY(-50%);
-  }
-
-  to {
-    height: 8.75rem;
-    border-radius: 29px;
-    transform: translateY(-50%);
-  }
-}
-
 @layer utilities {
   .card-action-height {
     height: 58px;
@@ -371,21 +357,31 @@ input {
 
   .game-mode-picker__panel {
     transform: translateY(-50%);
-    animation: game-mode-picker-reveal 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
     transform-origin: center;
-    will-change: height, border-radius;
+    will-change: height;
+    contain: layout;
   }
 
   .home-view-actions:has(.game-mode-picker[data-open="true"]) {
     position: relative;
-    z-index: 80;
+    z-index: 240;
+    isolation: isolate;
     overflow: visible;
+    transform: translateZ(0);
   }
 
   .lobby-settings-controls:has(.game-mode-picker[data-open="true"]) {
     position: relative;
-    z-index: 80;
+    z-index: 240;
+    isolation: isolate;
     overflow: visible;
+    transform: translateZ(0);
+  }
+
+  .home-view-actions:has(.game-mode-picker[data-open="true"]) ~ .home-view-actions,
+  .lobby-settings-controls:has(.game-mode-picker[data-open="true"]) ~ .lobby-actions {
+    position: relative;
+    z-index: 1;
   }
 
   .creator-link::after {

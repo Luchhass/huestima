@@ -5,6 +5,7 @@ import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
 import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import StructuredData from "@/components/seo/StructuredData";
+import { AdminModeProvider } from "@/hooks/useAdminMode";
 import {
   APP_NAME,
   FULLSCREEN_STORAGE_KEY,
@@ -180,10 +181,12 @@ export default function RootLayout({ children }) {
         <GoogleAnalytics />
         <StructuredData />
         <InteractionAudio />
-        <AppHeader />
-        <FullscreenEscapeButton />
-        {children}
-        <AppFooter />
+        <AdminModeProvider>
+          <AppHeader />
+          <FullscreenEscapeButton />
+          {children}
+          <AppFooter />
+        </AdminModeProvider>
       </body>
     </html>
   );

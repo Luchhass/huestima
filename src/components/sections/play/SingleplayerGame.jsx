@@ -121,6 +121,7 @@ export default function SingleplayerGame({ initialDifficulty, initialGameMode })
               round={game.roundIndex + 1}
               roundLabel={currentRoundLabel}
               difficulty={game.difficulty}
+              targetColor={game.targetColor}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}

@@ -2,9 +2,11 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Check } from "lucide-react";
+import { Check, Crown } from "lucide-react";
+import AdminProtectorOverlay from "@/components/admin/AdminProtectorOverlay";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
+import { useAdminMode } from "@/hooks/useAdminMode";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
 import { isGradientColor } from "@/lib/color";
@@ -16,6 +18,7 @@ export default function GuessPhase({
   round,
   roundLabel = `${round}/5`,
   difficulty,
+  targetColor = null,
   guessColor,
   onGuessChange,
   onSubmit,
@@ -23,6 +26,12 @@ export default function GuessPhase({
   progressItems = [],
 }) {
   const { t } = useTranslation();
+  const {
+    cancelUnlockRequest,
+    enabled: isAdminModeEnabled,
+    enableAdmin,
+    pendingUnlock,
+  } = useAdminMode();
   const scopeRef = useRef(null);
   const roundRef = useRef(null);
   const timerRef = useRef(null);
@@ -30,6 +39,9 @@ export default function GuessPhase({
   const progressRef = useRef(null);
   const timedSubmitRef = useRef(false);
 
+  const adminButtonRef = useRef(null);
+  const adminButtonCoreRef = useRef(null);
+  const adminIconRef = useRef(null);
   const submitButtonRef = useRef(null);
   const submitButtonCoreRef = useRef(null);
   const submitButtonRingRef = useRef(null);
@@ -46,6 +58,7 @@ export default function GuessPhase({
   const contentLeftSm = pickerWidth + 32;
   const contentRight = rightPickerWidth + 24;
   const contentRightSm = rightPickerWidth + 32;
+  const actionReserveWidth = isAdminModeEnabled ? 156 : 88;
   const controlsKey = difficulty.controls.join("-");
   const timedGuessDurationMs =
     Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
@@ -66,6 +79,12 @@ export default function GuessPhase({
 
     handleTimedSubmit();
   }, [handleTimedSubmit, isTimedGuess, onSubmit]);
+
+  const handleAdminPerfectGuess = useCallback(() => {
+    if (!isAdminModeEnabled || !targetColor) return;
+
+    onGuessChange(targetColor);
+  }, [isAdminModeEnabled, onGuessChange, targetColor]);
 
   const { centiseconds } = useCountdown({
     durationMs: timedGuessDurationMs,
@@ -122,6 +141,27 @@ export default function GuessPhase({
         gsap.set(progressRef.current, {
           yPercent: 80,
           autoAlpha: 0,
+        });
+      }
+
+      if (adminButtonRef.current) {
+        gsap.set(adminButtonRef.current, {
+          autoAlpha: 0,
+        });
+
+        gsap.set(adminButtonCoreRef.current, {
+          scale: 0,
+          rotation: 10,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(adminIconRef.current, {
+          scale: 0.72,
+          rotation: 8,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
         });
       }
 
@@ -370,6 +410,50 @@ export default function GuessPhase({
         );
       }
 
+      if (adminButtonRef.current) {
+        timeline
+          .set(
+            adminButtonRef.current,
+            {
+              autoAlpha: 1,
+            },
+            0.58,
+          )
+          .to(
+            adminButtonCoreRef.current,
+            {
+              scale: 1.12,
+              rotation: -2.4,
+              duration: 0.18,
+              ease: "expo.out",
+            },
+            0.58,
+          )
+          .to(
+            adminButtonCoreRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              duration: 0.13,
+              ease: "power3.out",
+              clearProps: "transform",
+            },
+            0.76,
+          )
+          .to(
+            adminIconRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              autoAlpha: 1,
+              duration: 0.22,
+              ease: "expo.out",
+              clearProps: "transform,opacity,visibility",
+            },
+            0.66,
+          );
+      }
+
       if (isTimedGuess) {
         timeline.call(() => setTimerRunning(true), [], 0.86);
       }
@@ -389,10 +473,17 @@ export default function GuessPhase({
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [controlsKey, isGradientGuess, isTimedGuess]);
+  }, [controlsKey, isAdminModeEnabled, isGradientGuess, isTimedGuess]);
 
   return (
     <div ref={scopeRef} className="relative h-full overflow-hidden">
+      {pendingUnlock && !isAdminModeEnabled && (
+        <AdminProtectorOverlay
+          onCancel={cancelUnlockRequest}
+          onUnlock={enableAdmin}
+        />
+      )}
+
       <div className="absolute inset-y-0 left-0 z-10">
         {isGradientGuess ? (
           <div
@@ -474,7 +565,7 @@ export default function GuessPhase({
           }`}
           style={{
             left: `${contentLeft}px`,
-            maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - 88px)`,
+            maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - ${actionReserveWidth}px)`,
           }}
         >
           <MultiplayerProgressList items={progressItems} />
@@ -498,6 +589,32 @@ export default function GuessPhase({
             className="translate-y-[0.18em]"
           />
         </div>
+      )}
+
+      {isAdminModeEnabled && targetColor && (
+        <button
+          ref={adminButtonRef}
+          type="button"
+          aria-label="Set perfect admin guess"
+          onClick={handleAdminPerfectGuess}
+          className="card-action-size absolute right-(--admin-right) bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--admin-right-sm) sm:bottom-8"
+          style={{
+            "--admin-right": `${contentRight + 68}px`,
+            "--admin-right-sm": `${contentRightSm + 74}px`,
+          }}
+        >
+          <span
+            ref={adminButtonCoreRef}
+            className="absolute inset-0 rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
+          />
+
+          <span
+            ref={adminIconRef}
+            className="relative z-10 grid place-items-center text-white"
+          >
+            <Crown size={27} strokeWidth={2.25} />
+          </span>
+        </button>
       )}
 
       <button

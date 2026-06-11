@@ -203,7 +203,7 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
   ];
 
   return (
-    <div className="card-control-frame card-action-height grid grid-cols-2 overflow-hidden">
+    <div className="card-control-frame card-action-height grid w-[7.25rem] shrink-0 grid-cols-2 overflow-hidden">
       {options.map((option) => {
         const Icon = option.icon;
         const isActive = value === option.id;
@@ -216,14 +216,11 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
             aria-pressed={isActive}
             title={option.label}
             onClick={() => onChange(option.id)}
-            className={`grid min-w-0 place-items-center px-2 text-[0.72rem] font-bold uppercase tracking-normal transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 ${
+            className={`grid min-w-0 place-items-center px-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 ${
               isActive ? "bg-white text-zinc-950" : "text-white/72"
             }`}
           >
-            <span className="flex min-w-0 items-center gap-1.5">
-              <Icon className="size-3.5 shrink-0" strokeWidth={2.25} />
-              <span className="min-w-0 truncate">{option.label}</span>
-            </span>
+            <Icon className="size-4 shrink-0" strokeWidth={2.25} />
           </button>
         );
       })}
@@ -310,7 +307,6 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
   const [password, setPassword] = useState("");
   const [rooms, setRooms] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoomCode, setSelectedRoomCode] = useState("");
   const [joinPassword, setJoinPassword] = useState("");
   const [formError, setFormError] = useState("");
@@ -345,8 +341,8 @@ export default function MultiplayerCard({ onTallStepChange }) {
   );
 
   const visibleRooms = useMemo(
-    () => rooms.filter((room) => roomMatchesSearch(room, searchQuery)),
-    [rooms, searchQuery],
+    () => rooms.filter((room) => roomMatchesSearch(room, "")),
+    [rooms],
   );
 
   const clearActionError = () => {
@@ -603,24 +599,24 @@ export default function MultiplayerCard({ onTallStepChange }) {
             <button
               type="button"
               disabled={!isPlayerNameReady}
-              onClick={() => openPanel(PANELS.JOIN)}
+              onClick={() => openPanel(PANELS.CREATE)}
               className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
             >
-              <LogIn className="relative z-10 size-5 shrink-0" strokeWidth={2.2} />
+              <Plus className="relative z-10 size-5 shrink-0" strokeWidth={2.25} />
               <span className="relative z-10 min-w-0 truncate">
-                {t("setup.joinLobbyAction")}
+                {t("setup.createLobbyAction")}
               </span>
             </button>
 
             <button
               type="button"
               disabled={!isPlayerNameReady}
-              onClick={() => openPanel(PANELS.CREATE)}
+              onClick={() => openPanel(PANELS.JOIN)}
               className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
             >
-              <Plus className="relative z-10 size-5 shrink-0" strokeWidth={2.25} />
+              <LogIn className="relative z-10 size-5 shrink-0" strokeWidth={2.2} />
               <span className="relative z-10 min-w-0 truncate">
-                {t("setup.createLobby")}
+                {t("setup.browseLobbyAction")}
               </span>
             </button>
           </div>
@@ -630,7 +626,11 @@ export default function MultiplayerCard({ onTallStepChange }) {
       {panel === PANELS.CREATE && (
         <>
           <div data-screen-reveal className="home-view-actions mt-auto w-full">
-            <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+            <div
+              className={`grid w-full items-center gap-2 sm:gap-3 ${
+                isPrivate ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
               <TextField
                 value={lobbyName}
                 onChange={(value) => {
@@ -642,23 +642,6 @@ export default function MultiplayerCard({ onTallStepChange }) {
                 placeholder={t("setup.lobbyNamePlaceholder")}
               />
 
-              <VisibilitySwitch
-                value={visibility}
-                onChange={(value) => {
-                  setVisibility(value);
-                  clearActionError();
-                }}
-                disabled={isCreating}
-              />
-            </div>
-          </div>
-
-          <div data-screen-reveal className="home-view-actions mt-3 w-full">
-            <div
-              className={`grid w-full items-center gap-2 sm:gap-3 ${
-                isPrivate ? "grid-cols-2" : "grid-cols-1"
-              }`}
-            >
               {isPrivate && (
                 <PasswordField
                   value={password}
@@ -671,12 +654,25 @@ export default function MultiplayerCard({ onTallStepChange }) {
                   placeholder={t("setup.lobbyPasswordPlaceholder")}
                 />
               )}
+            </div>
+          </div>
+
+          <div data-screen-reveal className="home-view-actions mt-3 w-full">
+            <div className="flex w-full items-center gap-2 sm:gap-3">
+              <VisibilitySwitch
+                value={visibility}
+                onChange={(value) => {
+                  setVisibility(value);
+                  clearActionError();
+                }}
+                disabled={isCreating}
+              />
 
               <button
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating}
-                className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
+                className={`card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
                   actionError
                     ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
                     : "rgb-hover-button bg-white text-zinc-950"
@@ -741,6 +737,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
             )}
           </div>
 
+          {/*
           <div data-screen-reveal className="join-lobby-region mt-3 w-full">
             <TextField
               value={searchQuery}
@@ -751,6 +748,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
               icon={<Search className="size-4" strokeWidth={2.3} />}
             />
           </div>
+          */}
 
           <div data-screen-reveal className="home-view-actions relative mt-3 w-full">
             <div

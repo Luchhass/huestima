@@ -286,26 +286,30 @@ export default function LobbyCard({
             data-game-mode-shock-target
             className="lobby-settings-controls mt-4 grid w-full grid-cols-2 gap-3"
           >
-            <GameModePicker
-              value={room?.gameMode}
-              onChange={handleGameModeChange}
-              options={MULTIPLAYER_GAME_MODE_OPTIONS}
-              disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
-              className="w-full"
-            />
+            <div className="order-1 min-w-0">
+              <DifficultySwitch
+                value={room?.difficulty}
+                onChange={handleDifficultyChange}
+                onSelectFeedback={triggerDifficultyFeedback}
+                disabled={
+                  isDifficultyLocked ||
+                  !isHost ||
+                  isUpdatingSettings ||
+                  room?.status !== "lobby"
+                }
+                className="w-full"
+              />
+            </div>
 
-            <DifficultySwitch
-              value={room?.difficulty}
-              onChange={handleDifficultyChange}
-              onSelectFeedback={triggerDifficultyFeedback}
-              disabled={
-                isDifficultyLocked ||
-                !isHost ||
-                isUpdatingSettings ||
-                room?.status !== "lobby"
-              }
-              className="w-full"
-            />
+            <div className="order-2 min-w-0">
+              <GameModePicker
+                value={room?.gameMode}
+                onChange={handleGameModeChange}
+                options={MULTIPLAYER_GAME_MODE_OPTIONS}
+                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+                className="w-full"
+              />
+            </div>
           </div>
         )}
 

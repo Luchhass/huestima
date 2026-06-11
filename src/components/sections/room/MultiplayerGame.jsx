@@ -200,6 +200,7 @@ export default function MultiplayerGame({
                 game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
               }
               difficulty={game.difficulty}
+              targetColor={game.targetColor}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
