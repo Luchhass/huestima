@@ -41,6 +41,7 @@ export default function GuessPhase({
 
   const adminButtonRef = useRef(null);
   const adminButtonCoreRef = useRef(null);
+  const adminButtonRingRef = useRef(null);
   const adminIconRef = useRef(null);
   const submitButtonRef = useRef(null);
   const submitButtonCoreRef = useRef(null);
@@ -152,6 +153,13 @@ export default function GuessPhase({
         gsap.set(adminButtonCoreRef.current, {
           scale: 0,
           rotation: 10,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(adminButtonRingRef.current, {
+          scale: 0.22,
+          autoAlpha: 0,
           transformOrigin: "center center",
           force3D: true,
         });
@@ -441,6 +449,26 @@ export default function GuessPhase({
             0.76,
           )
           .to(
+            adminButtonRingRef.current,
+            {
+              scale: 1.42,
+              autoAlpha: 0.52,
+              duration: 0.25,
+              ease: "expo.out",
+            },
+            0.59,
+          )
+          .to(
+            adminButtonRingRef.current,
+            {
+              scale: 1.76,
+              autoAlpha: 0,
+              duration: 0.22,
+              ease: "power2.out",
+            },
+            0.78,
+          )
+          .to(
             adminIconRef.current,
             {
               scale: 1,
@@ -597,7 +625,7 @@ export default function GuessPhase({
           type="button"
           aria-label="Set perfect admin guess"
           onClick={handleAdminPerfectGuess}
-          className="card-action-size absolute right-(--admin-right) bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--admin-right-sm) sm:bottom-8"
+          className="card-action-size absolute right-(--admin-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--admin-right-sm) sm:bottom-8"
           style={{
             "--admin-right": `${contentRight + 68}px`,
             "--admin-right-sm": `${contentRightSm + 74}px`,
@@ -606,6 +634,11 @@ export default function GuessPhase({
           <span
             ref={adminButtonCoreRef}
             className="absolute inset-0 rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
+          />
+
+          <span
+            ref={adminButtonRingRef}
+            className="pointer-events-none absolute inset-0 rounded-full border border-current/20"
           />
 
           <span

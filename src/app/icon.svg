@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <style>
+    #hue-mark {
+      animation: hue-spin 8s linear infinite;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    @keyframes hue-spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
   <defs>
     <linearGradient id="hue-0" x1="256" y1="102" x2="365" y2="147" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#32d989"/>
@@ -33,7 +49,7 @@
       <stop offset="1" stop-color="#32d989"/>
     </linearGradient>
   </defs>
-  <g fill="none" stroke-width="124" stroke-linecap="butt">
+  <g id="hue-mark" fill="none" stroke-width="124" stroke-linecap="butt">
     <path d="M 256 102 A 154 154 0 0 1 365 147" stroke="url(#hue-0)"/>
     <path d="M 365 147 A 154 154 0 0 1 410 256" stroke="url(#hue-1)"/>
     <path d="M 410 256 A 154 154 0 0 1 365 365" stroke="url(#hue-2)"/>

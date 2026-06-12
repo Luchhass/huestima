@@ -28,11 +28,16 @@ const GAME_MODE_ICONS = {
 
 const FALLBACK_ITEM_HEIGHT = 58;
 const PANEL_EXTRA_HEIGHT = 82;
+const PANEL_SHADOW =
+  "0 22px 54px rgba(0,0,0,0.38), 0 8px 18px rgba(0,0,0,0.22)";
+const PANEL_SHADOW_REST =
+  "0 6px 14px rgba(0,0,0,0), 0 2px 6px rgba(0,0,0,0)";
 const WHEEL_DELTA_THRESHOLD = 82;
 const WHEEL_STEP_GUARD = 58;
 const WHEEL_GESTURE_GAP = 180;
 const MAX_WHEEL_STEPS_PER_EVENT = 3;
 const DRAG_START_THRESHOLD = 5;
+const DRAG_LOOP_THRESHOLD_RATIO = 0.5;
 
 function wrapIndex(index, length) {
   if (length <= 0) return 0;
@@ -54,10 +59,6 @@ function getSignedCircularDistance(index, centerIndex, length) {
 
 function getCircularDistance(firstIndex, secondIndex, length) {
   return Math.abs(getSignedCircularDistance(firstIndex, secondIndex, length));
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
 }
 
 export default function GameModePicker({
@@ -92,7 +93,7 @@ export default function GameModePicker({
     active: false,
     moved: false,
     pointerId: null,
-    startIndex: 0,
+    lastY: 0,
     startY: 0,
   });
 
@@ -149,6 +150,20 @@ export default function GameModePicker({
     [moveToIndex, optionCount],
   );
 
+  const moveWheelPreview = useCallback(
+    (nextIndex, nextOffset) => {
+      if (!optionCount) return;
+
+      const wrappedIndex = wrapIndex(nextIndex, optionCount);
+
+      wheelIndexRef.current = wrappedIndex;
+      dragOffsetRef.current = nextOffset;
+      setWheelIndex(wrappedIndex);
+      setDragOffset(nextOffset);
+    },
+    [optionCount],
+  );
+
   const closePicker = useCallback(() => {
     setOpen(false);
   }, []);
@@ -193,11 +208,13 @@ export default function GameModePicker({
         {
           height: itemHeight,
           autoAlpha: 1,
+          boxShadow: PANEL_SHADOW_REST,
           yPercent: -50,
         },
         {
           height: panelHeight,
           autoAlpha: 1,
+          boxShadow: PANEL_SHADOW,
           duration: 0.34,
           ease: "expo.out",
           overwrite: true,
@@ -209,11 +226,13 @@ export default function GameModePicker({
         {
           height: panel.getBoundingClientRect().height || panelHeight,
           autoAlpha: 1,
+          boxShadow: PANEL_SHADOW,
           yPercent: -50,
         },
         {
           height: itemHeight,
           autoAlpha: 1,
+          boxShadow: PANEL_SHADOW_REST,
           duration: 0.22,
           ease: "power3.inOut",
           overwrite: true,
@@ -305,7 +324,7 @@ export default function GameModePicker({
       active: true,
       moved: false,
       pointerId: event.pointerId,
-      startIndex: wheelIndexRef.current,
+      lastY: event.clientY,
       startY: event.clientY,
     };
     dragOffsetRef.current = 0;
@@ -347,15 +366,27 @@ export default function GameModePicker({
 
       event.preventDefault();
 
-      const rawOffset = event.clientY - dragState.startY;
-      const nextOffset = clamp(rawOffset, -itemHeight * 2.35, itemHeight * 2.35);
+      const deltaY = event.clientY - dragState.lastY;
+      let nextIndex = wheelIndexRef.current;
+      let nextOffset = dragOffsetRef.current + deltaY;
+      const loopThreshold = itemHeight * DRAG_LOOP_THRESHOLD_RATIO;
 
-      if (Math.abs(rawOffset) > DRAG_START_THRESHOLD) {
+      if (Math.abs(event.clientY - dragState.startY) > DRAG_START_THRESHOLD) {
         dragState.moved = true;
       }
 
-      dragOffsetRef.current = nextOffset;
-      setDragOffset(nextOffset);
+      while (nextOffset > loopThreshold) {
+        nextIndex -= 1;
+        nextOffset -= itemHeight;
+      }
+
+      while (nextOffset < -loopThreshold) {
+        nextIndex += 1;
+        nextOffset += itemHeight;
+      }
+
+      dragState.lastY = event.clientY;
+      moveWheelPreview(nextIndex, nextOffset);
     };
 
     const handleWindowPointerEnd = (event) => {
@@ -368,20 +399,19 @@ export default function GameModePicker({
         return;
       }
 
-      const steps = Math.round(-dragOffsetRef.current / itemHeight);
-      const nextIndex = dragState.startIndex + steps;
       const captureTarget = wheelAreaRef.current;
+      const finalIndex = wheelIndexRef.current;
 
       dragStateRef.current = {
         active: false,
         moved: dragState.moved,
         pointerId: null,
-        startIndex: 0,
+        lastY: 0,
         startY: 0,
       };
 
       setDragging(false);
-      moveToIndex(nextIndex);
+      moveToIndex(finalIndex);
 
       if (
         dragState.pointerId !== null &&
@@ -406,7 +436,7 @@ export default function GameModePicker({
       window.removeEventListener("pointerup", handleWindowPointerEnd);
       window.removeEventListener("pointercancel", handleWindowPointerEnd);
     };
-  }, [dragging, itemHeight, moveToIndex]);
+  }, [dragging, itemHeight, moveToIndex, moveWheelPreview]);
 
   return (
     <div
@@ -451,8 +481,8 @@ export default function GameModePicker({
       {renderOpen && (
         <div
           ref={panelRef}
-          className="game-mode-picker__panel absolute left-0 top-1/2 z-[220] w-full overflow-hidden rounded-[29px] border-2 border-white/96 bg-black text-white shadow-[0_22px_54px_rgba(0,0,0,0.38),0_8px_18px_rgba(0,0,0,0.22)]"
-          style={{ height: itemHeight }}
+          className="game-mode-picker__panel absolute left-0 top-1/2 z-[220] w-full overflow-hidden rounded-[29px] border-2 border-white/96 bg-black text-white"
+          style={{ height: itemHeight, boxShadow: PANEL_SHADOW_REST }}
           role="listbox"
           aria-label={ariaLabel || t("gameMode.label")}
         >

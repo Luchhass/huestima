@@ -32,6 +32,7 @@ body {
   height: 100%;
   overflow: hidden;
   background: var(--background);
+  transition: background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body {
@@ -39,6 +40,9 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   text-rendering: geometricPrecision;
   user-select: none;
+  transition:
+    background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.32s ease;
 }
 
 html[data-page-intro-pending="true"] body::before {
@@ -68,6 +72,9 @@ input {
 
 .app-gradient {
   background: var(--background);
+  transition:
+    background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.32s ease;
 }
 
 @keyframes rgb-disk-ramp {
@@ -85,6 +92,48 @@ input {
   }
   to {
     transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes brand-gradient-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes game-action-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.22) rotate(-8deg);
+  }
+  52% {
+    opacity: 1;
+    transform: scale(1.14) rotate(2.4deg);
+  }
+  72% {
+    transform: scale(0.94) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes game-action-pop-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.24);
+  }
+  46% {
+    opacity: 0.58;
+    transform: scale(1.42);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.78);
   }
 }
 
@@ -223,6 +272,9 @@ input {
       #9d6cff,
       #ff5f7a
     );
+    animation: brand-gradient-spin 8s linear infinite;
+    transform-origin: center;
+    will-change: transform;
   }
 
   .rgb-hover-button {
@@ -302,13 +354,37 @@ input {
     transition: transform 0.22s ease;
   }
 
+  .game-action-pop {
+    position: relative;
+    overflow: visible;
+    transform-origin: center;
+    animation: game-action-pop 0.43s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .game-action-pop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: center;
+    animation: game-action-pop-ring 0.48s cubic-bezier(0.16, 1, 0.3, 1) 0.03s both;
+  }
+
   .soft-icon-button:hover,
   .soft-icon-button:focus-visible {
     transform: scale(1.06);
   }
 
+  .result-action-button {
+    overflow: visible;
+  }
+
   .result-next-button {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .app-header,
@@ -525,6 +601,9 @@ input {
   .rgb-hover-button,
   .rgb-hover-button::before,
   .rgb-hover-button::after,
+  .gradient-icon-flow,
+  .game-action-pop,
+  .game-action-pop::after,
   .soft-icon-button,
   .solo-close-button,
   .fullscreen-escape-button,
@@ -532,6 +611,9 @@ input {
   .fullscreen-escape-button__icon,
   .app-header,
   .creator-tag,
+  html,
+  body,
+  .app-gradient,
   .difficulty-burst,
   .difficulty-switch__thumb,
   .game-mode-picker__panel,
@@ -722,6 +804,12 @@ html[data-fullscreen-mode="on"] .lobby-card .difficulty-burst {
   max-width: none !important;
   height: 100dvh !important;
   border-radius: 0 !important;
+}
+
+html[data-fullscreen-transitioning="true"] .difficulty-burst,
+html[data-fullscreen-mode="on"] .difficulty-burst {
+  display: none !important;
+  animation: none !important;
 }
 
 html[data-fullscreen-mode="on"] .game-card-shell:has(.lobby-card) {

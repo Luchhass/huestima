@@ -415,7 +415,7 @@ export default function FinalSummary({
 
               <span
                 data-summary-tile-score
-                className={`absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[0.72rem] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-base ${tileScoreTone(
+                className={`absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[clamp(0.86rem,3.15vw,1.05rem)] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-[1.08rem] ${tileScoreTone(
                   colorToneHex(result.target)
                 )}`}
               >

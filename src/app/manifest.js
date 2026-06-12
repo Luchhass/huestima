@@ -21,12 +21,6 @@ export default function manifest() {
     categories: ["games", "entertainment"],
     icons: [
       {
-        src: "/favicon-48x48.png",
-        sizes: "48x48",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
         src: "/icon-192.png",
         sizes: "192x192",
         type: "image/png",
@@ -39,9 +33,9 @@ export default function manifest() {
         purpose: "any maskable",
       },
       {
-        src: "/icon.svg",
-        sizes: "512x512",
-        type: "image/svg+xml",
+        src: "/icon-1024.png",
+        sizes: "1024x1024",
+        type: "image/png",
         purpose: "any maskable",
       },
     ],

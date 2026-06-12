@@ -24,6 +24,7 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const EXPANDED_REVEAL_DELAY = 320;
+const DIFFICULTY_BURST_LIFETIME_MS = 3900;
 const MULTIPLAYER_GAME_MODE_OPTIONS = GAME_MODE_OPTIONS.filter(
   (option) => !option.singleplayerOnly,
 );
@@ -51,6 +52,7 @@ export default function LobbyCard({
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const scopeRef = useRef(null);
   const copiedTimerRef = useRef(null);
+  const difficultyBurstTimerRef = useRef(null);
 
   const isHost = room?.hostPlayerId === currentPlayerId;
   const isDifficultyLocked = Boolean(
@@ -84,18 +86,30 @@ export default function LobbyCard({
       DIFFICULTY_BURST_COLORS[nextDifficulty] ||
       DIFFICULTY_BURST_COLORS[DIFFICULTY_IDS.NORMAL];
 
+    if (difficultyBurstTimerRef.current) {
+      window.clearTimeout(difficultyBurstTimerRef.current);
+    }
+
     setDifficultyBurst({
       id: nextDifficulty,
       color: burst.color,
       rgb: burst.rgb,
       key: `${nextDifficulty}-${optionIndex}-${Date.now()}`,
     });
+
+    difficultyBurstTimerRef.current = window.setTimeout(() => {
+      setDifficultyBurst(null);
+      difficultyBurstTimerRef.current = null;
+    }, DIFFICULTY_BURST_LIFETIME_MS);
   };
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current) {
         window.clearTimeout(copiedTimerRef.current);
+      }
+      if (difficultyBurstTimerRef.current) {
+        window.clearTimeout(difficultyBurstTimerRef.current);
       }
     };
   }, []);
@@ -336,7 +350,7 @@ export default function LobbyCard({
                 }
                 onClick={handleToggleSettings}
                 disabled={isUpdatingSettings}
-                className={`card-action-size grid shrink-0 place-items-center rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`game-action-pop card-action-size grid shrink-0 place-items-center rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40 ${
                   isSettingsOpen
                     ? "border-red-500 bg-red-500 text-white"
                     : "border-white/95 bg-transparent text-white hover:bg-white/10"
@@ -357,7 +371,7 @@ export default function LobbyCard({
               onClick={handleCopyInvite}
               className={`rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 isHost
-                  ? "card-action-size grid shrink-0 place-items-center"
+                  ? "game-action-pop card-action-size grid shrink-0 place-items-center"
                   : "card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 px-4 text-center text-sm font-semibold leading-tight sm:text-base"
               } ${
                 copyActionError

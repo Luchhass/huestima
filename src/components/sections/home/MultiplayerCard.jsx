@@ -99,6 +99,12 @@ function writeStoredPlayerName(value) {
   }
 }
 
+function defaultLobbyNameForPlayer(value) {
+  const cleanName = cleanPlayerName(value);
+
+  return cleanName ? `${cleanName}'s lobby` : "";
+}
+
 async function copyInviteLink(roomCode) {
   const inviteUrl = `${window.location.origin}/${roomCode}`;
 
@@ -304,6 +310,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
   const [lobbyName, setLobbyName] = useState("");
+  const [isLobbyNameDirty, setIsLobbyNameDirty] = useState(false);
   const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
   const [password, setPassword] = useState("");
   const [rooms, setRooms] = useState([]);
@@ -353,6 +360,11 @@ export default function MultiplayerCard({ onTallStepChange }) {
   const updatePlayerName = (value) => {
     setPlayerName(value);
     writeStoredPlayerName(value);
+
+    if (!isLobbyNameDirty) {
+      setLobbyName(defaultLobbyNameForPlayer(value));
+    }
+
     clearActionError();
   };
 
@@ -430,6 +442,11 @@ export default function MultiplayerCard({ onTallStepChange }) {
     }
 
     setPanel(nextPanel);
+
+    if (nextPanel === PANELS.CREATE && !isLobbyNameDirty) {
+      setLobbyName(defaultLobbyNameForPlayer(playerName));
+    }
+
     setFormError("");
     setSubmitError("");
   };
@@ -635,6 +652,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
                 value={lobbyName}
                 onChange={(value) => {
                   setLobbyName(value);
+                  setIsLobbyNameDirty(true);
                   clearActionError();
                 }}
                 disabled={isCreating}

@@ -176,7 +176,7 @@ export default function LeaderboardCard({
                     />
 
                     <span
-                      className={`absolute left-2 top-2 z-10 text-[0.9rem] font-semibold leading-none sm:text-[0.95rem] ${tileScoreTone(
+                      className={`absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)] truncate text-[clamp(0.92rem,2.8vw,1.05rem)] font-semibold leading-none tabular-nums sm:text-[1.08rem] ${tileScoreTone(
                         colorToneHex(result.target),
                       )}`}
                     >

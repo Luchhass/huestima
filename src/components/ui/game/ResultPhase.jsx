@@ -43,6 +43,8 @@ export default function ResultPhase({
   const continueButtonRingRef = useRef(null);
   const continueArrowRef = useRef(null);
   const finishRunButtonRef = useRef(null);
+  const finishRunButtonRingRef = useRef(null);
+  const finishRunButtonIconRef = useRef(null);
 
   const selectionLabelRef = useRef(null);
   const selectionValueRef = useRef(null);
@@ -164,6 +166,21 @@ export default function ResultPhase({
         force3D: true,
       });
 
+      gsap.set(finishRunButtonRingRef.current, {
+        scale: 0.22,
+        autoAlpha: 0,
+        transformOrigin: "center center",
+        force3D: true,
+      });
+
+      gsap.set(finishRunButtonIconRef.current, {
+        scale: 0.74,
+        rotation: 8,
+        autoAlpha: 0,
+        transformOrigin: "center center",
+        force3D: true,
+      });
+
       gsap.set(continueButtonCoreRef.current, {
         scale: 0,
         rotation: -10,
@@ -250,7 +267,8 @@ export default function ResultPhase({
         .to(
           finishRunButtonRef.current,
           {
-            scale: 1.045,
+            scale: 1.14,
+            rotation: -2.4,
             duration: 0.2,
             ease: "expo.out",
           },
@@ -260,6 +278,7 @@ export default function ResultPhase({
           finishRunButtonRef.current,
           {
             scale: 0.94,
+            rotation: 1,
             duration: 0.09,
             ease: "power3.out",
           },
@@ -269,11 +288,44 @@ export default function ResultPhase({
           finishRunButtonRef.current,
           {
             scale: 1,
+            rotation: 0,
             duration: 0.12,
             ease: "expo.out",
             clearProps: "transform,opacity,visibility",
           },
           0.97
+        )
+        .to(
+          finishRunButtonRingRef.current,
+          {
+            scale: 1.42,
+            autoAlpha: 0.58,
+            duration: 0.25,
+            ease: "expo.out",
+          },
+          0.69
+        )
+        .to(
+          finishRunButtonRingRef.current,
+          {
+            scale: 1.76,
+            autoAlpha: 0,
+            duration: 0.22,
+            ease: "power2.out",
+          },
+          0.88
+        )
+        .to(
+          finishRunButtonIconRef.current,
+          {
+            scale: 1,
+            rotation: 0,
+            autoAlpha: 1,
+            duration: 0.2,
+            ease: "expo.out",
+            clearProps: "transform,opacity,visibility",
+          },
+          0.78
         )
 
         // Fancy popup core
@@ -468,11 +520,11 @@ export default function ResultPhase({
           </div>
         </div>
 
-        <div className="absolute top-6 right-6 max-w-60 text-right sm:top-8 sm:right-8">
+        <div className="absolute top-6 right-6 max-w-[calc(100%-3rem)] text-right sm:top-8 sm:right-8 sm:max-w-72">
           <div className="overflow-hidden pb-[0.08em]">
             <p
               ref={scoreRef}
-              className="text-7xl leading-[0.82] font-semibold tracking-normal sm:text-[6.3rem]"
+              className="whitespace-nowrap text-[clamp(4rem,18vw,4.5rem)] leading-[0.82] font-semibold tracking-normal tabular-nums sm:text-[6.3rem]"
             >
               {formatScore(0)}
             </p>
@@ -526,9 +578,15 @@ export default function ResultPhase({
             type="button"
             aria-label={t("game.finishRun")}
             onClick={onFinishRun}
-            className="soft-icon-button card-action-size group absolute right-[5.75rem] bottom-6 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
+            className="soft-icon-button result-action-button card-action-size group absolute right-[5.75rem] bottom-6 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
           >
-            <X size={29} strokeWidth={2.15} />
+            <span
+              ref={finishRunButtonRingRef}
+              className="pointer-events-none absolute -inset-1 rounded-full border border-current/28"
+            />
+            <span ref={finishRunButtonIconRef} className="relative z-10 grid place-items-center">
+              <X size={29} strokeWidth={2.15} />
+            </span>
           </button>
         )}
 
@@ -539,11 +597,11 @@ export default function ResultPhase({
             hasNextRound ? t("game.goNextRound") : t("game.showFinalScore")
           }
           onClick={onContinue}
-          className="soft-icon-button result-next-button card-action-size group absolute right-6 bottom-6 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
+          className="soft-icon-button result-action-button result-next-button card-action-size group absolute right-6 bottom-6 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
         >
           <span
             ref={continueButtonRingRef}
-            className="pointer-events-none absolute inset-0 rounded-full border border-current/20"
+            className="pointer-events-none absolute -inset-1 rounded-full border border-current/28"
           />
 
           <span

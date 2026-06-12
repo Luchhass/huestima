@@ -34,6 +34,7 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const CARD_RESIZE_DURATION_MS = 700;
+const DIFFICULTY_BURST_LIFETIME_MS = 3900;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -58,6 +59,7 @@ export default function HomeCard({ initialView = "home" }) {
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
   const contentRef = useRef(null);
+  const difficultyBurstTimerRef = useRef(null);
   const isChangingViewRef = useRef(false);
   const lastProtectorRequestRef = useRef(0);
 
@@ -71,6 +73,14 @@ export default function HomeCard({ initialView = "home" }) {
   useScreenReveal(contentRef, [view, isAdminProtectorVisible], {
     delay: isAdminProtectorVisible ? 90 : 0,
   });
+
+  useEffect(() => {
+    return () => {
+      if (difficultyBurstTimerRef.current) {
+        window.clearTimeout(difficultyBurstTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!protectorRequestId) return;
@@ -116,12 +126,21 @@ export default function HomeCard({ initialView = "home" }) {
       DIFFICULTY_BURST_COLORS[nextDifficulty] ||
       DIFFICULTY_BURST_COLORS[DIFFICULTY_IDS.NORMAL];
 
+    if (difficultyBurstTimerRef.current) {
+      window.clearTimeout(difficultyBurstTimerRef.current);
+    }
+
     setDifficultyBurst({
       id: nextDifficulty,
       color: burst.color,
       rgb: burst.rgb,
       key: `${nextDifficulty}-${optionIndex}-${Date.now()}`,
     });
+
+    difficultyBurstTimerRef.current = window.setTimeout(() => {
+      setDifficultyBurst(null);
+      difficultyBurstTimerRef.current = null;
+    }, DIFFICULTY_BURST_LIFETIME_MS);
   };
 
   const handleGameModeChange = (nextGameMode) => {

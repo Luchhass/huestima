@@ -205,6 +205,11 @@ function setImportantStyle(element, property, value) {
   element.style.setProperty(property, value, "important");
 }
 
+function setAnimatableShadow(element, value) {
+  element.style.removeProperty("box-shadow");
+  element.style.boxShadow = value || "none";
+}
+
 function createTransitionCover(card) {
   const rect = card.getBoundingClientRect();
   const styles = window.getComputedStyle(card);
@@ -225,7 +230,7 @@ function createTransitionCover(card) {
   setImportantStyle(cover, "min-height", "0px");
   setImportantStyle(cover, "margin", "0px");
   setImportantStyle(cover, "border-radius", styles.borderRadius || "24px");
-  setImportantStyle(cover, "box-shadow", styles.boxShadow || "none");
+  setAnimatableShadow(cover, styles.boxShadow || "none");
   setImportantStyle(cover, "transform", "none");
   setImportantStyle(cover, "transform-origin", "top left");
   setImportantStyle(cover, "transition", "none");
@@ -262,7 +267,7 @@ function createSurfaceTransitionCover(card) {
   setImportantStyle(cover, "margin", "0px");
   setImportantStyle(cover, "border-radius", styles.borderRadius || "24px");
   setImportantStyle(cover, "background", styles.background || styles.backgroundColor);
-  setImportantStyle(cover, "box-shadow", styles.boxShadow || "none");
+  setAnimatableShadow(cover, styles.boxShadow || "none");
   setImportantStyle(cover, "transform", "none");
   setImportantStyle(cover, "transform-origin", "top left");
   setImportantStyle(cover, "transition", "none");
@@ -306,7 +311,7 @@ function createViewportSurfaceCover() {
   setImportantStyle(cover, "margin", "0px");
   setImportantStyle(cover, "border-radius", "0px");
   setImportantStyle(cover, "background", "#000000");
-  setImportantStyle(cover, "box-shadow", "none");
+  setAnimatableShadow(cover, "none");
   setImportantStyle(cover, "transition", "none");
   setImportantStyle(cover, "opacity", "1");
   setImportantStyle(cover, "visibility", "visible");
@@ -369,7 +374,21 @@ function parsePixelValue(value) {
 }
 
 function readNormalGameCardBox(element) {
-  const viewport = readViewportBox();
+  const visualViewport = window.visualViewport;
+  const viewport = {
+    top: visualViewport?.offsetTop || 0,
+    left: visualViewport?.offsetLeft || 0,
+    width:
+      document.documentElement.clientWidth ||
+      window.innerWidth ||
+      visualViewport?.width ||
+      0,
+    height:
+      document.documentElement.clientHeight ||
+      window.innerHeight ||
+      visualViewport?.height ||
+      0,
+  };
   const styles = window.getComputedStyle(element);
   const pagePadding =
     parseFloat(
@@ -395,13 +414,85 @@ function readNormalGameCardBox(element) {
   };
 }
 
+function composeImmersiveTargetBox(element, measuredBox = null) {
+  const normalBox = readNormalGameCardBox(element);
+
+  if (!measuredBox) return normalBox;
+
+  const useMeasuredHeight = measuredBox.height > normalBox.height + 8;
+
+  return {
+    ...normalBox,
+    top: useMeasuredHeight ? measuredBox.top : normalBox.top,
+    height: useMeasuredHeight ? measuredBox.height : normalBox.height,
+    borderRadius: measuredBox.borderRadius || normalBox.borderRadius,
+    boxShadow: measuredBox.boxShadow || normalBox.boxShadow,
+  };
+}
+
+function boxesAreClose(firstBox, secondBox, tolerance = 0.5) {
+  return (
+    Math.abs(firstBox.top - secondBox.top) <= tolerance &&
+    Math.abs(firstBox.left - secondBox.left) <= tolerance &&
+    Math.abs(firstBox.width - secondBox.width) <= tolerance &&
+    Math.abs(firstBox.height - secondBox.height) <= tolerance
+  );
+}
+
+function isFullscreenSizedBox(box) {
+  const viewport = readViewportBox();
+
+  return (
+    box.width >= viewport.width - 2 ||
+    box.height >= viewport.height - 2
+  );
+}
+
+async function readSettledElementBox(element) {
+  let previousBox = null;
+  let stableFrameCount = 0;
+  let latestBox = readElementBox(element);
+
+  for (let frameIndex = 0; frameIndex < 18; frameIndex += 1) {
+    await nextFrame();
+    latestBox = readElementBox(element);
+
+    if (
+      previousBox &&
+      boxesAreClose(previousBox, latestBox) &&
+      !isFullscreenSizedBox(latestBox)
+    ) {
+      stableFrameCount += 1;
+
+      if (stableFrameCount >= 2) {
+        return latestBox;
+      }
+    } else {
+      stableFrameCount = 0;
+    }
+
+    previousBox = latestBox;
+  }
+
+  return latestBox;
+}
+
 function setCoverBox(cover, box) {
   setImportantStyle(cover, "top", `${box.top}px`);
   setImportantStyle(cover, "left", `${box.left}px`);
   setImportantStyle(cover, "width", `${box.width}px`);
   setImportantStyle(cover, "height", `${box.height}px`);
   setImportantStyle(cover, "border-radius", box.borderRadius || "0px");
-  setImportantStyle(cover, "box-shadow", box.boxShadow || "none");
+  setAnimatableShadow(cover, box.boxShadow || "none");
+}
+
+function animateCoverShadow(cover, targetShadow, vars) {
+  return gsap.to(cover, {
+    boxShadow: targetShadow || "none",
+    duration: vars.duration,
+    ease: vars.ease,
+    overwrite: "auto",
+  });
 }
 
 function animateCoverToBox(cover, targetBox, vars) {
@@ -414,6 +505,7 @@ function animateCoverToBox(cover, targetBox, vars) {
     borderRadius: parsePixelValue(currentBox.borderRadius),
   };
   const targetRadius = parsePixelValue(targetBox.borderRadius);
+  let shadowTween = null;
 
   return new Promise((resolve) => {
     let settled = false;
@@ -421,9 +513,12 @@ function animateCoverToBox(cover, targetBox, vars) {
       if (settled) return;
 
       settled = true;
+      shadowTween?.kill();
       setCoverBox(cover, targetBox);
       resolve();
     };
+
+    shadowTween = animateCoverShadow(cover, targetBox.boxShadow, vars);
 
     gsap.to(state, {
       top: targetBox.top,
@@ -440,6 +535,70 @@ function animateCoverToBox(cover, targetBox, vars) {
         setImportantStyle(cover, "width", `${state.width}px`);
         setImportantStyle(cover, "height", `${state.height}px`);
         setImportantStyle(cover, "border-radius", `${state.borderRadius}px`);
+      },
+      onComplete: finish,
+      onInterrupt: finish,
+    });
+  });
+}
+
+function animateCoverTransformToBox(cover, initialTargetBox, vars) {
+  const currentBox = getCoverBox(cover);
+  const liveTargetCard = findTransitionCard();
+  const liveTargetBox = liveTargetCard ? readElementBox(liveTargetCard) : null;
+  const targetBox =
+    liveTargetBox && !isFullscreenSizedBox(liveTargetBox)
+      ? liveTargetBox
+      : initialTargetBox;
+  const scaleX = targetBox.width / Math.max(currentBox.width, 1);
+  const scaleY = targetBox.height / Math.max(currentBox.height, 1);
+  const x = targetBox.left - currentBox.left;
+  const y = targetBox.top - currentBox.top;
+  const state = {
+    x: 0,
+    y: 0,
+    scaleX: 1,
+    scaleY: 1,
+    borderRadius: parsePixelValue(currentBox.borderRadius),
+  };
+  const targetRadius = parsePixelValue(targetBox.borderRadius);
+  let shadowTween = null;
+
+  setImportantStyle(cover, "transform-origin", "top left");
+  setImportantStyle(cover, "backface-visibility", "hidden");
+  cover.style.removeProperty("transform");
+  cover.style.transform = "translate3d(0px, 0px, 0px) scale(1, 1)";
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+
+      settled = true;
+      shadowTween?.kill();
+      resolve();
+    };
+
+    shadowTween = animateCoverShadow(cover, targetBox.boxShadow, vars);
+
+    gsap.to(state, {
+      x,
+      y,
+      scaleX,
+      scaleY,
+      borderRadius: targetRadius,
+      duration: vars.duration,
+      ease: vars.ease,
+      overwrite: true,
+      onUpdate: () => {
+        cover.style.transform = `translate3d(${state.x}px, ${state.y}px, 0px) scale(${state.scaleX}, ${state.scaleY})`;
+        setImportantStyle(
+          cover,
+          "border-radius",
+          `${state.borderRadius / Math.max(state.scaleX, 0.001)}px / ${
+            state.borderRadius / Math.max(state.scaleY, 0.001)
+          }px`,
+        );
       },
       onComplete: finish,
       onInterrupt: finish,
@@ -525,16 +684,22 @@ async function playFullscreenModeTransition(nextEnabled) {
 
       const viewport = readViewportBox();
 
+      const enterShadowTween = animateCoverShadow(cover, "none", {
+        duration: RESIZE_DURATION,
+        ease: "expo.inOut",
+      });
+
       await animateTo(cover, {
         top: viewport.top,
         left: viewport.left,
         width: viewport.width,
         height: viewport.height,
         borderRadius: 0,
-        boxShadow: "none",
         duration: RESIZE_DURATION,
         ease: "expo.inOut",
       });
+      enterShadowTween.kill();
+      setAnimatableShadow(cover, "none");
 
       applyAndNotifyFullscreenMode(nextEnabled);
       await waitForLayoutFrames();
@@ -590,19 +755,29 @@ async function playFullscreenModeTransition(nextEnabled) {
 
       await waitForLayoutFrames();
 
-      const targetBox =
-        isImmersiveLayout && (targetCard || card)
-          ? readNormalGameCardBox(targetCard || card)
-          : targetCard
-            ? readElementBox(targetCard)
-            : readViewportBox();
+      const measuredTargetBox =
+        isImmersiveLayout && targetCard
+          ? await readSettledElementBox(targetCard)
+          : null;
+      const targetBox = isImmersiveLayout
+        ? composeImmersiveTargetBox(targetCard || card, measuredTargetBox)
+        : targetCard
+          ? readElementBox(targetCard)
+          : readViewportBox();
 
       setCoverBox(cover, coverStartBox);
 
-      await animateCoverToBox(cover, targetBox, {
-        duration: SHRINK_DURATION,
-        ease: "expo.inOut",
-      });
+      if (isImmersiveLayout) {
+        await animateCoverTransformToBox(cover, targetBox, {
+          duration: SHRINK_DURATION,
+          ease: "expo.inOut",
+        });
+      } else {
+        await animateCoverToBox(cover, targetBox, {
+          duration: SHRINK_DURATION,
+          ease: "expo.inOut",
+        });
+      }
 
       if (targetCard) {
         gsap.set(targetCard, {
