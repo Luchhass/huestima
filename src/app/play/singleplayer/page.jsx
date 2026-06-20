@@ -5,6 +5,7 @@ import {
   DIFFICULTY_OPTIONS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
+import { normalizeRoundCount } from "@/lib/roundCount";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata("singleplayer");
@@ -30,11 +31,13 @@ export default async function SingleplayerPage({ searchParams }) {
     : DEFAULT_GAME_MODE_ID;
   const gameModeOption = GAME_MODE_OPTIONS.find((option) => option.id === gameMode);
   const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
+  const roundCount = normalizeRoundCount(params?.roundCount ?? params?.levels);
 
   return (
     <SingleplayerGame
       initialDifficulty={difficulty}
       initialGameMode={gameMode}
+      initialRoundCount={roundCount}
     />
   );
 }

@@ -15,9 +15,11 @@ export default function ColorSlider({
   trackClassName = "",
   handleClassName = "",
   showLabel = true,
+  orientation = "vertical",
 }) {
   const trackRef = useRef(null);
   const lastSoundStepRef = useRef(null);
+  const isHorizontal = orientation === "horizontal";
   const playChangeSound = useCallback(
     (nextValue) => {
       const range = max - min;
@@ -40,12 +42,14 @@ export default function ColorSlider({
       if (!track) return;
 
       const rect = track.getBoundingClientRect();
-      const percent = clamp((rect.bottom - event.clientY) / rect.height, 0, 1);
+      const percent = isHorizontal
+        ? clamp((event.clientX - rect.left) / rect.width, 0, 1)
+        : clamp((rect.bottom - event.clientY) / rect.height, 0, 1);
       const nextValue = min + percent * (max - min);
       playChangeSound(nextValue);
       onChange(nextValue);
     },
-    [max, min, onChange, playChangeSound],
+    [isHorizontal, max, min, onChange, playChangeSound],
   );
 
   const handlePointerDown = (event) => {
@@ -76,12 +80,19 @@ export default function ColorSlider({
   };
 
   const percentage = ((value - min) / (max - min)) * 100;
+  const orientedGradient = isHorizontal
+    ? String(gradient).replace("to top", "to right")
+    : gradient;
+  const handlePositionStyle = isHorizontal
+    ? { left: `${percentage}%` }
+    : { bottom: `${percentage}%` };
 
   return (
-    <div className="flex h-full flex-col items-center gap-3">
+    <div className={isHorizontal ? "flex w-full flex-col gap-2" : "flex h-full w-full flex-col items-center gap-3"}>
       <div
         ref={trackRef}
         role="slider"
+        aria-orientation={isHorizontal ? "horizontal" : "vertical"}
         tabIndex={0}
         aria-label={label}
         aria-valuemin={min}
@@ -96,11 +107,15 @@ export default function ColorSlider({
         }}
         onKeyDown={handleKeyDown}
         className={`relative h-50.5 w-10 touch-none rounded-full border border-white/28 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08),0_14px_28px_rgba(0,0,0,0.18)] outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:h-57.5 sm:w-11 ${trackClassName}`}
-        style={{ background: gradient }}
+        style={{ background: orientedGradient }}
       >
         <span
-          className={`absolute left-1/2 grid size-8 -translate-x-1/2 translate-y-1/2 place-items-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${handleClassName}`}
-          style={{ bottom: `${percentage}%` }}
+          className={`absolute grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+            isHorizontal
+              ? "top-1/2 -translate-x-1/2 -translate-y-1/2"
+              : "left-1/2 -translate-x-1/2 translate-y-1/2"
+          } ${handleClassName}`}
+          style={handlePositionStyle}
           aria-hidden="true"
         >
           <span className="hidden" />

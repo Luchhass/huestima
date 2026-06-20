@@ -374,6 +374,154 @@ input {
     animation: game-action-pop-ring 0.48s cubic-bezier(0.16, 1, 0.3, 1) 0.03s both;
   }
 
+  .flag-game-card-shell {
+    --flag-widget-width: 9.375rem;
+    --flag-widget-gap: 1.25rem;
+    --flag-widget-mobile-height: calc(var(--flag-control-count, 3) * 3.125rem);
+    --flag-widget-mobile-gap: 0.9rem;
+    overflow: visible !important;
+    transform: translateY(
+      calc((var(--flag-widget-mobile-height) + var(--flag-widget-mobile-gap)) / -2)
+    );
+  }
+
+  .flag-control-widget {
+    position: absolute;
+    z-index: 25;
+    pointer-events: auto;
+    opacity: 1;
+    transform-origin: center;
+    filter: drop-shadow(0 0 0 rgb(0 0 0 / 0));
+    animation: flag-widget-reveal 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.36s both;
+    will-change: clip-path, filter, transform;
+  }
+
+  .flag-control-widget--exiting {
+    pointer-events: none;
+    animation: flag-widget-exit 0.5s cubic-bezier(0.7, 0, 0.84, 0) both;
+  }
+
+  .flag-control-widget--desktop {
+    top: 0;
+    left: calc((var(--flag-widget-width) + var(--flag-widget-gap)) * -1);
+    display: none;
+    height: 100%;
+    width: var(--flag-widget-width);
+  }
+
+  .flag-control-widget--mobile {
+    right: 0;
+    bottom: calc((var(--flag-widget-mobile-height) + var(--flag-widget-mobile-gap)) * -1);
+    left: 0;
+    display: block;
+    height: var(--flag-widget-mobile-height);
+  }
+
+  .flag-control-widget .guess-picker-track {
+    border-radius: 0 !important;
+  }
+
+  .flag-control-stack {
+    box-shadow: none !important;
+  }
+
+  .flag-control-stack--horizontal {
+    grid-template-rows: repeat(var(--flag-control-count), minmax(0, 1fr));
+  }
+
+  .flag-control-stack--horizontal > * {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .flag-control-stack--horizontal [role="slider"] {
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  .flag-slot-area {
+    outline: none;
+    transform-origin: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .flag-slot-area:focus,
+  .flag-slot-area:focus-visible,
+  .flag-slot-area:active {
+    outline: none;
+  }
+
+  .flag-slot-area--pulse {
+    animation: flag-slot-area-pulse 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes flag-slot-area-pulse {
+    0% {
+      filter: brightness(1) saturate(1);
+      opacity: 1;
+    }
+
+    38% {
+      filter: brightness(0.66) saturate(0.82);
+      opacity: 0.72;
+    }
+
+    100% {
+      filter: brightness(1) saturate(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes flag-widget-reveal {
+    from {
+      clip-path: inset(50% 0 50% 0 round 22px);
+      filter: drop-shadow(0 0 0 rgb(0 0 0 / 0));
+      transform: scale(0.985);
+    }
+
+    62% {
+      clip-path: inset(-1.5% -1.5% -1.5% -1.5% round 22px);
+      filter: drop-shadow(0 16px 32px rgb(0 0 0 / 0.18));
+      transform: scale(1.006);
+    }
+
+    to {
+      clip-path: inset(0 0 0 0 round 22px);
+      filter: drop-shadow(0 18px 36px rgb(0 0 0 / 0.2));
+      transform: scale(1);
+    }
+  }
+
+  @keyframes flag-widget-exit {
+    from {
+      clip-path: inset(0 0 0 0 round 22px);
+      filter: drop-shadow(0 18px 36px rgb(0 0 0 / 0.2));
+      transform: scale(1);
+    }
+
+    to {
+      clip-path: inset(50% 0 50% 0 round 22px);
+      filter: drop-shadow(0 0 0 rgb(0 0 0 / 0));
+      transform: scale(0.985);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .flag-game-card-shell {
+      transform: translateX(
+        calc((var(--flag-widget-width) + var(--flag-widget-gap)) / 2)
+      );
+    }
+
+    .flag-control-widget--desktop {
+      display: block;
+    }
+
+    .flag-control-widget--mobile {
+      display: none;
+    }
+  }
+
   .soft-icon-button:hover,
   .soft-icon-button:focus-visible {
     transform: scale(1.06);
@@ -431,11 +579,29 @@ input {
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.18);
   }
 
+  .level-count-picker {
+    --level-count-index: 2;
+    position: relative;
+  }
+
+  .level-count-picker__thumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc((100% - 8px) / 4);
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 0.18);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(calc(var(--level-count-index) * 100%));
+  }
+
   .game-mode-picker__panel {
-    transform: translateY(-50%);
-    transform-origin: center;
-    will-change: height;
-    contain: layout;
+    transform: translate3d(0, -50%, 0);
+    transform-origin: center center;
+    will-change: transform, opacity;
+    contain: layout paint;
   }
 
   .home-view-actions:has(.game-mode-picker[data-open="true"]) {
@@ -452,6 +618,11 @@ input {
     isolation: isolate;
     overflow: visible;
     transform: translateZ(0);
+  }
+
+  .home-card:has(.game-mode-picker[data-open="true"]),
+  .lobby-card:has(.game-mode-picker[data-open="true"]) {
+    overflow: visible;
   }
 
   .home-view-actions:has(.game-mode-picker[data-open="true"]) ~ .home-view-actions,

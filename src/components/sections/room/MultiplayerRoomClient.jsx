@@ -188,6 +188,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
       game_type: "multiplayer",
       difficulty: room.difficulty,
       game_mode: room.gameMode,
+      rounds: room.roundCount,
       player_count: room.players?.length || 0,
     });
 
@@ -238,6 +239,24 @@ export default function MultiplayerRoomClient({ roomCode }) {
     const response = await updateSettings({
       playerId: player.playerId,
       difficulty,
+    });
+
+    setIsUpdatingSettings(false);
+
+    if (!response.ok) {
+      setError(response.error || t("room.couldNotUpdateSettings"));
+    }
+  };
+
+  const handleUpdateRoundCount = async (roundCount) => {
+    if (!player) return;
+
+    setIsUpdatingSettings(true);
+    setError("");
+
+    const response = await updateSettings({
+      playerId: player.playerId,
+      roundCount,
     });
 
     setIsUpdatingSettings(false);
@@ -418,6 +437,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
           onKickPlayer={handleKickPlayer}
           onGameModeChange={handleUpdateGameMode}
           onDifficultyChange={handleUpdateDifficulty}
+          onRoundCountChange={handleUpdateRoundCount}
           onBackHome={handleBackHome}
           isStarting={isStarting}
           canStartGame={canStartGame}

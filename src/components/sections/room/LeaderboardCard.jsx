@@ -5,8 +5,9 @@ import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
-import { colorToneHex, gradientBackground, readableTone } from "@/lib/color";
+import { colorToneHex, gradientBackground, isFlagColor, readableTone } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
+import FlagOverlay from "@/components/ui/game/FlagOverlay";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
 const EXPANDED_REVEAL_DELAY = 320;
@@ -26,6 +27,10 @@ function tileGradient(result) {
 function colorTitleLabel(color) {
   if (color?.left && color?.right) {
     return `${color.left.hex} / ${color.right.hex}`;
+  }
+
+  if (isFlagColor(color)) {
+    return color.hex;
   }
 
   return color?.hex || "";
@@ -122,6 +127,7 @@ export default function LeaderboardCard({
           const isLocal = row.playerId === currentPlayerId;
           const scoreColor = getScoreColor(row.totalScore, maxTotalScore);
           const roundResults = row.roundResults || [];
+          const hasFlagResults = roundResults.some((result) => isFlagColor(result.target));
 
           return (
             <article key={row.playerId} data-screen-reveal className="shrink-0">
@@ -155,11 +161,17 @@ export default function LeaderboardCard({
                 </div>
               </div>
 
-              <div className="grid h-18 grid-cols-5 overflow-hidden sm:h-19.5">
-                {roundResults.map((result) => (
+              <div
+                className={`grid grid-cols-5 overflow-hidden ${
+                  hasFlagResults ? "" : "h-18 sm:h-19.5"
+                }`}
+              >
+                {roundResults.map((result, resultIndex) => (
                   <div
-                    key={`${row.playerId}-${result.round}`}
-                    className="relative overflow-hidden"
+                    key={`${row.playerId}-${result.round}-${resultIndex}-${result.target?.flagId || result.target?.hex || result.target?.toneHex || "round"}`}
+                    className={`relative overflow-hidden ${
+                      isFlagColor(result.target) ? "aspect-[3/2]" : ""
+                    }`}
                     style={{ background: gradientBackground(result.target) }}
                     title={t("room.roundTitle", {
                       round: result.round,
@@ -174,6 +186,10 @@ export default function LeaderboardCard({
                         clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
                       }}
                     />
+
+                    {isFlagColor(result.target) && (
+                      <FlagOverlay color={result.target} className="z-[1]" />
+                    )}
 
                     <span
                       className={`absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)] truncate text-[clamp(0.92rem,2.8vw,1.05rem)] font-semibold leading-none tabular-nums sm:text-[1.08rem] ${tileScoreTone(

@@ -3,11 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Clipboard, Pencil, UserMinus, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
-import { DIFFICULTY_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
+import LevelCountPicker from "@/components/ui/LevelCountPicker";
+import {
+  DEFAULT_ROUND_COUNT,
+  DIFFICULTY_IDS,
+  GAME_MODE_IDS,
+  GAME_MODE_OPTIONS,
+} from "@/lib/constants";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -37,6 +44,7 @@ export default function LobbyCard({
   onKickPlayer,
   onGameModeChange,
   onDifficultyChange,
+  onRoundCountChange,
   onBackHome,
   isStarting,
   canStartGame = true,
@@ -77,6 +85,7 @@ export default function LobbyCard({
       : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
+  useFlagFullscreenLock(room?.gameMode === GAME_MODE_IDS.FLAG);
   useScreenReveal(scopeRef, [room?.code], {
     delay: EXPANDED_REVEAL_DELAY,
   });
@@ -179,6 +188,12 @@ export default function LobbyCard({
     await onDifficultyChange?.(difficulty);
   };
 
+  const handleRoundCountChange = async (roundCount) => {
+    setLastAction("settings");
+    setHiddenActionError("");
+    await onRoundCountChange?.(roundCount);
+  };
+
   return (
     <div className="lobby-card relative isolate flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       {difficultyBurst && (
@@ -225,6 +240,7 @@ export default function LobbyCard({
             count: players.length,
             gameMode: gameModeLabel,
             difficulty: difficultyLabel,
+            roundCount: room?.roundCount || DEFAULT_ROUND_COUNT,
           })}
         </p>
       </div>
@@ -322,6 +338,14 @@ export default function LobbyCard({
                 options={MULTIPLAYER_GAME_MODE_OPTIONS}
                 disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
                 className="w-full"
+              />
+            </div>
+
+            <div className="order-3 col-span-2 flex min-w-0 justify-end">
+              <LevelCountPicker
+                value={room?.roundCount}
+                onChange={handleRoundCountChange}
+                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
               />
             </div>
           </div>

@@ -12,6 +12,7 @@ export const GAME_MODES = {
   SEQUENCE: "sequence",
   TIMED: "timed",
   GRADIENT: "gradient",
+  FLAG: "flag",
   DUEL: "duel",
 };
 
@@ -21,7 +22,9 @@ export const DIFFICULTIES = {
   HARD: "hard",
 };
 
-export const ROUND_COUNT = 5;
+export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10];
+export const DEFAULT_ROUND_COUNT = 5;
+export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;
 export const PLAYER_NAME_MIN_LENGTH = 2;
 export const PLAYER_NAME_MAX_LENGTH = 18;
@@ -54,6 +57,10 @@ export const GAME_MODE_CONFIG = {
   [GAME_MODES.GRADIENT]: {
     revealDurationMs: 5000,
     lockedDifficulty: DIFFICULTIES.EASY,
+  },
+  [GAME_MODES.FLAG]: {
+    revealDurationMs: 5000,
+    lockedDifficulty: DIFFICULTIES.HARD,
   },
   [GAME_MODES.DUEL]: {
     revealDurationMs: 5000,

@@ -8,6 +8,7 @@ import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
+import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
@@ -15,7 +16,9 @@ import {
   APP_NAME,
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
+  DEFAULT_ROUND_COUNT,
   DIFFICULTY_IDS,
+  GAME_MODE_IDS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
 
@@ -55,6 +58,7 @@ export default function HomeCard({ initialView = "home" }) {
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
   const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
+  const [roundCount, setRoundCount] = useState(DEFAULT_ROUND_COUNT);
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
@@ -70,6 +74,7 @@ export default function HomeCard({ initialView = "home" }) {
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
+  useFlagFullscreenLock(isSingleplayer && gameMode === GAME_MODE_IDS.FLAG);
   useScreenReveal(contentRef, [view, isAdminProtectorVisible], {
     delay: isAdminProtectorVisible ? 90 : 0,
   });
@@ -247,9 +252,11 @@ export default function HomeCard({ initialView = "home" }) {
             <SingleplayerCard
               difficulty={difficulty}
               gameMode={gameMode}
+              roundCount={roundCount}
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
+              onRoundCountChange={setRoundCount}
             />
           ) : (
             <MultiplayerCard

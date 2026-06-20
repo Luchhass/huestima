@@ -11,7 +11,7 @@ export const SITE_IMAGE_HEIGHT = 909;
 export const SITE_LAST_MODIFIED = "2026-06-03T00:00:00.000Z";
 
 export const SITE_DESCRIPTION =
-  "Huestima is a free online hue estimate and color guessing game. Memorize a shade, rebuild it with hue, saturation, and brightness controls, then score your eye across five rounds.";
+  "Huestima is a free online hue estimate and color guessing game. Memorize a shade, rebuild it with hue, saturation, and brightness controls, then score your eye across custom levels.";
 
 export const SEO_KEYWORDS = [
   "Huestima",

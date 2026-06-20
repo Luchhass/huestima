@@ -4,10 +4,17 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ArrowRight, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
-import { colorToneHex, gradientBackground, isGradientColor, readableTone } from "@/lib/color";
+import {
+  colorToneHex,
+  gradientBackground,
+  isFlagColor,
+  isGradientColor,
+  readableTone,
+} from "@/lib/color";
 import { getResultLineKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playScoreResolve, startScoreCountSound } from "@/lib/sound";
+import FlagOverlay from "./FlagOverlay";
 
 const SCORE_COUNT_DURATION = 2.55;
 
@@ -18,6 +25,10 @@ function swatchToneClasses(hex) {
 function formatHsb(color) {
   if (isGradientColor(color)) {
     return `H${Math.round(color.left.h)} -> H${Math.round(color.right.h)}`;
+  }
+
+  if (isFlagColor(color)) {
+    return `H${Math.round(color.h)} S${Math.round(color.s)} B${Math.round(color.v)}`;
   }
 
   const { h, s, v } = color;
@@ -491,6 +502,10 @@ export default function ResultPhase({
         className={`relative p-6 sm:p-8 ${guessTone}`}
         style={{ background: gradientBackground(result.guess) }}
       >
+        {isFlagColor(result.guess) && (
+          <FlagOverlay color={result.guess} slice="top" />
+        )}
+
         <div className="overflow-hidden">
           <p
             ref={roundRef}
@@ -552,6 +567,10 @@ export default function ResultPhase({
         className={`relative p-6 sm:p-8 ${targetTone}`}
         style={{ background: gradientBackground(result.target) }}
       >
+        {isFlagColor(result.target) && (
+          <FlagOverlay color={result.target} slice="bottom" />
+        )}
+
         <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
           <div className="overflow-hidden">
             <p

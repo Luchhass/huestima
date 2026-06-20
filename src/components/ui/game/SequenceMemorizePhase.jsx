@@ -18,6 +18,7 @@ function clampSequenceProgress(value) {
 export default function SequenceMemorizePhase({
   colors,
   durationMs = SEQUENCE_MEMORIZE_DURATION_MS,
+  roundCount = ROUND_COUNT,
   onColorChange,
   onComplete,
   progressItems = [],
@@ -31,8 +32,8 @@ export default function SequenceMemorizePhase({
   const onCompleteRef = useRef(onComplete);
 
   const visibleColors = useMemo(
-    () => colors.filter(Boolean).slice(0, ROUND_COUNT),
-    [colors],
+    () => colors.filter(Boolean).slice(0, roundCount),
+    [colors, roundCount],
   );
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function SequenceMemorizePhase({
     <div data-fullscreen-surface-transition className="relative h-full p-6 sm:p-8">
       <div className="absolute left-6 top-6 sm:left-8 sm:top-8">
         <p className="text-base font-semibold text-current/88">
-          {activeIndex + 1}/{visibleColors.length || ROUND_COUNT}
+          {activeIndex + 1}/{visibleColors.length || roundCount}
         </p>
       </div>
 

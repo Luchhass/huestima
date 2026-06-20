@@ -1,8 +1,10 @@
 import {
   DIFFICULTIES,
+  DEFAULT_ROUND_COUNT,
   GAME_MODES,
   PLAYER_NAME_MAX_LENGTH,
   PLAYER_NAME_MIN_LENGTH,
+  ROUND_COUNT_OPTIONS,
   ROOM_NAME_MAX_LENGTH,
   ROOM_NAME_MIN_LENGTH,
   ROOM_PASSWORD_MAX_LENGTH,
@@ -64,6 +66,16 @@ export function validateGameMode(gameMode) {
   }
 
   return ok({ gameMode: cleanMode });
+}
+
+export function validateRoundCount(roundCount) {
+  const value = Number(roundCount ?? DEFAULT_ROUND_COUNT);
+
+  if (!Number.isInteger(value) || !ROUND_COUNT_OPTIONS.includes(value)) {
+    return fail("Invalid level count.");
+  }
+
+  return ok({ roundCount: value });
 }
 
 export function validateRoomName(roomName, fallback = "Huestima lobby") {

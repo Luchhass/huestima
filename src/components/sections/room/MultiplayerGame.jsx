@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
+import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
@@ -15,6 +16,8 @@ import GuessPhase from "@/components/ui/game/GuessPhase";
 import ResultPhase from "@/components/ui/game/ResultPhase";
 import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
+
+const FLAG_WIDGET_EXIT_DELAY_MS = 680;
 
 function buildProgressItems(room, currentPlayerId) {
   const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
@@ -87,6 +90,9 @@ export default function MultiplayerGame({
     incomingLeaderboard: leaderboard,
   });
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
+  const currentRoundLabel = game.isDuelMode
+    ? `R${game.roundIndex + 1}/${game.roundCount}`
+    : `${game.roundIndex + 1}/${game.roundCount}`;
   const progressItems = useMemo(
     () => buildProgressItems(room, playerId),
     [playerId, room],
@@ -97,8 +103,41 @@ export default function MultiplayerGame({
     phase === GAME_PHASES.GUESS ||
     phase === GAME_PHASES.RESULT ||
     phase === "waiting";
+  const isFlagMode = game.gameMode.id === GAME_MODE_IDS.FLAG;
+  const [renderedPhase, setRenderedPhase] = useState(game.phase);
+  const [isFlagWidgetExiting, setIsFlagWidgetExiting] = useState(false);
+  const isRenderedFlagGuessPhase =
+    isFlagMode && renderedPhase === GAME_PHASES.GUESS;
 
   useGameChrome(isImmersivePhase);
+  useFlagFullscreenLock(isFlagMode);
+
+  useEffect(() => {
+    if (game.phase === renderedPhase) return undefined;
+
+    if (renderedPhase === GAME_PHASES.GUESS && isFlagMode) {
+      const exitStartId = window.setTimeout(() => {
+        setIsFlagWidgetExiting(true);
+      }, 0);
+
+      const timeoutId = window.setTimeout(() => {
+        setRenderedPhase(game.phase);
+        setIsFlagWidgetExiting(false);
+      }, FLAG_WIDGET_EXIT_DELAY_MS);
+
+      return () => {
+        window.clearTimeout(exitStartId);
+        window.clearTimeout(timeoutId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRenderedPhase(game.phase);
+      setIsFlagWidgetExiting(false);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [game.phase, isFlagMode, renderedPhase]);
 
   useEffect(() => {
     if (startTrackedRef.current) return;
@@ -108,8 +147,9 @@ export default function MultiplayerGame({
       gameType: "multiplayer",
       difficulty: game.difficulty.id,
       gameMode: game.gameMode.id,
+      rounds: game.roundCount,
     });
-  }, [game.difficulty.id, game.gameMode.id]);
+  }, [game.difficulty.id, game.gameMode.id, game.roundCount]);
 
   useEffect(() => {
     if (phase === "waiting" && gameLeaderboard) {
@@ -128,7 +168,7 @@ export default function MultiplayerGame({
 
     const rows = game.leaderboard.leaderboard || [];
     const currentRow = rows.find((row) => row.playerId === playerId);
-    const totalRounds = game.leaderboard.totalRounds || ROUND_COUNT;
+    const totalRounds = game.leaderboard.totalRounds || game.roundCount || ROUND_COUNT;
     const totalScore = currentRow?.totalScore || 0;
 
     completionTrackedRef.current = true;
@@ -144,36 +184,72 @@ export default function MultiplayerGame({
     game.difficulty.id,
     game.gameMode.id,
     game.leaderboard,
+    game.roundCount,
     phase,
     playerId,
   ]);
 
   const shellColor =
-    game.phase === GAME_PHASES.INTRO
+    renderedPhase === GAME_PHASES.INTRO
       ? "#000000"
-      : game.phase === GAME_PHASES.MEMORIZE
+      : renderedPhase === GAME_PHASES.MEMORIZE
         ? game.targetColor
-        : game.phase === GAME_PHASES.GUESS
+        : renderedPhase === GAME_PHASES.GUESS
           ? game.guessColor
           : null;
 
   return (
-    <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
-      <GameCardShell color={shellColor} isExpanded={game.phase === "leaderboard"}>
+    <main
+      className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8"
+      style={
+        isRenderedFlagGuessPhase
+          ? { "--flag-control-count": game.difficulty?.controls?.length || 3 }
+          : undefined
+      }
+    >
+      <GameCardShell
+        color={shellColor}
+        className={`${isRenderedFlagGuessPhase ? "flag-game-card-shell" : ""} ${
+          isFlagWidgetExiting ? "flag-game-card-shell--exiting" : ""
+        }`}
+        flagOverlayProps={
+          isRenderedFlagGuessPhase
+            ? {
+                isInteractive: true,
+                activeSlotId: game.guessColor.activeSlotId,
+                onSlotSelect: (slotId) => {
+                  const selectedSlot = game.guessColor.slots?.find(
+                    (slotColor) => slotColor.id === slotId,
+                  );
+
+                  game.updateGuess({
+                    ...game.guessColor,
+                    activeSlotId: slotId,
+                    h: selectedSlot?.h ?? game.guessColor.h,
+                    s: selectedSlot?.s ?? game.guessColor.s,
+                    v: selectedSlot?.v ?? game.guessColor.v,
+                  });
+                },
+              }
+            : undefined
+        }
+        isExpanded={renderedPhase === "leaderboard"}
+      >
         <div className="h-full min-h-[inherit]">
-          {game.phase === GAME_PHASES.INTRO && (
+          {renderedPhase === GAME_PHASES.INTRO && (
             <IntroPhase
               key={`intro-${game.roundIndex}`}
               onComplete={game.finishIntro}
             />
           )}
 
-          {game.phase === GAME_PHASES.MEMORIZE && game.targetColor && (
+          {renderedPhase === GAME_PHASES.MEMORIZE && game.targetColor && (
             game.isSequenceMode ? (
               <SequenceMemorizePhase
                 key="sequence-memorize"
                 colors={game.targetColors}
                 durationMs={game.revealDurationMs || undefined}
+                roundCount={game.roundCount}
                 onColorChange={game.setTargetColor}
                 onComplete={game.finishMemorize}
                 progressItems={progressItems}
@@ -182,9 +258,7 @@ export default function MultiplayerGame({
               <MemorizePhase
                 key={`memorize-${game.roundIndex}`}
                 round={game.roundIndex + 1}
-                roundLabel={
-                  game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
-                }
+                roundLabel={currentRoundLabel}
                 durationMs={game.revealDurationMs || undefined}
                 onComplete={game.finishMemorize}
                 progressItems={progressItems}
@@ -192,13 +266,11 @@ export default function MultiplayerGame({
             )
           )}
 
-          {game.phase === GAME_PHASES.GUESS && (
+          {renderedPhase === GAME_PHASES.GUESS && (
             <GuessPhase
               key={`guess-${game.roundIndex}`}
               round={game.roundIndex + 1}
-              roundLabel={
-                game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
-              }
+              roundLabel={currentRoundLabel}
               difficulty={game.difficulty}
               targetColor={game.targetColor}
               guessColor={game.guessColor}
@@ -206,26 +278,25 @@ export default function MultiplayerGame({
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
               progressItems={progressItems}
+              isFlagWidgetExiting={isFlagWidgetExiting}
             />
           )}
 
-          {game.phase === GAME_PHASES.RESULT && (
+          {renderedPhase === GAME_PHASES.RESULT && (
             <ResultPhase
               key={`result-${game.roundIndex}`}
               result={game.latestResult}
-              roundLabel={
-                game.isDuelMode ? `R${game.roundIndex + 1}` : undefined
-              }
+              roundLabel={currentRoundLabel}
               hasNextRound={
                 game.isDuelMode
                   ? !game.leaderboard && !game.isCurrentPlayerEliminated
-                  : game.roundIndex + 1 < ROUND_COUNT
+                  : game.roundIndex + 1 < game.roundCount
               }
               onContinue={game.continueFromResult}
             />
           )}
 
-          {game.phase === "waiting" && (
+          {renderedPhase === "waiting" && (
             <WaitingCard
               message={
                 game.error ||
@@ -236,7 +307,7 @@ export default function MultiplayerGame({
             />
           )}
 
-          {game.phase === "leaderboard" && (
+          {renderedPhase === "leaderboard" && (
             <LeaderboardCard
               leaderboard={game.leaderboard}
               currentPlayerId={playerId}
@@ -247,7 +318,7 @@ export default function MultiplayerGame({
             />
           )}
 
-          {game.error && game.phase !== "waiting" && (
+          {game.error && renderedPhase !== "waiting" && (
             <p className="absolute bottom-4 left-6 right-6 z-30 rounded-full bg-black/70 px-4 py-2 text-center text-xs font-semibold text-red-200">
               {game.error}
             </p>

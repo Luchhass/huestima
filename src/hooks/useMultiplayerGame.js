@@ -12,8 +12,11 @@ import {
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
 import {
+  createDefaultFlagGuess,
   createDefaultGradientGuess,
+  isFlagColor,
   isGradientColor,
+  withFlagHex,
   withGradientHex,
   withHex,
 } from "@/lib/color";
@@ -23,9 +26,13 @@ function responseData(response) {
   return response?.data || response || {};
 }
 
-function createDefaultGuess(difficulty, gameMode) {
+function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
     return createDefaultGradientGuess();
+  }
+
+  if (gameMode?.id === GAME_MODE_IDS.FLAG) {
+    return createDefaultFlagGuess(targetColor?.flagId);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -34,6 +41,10 @@ function createDefaultGuess(difficulty, gameMode) {
 function constrainGuessColor(guessColor, difficulty, gameMode) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
+  }
+
+  if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
+    return withFlagHex(guessColor);
   }
 
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
@@ -72,6 +83,13 @@ export function useMultiplayerGame({
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
     [difficulty, lockedDifficultyId],
   );
+  const roundCount = useMemo(() => {
+    const value = Number(
+      gamePayload?.roundCount ?? room?.game?.roundCount ?? room?.roundCount ?? ROUND_COUNT,
+    );
+
+    return Number.isFinite(value) && value > 0 ? value : ROUND_COUNT;
+  }, [gamePayload?.roundCount, room?.game?.roundCount, room?.roundCount]);
   const serverTargetColors = gamePayload?.targetColors || [];
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
   const [roundIndex, setRoundIndex] = useState(() => gamePayload?.currentRoundIndex || 0);
@@ -108,12 +126,17 @@ export function useMultiplayerGame({
       setError("");
       setTargetColors(colors);
       setRevealDurationMs(gamePayload?.revealDurationMs || gameMode.revealDurationMs);
-      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
+
+      const nextTargetColor = isSequenceMode
+        ? colors[0]
+        : colors[nextRoundIndex];
+
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, nextTargetColor));
 
       if (isSequenceMode) {
-        setTargetColor(colors[0]);
+        setTargetColor(nextTargetColor);
       } else {
-        setTargetColor(colors[nextRoundIndex]);
+        setTargetColor(nextTargetColor);
       }
 
       setPhase(GAME_PHASES.MEMORIZE);
@@ -202,7 +225,7 @@ export function useMultiplayerGame({
       return;
     }
 
-    if (roundIndex + 1 >= ROUND_COUNT) {
+    if (roundIndex + 1 >= roundCount) {
       setPhase("waiting");
       return;
     }
@@ -225,6 +248,7 @@ export function useMultiplayerGame({
     gameMode,
     isDuelMode,
     isSequenceMode,
+    roundCount,
     roundIndex,
     targetColors,
   ]);
@@ -266,6 +290,7 @@ export function useMultiplayerGame({
     isGradientMode,
     isDuelMode,
     isCurrentPlayerEliminated,
+    roundCount,
     phase,
     roundIndex,
     targetColor,

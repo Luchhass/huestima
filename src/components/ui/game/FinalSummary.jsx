@@ -8,10 +8,11 @@ import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
-import { colorToneHex, gradientBackground, readableTone } from "@/lib/color";
+import { colorToneHex, gradientBackground, isFlagColor, readableTone } from "@/lib/color";
 import { getFinalAssessmentKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playFinalScore } from "@/lib/sound";
+import FlagOverlay from "./FlagOverlay";
 
 const EXPANDED_REVEAL_DELAY = 320;
 
@@ -22,6 +23,10 @@ function tileGradient(result) {
 function colorTitleLabel(color) {
   if (color?.left && color?.right) {
     return `${color.left.hex} / ${color.right.hex}`;
+  }
+
+  if (isFlagColor(color)) {
+    return color.hex;
   }
 
   return color?.hex || "";
@@ -66,6 +71,7 @@ export default function FinalSummary({
   const assessment = t(`game.assessment.${getFinalAssessmentKey(averageScore)}`);
   const assessmentWords = assessment.split(" ");
   const hasWrappedTiles = results.length > ROUND_COUNT;
+  const hasFlagTiles = results.some((result) => isFlagColor(result.target));
 
   useLayoutEffect(() => {
     const reduceMotion = window.matchMedia(
@@ -388,15 +394,17 @@ export default function FinalSummary({
         <div
           className={`grid w-full grid-cols-5 overflow-hidden ${
             hasWrappedTiles
-              ? "scrollbar-hidden max-h-[13.5rem] overflow-y-auto"
+              ? `scrollbar-hidden overflow-y-auto ${hasFlagTiles ? "max-h-[9rem]" : "max-h-[13.5rem]"}`
               : ""
           }`}
         >
-          {results.map((result) => (
+          {results.map((result, resultIndex) => (
             <div
-              key={result.round}
+              key={`${result.round}-${resultIndex}-${result.target?.flagId || result.target?.hex || result.target?.toneHex || "round"}`}
               data-summary-tile
-              className="relative aspect-square min-w-0 overflow-hidden"
+              className={`relative min-w-0 overflow-hidden ${
+                isFlagColor(result.target) ? "aspect-[3/2]" : "aspect-square"
+              }`}
               style={{ background: gradientBackground(result.target) }}
               title={t("room.roundTitle", {
                 round: result.round,
@@ -412,6 +420,10 @@ export default function FinalSummary({
                   clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
                 }}
               />
+
+              {isFlagColor(result.target) && (
+                <FlagOverlay color={result.target} className="z-[1]" />
+              )}
 
               <span
                 data-summary-tile-score

@@ -2,10 +2,12 @@ export const APP_NAME = "Huestima";
 
 export const HOME_PARAGRAPHS = [
   "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
-  "Recreate it from memory with hue, saturation, and brightness controls. Play five rounds of this free color guessing game to test your eye.",
+  "Recreate it from memory with hue, saturation, and brightness controls. Play one, three, five, or ten levels to test your eye.",
 ];
 
-export const ROUND_COUNT = 5;
+export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10];
+export const DEFAULT_ROUND_COUNT = 5;
+export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;
 export const MEMORIZE_DURATION_MS = 5000;
 export const FLASH_MEMORIZE_DURATION_MS = 1000;
@@ -59,6 +61,7 @@ export const GAME_MODE_IDS = {
   SEQUENCE: "sequence",
   TIMED: "timed",
   GRADIENT: "gradient",
+  FLAG: "flag",
   DUEL: "duel",
 };
 
@@ -88,7 +91,7 @@ export const GAME_MODE_OPTIONS = [
   {
     id: GAME_MODE_IDS.SEQUENCE,
     label: "Sequence",
-    description: "Five colors appear back-to-back, three seconds each.",
+    description: "Colors appear back-to-back, three seconds each.",
     revealDurationMs: SEQUENCE_MEMORIZE_DURATION_MS,
   },
   {
@@ -107,6 +110,13 @@ export const GAME_MODE_OPTIONS = [
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {
+    id: GAME_MODE_IDS.FLAG,
+    label: "Flag",
+    description: "Keep the emblem fixed and match the flag background color.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+    lockedDifficultyId: DIFFICULTY_IDS.HARD,
+  },
+  {
     id: GAME_MODE_IDS.DUEL,
     label: "Duel",
     description: "Endless PvP survival. Weak rounds eliminate only when the gap opens.",
@@ -119,17 +129,19 @@ export const GAME_MODE_OPTIONS = [
 export const GAME_MODE_CARD_COPY = {
   singleplayer: {
     [GAME_MODE_IDS.NORMAL]:
-      "Memorize each color for five seconds, then rebuild it across five rounds.",
+      "Memorize each color for five seconds, then rebuild it across your selected levels.",
     [GAME_MODE_IDS.ENDLESS]:
       "Classic five-second colors keep coming until you finish the run.",
     [GAME_MODE_IDS.FLASH]:
       "Catch each one-second flash, then trust your first read.",
     [GAME_MODE_IDS.SEQUENCE]:
-      "Study five colors in order, then recreate the sequence one by one.",
+      "Study the colors in order, then recreate the sequence one by one.",
     [GAME_MODE_IDS.TIMED]:
       "Memorize each color for three seconds, then lock your guess in three seconds.",
     [GAME_MODE_IDS.GRADIENT]:
       "Match both sides of a two-color gradient using the left and right hue bars.",
+    [GAME_MODE_IDS.FLAG]:
+      "Read the flag shape, then tune the background color behind its fixed emblem.",
     [GAME_MODE_IDS.DUEL]:
       "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
   },
@@ -141,11 +153,13 @@ export const GAME_MODE_CARD_COPY = {
     [GAME_MODE_IDS.FLASH]:
       "Everyone gets the same one-second flashes. Fast eyes win.",
     [GAME_MODE_IDS.SEQUENCE]:
-      "Everyone studies the same five-color sequence, then rebuilds it in order.",
+      "Everyone studies the same color sequence, then rebuilds it in order.",
     [GAME_MODE_IDS.TIMED]:
       "Everyone gets three seconds to memorize and three seconds to choose.",
     [GAME_MODE_IDS.GRADIENT]:
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
+    [GAME_MODE_IDS.FLAG]:
+      "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
     [GAME_MODE_IDS.DUEL]:
       "Endless PvP rounds. The last player is eliminated only when the score gap is wide enough.",
   },

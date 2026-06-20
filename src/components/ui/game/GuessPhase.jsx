@@ -6,10 +6,12 @@ import { Check, Crown } from "lucide-react";
 import AdminProtectorOverlay from "@/components/admin/AdminProtectorOverlay";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
+import SaturationSlider from "@/components/ui/color-picker/SaturationSlider";
+import ValueSlider from "@/components/ui/color-picker/ValueSlider";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
-import { isGradientColor } from "@/lib/color";
+import { isFlagColor, isGradientColor } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
 import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
@@ -24,6 +26,7 @@ export default function GuessPhase({
   onSubmit,
   guessDurationMs = null,
   progressItems = [],
+  isFlagWidgetExiting = false,
 }) {
   const { t } = useTranslation();
   const {
@@ -50,6 +53,7 @@ export default function GuessPhase({
   const [timerRunning, setTimerRunning] = useState(false);
 
   const isGradientGuess = isGradientColor(guessColor);
+  const isFlagGuess = isFlagColor(guessColor);
   const sidePickerWidth = 50;
   const pickerWidth = isGradientGuess
     ? sidePickerWidth
@@ -105,6 +109,16 @@ export default function GuessPhase({
           ...guessColor[side],
           h,
         },
+      });
+    },
+    [guessColor, onGuessChange],
+  );
+
+  const handleFlagControlChange = useCallback(
+    (partial) => {
+      onGuessChange({
+        ...guessColor,
+        ...partial,
       });
     },
     [guessColor, onGuessChange],
@@ -501,7 +515,171 @@ export default function GuessPhase({
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [controlsKey, isAdminModeEnabled, isGradientGuess, isTimedGuess]);
+  }, [controlsKey, isAdminModeEnabled, isFlagGuess, isGradientGuess, isTimedGuess]);
+
+  const renderFlagControls = (orientation) => {
+    const isHorizontal = orientation === "horizontal";
+    const controlCount = difficulty.controls.length;
+    const trackClassName = isHorizontal
+      ? "guess-picker-track !h-full !w-full rounded-none border-0 shadow-none"
+      : "guess-picker-track h-full w-full rounded-none border-0 shadow-none sm:h-full sm:w-full";
+    const handleClassName = isHorizontal
+      ? "guess-picker-thumb size-5 shadow-[0_5px_14px_rgba(0,0,0,0.24)]"
+      : "guess-picker-thumb size-5 shadow-[0_5px_14px_rgba(0,0,0,0.24)]";
+
+    return (
+      <div
+        className={
+          isHorizontal
+            ? "flag-control-stack flag-control-stack--horizontal grid h-full w-full overflow-hidden rounded-[18px] shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
+            : "flag-control-stack flag-control-stack--vertical grid h-full grid-cols-3 overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
+        }
+        style={{ "--flag-control-count": controlCount }}
+        aria-label={t("colorPicker.controls")}
+      >
+        {difficulty.controls.includes("h") && (
+          <HueSlider
+            value={guessColor.h}
+            onChange={(h) => handleFlagControlChange({ h })}
+            trackClassName={trackClassName}
+            handleClassName={handleClassName}
+            showLabel={false}
+            orientation={orientation}
+          />
+        )}
+
+        {difficulty.controls.includes("s") && (
+          <SaturationSlider
+            hue={guessColor.h}
+            brightness={guessColor.v}
+            value={guessColor.s}
+            onChange={(s) => handleFlagControlChange({ s })}
+            trackClassName={trackClassName}
+            handleClassName={handleClassName}
+            showLabel={false}
+            orientation={orientation}
+          />
+        )}
+
+        {difficulty.controls.includes("v") && (
+          <ValueSlider
+            hue={guessColor.h}
+            saturation={guessColor.s}
+            value={guessColor.v}
+            onChange={(v) => handleFlagControlChange({ v })}
+            trackClassName={trackClassName}
+            handleClassName={handleClassName}
+            showLabel={false}
+            orientation={orientation}
+          />
+        )}
+      </div>
+    );
+  };
+
+  if (isFlagGuess) {
+    return (
+      <div ref={scopeRef} className="relative h-full overflow-visible p-6 sm:p-8">
+        {pendingUnlock && !isAdminModeEnabled && (
+          <AdminProtectorOverlay
+            onCancel={cancelUnlockRequest}
+            onUnlock={enableAdmin}
+          />
+        )}
+
+        <div
+          className={`flag-control-widget flag-control-widget--desktop ${
+            isFlagWidgetExiting ? "flag-control-widget--exiting" : ""
+          }`}
+          style={{ "--flag-control-count": difficulty.controls.length }}
+        >
+          {renderFlagControls("vertical")}
+        </div>
+
+        <div
+          className={`flag-control-widget flag-control-widget--mobile ${
+            isFlagWidgetExiting ? "flag-control-widget--exiting" : ""
+          }`}
+          style={{ "--flag-control-count": difficulty.controls.length }}
+        >
+          {renderFlagControls("horizontal")}
+        </div>
+
+        <div className="absolute top-6 left-6 z-10 overflow-hidden sm:top-8 sm:left-8">
+          <p ref={roundRef} className="text-base font-semibold text-current/78">
+            {roundLabel}
+          </p>
+        </div>
+
+        <div className="absolute top-6 right-6 z-10 overflow-hidden text-right sm:top-8 sm:right-8">
+          <p ref={brandRef} className="text-lg font-semibold text-current/72">
+            {APP_NAME}
+          </p>
+        </div>
+
+        {progressItems.length > 0 && (
+          <div
+            ref={progressRef}
+            className="absolute bottom-[5.25rem] left-6 z-20 sm:bottom-[5.75rem] sm:left-8"
+          >
+            <MultiplayerProgressList items={progressItems} />
+          </div>
+        )}
+
+        {isAdminModeEnabled && targetColor && (
+          <button
+            ref={adminButtonRef}
+            type="button"
+            aria-label="Set perfect admin guess"
+            onClick={handleAdminPerfectGuess}
+            className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
+          >
+            <span
+              ref={adminButtonCoreRef}
+              className="absolute inset-0 rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.28)]"
+            />
+
+            <span
+              ref={adminButtonRingRef}
+              className="pointer-events-none absolute inset-0 rounded-full border border-current/20"
+            />
+
+            <span
+              ref={adminIconRef}
+              className="relative z-10 grid place-items-center text-white"
+            >
+              <Crown size={27} strokeWidth={2.25} />
+            </span>
+          </button>
+        )}
+
+        <button
+          ref={submitButtonRef}
+          type="button"
+          aria-label={t("game.submitColorGuess")}
+          onClick={handleSubmitClick}
+          className="soft-icon-button card-action-size absolute right-6 bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
+        >
+          <span
+            ref={submitButtonRingRef}
+            className="pointer-events-none absolute inset-0 rounded-full border border-current/20"
+          />
+
+          <span
+            ref={submitButtonCoreRef}
+            className="absolute inset-0 rounded-full bg-white text-zinc-950 shadow-[0_16px_34px_rgba(0,0,0,0.22)] ring-1 ring-black/6"
+          />
+
+          <span
+            ref={submitIconRef}
+            className="relative z-10 grid place-items-center text-zinc-950"
+          >
+            <Check size={30} strokeWidth={2.4} />
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div ref={scopeRef} className="relative h-full overflow-hidden">

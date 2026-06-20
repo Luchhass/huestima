@@ -1,4 +1,5 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
+import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -91,6 +92,7 @@ export function hexToRgb(hex) {
 export function withHex(hsv) {
   const cleanHsv = clampHsv(hsv);
   return {
+    ...hsv,
     ...cleanHsv,
     hex: hsvToHex(cleanHsv),
   };
@@ -98,6 +100,10 @@ export function withHex(hsv) {
 
 export function isGradientColor(color) {
   return Boolean(color?.left && color?.right);
+}
+
+export function isFlagColor(color) {
+  return color?.type === GAME_MODES.FLAG && Boolean(color?.flagId);
 }
 
 function averageRgbHex(firstHex, secondHex) {
@@ -108,6 +114,18 @@ function averageRgbHex(firstHex, secondHex) {
     r: (first.r + second.r) / 2,
     g: (first.g + second.g) / 2,
     b: (first.b + second.b) / 2,
+  });
+}
+
+function averageManyRgbHex(hexValues) {
+  const colors = hexValues.filter(Boolean).map(hexToRgb);
+
+  if (!colors.length) return "#000000";
+
+  return rgbToHex({
+    r: colors.reduce((sum, color) => sum + color.r, 0) / colors.length,
+    g: colors.reduce((sum, color) => sum + color.g, 0) / colors.length,
+    b: colors.reduce((sum, color) => sum + color.b, 0) / colors.length,
   });
 }
 
@@ -131,9 +149,89 @@ export function withGradientHex(color) {
   };
 }
 
+export function withFlagHex(color) {
+  const flag = getFlagOption(color?.flagId || DEFAULT_FLAG_ID);
+  const slotDefinitions = flag.slots?.length
+    ? flag.slots
+    : [{ id: "base", ...flag.background }];
+  const incomingSlots = Array.isArray(color?.slots) ? color.slots : [];
+  const requestedSlotId =
+    color?.activeSlotId ||
+    incomingSlots.find((slotColor) => slotDefinitions.some((slot) => slot.id === slotColor.id))?.id ||
+    slotDefinitions[0].id;
+
+  const cleanSlots = slotDefinitions.map((slotDefinition, index) => {
+    const incomingSlot = incomingSlots.find((slotColor) => slotColor.id === slotDefinition.id);
+    const shouldApplyDirectColor =
+      slotDefinition.id === requestedSlotId &&
+      [color?.h, color?.s, color?.v].some(Number.isFinite);
+
+    return withHex({
+      ...slotDefinition,
+      ...(incomingSlot || {}),
+      ...(shouldApplyDirectColor || (!incomingSlots.length && index === 0) ? color || {} : {}),
+      id: slotDefinition.id,
+    });
+  });
+
+  const activeSlot =
+    cleanSlots.find((slotColor) => slotColor.id === requestedSlotId) || cleanSlots[0];
+  const toneHex = averageManyRgbHex(cleanSlots.map((slotColor) => slotColor.hex));
+
+  return {
+    type: GAME_MODES.FLAG,
+    flagId: flag.id,
+    flagLabel: flag.label,
+    motif: flag.motif,
+    motifColor: flag.motifColor || "#ffffff",
+    activeSlotId: activeSlot.id,
+    slots: cleanSlots,
+    h: activeSlot.h,
+    s: activeSlot.s,
+    v: activeSlot.v,
+    hex: activeSlot.hex,
+    toneHex,
+  };
+}
+
+export function randomFlagTargetColor(random = Math.random) {
+  const flag = FLAG_OPTIONS[Math.floor(random() * FLAG_OPTIONS.length)];
+
+  return withFlagHex({
+    flagId: flag.id,
+  });
+}
+
+export function randomFlagTargetColors(count, random = Math.random) {
+  const result = [];
+
+  while (result.length < count) {
+    const shuffled = [...FLAG_OPTIONS];
+
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+
+    for (const flag of shuffled) {
+      if (result.length >= count) break;
+
+      result.push(withFlagHex({
+        flagId: flag.id,
+      }));
+    }
+  }
+
+  return result;
+}
+
 export function applyDifficultyConstraints(hsv, difficultyId) {
   if (isGradientColor(hsv)) {
     return withGradientHex(hsv);
+  }
+
+  if (isFlagColor(hsv)) {
+    return withFlagHex(hsv);
   }
 
   const difficulty = DIFFICULTY_CONFIG[difficultyId] || DIFFICULTY_CONFIG.normal;
@@ -176,6 +274,10 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode })
         right: { h: Math.floor(random() * 360) },
       }),
     );
+  }
+
+  if (gameMode === GAME_MODES.FLAG) {
+    return randomFlagTargetColors(roundCount, random);
   }
 
   return Array.from({ length: roundCount }, () =>

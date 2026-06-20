@@ -3,12 +3,14 @@ import {
   GAME_MODES,
   MAX_ROUND_SCORE,
   ROOM_STATUSES,
-  ROUND_COUNT,
+  DEFAULT_ROUND_COUNT,
 } from "../constants.js";
 import {
   applyDifficultyConstraints,
   generateTargetColors,
+  isFlagColor,
   isGradientColor,
+  withFlagHex,
   withHex,
   withGradientHex,
 } from "./colorGenerator.js";
@@ -58,6 +60,10 @@ function calculateMatchScore(targetColor, guessColor) {
     ) / 2;
   }
 
+  if (isFlagColor(targetColor) && isFlagColor(guessColor)) {
+    return calculateFlagSlotAverage(targetColor, guessColor, calculateColorScore);
+  }
+
   return calculateColorScore(targetColor.hex, guessColor.hex);
 }
 
@@ -69,7 +75,29 @@ function calculateMatchDistance(targetColor, guessColor) {
     ) / 2;
   }
 
+  if (isFlagColor(targetColor) && isFlagColor(guessColor)) {
+    return calculateFlagSlotAverage(targetColor, guessColor, ciede2000Distance);
+  }
+
   return ciede2000Distance(targetColor.hex, guessColor.hex);
+}
+
+function calculateFlagSlotAverage(targetColor, guessColor, scoreFn) {
+  const targetSlots = Array.isArray(targetColor?.slots) ? targetColor.slots : [];
+  const guessSlots = Array.isArray(guessColor?.slots) ? guessColor.slots : [];
+
+  if (!targetSlots.length || !guessSlots.length) {
+    return scoreFn(targetColor.hex, guessColor.hex);
+  }
+
+  const scores = targetSlots.map((targetSlot) => {
+    const guessSlot =
+      guessSlots.find((slotColor) => slotColor.id === targetSlot.id) || guessSlots[0];
+
+    return scoreFn(targetSlot.hex, guessSlot.hex);
+  });
+
+  return scores.reduce((sum, score) => sum + score, 0) / scores.length;
 }
 
 function validateGuessColorPayload(targetColor, guessColor) {
@@ -86,6 +114,52 @@ function validateGuessColorPayload(targetColor, guessColor) {
         color: withGradientHex({
           left: left.data.color,
           right: right.data.color,
+        }),
+      },
+    };
+  }
+
+  if (isFlagColor(targetColor)) {
+    const targetSlots = Array.isArray(targetColor.slots) ? targetColor.slots : [];
+
+    if (!targetSlots.length) {
+      const color = validateHsvColor(guessColor);
+      if (!color.ok) return color;
+
+      return {
+        ok: true,
+        data: {
+          color: withFlagHex({
+            ...color.data.color,
+            flagId: targetColor.flagId,
+          }),
+        },
+      };
+    }
+
+    const cleanSlots = [];
+
+    for (const targetSlot of targetSlots) {
+      const slotPayload = guessColor?.slots?.find(
+        (slotColor) => slotColor?.id === targetSlot.id,
+      );
+      const slotResult = validateHsvColor(slotPayload || guessColor);
+
+      if (!slotResult.ok) return slotResult;
+
+      cleanSlots.push({
+        id: targetSlot.id,
+        ...slotResult.data.color,
+      });
+    }
+
+    return {
+      ok: true,
+      data: {
+        color: withFlagHex({
+          activeSlotId: guessColor?.activeSlotId,
+          slots: cleanSlots,
+          flagId: targetColor.flagId,
         }),
       },
     };
@@ -121,7 +195,7 @@ export function startGameForRoom(room) {
   const seed = createSeed();
   const modeConfig = GAME_MODE_CONFIG[room.gameMode] || GAME_MODE_CONFIG.normal;
   const difficulty = modeConfig.lockedDifficulty || room.difficulty;
-  const roundCount = modeConfig.roundCount || ROUND_COUNT;
+  const roundCount = room.roundCount || modeConfig.roundCount || DEFAULT_ROUND_COUNT;
   const isElimination = Boolean(modeConfig.elimination);
 
   room.status = ROOM_STATUSES.IN_GAME;
@@ -243,6 +317,8 @@ export function submitRoundGuess(room, payload) {
 
   const guessColor = isGradientColor(targetColor)
     ? withGradientHex(colorResult.data.color)
+    : isFlagColor(targetColor)
+      ? withFlagHex(colorResult.data.color)
     : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
   const result = {

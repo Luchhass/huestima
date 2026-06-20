@@ -6,6 +6,7 @@ import {
   Blend,
   ChevronDown,
   Eye,
+  Flag,
   Infinity,
   Layers,
   Swords,
@@ -23,6 +24,7 @@ const GAME_MODE_ICONS = {
   sequence: Layers,
   timed: Timer,
   gradient: Blend,
+  flag: Flag,
   duel: Swords,
 };
 
@@ -486,9 +488,6 @@ export default function GameModePicker({
           role="listbox"
           aria-label={ariaLabel || t("gameMode.label")}
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-7 bg-gradient-to-b from-black/90 via-black/42 to-transparent" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-7 bg-gradient-to-t from-black/90 via-black/42 to-transparent" />
-
           <div
             ref={wheelAreaRef}
             onWheel={handleWheel}

@@ -28,6 +28,7 @@ import {
   validateGameMode,
   validatePlayerId,
   validatePlayerName,
+  validateRoundCount,
   validateRoomName,
   validateRoomPassword,
   validateRoomCode,
@@ -167,6 +168,7 @@ export function getRoomSnapshot(room) {
     mode: room.gameMode,
     gameMode: room.gameMode,
     difficulty: room.difficulty,
+    roundCount: room.roundCount,
     maxPlayers: room.maxPlayers,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
@@ -196,6 +198,7 @@ function getRoomListSnapshot(room) {
     hasPassword: Boolean(room.password),
     gameMode: room.gameMode,
     difficulty: room.difficulty,
+    roundCount: room.roundCount,
     status: room.status,
     playerCount: Array.from(room.players.values()).filter(
       (player) => !player.kicked,
@@ -294,6 +297,9 @@ function validateRoomCreatePayload(payload) {
   const gameMode = validateGameMode(payload.gameMode || payload.mode);
   if (!gameMode.ok) return gameMode;
 
+  const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
+  if (!roundCount.ok) return roundCount;
+
   const roomName = validateRoomName(
     payload.roomName || payload.lobbyName,
     `${playerName.data.playerName}'s lobby`,
@@ -316,6 +322,7 @@ function validateRoomCreatePayload(payload) {
       gameMode.data.gameMode,
       difficulty.data.difficulty,
     ),
+    roundCount: roundCount.data.roundCount,
     roomName: roomName.data.roomName,
     visibility: visibility.data.visibility,
     password: password.data.password,
@@ -339,6 +346,7 @@ export function createRoom(payload) {
     status: ROOM_STATUSES.LOBBY,
     gameMode: validation.data.gameMode,
     difficulty: validation.data.difficulty,
+    roundCount: validation.data.roundCount,
     maxPlayers: env.maxPlayersPerRoom,
     createdAt,
     updatedAt: createdAt,
@@ -526,6 +534,13 @@ export function updateRoomSettings(payload) {
     if (!difficulty.ok) return difficulty;
 
     room.difficulty = resolveModeDifficulty(room.gameMode, difficulty.data.difficulty);
+  }
+
+  if (payload.roundCount !== undefined || payload.levelCount !== undefined) {
+    const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
+    if (!roundCount.ok) return roundCount;
+
+    room.roundCount = roundCount.data.roundCount;
   }
 
   room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);

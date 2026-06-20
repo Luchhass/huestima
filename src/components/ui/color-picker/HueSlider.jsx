@@ -4,7 +4,14 @@ import ColorSlider from "./ColorSlider";
 import { useTranslation } from "@/hooks/useLanguage";
 import { hueGradient } from "@/lib/color";
 
-export default function HueSlider({ value, onChange, trackClassName, handleClassName, showLabel }) {
+export default function HueSlider({
+  value,
+  onChange,
+  trackClassName,
+  handleClassName,
+  showLabel,
+  orientation,
+}) {
   const { t } = useTranslation();
 
   return (
@@ -19,6 +26,7 @@ export default function HueSlider({ value, onChange, trackClassName, handleClass
       trackClassName={trackClassName}
       handleClassName={handleClassName}
       showLabel={showLabel}
+      orientation={orientation}
     />
   );
 }

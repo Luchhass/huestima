@@ -6,12 +6,15 @@ import {
   DEFAULT_GAME_MODE_ID,
   GAME_MODE_IDS,
   MAX_ROUND_SCORE,
-  ROUND_COUNT,
 } from "@/lib/constants";
 import {
   createDefaultGradientGuess,
+  createDefaultFlagGuess,
   isGradientColor,
+  isFlagColor,
+  randomFlagTargetColors,
   randomTargetColor,
+  withFlagHex,
   withGradientHex,
   withHex,
 } from "@/lib/color";
@@ -20,6 +23,7 @@ import {
   getDifficultyOption,
 } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
+import { normalizeRoundCount } from "@/lib/roundCount";
 import {
   calculateColorMatchDistance,
   calculateColorMatchScore,
@@ -38,9 +42,13 @@ function roundScore(value) {
   return Math.round(value * 100) / 100;
 }
 
-function createDefaultGuess(difficulty, gameMode) {
+function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
     return createDefaultGradientGuess();
+  }
+
+  if (gameMode?.id === GAME_MODE_IDS.FLAG) {
+    return createDefaultFlagGuess(targetColor?.flagId);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -51,11 +59,19 @@ function constrainGuessColor(guessColor, difficulty, gameMode) {
     return withGradientHex(guessColor);
   }
 
+  if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
+    return withFlagHex(guessColor);
+  }
+
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
 }
 
-function createTargetColors(difficultyId, gameModeId) {
-  return Array.from({ length: ROUND_COUNT }, () =>
+function createTargetColors(difficultyId, gameModeId, roundCount) {
+  if (gameModeId === GAME_MODE_IDS.FLAG) {
+    return randomFlagTargetColors(roundCount);
+  }
+
+  return Array.from({ length: roundCount }, () =>
     randomTargetColor(difficultyId, gameModeId),
   );
 }
@@ -63,12 +79,18 @@ function createTargetColors(difficultyId, gameModeId) {
 export function useSingleplayerGame(
   difficultyId = DEFAULT_DIFFICULTY_ID,
   gameModeId = DEFAULT_GAME_MODE_ID,
+  roundCountValue,
 ) {
   const difficulty = useMemo(() => getDifficultyOption(difficultyId), [difficultyId]);
   const gameMode = useMemo(() => getGameModeOption(gameModeId), [gameModeId]);
+  const roundCount = useMemo(
+    () => normalizeRoundCount(roundCountValue),
+    [roundCountValue],
+  );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
+  const isFlagMode = gameMode.id === GAME_MODE_IDS.FLAG;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -85,20 +107,48 @@ export function useSingleplayerGame(
 
   const startRound = useCallback((nextRoundIndex) => {
     setRoundIndex(nextRoundIndex);
-    setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
 
     if (isSequenceMode) {
-      const sequenceColors = createTargetColors(effectiveDifficulty.id, gameMode.id);
+      const sequenceColors = createTargetColors(
+        effectiveDifficulty.id,
+        gameMode.id,
+        roundCount,
+      );
       setTargetColors(sequenceColors);
       setTargetColor(sequenceColors[0]);
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, sequenceColors[0]));
       setPhase(GAME_PHASES.MEMORIZE);
       return;
     }
 
+    if (isFlagMode) {
+      const flagTargetColors =
+        nextRoundIndex === 0 || targetColors.length < roundCount
+          ? randomFlagTargetColors(roundCount)
+          : targetColors;
+      const nextTargetColor = flagTargetColors[nextRoundIndex];
+
+      setTargetColors(flagTargetColors);
+      setTargetColor(nextTargetColor);
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, nextTargetColor));
+      setPhase(GAME_PHASES.MEMORIZE);
+      return;
+    }
+
+    const nextTargetColor = randomTargetColor(effectiveDifficulty.id, gameMode.id);
+
     setTargetColors([]);
-    setTargetColor(randomTargetColor(effectiveDifficulty.id, gameMode.id));
+    setTargetColor(nextTargetColor);
+    setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, nextTargetColor));
     setPhase(GAME_PHASES.MEMORIZE);
-  }, [effectiveDifficulty, gameMode, isSequenceMode]);
+  }, [
+    effectiveDifficulty,
+    gameMode,
+    isFlagMode,
+    isSequenceMode,
+    roundCount,
+    targetColors,
+  ]);
 
   const finishIntro = useCallback(() => {
     startRound(roundIndex);
@@ -151,7 +201,7 @@ export function useSingleplayerGame(
   ]);
 
   const continueFromResult = useCallback(() => {
-    if (!isEndlessMode && roundIndex + 1 >= ROUND_COUNT) {
+    if (!isEndlessMode && roundIndex + 1 >= roundCount) {
       setPhase(GAME_PHASES.FINAL);
       return;
     }
@@ -174,6 +224,7 @@ export function useSingleplayerGame(
     gameMode,
     isEndlessMode,
     isSequenceMode,
+    roundCount,
     roundIndex,
     targetColors,
   ]);
@@ -196,7 +247,7 @@ export function useSingleplayerGame(
   const summary = useMemo(() => {
     const totalScore = roundScore(results.reduce((sum, result) => sum + result.score, 0));
     const averageScore = results.length ? roundScore(totalScore / results.length) : 0;
-    const maxScore = (isEndlessMode ? Math.max(results.length, 1) : ROUND_COUNT) *
+    const maxScore = (isEndlessMode ? Math.max(results.length, 1) : roundCount) *
       MAX_ROUND_SCORE;
 
     return {
@@ -204,7 +255,7 @@ export function useSingleplayerGame(
       averageScore,
       maxScore,
     };
-  }, [isEndlessMode, results]);
+  }, [isEndlessMode, results, roundCount]);
 
   return {
     difficulty: effectiveDifficulty,
@@ -212,6 +263,7 @@ export function useSingleplayerGame(
     isSequenceMode,
     isGradientMode,
     isEndlessMode,
+    roundCount,
     phase,
     roundIndex,
     targetColor,

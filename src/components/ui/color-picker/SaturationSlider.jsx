@@ -12,6 +12,7 @@ export default function SaturationSlider({
   trackClassName,
   handleClassName,
   showLabel,
+  orientation,
 }) {
   const { t } = useTranslation();
 
@@ -29,6 +30,7 @@ export default function SaturationSlider({
       trackClassName={trackClassName}
       handleClassName={handleClassName}
       showLabel={showLabel}
+      orientation={orientation}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { hexToRgb, isGradientColor } from "./color";
+import { hexToRgb, isFlagColor, isGradientColor } from "./color";
 import { MAX_ROUND_SCORE } from "./constants";
 
 export const SCORE_TUNING = {
@@ -156,12 +156,34 @@ export function calculateColorScore(targetHex, guessHex) {
   );
 }
 
+function averageFlagSlotScore(target, guess, scoreFn) {
+  const targetSlots = Array.isArray(target?.slots) ? target.slots : [];
+  const guessSlots = Array.isArray(guess?.slots) ? guess.slots : [];
+
+  if (!targetSlots.length || !guessSlots.length) {
+    return scoreFn(target.hex, guess.hex);
+  }
+
+  const scores = targetSlots.map((targetSlot) => {
+    const guessSlot =
+      guessSlots.find((slotColor) => slotColor.id === targetSlot.id) || guessSlots[0];
+
+    return scoreFn(targetSlot.hex, guessSlot.hex);
+  });
+
+  return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+}
+
 export function calculateColorMatchScore(target, guess) {
   if (isGradientColor(target) && isGradientColor(guess)) {
     return (
       calculateColorScore(target.left.hex, guess.left.hex) +
       calculateColorScore(target.right.hex, guess.right.hex)
     ) / 2;
+  }
+
+  if (isFlagColor(target) && isFlagColor(guess)) {
+    return averageFlagSlotScore(target, guess, calculateColorScore);
   }
 
   return calculateColorScore(target.hex, guess.hex);
@@ -173,6 +195,10 @@ export function calculateColorMatchDistance(target, guess) {
       ciede2000Distance(target.left.hex, guess.left.hex) +
       ciede2000Distance(target.right.hex, guess.right.hex)
     ) / 2;
+  }
+
+  if (isFlagColor(target) && isFlagColor(guess)) {
+    return averageFlagSlotScore(target, guess, ciede2000Distance);
   }
 
   return ciede2000Distance(target.hex, guess.hex);
