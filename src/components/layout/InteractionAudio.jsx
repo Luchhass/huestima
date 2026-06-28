@@ -2,6 +2,11 @@
 
 import { useEffect } from "react";
 import {
+  prepareMusic,
+  resumeMusicIfAllowed,
+  unlockMusic,
+} from "@/lib/music";
+import {
   playCloseClick,
   playCloseHover,
   playButtonClick,
@@ -58,6 +63,7 @@ export default function InteractionAudio() {
   useEffect(() => {
     const hoverDriveStops = new Map();
     prepareAudio();
+    prepareMusic();
 
     const stopHoverDrive = (element) => {
       const stop = hoverDriveStops.get(element);
@@ -113,6 +119,7 @@ export default function InteractionAudio() {
 
     const handlePointerDown = (event) => {
       unlockAudio();
+      unlockMusic();
 
       const element = getInteractiveElement(event);
       if (!element) return;
@@ -131,6 +138,7 @@ export default function InteractionAudio() {
 
     const handleKeyDown = (event) => {
       unlockAudio();
+      unlockMusic();
 
       if (event.key !== "Enter" && event.key !== " ") return;
 
@@ -157,29 +165,40 @@ export default function InteractionAudio() {
 
       if (document.visibilityState === "visible") {
         resumeAudioIfAllowed();
+        resumeMusicIfAllowed();
       }
+    };
+
+    const handleUnlock = () => {
+      unlockAudio();
+      unlockMusic();
+    };
+
+    const handlePageShow = () => {
+      resumeAudioIfAllowed();
+      resumeMusicIfAllowed();
     };
 
     document.addEventListener("pointerover", handlePointerOver, true);
     document.addEventListener("pointerout", handlePointerOut, true);
     document.addEventListener("pointerdown", handlePointerDown, true);
     document.addEventListener("keydown", handleKeyDown, true);
-    window.addEventListener("pointerdown", unlockAudio, true);
-    window.addEventListener("mousedown", unlockAudio, true);
-    window.addEventListener("touchstart", unlockAudio, { capture: true, passive: true });
+    window.addEventListener("pointerdown", handleUnlock, true);
+    window.addEventListener("mousedown", handleUnlock, true);
+    window.addEventListener("touchstart", handleUnlock, { capture: true, passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pageshow", resumeAudioIfAllowed);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       document.removeEventListener("pointerover", handlePointerOver, true);
       document.removeEventListener("pointerout", handlePointerOut, true);
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("keydown", handleKeyDown, true);
-      window.removeEventListener("pointerdown", unlockAudio, true);
-      window.removeEventListener("mousedown", unlockAudio, true);
-      window.removeEventListener("touchstart", unlockAudio, { capture: true });
+      window.removeEventListener("pointerdown", handleUnlock, true);
+      window.removeEventListener("mousedown", handleUnlock, true);
+      window.removeEventListener("touchstart", handleUnlock, { capture: true });
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("pageshow", resumeAudioIfAllowed);
+      window.removeEventListener("pageshow", handlePageShow);
       stopAllHoverDrives();
     };
   }, []);

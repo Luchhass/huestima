@@ -9,6 +9,7 @@ import SingleplayerCard from "./SingleplayerCard";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
+import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
@@ -75,6 +76,7 @@ export default function HomeCard({ initialView = "home" }) {
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useFlagFullscreenLock(isSingleplayer && gameMode === GAME_MODE_IDS.FLAG);
+  useMusicScene(MUSIC_SCENES.MENU);
   useScreenReveal(contentRef, [view, isAdminProtectorVisible], {
     delay: isAdminProtectorVisible ? 90 : 0,
   });

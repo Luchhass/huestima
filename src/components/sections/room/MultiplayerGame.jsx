@@ -5,6 +5,7 @@ import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
+import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
@@ -111,6 +112,9 @@ export default function MultiplayerGame({
 
   useGameChrome(isImmersivePhase);
   useFlagFullscreenLock(isFlagMode);
+  useMusicScene(
+    renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
+  );
 
   useEffect(() => {
     if (game.phase === renderedPhase) return undefined;

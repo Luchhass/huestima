@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { GAME_MODE_IDS } from "@/lib/constants";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
+import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import GameCardShell from "@/components/ui/game/GameCardShell";
@@ -47,6 +48,9 @@ export default function SingleplayerGame({
 
   useGameChrome(isImmersivePhase);
   useFlagFullscreenLock(isFlagMode);
+  useMusicScene(
+    renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
+  );
 
   useEffect(() => {
     if (game.phase === renderedPhase) return undefined;

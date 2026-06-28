@@ -5,6 +5,7 @@ import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 import FullscreenToggle from "./FullscreenToggle";
 import LanguageToggle from "./LanguageToggle";
+import MusicToggle from "./MusicToggle";
 import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -27,6 +28,7 @@ export default function AppHeader() {
       <div className="header-controls pointer-events-auto inline-flex h-11 items-center justify-end gap-1">
         <LanguageToggle />
         <SoundToggle />
+        <MusicToggle />
         <ThemeToggle />
         <FullscreenToggle />
       </div>

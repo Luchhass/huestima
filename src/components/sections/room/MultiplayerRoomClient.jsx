@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPlayerId, consumeInviteCopied, useRoomSession } from "@/hooks/useRoomSession";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
+import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 import RoomCardShell from "./RoomCardShell";
@@ -70,6 +71,8 @@ export default function MultiplayerRoomClient({ roomCode }) {
   const [error, setError] = useState("");
   const [renderedView, setRenderedView] = useState("loading");
   const [isRenderedShellExpanded, setIsRenderedShellExpanded] = useState(false);
+
+  useMusicScene(renderedView === "game" ? null : MUSIC_SCENES.MENU);
 
   useEffect(() => {
     if (!session || (!kickedMessage && !closedMessage)) return;
