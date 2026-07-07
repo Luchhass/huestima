@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
+import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import BrandLogoMark from "./BrandLogoMark";
 import FullscreenToggle from "./FullscreenToggle";
 import LanguageToggle from "./LanguageToggle";
@@ -37,13 +37,7 @@ export default function AppHeader() {
       return;
     }
 
-    await gsap.to(scope, {
-      autoAlpha: 0,
-      x: 28,
-      duration: 0.24,
-      ease: "power2.inOut",
-      overwrite: true,
-    });
+    await playScreenFadeOut(scope, { duration: 0.24 });
 
     router.push(href);
   };
