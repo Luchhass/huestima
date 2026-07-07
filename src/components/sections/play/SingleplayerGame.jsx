@@ -61,7 +61,7 @@ export default function SingleplayerGame({
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
 
   useGameChrome(isImmersivePhase);
-  useFlagFullscreenLock(isFlagMode);
+  useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
     renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
   );

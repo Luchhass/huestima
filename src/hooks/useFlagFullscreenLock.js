@@ -3,10 +3,10 @@
 import { useEffect } from "react";
 import { useFullscreenMode } from "@/hooks/useFullscreenMode";
 
-export const FLAG_FULLSCREEN_LOCK_CHANGE_EVENT = "huestima-flag-fullscreen-lock-change";
+export const FULLSCREEN_LOCK_CHANGE_EVENT = "huestima-fullscreen-lock-change";
 
 function notifyLockChange() {
-  window.dispatchEvent(new Event(FLAG_FULLSCREEN_LOCK_CHANGE_EVENT));
+  window.dispatchEvent(new Event(FULLSCREEN_LOCK_CHANGE_EVENT));
 }
 
 export function useFlagFullscreenLock(isLocked) {
@@ -18,20 +18,19 @@ export function useFlagFullscreenLock(isLocked) {
     const root = document.documentElement;
 
     if (isLocked) {
-      root.dataset.flagFullscreenLocked = "true";
+      root.dataset.fullscreenLocked = "true";
       notifyLockChange();
       exitFullscreen();
-    } else if (root.dataset.flagFullscreenLocked === "true") {
-      delete root.dataset.flagFullscreenLocked;
+    } else if (root.dataset.fullscreenLocked === "true") {
+      delete root.dataset.fullscreenLocked;
       notifyLockChange();
     }
 
     return () => {
-      if (isLocked && root.dataset.flagFullscreenLocked === "true") {
-        delete root.dataset.flagFullscreenLocked;
+      if (isLocked && root.dataset.fullscreenLocked === "true") {
+        delete root.dataset.fullscreenLocked;
         notifyLockChange();
       }
     };
   }, [exitFullscreen, isLocked]);
 }
-

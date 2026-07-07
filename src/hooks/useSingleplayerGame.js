@@ -17,8 +17,8 @@ import {
   randomCartoonTargetColors,
   randomFlagTargetColors,
   randomTargetColor,
-  withCartoonHex,
-  withFlagHex,
+  withCartoonDifficultyHex,
+  withFlagDifficultyHex,
   withGradientHex,
   withHex,
 } from "@/lib/color";
@@ -52,27 +52,27 @@ function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   }
 
   if (gameMode?.id === GAME_MODE_IDS.FLAG) {
-    return createDefaultFlagGuess(targetColor);
+    return createDefaultFlagGuess(targetColor, difficulty);
   }
 
   if (gameMode?.id === GAME_MODE_IDS.CARTOON) {
-    return createDefaultCartoonGuess(targetColor);
+    return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
 }
 
-function constrainGuessColor(guessColor, difficulty, gameMode) {
+function constrainGuessColor(guessColor, difficulty, gameMode, targetColor = null) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
   }
 
   if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
-    return withFlagHex(guessColor);
+    return withFlagDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   if (gameMode.id === GAME_MODE_IDS.CARTOON || isCartoonColor(guessColor)) {
-    return withCartoonHex(guessColor);
+    return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
@@ -195,8 +195,21 @@ export function useSingleplayerGame(
   }, [isSequenceMode, roundIndex, targetColors]);
 
   const updateGuess = useCallback((nextGuess) => {
-    setGuessColor(constrainGuessColor(nextGuess, effectiveDifficulty, gameMode));
-  }, [effectiveDifficulty, gameMode]);
+    const activeTarget = isSequenceMode
+      ? targetColors[roundIndex]
+      : targetColor;
+
+    setGuessColor(
+      constrainGuessColor(nextGuess, effectiveDifficulty, gameMode, activeTarget),
+    );
+  }, [
+    effectiveDifficulty,
+    gameMode,
+    isSequenceMode,
+    roundIndex,
+    targetColor,
+    targetColors,
+  ]);
 
   const submitGuess = useCallback(() => {
     const activeTarget = isSequenceMode
@@ -205,7 +218,12 @@ export function useSingleplayerGame(
 
     if (!activeTarget) return;
 
-    const finalGuess = constrainGuessColor(guessColor, effectiveDifficulty, gameMode);
+    const finalGuess = constrainGuessColor(
+      guessColor,
+      effectiveDifficulty,
+      gameMode,
+      activeTarget,
+    );
     const score = roundScore(calculateColorMatchScore(activeTarget, finalGuess));
     const result = {
       round: roundIndex + 1,

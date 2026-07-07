@@ -1,4 +1,5 @@
 import {
+  DIFFICULTY_CONFIG,
   GAME_MODE_CONFIG,
   GAME_MODES,
   MAX_ROUND_SCORE,
@@ -110,7 +111,35 @@ function calculateFlagSlotAverage(targetColor, guessColor, scoreFn) {
   return scores.reduce((sum, score) => sum + score, 0) / scores.length;
 }
 
-function validateGuessColorPayload(targetColor, guessColor) {
+function difficultyControls(difficulty) {
+  const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.easy;
+
+  return Array.isArray(config?.controls) ? config.controls : [];
+}
+
+function finiteColorChannel(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function completeHsvForDifficulty(targetColor, guessColor, difficulty) {
+  const controls = difficultyControls(difficulty);
+
+  return {
+    h: controls.includes("h")
+      ? finiteColorChannel(guessColor?.h) ?? targetColor.h
+      : targetColor.h,
+    s: controls.includes("s")
+      ? finiteColorChannel(guessColor?.s) ?? targetColor.s
+      : targetColor.s,
+    v: controls.includes("v")
+      ? finiteColorChannel(guessColor?.v) ?? targetColor.v
+      : targetColor.v,
+  };
+}
+
+function validateGuessColorPayload(targetColor, guessColor, difficulty) {
   if (isGradientColor(targetColor)) {
     const left = validateHsvColor(guessColor?.left);
     if (!left.ok) return left;
@@ -133,10 +162,9 @@ function validateGuessColorPayload(targetColor, guessColor) {
     const targetSlots = Array.isArray(targetColor.slots) ? targetColor.slots : [];
 
     if (!targetSlots.length) {
-      const color = validateHsvColor({
-        ...targetColor,
-        ...guessColor,
-      });
+      const color = validateHsvColor(
+        completeHsvForDifficulty(targetColor, guessColor, difficulty),
+      );
       if (!color.ok) return color;
 
       return {
@@ -156,10 +184,18 @@ function validateGuessColorPayload(targetColor, guessColor) {
       const slotPayload = guessColor?.slots?.find(
         (slotColor) => slotColor?.id === targetSlot.id,
       );
-      const slotResult = validateHsvColor({
-        ...targetSlot,
-        ...(slotPayload || guessColor),
-      });
+      const mergedGuess =
+        targetSlot.id === guessColor?.activeSlotId
+          ? {
+              ...(slotPayload || {}),
+              h: finiteColorChannel(guessColor?.h) ?? slotPayload?.h,
+              s: finiteColorChannel(guessColor?.s) ?? slotPayload?.s,
+              v: finiteColorChannel(guessColor?.v) ?? slotPayload?.v,
+            }
+          : slotPayload || {};
+      const slotResult = validateHsvColor(
+        completeHsvForDifficulty(targetSlot, mergedGuess, difficulty),
+      );
 
       if (!slotResult.ok) return slotResult;
 
@@ -182,10 +218,9 @@ function validateGuessColorPayload(targetColor, guessColor) {
   }
 
   if (isCartoonColor(targetColor)) {
-    const color = validateHsvColor({
-      ...targetColor,
-      ...guessColor,
-    });
+    const color = validateHsvColor(
+      completeHsvForDifficulty(targetColor, guessColor, difficulty),
+    );
     if (!color.ok) return color;
 
     return {
@@ -346,7 +381,11 @@ export function submitRoundGuess(room, payload) {
   const targetColor = room.game.targetColors[roundIndex];
   if (!targetColor) return fail("Target color is unavailable.");
 
-  const colorResult = validateGuessColorPayload(targetColor, payload.guessColor);
+  const colorResult = validateGuessColorPayload(
+    targetColor,
+    payload.guessColor,
+    room.difficulty,
+  );
   if (!colorResult.ok) return colorResult;
 
   const guessColor = isGradientColor(targetColor)

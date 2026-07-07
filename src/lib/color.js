@@ -117,6 +117,29 @@ export function isCartoonColor(color) {
   return color?.type === GAME_MODE_IDS.CARTOON && Boolean(color?.cartoonId);
 }
 
+function difficultyControls(difficulty) {
+  const option =
+    typeof difficulty === "string"
+      ? getDifficultyOption(difficulty)
+      : difficulty || getDifficultyOption();
+
+  return Array.isArray(option?.controls) ? option.controls : [];
+}
+
+function hasChannelControl(difficulty, channel) {
+  return difficultyControls(difficulty).includes(channel);
+}
+
+function channelValue({ difficulty, channel, targetValue, guessValue, fallbackValue }) {
+  if (!hasChannelControl(difficulty, channel)) {
+    return Number.isFinite(targetValue) ? targetValue : fallbackValue;
+  }
+
+  if (Number.isFinite(guessValue)) return guessValue;
+  if (Number.isFinite(targetValue)) return targetValue;
+  return fallbackValue;
+}
+
 function averageRgbHex(firstHex, secondHex) {
   const first = hexToRgb(firstHex);
   const second = hexToRgb(secondHex);
@@ -237,6 +260,64 @@ export function withFlagHex(color) {
   };
 }
 
+export function withFlagDifficultyHex(guessColor, targetColor, difficulty) {
+  if (!targetColor || !isFlagColor(targetColor)) {
+    return withFlagHex(guessColor);
+  }
+
+  const flag = getFlagOption(targetColor.flagId || guessColor?.flagId || DEFAULT_FLAG_ID);
+  const targetSlots = Array.isArray(targetColor.slots) && targetColor.slots.length
+    ? targetColor.slots
+    : flag.slots || [{ id: "base", ...flag.background }];
+  const guessSlots = Array.isArray(guessColor?.slots) ? guessColor.slots : [];
+  const activeSlotId =
+    guessColor?.activeSlotId || targetColor.activeSlotId || targetSlots[0]?.id;
+  const slots = targetSlots.map((targetSlot) => {
+    const guessSlot =
+      guessSlots.find((slotColor) => slotColor?.id === targetSlot.id) || {};
+    const mergedGuess =
+      targetSlot.id === activeSlotId
+        ? {
+            ...guessSlot,
+            h: Number.isFinite(guessColor?.h) ? guessColor.h : guessSlot.h,
+            s: Number.isFinite(guessColor?.s) ? guessColor.s : guessSlot.s,
+            v: Number.isFinite(guessColor?.v) ? guessColor.v : guessSlot.v,
+          }
+        : guessSlot;
+
+    return {
+      id: targetSlot.id,
+      h: channelValue({
+        difficulty,
+        channel: "h",
+        targetValue: targetSlot.h,
+        guessValue: mergedGuess.h,
+        fallbackValue: targetSlot.h ?? 0,
+      }),
+      s: channelValue({
+        difficulty,
+        channel: "s",
+        targetValue: targetSlot.s,
+        guessValue: mergedGuess.s,
+        fallbackValue: targetSlot.s ?? 82,
+      }),
+      v: channelValue({
+        difficulty,
+        channel: "v",
+        targetValue: targetSlot.v,
+        guessValue: mergedGuess.v,
+        fallbackValue: targetSlot.v ?? 78,
+      }),
+    };
+  });
+
+  return withFlagHex({
+    flagId: targetColor.flagId,
+    activeSlotId,
+    slots,
+  });
+}
+
 function mergeCartoonPaint(cartoon, color) {
   const paint = { ...cartoon.paint };
 
@@ -282,43 +363,110 @@ export function withCartoonHex(color) {
   };
 }
 
-export function createDefaultCartoonGuess(targetOrCartoonId = DEFAULT_CARTOON_ID) {
+export function withCartoonDifficultyHex(guessColor, targetColor, difficulty) {
+  if (!targetColor || !isCartoonColor(targetColor)) {
+    return withCartoonHex(guessColor);
+  }
+
+  return withCartoonHex({
+    ...guessColor,
+    cartoonId: targetColor.cartoonId,
+    h: channelValue({
+      difficulty,
+      channel: "h",
+      targetValue: targetColor.h,
+      guessValue: guessColor?.h,
+      fallbackValue: 210,
+    }),
+    s: channelValue({
+      difficulty,
+      channel: "s",
+      targetValue: targetColor.s,
+      guessValue: guessColor?.s,
+      fallbackValue: 50,
+    }),
+    v: channelValue({
+      difficulty,
+      channel: "v",
+      targetValue: targetColor.v,
+      guessValue: guessColor?.v,
+      fallbackValue: 78,
+    }),
+  });
+}
+
+export function createDefaultCartoonGuess(
+  targetOrCartoonId = DEFAULT_CARTOON_ID,
+  difficulty,
+) {
   const targetColor =
     targetOrCartoonId && typeof targetOrCartoonId === "object"
       ? targetOrCartoonId
       : null;
   const cartoonId = targetColor?.cartoonId || targetOrCartoonId || DEFAULT_CARTOON_ID;
+  const defaultGuess = getDifficultyOption(
+    typeof difficulty === "string" ? difficulty : difficulty?.id,
+  )?.defaultGuess;
+  const guessColor = {
+    cartoonId,
+    h: defaultGuess?.h ?? 210,
+    s: channelValue({
+      difficulty,
+      channel: "s",
+      targetValue: targetColor?.s,
+      guessValue: defaultGuess?.s,
+      fallbackValue: 50,
+    }),
+    v: channelValue({
+      difficulty,
+      channel: "v",
+      targetValue: targetColor?.v,
+      guessValue: defaultGuess?.v,
+      fallbackValue: 78,
+    }),
+  };
 
   if (!DEFAULT_CARTOON_ID) {
     return withHex({
-      h: 210,
-      s: targetColor?.s ?? 22,
-      v: targetColor?.v ?? 76,
+      h: guessColor.h,
+      s: guessColor.s,
+      v: guessColor.v,
     });
   }
 
-  return withCartoonHex({
-    cartoonId,
-    h: 210,
-    s: targetColor?.s,
-    v: targetColor?.v,
-  });
+  return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
 }
 
 const FLAG_GUESS_START_HUES = [210, 22, 132, 286, 48, 342, 172];
 
-function createRandomFlagGuessSlot(slotColor, index, random) {
+function createRandomFlagGuessSlot(slotColor, index, random, difficulty) {
   const hueBase = FLAG_GUESS_START_HUES[index % FLAG_GUESS_START_HUES.length];
 
   return {
     id: slotColor.id,
     h: (hueBase + Math.floor(random() * 44) - 22 + 360) % 360,
-    s: Number.isFinite(slotColor.s) ? slotColor.s : 82,
-    v: Number.isFinite(slotColor.v) ? slotColor.v : 78,
+    s: channelValue({
+      difficulty,
+      channel: "s",
+      targetValue: slotColor.s,
+      guessValue: Math.floor(48 + random() * 42),
+      fallbackValue: 82,
+    }),
+    v: channelValue({
+      difficulty,
+      channel: "v",
+      targetValue: slotColor.v,
+      guessValue: Math.floor(50 + random() * 40),
+      fallbackValue: 78,
+    }),
   };
 }
 
-export function createDefaultFlagGuess(targetOrFlagId = DEFAULT_FLAG_ID, random = Math.random) {
+export function createDefaultFlagGuess(
+  targetOrFlagId = DEFAULT_FLAG_ID,
+  difficultyOrRandom,
+  random = Math.random,
+) {
   const targetColor =
     targetOrFlagId && typeof targetOrFlagId === "object" ? targetOrFlagId : null;
   const flagId = targetColor?.flagId || targetOrFlagId || DEFAULT_FLAG_ID;
@@ -326,14 +474,18 @@ export function createDefaultFlagGuess(targetOrFlagId = DEFAULT_FLAG_ID, random 
   const targetSlots = Array.isArray(targetColor?.slots)
     ? targetColor.slots
     : flag.slots || [{ id: "base", ...flag.background }];
+  const difficulty =
+    typeof difficultyOrRandom === "function" ? undefined : difficultyOrRandom;
+  const randomFn =
+    typeof difficultyOrRandom === "function" ? difficultyOrRandom : random;
 
-  return withFlagHex({
+  return withFlagDifficultyHex({
     flagId,
     activeSlotId: targetColor?.activeSlotId || targetSlots[0]?.id,
     slots: targetSlots.map((slotColor, index) =>
-      createRandomFlagGuessSlot(slotColor, index, random),
+      createRandomFlagGuessSlot(slotColor, index, randomFn, difficulty),
     ),
-  });
+  }, targetColor, difficulty);
 }
 
 export function randomFlagTargetColor(random = Math.random) {

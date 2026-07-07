@@ -92,7 +92,10 @@ export default function LobbyCard({
       : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
-  useFlagFullscreenLock(room?.gameMode === GAME_MODE_IDS.FLAG);
+  useFlagFullscreenLock(
+    room?.gameMode === GAME_MODE_IDS.FLAG ||
+      room?.gameMode === GAME_MODE_IDS.CARTOON,
+  );
   useScreenReveal(scopeRef, [room?.code], {
     delay: EXPANDED_REVEAL_DELAY,
   });

@@ -18,8 +18,8 @@ import {
   isCartoonColor,
   isFlagColor,
   isGradientColor,
-  withCartoonHex,
-  withFlagHex,
+  withCartoonDifficultyHex,
+  withFlagDifficultyHex,
   withGradientHex,
   withHex,
 } from "@/lib/color";
@@ -35,27 +35,27 @@ function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   }
 
   if (gameMode?.id === GAME_MODE_IDS.FLAG) {
-    return createDefaultFlagGuess(targetColor);
+    return createDefaultFlagGuess(targetColor, difficulty);
   }
 
   if (gameMode?.id === GAME_MODE_IDS.CARTOON) {
-    return createDefaultCartoonGuess(targetColor);
+    return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
 }
 
-function constrainGuessColor(guessColor, difficulty, gameMode) {
+function constrainGuessColor(guessColor, difficulty, gameMode, targetColor = null) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
   }
 
   if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
-    return withFlagHex(guessColor);
+    return withFlagDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   if (gameMode.id === GAME_MODE_IDS.CARTOON || isCartoonColor(guessColor)) {
-    return withCartoonHex(guessColor);
+    return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
@@ -179,9 +179,11 @@ export function useMultiplayerGame({
 
   const updateGuess = useCallback(
     (nextGuess) => {
-      setGuessColor(constrainGuessColor(nextGuess, effectiveDifficulty, gameMode));
+      setGuessColor(
+        constrainGuessColor(nextGuess, effectiveDifficulty, gameMode, targetColor),
+      );
     },
-    [effectiveDifficulty, gameMode],
+    [effectiveDifficulty, gameMode, targetColor],
   );
 
   const submitGuess = useCallback(async () => {
@@ -194,7 +196,12 @@ export function useMultiplayerGame({
       roomCode,
       playerId,
       roundIndex,
-      guessColor: constrainGuessColor(guessColor, effectiveDifficulty, gameMode),
+      guessColor: constrainGuessColor(
+        guessColor,
+        effectiveDifficulty,
+        gameMode,
+        targetColor,
+      ),
     });
 
     setIsSubmitting(false);
@@ -229,6 +236,7 @@ export function useMultiplayerGame({
     playerId,
     roomCode,
     roundIndex,
+    targetColor,
     t,
   ]);
 

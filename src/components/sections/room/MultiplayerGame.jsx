@@ -123,7 +123,7 @@ export default function MultiplayerGame({
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
 
   useGameChrome(isImmersivePhase);
-  useFlagFullscreenLock(isFlagMode);
+  useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
     renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
   );

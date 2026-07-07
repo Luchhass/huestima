@@ -20,12 +20,15 @@ export default function AppHeader() {
   const [isNavOpen, setIsNavOpen] = useState(false);
 
   return (
-    <header className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8">
+    <header
+      className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8"
+      data-nav-open={isNavOpen ? "true" : undefined}
+    >
       {isNavOpen && (
-        <div className="pointer-events-auto fixed inset-0 z-0 bg-white/96 text-zinc-950 backdrop-blur-xl dark:bg-black/94 dark:text-white md:hidden">
+        <div className="pointer-events-auto fixed inset-0 z-0 bg-white/96 p-6 text-zinc-950 backdrop-blur-xl dark:bg-black/94 dark:text-white sm:p-8 md:hidden">
           <nav
             aria-label={t("gameFamily.label")}
-            className="flex h-full flex-col items-center justify-center gap-8 text-[clamp(2.6rem,13vw,4.5rem)] font-semibold leading-none tracking-normal"
+            className="flex h-full flex-col items-start gap-3 pt-28 text-[clamp(2.85rem,13vw,4.9rem)] font-semibold leading-[0.96] tracking-normal"
           >
             {GAME_FAMILY_OPTIONS.map((option) => {
               const active =
@@ -47,6 +50,14 @@ export default function AppHeader() {
                 </Link>
               );
             })}
+
+            <div className="mt-auto flex items-center gap-1 pb-1">
+              <LanguageToggle />
+              <SoundToggle />
+              <MusicToggle />
+              <ThemeToggle />
+              <FullscreenToggle />
+            </div>
           </nav>
         </div>
       )}
@@ -96,11 +107,14 @@ export default function AppHeader() {
       </div>
 
       <div className="header-controls pointer-events-auto relative z-10 inline-flex h-11 items-center justify-end gap-1">
-        <LanguageToggle />
-        <SoundToggle />
-        <MusicToggle />
-        <ThemeToggle />
-        <FullscreenToggle />
+        <div className="hidden items-center gap-1 md:inline-flex">
+          <LanguageToggle />
+          <SoundToggle />
+          <MusicToggle />
+          <ThemeToggle />
+          <FullscreenToggle />
+        </div>
+
         <button
           type="button"
           aria-label={isNavOpen ? t("common.closeMenu") : t("common.openMenu")}

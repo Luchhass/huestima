@@ -24,6 +24,14 @@ const NORMAL_CARD_VIEWPORT_OFFSET = 132;
 
 let isTransitioningFullscreen = false;
 
+function getTransitionCoverZIndex() {
+  if (typeof document === "undefined") return "9998";
+
+  return document.querySelector(".app-header[data-nav-open='true']")
+    ? "40"
+    : "9998";
+}
+
 function readStoredFullscreenMode() {
   if (typeof window === "undefined") return false;
 
@@ -238,7 +246,7 @@ function createTransitionCover(card) {
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
   setImportantStyle(cover, "pointer-events", "auto");
-  setImportantStyle(cover, "z-index", "9998");
+  setImportantStyle(cover, "z-index", getTransitionCoverZIndex());
   setImportantStyle(
     cover,
     "will-change",
@@ -275,7 +283,7 @@ function createSurfaceTransitionCover(card) {
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
   setImportantStyle(cover, "pointer-events", "auto");
-  setImportantStyle(cover, "z-index", "9998");
+  setImportantStyle(cover, "z-index", getTransitionCoverZIndex());
   setImportantStyle(
     cover,
     "will-change",
@@ -317,7 +325,7 @@ function createViewportSurfaceCover() {
   setImportantStyle(cover, "visibility", "visible");
   setImportantStyle(cover, "overflow", "hidden");
   setImportantStyle(cover, "pointer-events", "auto");
-  setImportantStyle(cover, "z-index", "9998");
+  setImportantStyle(cover, "z-index", getTransitionCoverZIndex());
   setImportantStyle(
     cover,
     "will-change",

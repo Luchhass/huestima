@@ -586,15 +586,16 @@ input {
 
   .level-count-picker__thumb {
     position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc((100% - 8px) / 4);
+    top: 50%;
+    left: calc(12.5% + (var(--level-count-index) * 25%));
+    height: calc(100% - 8px);
+    aspect-ratio: 1;
+    width: auto;
     border-radius: 999px;
     background: #ffffff;
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.18);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    transform: translateX(calc(var(--level-count-index) * 100%));
+    transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate(-50%, -50%);
   }
 
   .game-mode-picker__panel {
@@ -1012,4 +1013,19 @@ html[data-fullscreen-mode="on"] .solo-close-button {
   display: grid !important;
   visibility: visible !important;
   pointer-events: auto !important;
+}
+
+html[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .app-header__brand,
+html[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-controls > button {
+  color: #171717 !important;
+}
+
+html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .app-header__brand,
+html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-controls > button {
+  color: #ffffff !important;
 }

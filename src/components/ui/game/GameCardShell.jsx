@@ -39,7 +39,6 @@ export default function GameCardShell({
     background: background || undefined,
     color: color ? foreground : "#ffffff",
     "--game-muted": color ? muted : "rgba(255,255,255,0.72)",
-    textShadow: isCartoonCard ? "0 2px 12px rgba(0,0,0,0.52)" : undefined,
   };
 
   if (cardHeight) {

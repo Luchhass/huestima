@@ -115,14 +115,12 @@ export const GAME_MODE_OPTIONS = [
     label: "Flag",
     description: "Keep the emblem fixed and match the flag background color.",
     revealDurationMs: MEMORIZE_DURATION_MS,
-    lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {
     id: GAME_MODE_IDS.CARTOON,
     label: "Cartoon",
     description: "Memorize the main color in a cartoon scene.",
     revealDurationMs: MEMORIZE_DURATION_MS,
-    lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {
     id: GAME_MODE_IDS.DUEL,

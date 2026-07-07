@@ -22,6 +22,7 @@ import {
 } from "@/lib/constants";
 import {
   getDefaultGameModeForFamily,
+  GAME_FAMILY_IDS,
   getGameFamilyHref,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -92,7 +93,12 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     : t("home.paragraphs");
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
-  useFlagFullscreenLock(isSingleplayer && gameMode === GAME_MODE_IDS.FLAG);
+  useFlagFullscreenLock(
+    cleanGameFamily === GAME_FAMILY_IDS.FLAG ||
+      cleanGameFamily === GAME_FAMILY_IDS.CARTOON ||
+      gameMode === GAME_MODE_IDS.FLAG ||
+      gameMode === GAME_MODE_IDS.CARTOON,
+  );
   useMusicScene(MUSIC_SCENES.MENU);
   useScreenReveal(contentRef, [view, cleanGameFamily, isAdminProtectorVisible], {
     delay: isAdminProtectorVisible ? 90 : 0,

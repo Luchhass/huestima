@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
-import { FLAG_FULLSCREEN_LOCK_CHANGE_EVENT } from "@/hooks/useFlagFullscreenLock";
+import { FULLSCREEN_LOCK_CHANGE_EVENT } from "@/hooks/useFlagFullscreenLock";
 import { useFullscreenMode } from "@/hooks/useFullscreenMode";
 import { useTranslation } from "@/hooks/useLanguage";
 
 function readFullscreenLock() {
   if (typeof document === "undefined") return false;
 
-  return document.documentElement.dataset.flagFullscreenLocked === "true";
+  return document.documentElement.dataset.fullscreenLocked === "true";
 }
 
 export default function FullscreenToggle() {
@@ -27,16 +27,16 @@ export default function FullscreenToggle() {
     const syncLock = () => setIsLocked(readFullscreenLock());
 
     syncLock();
-    window.addEventListener(FLAG_FULLSCREEN_LOCK_CHANGE_EVENT, syncLock);
+    window.addEventListener(FULLSCREEN_LOCK_CHANGE_EVENT, syncLock);
 
     const observer = new MutationObserver(syncLock);
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-flag-fullscreen-locked"],
+      attributeFilter: ["data-fullscreen-locked"],
     });
 
     return () => {
-      window.removeEventListener(FLAG_FULLSCREEN_LOCK_CHANGE_EVENT, syncLock);
+      window.removeEventListener(FULLSCREEN_LOCK_CHANGE_EVENT, syncLock);
       observer.disconnect();
     };
   }, []);

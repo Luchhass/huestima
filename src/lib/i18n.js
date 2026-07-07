@@ -32,7 +32,7 @@ export const DICTIONARIES = {
       themeToggle: "Toggle theme",
       fullscreenEnter: "Enter fullscreen layout",
       fullscreenExit: "Exit fullscreen layout",
-      fullscreenLocked: "Fullscreen is locked in flag mode",
+      fullscreenLocked: "Fullscreen is disabled in this mode",
       fullscreenToggle: "Toggle fullscreen",
     },
     home: {
@@ -296,30 +296,30 @@ export const DICTIONARIES = {
       themeToggle: "Temayı değiştir",
       fullscreenEnter: "Tam ekran tasarıma geç",
       fullscreenExit: "Tam ekran tasarımdan çık",
-      fullscreenLocked: "Bayrak modunda tam ekran kilitli",
+      fullscreenLocked: "Bu modda tam ekran kapalı",
       fullscreenToggle: "Tam ekran tasarımı değiştir",
     },
     home: {
       sections: {
         color: {
-          title: "Color",
+          title: "Renk",
           paragraphs: [
-            "Bir renk bes saniye gorunur. Kaybolmadan once tonu ezberle, hue degerini tahmin et ve aklinda tut.",
-            "Rengi hue, saturation ve brightness kontrolleriyle hafizandan yeniden kur. Gozunu test etmek icin 1, 3, 5 veya 10 level oyna.",
+            "Bir rengi kısa süre görürsün. Tonunu aklında tut, kaybolunca hafızandan yeniden kurarsın.",
+            "Zorluğa göre hue, saturation ve brightness kontrolleri açılır. 1, 3, 5 veya 10 seviyelik serilerle gözünü test et.",
           ],
         },
         flag: {
-          title: "Flag",
+          title: "Bayrak",
           paragraphs: [
-            "Sabit sembollu bir bayrak rengi gorunur. Sekli oku, tonu ezberle ve bayragi aklinda tut.",
-            "Gizlenen rengi ayni kontrollerle yeniden kur. Bayrak sabit kalir, sen sadece rengi hafizandan yakalarsin.",
+            "Bayrağın renk düzenini kısa süre görürsün. Şekil sabit kalır, asıl iş gördüğün rengi hafızadan yakalamaktır.",
+            "Kolayda sadece hue ayarlanır; Normal ve Zor seviyelerde diğer kontroller de açılır. Kapalı kanallar hedefe otomatik sabitlenir.",
           ],
         },
         cartoon: {
-          title: "Cartoon",
+          title: "Çizgi Film",
           paragraphs: [
-            "Bir cartoon sahnesinde adjustable boyali alan gorunur. Karakteri, sahneyi ve hedef rengi kaybolmadan once incele.",
-            "Rengi hue kontrolleriyle hafizandan yeniden kur. Maske sahneyi sabit tutar, sen boyali layerin rengini degistirirsin.",
+            "Çizgi film sahnesindeki boyanabilir karakter alanını görürsün. Sahne aynı kalır, sen karakter rengini aklında tutarsın.",
+            "Tahminde hue, saturation ve brightness zorluğa göre açılır. Maske sahneyi korur, renk hesabı karakter katmanında yapılır.",
           ],
         },
       },
@@ -367,10 +367,10 @@ export const DICTIONARIES = {
       duel: "Duel",
     },
     gameFamily: {
-      label: "Oyun bolumu",
-      color: "Color",
-      flag: "Flag",
-      cartoon: "Cartoon",
+      label: "Oyun bölümü",
+      color: "Renk",
+      flag: "Bayrak",
+      cartoon: "Çizgi Film",
     },
     gameModeDescription: {
       normal: "Her rengi ezberlemek için beş saniye.",
