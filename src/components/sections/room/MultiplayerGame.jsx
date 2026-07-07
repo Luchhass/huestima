@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
+import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -19,15 +20,6 @@ import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
-
-const HUE_SHOWCASE_MODE_IDS = new Set([
-  GAME_MODE_IDS.NORMAL,
-  GAME_MODE_IDS.ENDLESS,
-  GAME_MODE_IDS.FLASH,
-  GAME_MODE_IDS.SEQUENCE,
-  GAME_MODE_IDS.TIMED,
-  GAME_MODE_IDS.DUEL,
-]);
 
 function buildProgressItems(room, currentPlayerId) {
   const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
@@ -115,14 +107,19 @@ export default function MultiplayerGame({
     phase === "waiting";
   const isFlagMode = game.gameMode.id === GAME_MODE_IDS.FLAG;
   const isCartoonMode = game.gameMode.id === GAME_MODE_IDS.CARTOON;
+  const cartoonPreloadTargets = useMemo(() => {
+    if (!isCartoonMode) return [];
+    if (game.targetColors.length) return game.targetColors;
+    return game.targetColor ? [game.targetColor] : [];
+  }, [game.targetColor, game.targetColors, isCartoonMode]);
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
-  const usesShowcaseGuessChrome =
-    isFlagMode || isCartoonMode || HUE_SHOWCASE_MODE_IDS.has(game.gameMode.id);
+  const usesShowcaseGuessChrome = isFlagMode || isCartoonMode;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
 
   useGameChrome(isImmersivePhase);
+  useCartoonAssetPreload(isCartoonMode, cartoonPreloadTargets);
   useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
     renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
@@ -213,6 +210,10 @@ export default function MultiplayerGame({
         : renderedPhase === GAME_PHASES.GUESS
           ? game.guessColor
           : null;
+  const usesCompactShowcaseCard =
+    (isFlagMode || isCartoonMode) &&
+    (renderedPhase === GAME_PHASES.MEMORIZE ||
+      renderedPhase === GAME_PHASES.GUESS);
 
   return (
     <main
@@ -257,6 +258,7 @@ export default function MultiplayerGame({
               }
             : undefined
         }
+        heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
         isExpanded={renderedPhase === "leaderboard"}
       >
         <div className="h-full min-h-[inherit]">

@@ -8,6 +8,7 @@ import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
+import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -93,6 +94,11 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     : t("home.paragraphs");
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
+  useCartoonAssetPreload(
+    cleanGameFamily === GAME_FAMILY_IDS.CARTOON,
+    undefined,
+    "scene",
+  );
   useFlagFullscreenLock(
     cleanGameFamily === GAME_FAMILY_IDS.FLAG ||
       cleanGameFamily === GAME_FAMILY_IDS.CARTOON ||
@@ -235,6 +241,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
 
         <div
           ref={contentRef}
+          data-route-transition-scope
           className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
         >
           {isAdminProtectorVisible ? (

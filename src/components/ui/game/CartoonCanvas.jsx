@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { loadCartoonImage } from "@/lib/cartoonImageCache";
 
-const imageCache = new Map();
 const MAX_RENDER_WIDTH = 1400;
 const POSITIONS = new Float32Array([
   -1, -1,
@@ -123,22 +123,6 @@ const LAYER_FRAGMENT_SHADER = `
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
-}
-
-function loadImage(src) {
-  if (!src) return Promise.resolve(null);
-  if (imageCache.has(src)) return imageCache.get(src);
-
-  const promise = new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = "async";
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-
-  imageCache.set(src, promise);
-  return promise;
 }
 
 function compileShader(gl, type, source) {
@@ -290,12 +274,13 @@ export default function CartoonCanvas({
   const paintBase = color?.paintBase;
   const paintBaseKey = `${paintBase?.h ?? ""}:${paintBase?.s ?? ""}:${paintBase?.v ?? ""}`;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     targetRef.current = normalizeTarget(color);
 
     if (visibleRef.current && rendererRef.current) {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
-      frameRef.current = requestAnimationFrame(() => rendererRef.current?.draw());
+      frameRef.current = null;
+      rendererRef.current.draw();
     }
   }, [color, targetH, targetS, targetV, paintBaseKey]);
 
@@ -417,8 +402,8 @@ export default function CartoonCanvas({
     }
 
     async function loadTextures() {
-      const baseImage = await loadImage(baseSrc);
-      const sourceImage = sourceSrc ? await loadImage(sourceSrc) : null;
+      const baseImage = await loadCartoonImage(baseSrc);
+      const sourceImage = sourceSrc ? await loadCartoonImage(sourceSrc) : null;
 
       if (isCancelled || !baseImage) return;
 
@@ -426,10 +411,10 @@ export default function CartoonCanvas({
       renderer.layers = await Promise.all(
         cleanLayers.map(async (layer) => {
           const layerImage = layer.sourcePath
-            ? await loadImage(layer.sourcePath)
+            ? await loadCartoonImage(layer.sourcePath)
             : sourceImage;
           const needsMask = !layer.sourcePath && layer.maskPath;
-          const maskImage = needsMask ? await loadImage(layer.maskPath) : null;
+          const maskImage = needsMask ? await loadCartoonImage(layer.maskPath) : null;
 
           if (!layerImage) return null;
 

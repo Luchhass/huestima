@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clipboard, Pencil, UserMinus, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
@@ -92,6 +93,11 @@ export default function LobbyCard({
       : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
+  useCartoonAssetPreload(
+    room?.gameMode === GAME_MODE_IDS.CARTOON,
+    undefined,
+    "scene",
+  );
   useFlagFullscreenLock(
     room?.gameMode === GAME_MODE_IDS.FLAG ||
       room?.gameMode === GAME_MODE_IDS.CARTOON,

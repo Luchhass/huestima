@@ -41,12 +41,22 @@ export default function CartoonOverlay({
   const baseScenePath = color?.baseScenePath || color?.scenePath;
   const maskPath = color?.maskPath || imagePath;
   const variantStyle = VARIANT_CLASSES[variant] || VARIANT_CLASSES.reference;
-  const scenePlacement =
+  const scenePlacementStyle =
     slice === "top"
-      ? "absolute inset-x-0 top-0 h-[200%] w-full"
+      ? {
+          left: "-1px",
+          right: "-1px",
+          top: "-1px",
+          height: "calc(200% + 2px)",
+        }
       : slice === "bottom"
-        ? "absolute inset-x-0 bottom-0 h-[200%] w-full"
-        : "absolute inset-0 h-full w-full";
+        ? {
+            left: "-1px",
+            right: "-1px",
+            bottom: "-1px",
+            height: "calc(200% + 2px)",
+          }
+        : { inset: "-1px" };
 
   if (!isCartoonColor(color) || !imagePath) return null;
 
@@ -65,10 +75,31 @@ export default function CartoonOverlay({
     return (
       <span
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-[inherit] bg-black ${className}`}
-        style={{ borderRadius: "inherit" }}
+        className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-[inherit] ${className}`}
+        style={{
+          borderRadius: "inherit",
+          backgroundColor: color.hex || "transparent",
+        }}
       >
-        <span className={scenePlacement}>
+        <span className="absolute" style={scenePlacementStyle}>
+          <Image
+            src={baseScenePath || imagePath}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 500px"
+            unoptimized
+            priority={variant !== "tile"}
+            className="object-cover"
+          />
+          <span
+            className="absolute inset-0"
+            style={{
+              ...maskStyle,
+              backgroundColor: color.hex,
+              mixBlendMode: "color",
+              opacity: 1,
+            }}
+          />
           {originalScenePath && baseScenePath ? (
             <CartoonCanvas
               baseSrc={baseScenePath}

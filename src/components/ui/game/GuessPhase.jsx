@@ -55,12 +55,7 @@ export default function GuessPhase({
   const isGradientGuess = isGradientColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
   const isCartoonGuess = isCartoonColor(guessColor);
-  const isHueGuess =
-    !isGradientGuess &&
-    !isFlagGuess &&
-    !isCartoonGuess &&
-    Number.isFinite(guessColor?.h);
-  const usesShowcaseGuessLayout = isFlagGuess || isCartoonGuess || isHueGuess;
+  const usesShowcaseGuessLayout = isFlagGuess || isCartoonGuess;
   const sidePickerWidth = 50;
   const pickerWidth = isGradientGuess
     ? sidePickerWidth

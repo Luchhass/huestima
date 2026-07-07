@@ -18,9 +18,10 @@ export default function GameCardShell({
   flagOverlayProps = {},
   cartoonOverlayProps = {},
   isExpanded = false,
+  heightMode = "normal",
   ...props
 }) {
-  const cardHeight = useResponsiveCardHeight(isExpanded);
+  const cardHeight = useResponsiveCardHeight(isExpanded, heightMode);
   const isFlagCard = isFlagColor(color);
   const isCartoonCard = isCartoonColor(color);
   const background = color ? gradientBackground(color) : null;

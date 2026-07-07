@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import BrandLogoMark from "./BrandLogoMark";
@@ -17,7 +18,53 @@ import { useTranslation } from "@/hooks/useLanguage";
 export default function AppHeader() {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const router = useRouter();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const isNavigatingRef = useRef(false);
+
+  useEffect(() => {
+    isNavigatingRef.current = false;
+  }, [pathname]);
+
+  const playRouteTransition = async (href) => {
+    const scope =
+      document.querySelector("[data-route-transition-scope]") ||
+      document.querySelector("[data-intro-card-target]") ||
+      document.querySelector("main");
+
+    if (!scope || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      router.push(href);
+      return;
+    }
+
+    await gsap.to(scope, {
+      autoAlpha: 0,
+      x: 28,
+      duration: 0.24,
+      ease: "power2.inOut",
+      overwrite: true,
+    });
+
+    router.push(href);
+  };
+
+  const handleFamilyNavigation = (event, href, active) => {
+    if (active) {
+      setIsNavOpen(false);
+      return;
+    }
+
+    if (isNavigatingRef.current) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    isNavigatingRef.current = true;
+    setIsNavOpen(false);
+
+    void playRouteTransition(href);
+  };
 
   return (
     <header
@@ -39,7 +86,9 @@ export default function AppHeader() {
                   key={option.id}
                   href={option.href}
                   aria-current={active ? "page" : undefined}
-                  onClick={() => setIsNavOpen(false)}
+                  onClick={(event) =>
+                    handleFamilyNavigation(event, option.href, active)
+                  }
                   className={`transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                     active
                       ? "text-zinc-950 dark:text-white"
@@ -87,6 +136,9 @@ export default function AppHeader() {
                 href={option.href}
                 aria-current={active ? "page" : undefined}
                 data-sound="off"
+                onClick={(event) =>
+                  handleFamilyNavigation(event, option.href, active)
+                }
                 className={`relative inline-flex h-8 items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                   active
                     ? "text-zinc-950 dark:text-white"
