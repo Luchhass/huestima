@@ -77,7 +77,7 @@ export default function JoinRoomCard({
   return (
     <div ref={scopeRef} className="relative flex h-full flex-col bg-black p-6 text-white sm:p-8">
       <Link
-        href="/"
+        href="/color"
         aria-label={t("common.backHome")}
         className="solo-close-button absolute right-6 top-6 grid size-9 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8"
       >

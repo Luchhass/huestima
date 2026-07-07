@@ -20,6 +20,15 @@ import LeaderboardCard from "./LeaderboardCard";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
 
+const HUE_SHOWCASE_MODE_IDS = new Set([
+  GAME_MODE_IDS.NORMAL,
+  GAME_MODE_IDS.ENDLESS,
+  GAME_MODE_IDS.FLASH,
+  GAME_MODE_IDS.SEQUENCE,
+  GAME_MODE_IDS.TIMED,
+  GAME_MODE_IDS.DUEL,
+]);
+
 function buildProgressItems(room, currentPlayerId) {
   const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
   const totalRounds = room?.game?.roundCount || ROUND_COUNT;
@@ -105,10 +114,13 @@ export default function MultiplayerGame({
     phase === GAME_PHASES.RESULT ||
     phase === "waiting";
   const isFlagMode = game.gameMode.id === GAME_MODE_IDS.FLAG;
+  const isCartoonMode = game.gameMode.id === GAME_MODE_IDS.CARTOON;
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
-  const [isFlagWidgetExiting, setIsFlagWidgetExiting] = useState(false);
-  const isRenderedFlagGuessPhase =
-    isFlagMode && renderedPhase === GAME_PHASES.GUESS;
+  const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
+  const usesShowcaseGuessChrome =
+    isFlagMode || isCartoonMode || HUE_SHOWCASE_MODE_IDS.has(game.gameMode.id);
+  const isRenderedShowcaseGuessPhase =
+    usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
 
   useGameChrome(isImmersivePhase);
   useFlagFullscreenLock(isFlagMode);
@@ -119,14 +131,14 @@ export default function MultiplayerGame({
   useEffect(() => {
     if (game.phase === renderedPhase) return undefined;
 
-    if (renderedPhase === GAME_PHASES.GUESS && isFlagMode) {
+    if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseGuessChrome) {
       const exitStartId = window.setTimeout(() => {
-        setIsFlagWidgetExiting(true);
+        setIsShowcaseWidgetExiting(true);
       }, 0);
 
       const timeoutId = window.setTimeout(() => {
         setRenderedPhase(game.phase);
-        setIsFlagWidgetExiting(false);
+        setIsShowcaseWidgetExiting(false);
       }, FLAG_WIDGET_EXIT_DELAY_MS);
 
       return () => {
@@ -137,11 +149,11 @@ export default function MultiplayerGame({
 
     const timeoutId = window.setTimeout(() => {
       setRenderedPhase(game.phase);
-      setIsFlagWidgetExiting(false);
+      setIsShowcaseWidgetExiting(false);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [game.phase, isFlagMode, renderedPhase]);
+  }, [game.phase, renderedPhase, usesShowcaseGuessChrome]);
 
   useEffect(() => {
     if (startTrackedRef.current) return;
@@ -206,18 +218,18 @@ export default function MultiplayerGame({
     <main
       className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8"
       style={
-        isRenderedFlagGuessPhase
+        isRenderedShowcaseGuessPhase
           ? { "--flag-control-count": game.difficulty?.controls?.length || 3 }
           : undefined
       }
     >
       <GameCardShell
         color={shellColor}
-        className={`${isRenderedFlagGuessPhase ? "flag-game-card-shell" : ""} ${
-          isFlagWidgetExiting ? "flag-game-card-shell--exiting" : ""
+        className={`${isRenderedShowcaseGuessPhase ? "flag-game-card-shell" : ""} ${
+          isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
         }`}
         flagOverlayProps={
-          isRenderedFlagGuessPhase
+          isFlagMode && isRenderedShowcaseGuessPhase
             ? {
                 isInteractive: true,
                 activeSlotId: game.guessColor.activeSlotId,
@@ -234,6 +246,14 @@ export default function MultiplayerGame({
                     v: selectedSlot?.v ?? game.guessColor.v,
                   });
                 },
+              }
+            : undefined
+        }
+        cartoonOverlayProps={
+          isCartoonMode
+            ? {
+                variant:
+                  renderedPhase === GAME_PHASES.GUESS ? "guess" : "reference",
               }
             : undefined
         }
@@ -282,7 +302,7 @@ export default function MultiplayerGame({
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
               progressItems={progressItems}
-              isFlagWidgetExiting={isFlagWidgetExiting}
+              isShowcaseWidgetExiting={isShowcaseWidgetExiting}
             />
           )}
 

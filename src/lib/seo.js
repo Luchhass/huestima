@@ -46,7 +46,61 @@ export const ROUTE_SEO = {
     title: "Huestima - Hue Estimate Color Game",
     description:
       "Play Huestima, a free online color game where you estimate hue, saturation, and brightness from memory. Guess the color in singleplayer or multiplayer rounds.",
-    path: "/",
+    path: "/color",
+  },
+  color: {
+    title: "Huestima Color",
+    description:
+      "Play Huestima Color, the classic hue estimate game with normal, flash, sequence, timed, gradient, endless, and duel modes.",
+    path: "/color",
+  },
+  flag: {
+    title: "Huestima Flag",
+    description:
+      "Play Huestima Flag, a flag color guessing game where you match the colors behind fixed emblems.",
+    path: "/flag",
+  },
+  cartoon: {
+    title: "Huestima Cartoon",
+    description:
+      "Play Huestima Cartoon, a cartoon scene color guessing game with adjustable character masks.",
+    path: "/cartoon",
+  },
+  colorSingleplayer: {
+    title: "Huestima Color Singleplayer",
+    description:
+      "Play the isolated Huestima Color singleplayer game with classic hue, flash, sequence, timed, and gradient rounds.",
+    path: "/color/singleplayer",
+  },
+  flagSingleplayer: {
+    title: "Huestima Flag Singleplayer",
+    description:
+      "Play the isolated Huestima Flag singleplayer game and match flag colors from memory.",
+    path: "/flag/singleplayer",
+  },
+  cartoonSingleplayer: {
+    title: "Huestima Cartoon Singleplayer",
+    description:
+      "Play the isolated Huestima Cartoon singleplayer game and rebuild cartoon scene colors from memory.",
+    path: "/cartoon/singleplayer",
+  },
+  colorMultiplayer: {
+    title: "Huestima Color Multiplayer",
+    description:
+      "Create or join Huestima Color multiplayer lobbies for shared color guessing rounds.",
+    path: "/color/multiplayer",
+  },
+  flagMultiplayer: {
+    title: "Huestima Flag Multiplayer",
+    description:
+      "Create or join isolated Huestima Flag multiplayer lobbies.",
+    path: "/flag/multiplayer",
+  },
+  cartoonMultiplayer: {
+    title: "Huestima Cartoon Multiplayer",
+    description:
+      "Create or join isolated Huestima Cartoon multiplayer lobbies.",
+    path: "/cartoon/multiplayer",
   },
   singleplayer: {
     title: "Hue Estimate Singleplayer Game - Huestima",
@@ -120,7 +174,7 @@ export function createJsonLd() {
           "Huestima Color Memory Game",
           "Hue Estimate Game",
         ],
-        url: SITE_URL,
+        url: absoluteUrl("/color"),
         description: SITE_DESCRIPTION,
         inLanguage: "en",
         publisher: {
@@ -142,7 +196,7 @@ export function createJsonLd() {
           "Huestima Hue Estimate Game",
           "Huestima Color Guessing Game",
         ],
-        url: SITE_URL,
+        url: absoluteUrl("/color"),
         image: SITE_IMAGE_URL,
         description: SITE_DESCRIPTION,
         applicationCategory: "GameApplication",
@@ -167,6 +221,7 @@ export function createJsonLd() {
           "Hue, saturation, and brightness controls",
           "Easy, Normal, and Hard difficulty",
           "Normal, Flash, and Sequence game modes",
+          "Cartoon main color guessing mode",
         ],
       },
     ],

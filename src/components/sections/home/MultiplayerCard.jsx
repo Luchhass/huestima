@@ -11,8 +11,14 @@ import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
-  DEFAULT_GAME_MODE_ID,
+  GAME_MODE_OPTIONS,
 } from "@/lib/constants";
+import {
+  getDefaultGameModeForFamily,
+  getGameFamilyByMode,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
+import { getGameModeOption } from "@/lib/gameMode";
 import { emitWithAck, getSocket } from "@/lib/socket";
 import {
   createPlayerId,
@@ -234,7 +240,11 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
   );
 }
 
-function roomMatchesSearch(room, query) {
+function roomMatchesSearch(room, query, gameFamily) {
+  if (gameFamily && getGameFamilyByMode(room.gameMode) !== gameFamily) {
+    return false;
+  }
+
   const cleanQuery = query.trim().toLowerCase();
   if (!cleanQuery) return true;
 
@@ -303,9 +313,14 @@ function RoomListRow({ room, selected, onSelect, disabled }) {
   );
 }
 
-export default function MultiplayerCard({ onTallStepChange }) {
+export default function MultiplayerCard({ gameFamily = "color", onTallStepChange }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
+  const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
+  const defaultGameModeOption = getGameModeOption(defaultGameMode, GAME_MODE_OPTIONS, cleanGameFamily);
+  const defaultDifficulty =
+    defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
   const scopeRef = useRef(null);
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
@@ -348,8 +363,8 @@ export default function MultiplayerCard({ onTallStepChange }) {
   );
 
   const visibleRooms = useMemo(
-    () => rooms.filter((room) => roomMatchesSearch(room, "")),
-    [rooms],
+    () => rooms.filter((room) => roomMatchesSearch(room, "", cleanGameFamily)),
+    [cleanGameFamily, rooms],
   );
 
   const clearActionError = () => {
@@ -378,7 +393,9 @@ export default function MultiplayerCard({ onTallStepChange }) {
       return;
     }
 
-    const nextRooms = responseData(response).rooms || [];
+    const nextRooms = (responseData(response).rooms || []).filter(
+      (room) => getGameFamilyByMode(room.gameMode) === cleanGameFamily,
+    );
     setRooms(nextRooms);
 
     setSelectedRoomCode((currentCode) => {
@@ -388,7 +405,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
 
       return nextRooms[0]?.code || "";
     });
-  }, [t]);
+  }, [cleanGameFamily, t]);
 
   useEffect(() => {
     if (panel !== PANELS.JOIN) return undefined;
@@ -403,7 +420,9 @@ export default function MultiplayerCard({ onTallStepChange }) {
     }
 
     const handleListUpdated = (payload = {}) => {
-      const nextRooms = payload.rooms || [];
+      const nextRooms = (payload.rooms || []).filter(
+        (room) => getGameFamilyByMode(room.gameMode) === cleanGameFamily,
+      );
       setRooms(nextRooms);
       setSelectedRoomCode((currentCode) => {
         if (currentCode && nextRooms.some((room) => room.code === currentCode)) {
@@ -420,7 +439,7 @@ export default function MultiplayerCard({ onTallStepChange }) {
       window.clearTimeout(loadTimerId);
       socket.off("room:listUpdated", handleListUpdated);
     };
-  }, [loadRooms, panel]);
+  }, [cleanGameFamily, loadRooms, panel]);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -491,8 +510,8 @@ export default function MultiplayerCard({ onTallStepChange }) {
       roomName: cleanLobbyName(lobbyName),
       visibility,
       password: isPrivate ? cleanLobbyPassword(password) : "",
-      difficulty: DEFAULT_DIFFICULTY_ID,
-      gameMode: DEFAULT_GAME_MODE_ID,
+      difficulty: defaultDifficulty,
+      gameMode: defaultGameMode,
     });
 
     if (!response.ok) {
@@ -509,8 +528,8 @@ export default function MultiplayerCard({ onTallStepChange }) {
 
     trackEvent("lobby_create", {
       game_type: "multiplayer",
-      difficulty: DEFAULT_DIFFICULTY_ID,
-      game_mode: DEFAULT_GAME_MODE_ID,
+      difficulty: defaultDifficulty,
+      game_mode: defaultGameMode,
       visibility,
     });
 

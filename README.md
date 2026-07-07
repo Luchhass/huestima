@@ -68,6 +68,19 @@ Tracked events:
 
 No player names, room codes, or personal identifiers are sent to Analytics.
 
+## Cartoon Assets
+
+Cartoon mode keeps originals, masks, and generated runtime layers under
+`public/game-modes/cartoon/<pack>`. The shared catalog in
+`shared/cartoonCatalog.mjs` points at real scene stills; the generator crops
+each still and masks the adjustable cartoon color inside that scene.
+
+Regenerate the catalog scenes after adding or changing a cartoon:
+
+```bash
+npm run build:cartoons
+```
+
 ## Checks
 
 ```bash

@@ -25,7 +25,7 @@ export default function RoomMessageCard({ title, message }) {
       <div data-screen-reveal className="mt-auto">
         <div className="w-full">
           <Link
-            href="/"
+            href="/color"
             className="rgb-hover-button card-action-height inline-flex w-full items-center justify-center rounded-full bg-white px-6 text-base font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
             <span className="relative z-10">{t("common.backHome")}</span>

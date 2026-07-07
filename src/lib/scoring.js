@@ -1,4 +1,4 @@
-import { hexToRgb, isFlagColor, isGradientColor } from "./color";
+import { hexToRgb, isCartoonColor, isFlagColor, isGradientColor } from "./color";
 import { MAX_ROUND_SCORE } from "./constants";
 
 export const SCORE_TUNING = {
@@ -186,6 +186,10 @@ export function calculateColorMatchScore(target, guess) {
     return averageFlagSlotScore(target, guess, calculateColorScore);
   }
 
+  if (isCartoonColor(target) && isCartoonColor(guess)) {
+    return calculateColorScore(target.hex, guess.hex);
+  }
+
   return calculateColorScore(target.hex, guess.hex);
 }
 
@@ -199,6 +203,10 @@ export function calculateColorMatchDistance(target, guess) {
 
   if (isFlagColor(target) && isFlagColor(guess)) {
     return averageFlagSlotScore(target, guess, ciede2000Distance);
+  }
+
+  if (isCartoonColor(target) && isCartoonColor(guess)) {
+    return ciede2000Distance(target.hex, guess.hex);
   }
 
   return ciede2000Distance(target.hex, guess.hex);

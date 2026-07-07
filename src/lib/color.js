@@ -1,4 +1,9 @@
 import { GAME_MODE_IDS } from "./constants";
+import {
+  DEFAULT_CARTOON_ID,
+  CARTOON_OPTIONS,
+  getCartoonOption,
+} from "./cartoons";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
 
@@ -77,7 +82,7 @@ export function hexToRgb(hex) {
     normalized.length === 3
       ? normalized
           .split("")
-          .map((character) => character + character)
+          .map((digit) => digit + digit)
           .join("")
       : normalized;
 
@@ -108,6 +113,10 @@ export function isFlagColor(color) {
   return color?.type === GAME_MODE_IDS.FLAG && Boolean(color?.flagId);
 }
 
+export function isCartoonColor(color) {
+  return color?.type === GAME_MODE_IDS.CARTOON && Boolean(color?.cartoonId);
+}
+
 function averageRgbHex(firstHex, secondHex) {
   const first = hexToRgb(firstHex);
   const second = hexToRgb(secondHex);
@@ -133,6 +142,9 @@ function averageManyRgbHex(hexValues) {
 
 export function gradientBackground(color) {
   if (isFlagColor(color)) return color.hex;
+  if (isCartoonColor(color)) {
+    return "#000000";
+  }
   if (!isGradientColor(color)) return color?.hex || color;
 
   return `linear-gradient(90deg, ${color.left.hex}, ${color.right.hex})`;
@@ -140,6 +152,7 @@ export function gradientBackground(color) {
 
 export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
+  if (isCartoonColor(color)) return "#eef3ee";
   if (!isGradientColor(color)) return color?.hex || color || "#000000";
 
   return color.toneHex || averageRgbHex(color.left.hex, color.right.hex);
@@ -224,6 +237,74 @@ export function withFlagHex(color) {
   };
 }
 
+function mergeCartoonPaint(cartoon, color) {
+  const paint = { ...cartoon.paint };
+
+  if (Number.isFinite(color?.h)) paint.h = color.h;
+  if (Number.isFinite(color?.s)) paint.s = color.s;
+  if (Number.isFinite(color?.v)) paint.v = color.v;
+
+  return paint;
+}
+
+export function withCartoonHex(color) {
+  const cartoon = getCartoonOption(color?.cartoonId || DEFAULT_CARTOON_ID);
+
+  if (!cartoon) {
+    return withHex({
+      h: color?.h ?? 210,
+      s: color?.s ?? 22,
+      v: color?.v ?? 76,
+    });
+  }
+
+  const cleanColor = withHex(mergeCartoonPaint(cartoon, color));
+
+  return {
+    type: GAME_MODE_IDS.CARTOON,
+    cartoonId: cartoon.id,
+    cartoonLabel: cartoon.label,
+    cartoonSeries: cartoon.series,
+    paintLabel: cartoon.paintLabel,
+    originalScenePath: cartoon.originalScenePath,
+    baseScenePath: cartoon.baseScenePath,
+    scenePath: cartoon.scenePath,
+    imagePath: cartoon.imagePath,
+    maskPath: cartoon.maskPath,
+    assetPath: cartoon.assetPath || cartoon.imagePath,
+    paintBase: cartoon.paint,
+    layers: cartoon.layers,
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: cleanColor.hex,
+  };
+}
+
+export function createDefaultCartoonGuess(targetOrCartoonId = DEFAULT_CARTOON_ID) {
+  const targetColor =
+    targetOrCartoonId && typeof targetOrCartoonId === "object"
+      ? targetOrCartoonId
+      : null;
+  const cartoonId = targetColor?.cartoonId || targetOrCartoonId || DEFAULT_CARTOON_ID;
+
+  if (!DEFAULT_CARTOON_ID) {
+    return withHex({
+      h: 210,
+      s: targetColor?.s ?? 22,
+      v: targetColor?.v ?? 76,
+    });
+  }
+
+  return withCartoonHex({
+    cartoonId,
+    h: 210,
+    s: targetColor?.s,
+    v: targetColor?.v,
+  });
+}
+
 const FLAG_GUESS_START_HUES = [210, 22, 132, 286, 48, 342, 172];
 
 function createRandomFlagGuessSlot(slotColor, index, random) {
@@ -232,17 +313,24 @@ function createRandomFlagGuessSlot(slotColor, index, random) {
   return {
     id: slotColor.id,
     h: (hueBase + Math.floor(random() * 44) - 22 + 360) % 360,
-    s: Math.floor(48 + random() * 42),
-    v: Math.floor(50 + random() * 40),
+    s: Number.isFinite(slotColor.s) ? slotColor.s : 82,
+    v: Number.isFinite(slotColor.v) ? slotColor.v : 78,
   };
 }
 
-export function createDefaultFlagGuess(flagId = DEFAULT_FLAG_ID, random = Math.random) {
+export function createDefaultFlagGuess(targetOrFlagId = DEFAULT_FLAG_ID, random = Math.random) {
+  const targetColor =
+    targetOrFlagId && typeof targetOrFlagId === "object" ? targetOrFlagId : null;
+  const flagId = targetColor?.flagId || targetOrFlagId || DEFAULT_FLAG_ID;
   const flag = getFlagOption(flagId);
+  const targetSlots = Array.isArray(targetColor?.slots)
+    ? targetColor.slots
+    : flag.slots || [{ id: "base", ...flag.background }];
 
   return withFlagHex({
     flagId,
-    slots: (flag.slots || [{ id: "base" }]).map((slotColor, index) =>
+    activeSlotId: targetColor?.activeSlotId || targetSlots[0]?.id,
+    slots: targetSlots.map((slotColor, index) =>
       createRandomFlagGuessSlot(slotColor, index, random),
     ),
   });
@@ -279,6 +367,49 @@ export function randomFlagTargetColors(count, random = Math.random) {
   return result;
 }
 
+export function randomCartoonTargetColor(random = Math.random) {
+  if (!CARTOON_OPTIONS.length) {
+    return withHex({
+      h: Math.floor(random() * 360),
+      s: Math.floor(54 + random() * 38),
+      v: Math.floor(46 + random() * 42),
+    });
+  }
+
+  const cartoon = CARTOON_OPTIONS[Math.floor(random() * CARTOON_OPTIONS.length)];
+
+  return withCartoonHex({
+    cartoonId: cartoon.id,
+  });
+}
+
+export function randomCartoonTargetColors(count, random = Math.random) {
+  if (!CARTOON_OPTIONS.length) {
+    return Array.from({ length: count }, () => randomCartoonTargetColor(random));
+  }
+
+  const result = [];
+
+  while (result.length < count) {
+    const shuffled = [...CARTOON_OPTIONS];
+
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+
+    for (const cartoon of shuffled) {
+      if (result.length >= count) break;
+
+      result.push(withCartoonHex({
+        cartoonId: cartoon.id,
+      }));
+    }
+  }
+
+  return result;
+}
+
 export function randomTargetColor(difficultyId, gameModeId = GAME_MODE_IDS.NORMAL) {
   if (gameModeId === GAME_MODE_IDS.GRADIENT) {
     return randomGradientTargetColor();
@@ -286,6 +417,10 @@ export function randomTargetColor(difficultyId, gameModeId = GAME_MODE_IDS.NORMA
 
   if (gameModeId === GAME_MODE_IDS.FLAG) {
     return randomFlagTargetColor();
+  }
+
+  if (gameModeId === GAME_MODE_IDS.CARTOON) {
+    return randomCartoonTargetColor();
   }
 
   const difficulty = getDifficultyOption(difficultyId);

@@ -13,15 +13,17 @@ import {
   DEFAULT_ROUND_COUNT,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
-import { getGameModeOption } from "@/lib/gameMode";
+import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
 
-const SINGLEPLAYER_GAME_MODE_OPTIONS = GAME_MODE_OPTIONS.filter(
-  (option) => !option.multiplayerOnly,
+const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
+  GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
 );
 
 export default function SingleplayerCard({
   difficulty,
   gameMode,
+  gameModeOptions = SINGLEPLAYER_GAME_MODE_OPTIONS,
+  playPath = "/color/singleplayer",
   roundCount = DEFAULT_ROUND_COUNT,
   onDifficultyChange,
   onDifficultyFeedback,
@@ -33,7 +35,7 @@ export default function SingleplayerCard({
   const description = `${t(
     `setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`,
   )} ${t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`)}`;
-  const gameModeOption = getGameModeOption(gameMode);
+  const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
 
@@ -84,13 +86,14 @@ export default function SingleplayerCard({
             <GameModePicker
               value={gameMode}
               onChange={onGameModeChange}
-              options={SINGLEPLAYER_GAME_MODE_OPTIONS}
+              options={gameModeOptions}
+              disabled={gameModeOptions.length < 2}
             />
           </div>
 
           <Link
             data-game-mode-shock-target
-            href={`/play/singleplayer?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}`}
+            href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}`}
             className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
           >
             <span className="relative z-10">{t("setup.play")}</span>

@@ -375,7 +375,7 @@ input {
   }
 
   .flag-game-card-shell {
-    --flag-widget-width: 9.375rem;
+    --flag-widget-width: calc(var(--flag-control-count, 3) * 3.125rem);
     --flag-widget-gap: 1.25rem;
     --flag-widget-mobile-height: calc(var(--flag-control-count, 3) * 3.125rem);
     --flag-widget-mobile-gap: 0.9rem;

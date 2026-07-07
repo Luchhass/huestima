@@ -1,4 +1,5 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
+import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
 
 const GRADIENT_FIXED_COLOR = {
@@ -75,7 +76,7 @@ export function hexToRgb(hex) {
     normalized.length === 3
       ? normalized
           .split("")
-          .map((character) => character + character)
+          .map((digit) => digit + digit)
           .join("")
       : normalized;
   const number = Number.parseInt(value, 16);
@@ -104,6 +105,10 @@ export function isGradientColor(color) {
 
 export function isFlagColor(color) {
   return color?.type === GAME_MODES.FLAG && Boolean(color?.flagId);
+}
+
+export function isCartoonColor(color) {
+  return color?.type === GAME_MODES.CARTOON && Boolean(color?.cartoonId);
 }
 
 function averageRgbHex(firstHex, secondHex) {
@@ -194,6 +199,51 @@ export function withFlagHex(color) {
   };
 }
 
+function mergeCartoonPaint(cartoon, color) {
+  const paint = { ...cartoon.paint };
+
+  if (Number.isFinite(color?.h)) paint.h = color.h;
+  if (Number.isFinite(color?.s)) paint.s = color.s;
+  if (Number.isFinite(color?.v)) paint.v = color.v;
+
+  return paint;
+}
+
+export function withCartoonHex(color) {
+  const cartoon = getCartoonOption(color?.cartoonId || DEFAULT_CARTOON_ID);
+
+  if (!cartoon) {
+    return withHex({
+      h: color?.h ?? 210,
+      s: color?.s ?? 22,
+      v: color?.v ?? 76,
+    });
+  }
+
+  const cleanColor = withHex(mergeCartoonPaint(cartoon, color));
+
+  return {
+    type: GAME_MODES.CARTOON,
+    cartoonId: cartoon.id,
+    cartoonLabel: cartoon.label,
+    cartoonSeries: cartoon.series,
+    paintLabel: cartoon.paintLabel,
+    originalScenePath: cartoon.originalScenePath,
+    baseScenePath: cartoon.baseScenePath,
+    scenePath: cartoon.scenePath,
+    imagePath: cartoon.imagePath,
+    maskPath: cartoon.maskPath,
+    assetPath: cartoon.assetPath || cartoon.imagePath,
+    paintBase: cartoon.paint,
+    layers: cartoon.layers,
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: cleanColor.hex,
+  };
+}
+
 export function randomFlagTargetColor(random = Math.random) {
   const flag = FLAG_OPTIONS[Math.floor(random() * FLAG_OPTIONS.length)];
 
@@ -225,6 +275,39 @@ export function randomFlagTargetColors(count, random = Math.random) {
   return result;
 }
 
+export function randomCartoonTargetColors(count, random = Math.random) {
+  if (!CARTOON_OPTIONS.length) {
+    return Array.from({ length: count }, () =>
+      withHex({
+        h: Math.floor(random() * 360),
+        s: Math.floor(54 + random() * 38),
+        v: Math.floor(46 + random() * 42),
+      }),
+    );
+  }
+
+  const result = [];
+
+  while (result.length < count) {
+    const shuffled = [...CARTOON_OPTIONS];
+
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+
+    for (const cartoon of shuffled) {
+      if (result.length >= count) break;
+
+      result.push(withCartoonHex({
+        cartoonId: cartoon.id,
+      }));
+    }
+  }
+
+  return result;
+}
+
 export function applyDifficultyConstraints(hsv, difficultyId) {
   if (isGradientColor(hsv)) {
     return withGradientHex(hsv);
@@ -232,6 +315,10 @@ export function applyDifficultyConstraints(hsv, difficultyId) {
 
   if (isFlagColor(hsv)) {
     return withFlagHex(hsv);
+  }
+
+  if (isCartoonColor(hsv)) {
+    return withCartoonHex(hsv);
   }
 
   const difficulty = DIFFICULTY_CONFIG[difficultyId] || DIFFICULTY_CONFIG.normal;
@@ -278,6 +365,10 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode })
 
   if (gameMode === GAME_MODES.FLAG) {
     return randomFlagTargetColors(roundCount, random);
+  }
+
+  if (gameMode === GAME_MODES.CARTOON) {
+    return randomCartoonTargetColors(roundCount, random);
   }
 
   return Array.from({ length: roundCount }, () =>

@@ -7,7 +7,7 @@ const FLAG_WIDTH = 300;
 const FLAG_HEIGHT = 200;
 const THIRD_WIDTH = FLAG_WIDTH / 3;
 const THIRD_HEIGHT = FLAG_HEIGHT / 3;
-const FLAG_ASSET_BASE = "/flag-assets/emblems";
+const FLAG_ASSET_BASE = "/game-modes/flag/emblems";
 
 function starPoints(cx, cy, outerRadius, innerRadius, points = 5, rotation = -90) {
   return Array.from({ length: points * 2 }, (_, index) => {

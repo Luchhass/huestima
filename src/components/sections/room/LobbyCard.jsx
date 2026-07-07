@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clipboard, Pencil, UserMinus, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
@@ -15,6 +15,8 @@ import {
   GAME_MODE_IDS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
+import { getGameFamilyByMode } from "@/lib/gameFamily";
+import { getAvailableGameModeOptions } from "@/lib/gameMode";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -32,10 +34,6 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const EXPANDED_REVEAL_DELAY = 320;
 const DIFFICULTY_BURST_LIFETIME_MS = 3900;
-const MULTIPLAYER_GAME_MODE_OPTIONS = GAME_MODE_OPTIONS.filter(
-  (option) => !option.singleplayerOnly,
-);
-
 export default function LobbyCard({
   room,
   currentPlayerId,
@@ -68,6 +66,15 @@ export default function LobbyCard({
       ?.lockedDifficultyId,
   );
   const players = room?.players || [];
+  const gameFamily = getGameFamilyByMode(room?.gameMode);
+  const multiplayerGameModeOptions = useMemo(
+    () =>
+      getAvailableGameModeOptions(
+        GAME_MODE_OPTIONS.filter((option) => !option.singleplayerOnly),
+        gameFamily,
+      ),
+    [gameFamily],
+  );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
 
@@ -335,8 +342,13 @@ export default function LobbyCard({
               <GameModePicker
                 value={room?.gameMode}
                 onChange={handleGameModeChange}
-                options={MULTIPLAYER_GAME_MODE_OPTIONS}
-                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+                options={multiplayerGameModeOptions}
+                disabled={
+                  multiplayerGameModeOptions.length < 2 ||
+                  !isHost ||
+                  isUpdatingSettings ||
+                  room?.status !== "lobby"
+                }
                 className="w-full"
               />
             </div>

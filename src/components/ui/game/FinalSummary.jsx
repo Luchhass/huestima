@@ -8,10 +8,17 @@ import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
-import { colorToneHex, gradientBackground, isFlagColor, readableTone } from "@/lib/color";
+import {
+  colorToneHex,
+  gradientBackground,
+  isCartoonColor,
+  isFlagColor,
+  readableTone,
+} from "@/lib/color";
 import { getFinalAssessmentKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
-import { playFinalScore } from "@/lib/sound";
+import { playFinalScore, resumeAudioIfAllowed } from "@/lib/sound";
+import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 
 const EXPANDED_REVEAL_DELAY = 320;
@@ -27,6 +34,10 @@ function colorTitleLabel(color) {
 
   if (isFlagColor(color)) {
     return color.hex;
+  }
+
+  if (isCartoonColor(color)) {
+    return `${color.cartoonLabel || "Cartoon"} ${color.hex}`;
   }
 
   return color?.hex || "";
@@ -49,6 +60,7 @@ export default function FinalSummary({
   averageScore,
   maxScore: providedMaxScore,
   onPlayAgain,
+  homeHref = "/",
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
@@ -74,11 +86,14 @@ export default function FinalSummary({
   const hasFlagTiles = results.some((result) => isFlagColor(result.target));
 
   useLayoutEffect(() => {
+    resumeAudioIfAllowed();
+
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     );
 
     if (reduceMotion.matches) {
+      resumeAudioIfAllowed();
       playFinalScore(totalScore, maxScore);
       return undefined;
     }
@@ -168,6 +183,7 @@ export default function FinalSummary({
         })
         .call(
           () => {
+            resumeAudioIfAllowed();
             playFinalScore(totalScore, maxScore);
           },
           undefined,
@@ -327,7 +343,7 @@ export default function FinalSummary({
     >
       <Link
         ref={closeRef}
-        href="/"
+        href={homeHref}
         aria-label={t("common.backHome")}
         className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
       >
@@ -423,6 +439,15 @@ export default function FinalSummary({
 
               {isFlagColor(result.target) && (
                 <FlagOverlay color={result.target} className="z-[1]" />
+              )}
+
+              {isCartoonColor(result.target) && (
+                <CartoonOverlay
+                  color={result.target}
+                  variant="tile"
+                  size="tile"
+                  className="z-[2]"
+                />
               )}
 
               <span

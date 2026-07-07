@@ -11,6 +11,7 @@ import {
   ROOM_PASSWORD_MIN_LENGTH,
   ROOM_VISIBILITIES,
 } from "../constants.js";
+import { HAS_CARTOON_OPTIONS } from "../game/cartoons.js";
 
 export function fail(error) {
   return { ok: false, error };
@@ -63,6 +64,10 @@ export function validateGameMode(gameMode) {
   const cleanMode = cleanString(gameMode) || GAME_MODES.NORMAL;
   if (!Object.values(GAME_MODES).includes(cleanMode)) {
     return fail("Invalid game mode.");
+  }
+
+  if (cleanMode === GAME_MODES.CARTOON && !HAS_CARTOON_OPTIONS) {
+    return fail("Cartoon mode needs a cartoon dataset.");
   }
 
   return ok({ gameMode: cleanMode });

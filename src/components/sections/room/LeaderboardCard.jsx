@@ -5,8 +5,15 @@ import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
-import { colorToneHex, gradientBackground, isFlagColor, readableTone } from "@/lib/color";
+import {
+  colorToneHex,
+  gradientBackground,
+  isCartoonColor,
+  isFlagColor,
+  readableTone,
+} from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
+import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
@@ -31,6 +38,10 @@ function colorTitleLabel(color) {
 
   if (isFlagColor(color)) {
     return color.hex;
+  }
+
+  if (isCartoonColor(color)) {
+    return `${color.cartoonLabel || "Cartoon"} ${color.hex}`;
   }
 
   return color?.hex || "";
@@ -189,6 +200,15 @@ export default function LeaderboardCard({
 
                     {isFlagColor(result.target) && (
                       <FlagOverlay color={result.target} className="z-[1]" />
+                    )}
+
+                    {isCartoonColor(result.target) && (
+                      <CartoonOverlay
+                        color={result.target}
+                        variant="tile"
+                        size="tile"
+                        className="z-[2]"
+                      />
                     )}
 
                     <span

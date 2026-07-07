@@ -7,13 +7,19 @@ import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
   gradientBackground,
+  isCartoonColor,
   isFlagColor,
   isGradientColor,
   readableTone,
 } from "@/lib/color";
 import { getResultLineKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
-import { playScoreResolve, startScoreCountSound } from "@/lib/sound";
+import {
+  playScoreResolve,
+  resumeAudioIfAllowed,
+  startScoreCountSound,
+} from "@/lib/sound";
+import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 
 const SCORE_COUNT_DURATION = 2.55;
@@ -67,6 +73,8 @@ export default function ResultPhase({
   useLayoutEffect(() => {
     if (!result) return undefined;
 
+    resumeAudioIfAllowed();
+
     const scoreElement = scoreRef.current;
     const resultLineElement = resultLineRef.current;
 
@@ -104,6 +112,7 @@ export default function ResultPhase({
         if (scoreStarted || !scoreElement.isConnected) return;
 
         scoreStarted = true;
+        resumeAudioIfAllowed();
         const state = { value: 0 };
 
         scoreSound = startScoreCountSound({
@@ -437,6 +446,7 @@ export default function ResultPhase({
             if (scoreStarted || !scoreElement.isConnected) return;
 
             scoreStarted = true;
+            resumeAudioIfAllowed();
             const state = { value: 0 };
 
             scoreSound = startScoreCountSound({
@@ -491,6 +501,8 @@ export default function ResultPhase({
 
   const guessTone = swatchToneClasses(colorToneHex(result.guess));
   const targetTone = swatchToneClasses(colorToneHex(result.target));
+  const isCartoonGuessResult = isCartoonColor(result.guess);
+  const isCartoonTargetResult = isCartoonColor(result.target);
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
 
   return (
@@ -503,10 +515,18 @@ export default function ResultPhase({
         style={{ background: gradientBackground(result.guess) }}
       >
         {isFlagColor(result.guess) && (
-          <FlagOverlay color={result.guess} slice="top" />
+          <FlagOverlay color={result.guess} />
         )}
 
-        <div className="overflow-hidden">
+        {isCartoonGuessResult && (
+          <CartoonOverlay
+            color={result.guess}
+            variant="guess"
+            size="result"
+          />
+        )}
+
+        <div className="relative z-20 overflow-hidden">
           <p
             ref={roundRef}
             className="text-base font-semibold opacity-72"
@@ -515,7 +535,7 @@ export default function ResultPhase({
           </p>
         </div>
 
-        <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
+        <div className="absolute bottom-6 left-6 z-20 sm:bottom-8 sm:left-8">
           <div className="overflow-hidden">
             <p
               ref={selectionLabelRef}
@@ -535,7 +555,7 @@ export default function ResultPhase({
           </div>
         </div>
 
-        <div className="absolute top-6 right-6 max-w-[calc(100%-3rem)] text-right sm:top-8 sm:right-8 sm:max-w-72">
+        <div className="absolute top-6 right-6 z-20 max-w-[calc(100%-3rem)] text-right sm:top-8 sm:right-8 sm:max-w-72">
           <div className="overflow-hidden pb-[0.08em]">
             <p
               ref={scoreRef}
@@ -568,10 +588,18 @@ export default function ResultPhase({
         style={{ background: gradientBackground(result.target) }}
       >
         {isFlagColor(result.target) && (
-          <FlagOverlay color={result.target} slice="bottom" />
+          <FlagOverlay color={result.target} />
         )}
 
-        <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8">
+        {isCartoonTargetResult && (
+          <CartoonOverlay
+            color={result.target}
+            variant="reference"
+            size="result"
+          />
+        )}
+
+        <div className="absolute bottom-6 left-6 z-20 sm:bottom-8 sm:left-8">
           <div className="overflow-hidden">
             <p
               ref={originalLabelRef}
@@ -597,7 +625,7 @@ export default function ResultPhase({
             type="button"
             aria-label={t("game.finishRun")}
             onClick={onFinishRun}
-            className="soft-icon-button result-action-button card-action-size group absolute right-[5.75rem] bottom-6 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
+            className="soft-icon-button result-action-button card-action-size group absolute right-[5.75rem] bottom-6 z-30 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
           >
             <span
               ref={finishRunButtonRingRef}
@@ -616,7 +644,7 @@ export default function ResultPhase({
             hasNextRound ? t("game.goNextRound") : t("game.showFinalScore")
           }
           onClick={onContinue}
-          className="soft-icon-button result-action-button result-next-button card-action-size group absolute right-6 bottom-6 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
+          className="soft-icon-button result-action-button result-next-button card-action-size group absolute right-6 bottom-6 z-30 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
         >
           <span
             ref={continueButtonRingRef}

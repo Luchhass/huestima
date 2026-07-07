@@ -8,6 +8,7 @@ import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
+import { getGameFamilyByMode, getGameFamilyHref } from "@/lib/gameFamily";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
 import LobbyCard from "./LobbyCard";
@@ -301,7 +302,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
       await leaveRoom(player.playerId);
     }
 
-    router.push("/");
+    router.push(getGameFamilyHref(getGameFamilyByMode(room?.gameMode)));
   };
 
   const activeGame = startedGame || room?.game;

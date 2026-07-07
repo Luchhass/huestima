@@ -13,6 +13,7 @@ export const GAME_MODES = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
+  CARTOON: "cartoon",
   DUEL: "duel",
 };
 
@@ -60,7 +61,11 @@ export const GAME_MODE_CONFIG = {
   },
   [GAME_MODES.FLAG]: {
     revealDurationMs: 5000,
-    lockedDifficulty: DIFFICULTIES.HARD,
+    lockedDifficulty: DIFFICULTIES.EASY,
+  },
+  [GAME_MODES.CARTOON]: {
+    revealDurationMs: 5000,
+    lockedDifficulty: DIFFICULTIES.EASY,
   },
   [GAME_MODES.DUEL]: {
     revealDurationMs: 5000,

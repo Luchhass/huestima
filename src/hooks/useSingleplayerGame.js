@@ -8,12 +8,16 @@ import {
   MAX_ROUND_SCORE,
 } from "@/lib/constants";
 import {
+  createDefaultCartoonGuess,
   createDefaultGradientGuess,
   createDefaultFlagGuess,
+  isCartoonColor,
   isGradientColor,
   isFlagColor,
+  randomCartoonTargetColors,
   randomFlagTargetColors,
   randomTargetColor,
+  withCartoonHex,
   withFlagHex,
   withGradientHex,
   withHex,
@@ -48,7 +52,11 @@ function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   }
 
   if (gameMode?.id === GAME_MODE_IDS.FLAG) {
-    return createDefaultFlagGuess(targetColor?.flagId);
+    return createDefaultFlagGuess(targetColor);
+  }
+
+  if (gameMode?.id === GAME_MODE_IDS.CARTOON) {
+    return createDefaultCartoonGuess(targetColor);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -63,12 +71,20 @@ function constrainGuessColor(guessColor, difficulty, gameMode) {
     return withFlagHex(guessColor);
   }
 
+  if (gameMode.id === GAME_MODE_IDS.CARTOON || isCartoonColor(guessColor)) {
+    return withCartoonHex(guessColor);
+  }
+
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
 }
 
 function createTargetColors(difficultyId, gameModeId, roundCount) {
   if (gameModeId === GAME_MODE_IDS.FLAG) {
     return randomFlagTargetColors(roundCount);
+  }
+
+  if (gameModeId === GAME_MODE_IDS.CARTOON) {
+    return randomCartoonTargetColors(roundCount);
   }
 
   return Array.from({ length: roundCount }, () =>
@@ -91,6 +107,7 @@ export function useSingleplayerGame(
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isFlagMode = gameMode.id === GAME_MODE_IDS.FLAG;
+  const isCartoonMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -135,6 +152,20 @@ export function useSingleplayerGame(
       return;
     }
 
+    if (isCartoonMode) {
+      const cartoonTargetColors =
+        nextRoundIndex === 0 || targetColors.length < roundCount
+          ? randomCartoonTargetColors(roundCount)
+          : targetColors;
+      const nextTargetColor = cartoonTargetColors[nextRoundIndex];
+
+      setTargetColors(cartoonTargetColors);
+      setTargetColor(nextTargetColor);
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, nextTargetColor));
+      setPhase(GAME_PHASES.GUESS);
+      return;
+    }
+
     const nextTargetColor = randomTargetColor(effectiveDifficulty.id, gameMode.id);
 
     setTargetColors([]);
@@ -144,6 +175,7 @@ export function useSingleplayerGame(
   }, [
     effectiveDifficulty,
     gameMode,
+    isCartoonMode,
     isFlagMode,
     isSequenceMode,
     roundCount,
@@ -263,6 +295,7 @@ export function useSingleplayerGame(
     isSequenceMode,
     isGradientMode,
     isEndlessMode,
+    isCartoonMode,
     roundCount,
     phase,
     roundIndex,

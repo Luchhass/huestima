@@ -14,14 +14,18 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import {
-  APP_NAME,
   DEFAULT_DIFFICULTY_ID,
-  DEFAULT_GAME_MODE_ID,
   DEFAULT_ROUND_COUNT,
   DIFFICULTY_IDS,
   GAME_MODE_IDS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
+import {
+  getDefaultGameModeForFamily,
+  getGameFamilyHref,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
+import { getAvailableGameModeOptions } from "@/lib/gameMode";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -53,12 +57,20 @@ function waitForCardResize() {
   });
 }
 
-export default function HomeCard({ initialView = "home" }) {
+export default function HomeCard({ initialView = "home", gameFamily = "color" }) {
   const { t } = useTranslation();
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
+  const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
+  const defaultDifficulty =
+    GAME_MODE_LOCKED_DIFFICULTIES[defaultGameMode] || DEFAULT_DIFFICULTY_ID;
+  const singleplayerGameModeOptions = getAvailableGameModeOptions(
+    GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
+    cleanGameFamily,
+  );
   const { cancelUnlockRequest, enableAdmin, protectorRequestId } = useAdminMode();
   const [view, setView] = useState(initialView);
-  const [difficulty, setDifficulty] = useState(DEFAULT_DIFFICULTY_ID);
-  const [gameMode, setGameMode] = useState(DEFAULT_GAME_MODE_ID);
+  const [difficulty, setDifficulty] = useState(defaultDifficulty);
+  const [gameMode, setGameMode] = useState(defaultGameMode);
   const [roundCount, setRoundCount] = useState(DEFAULT_ROUND_COUNT);
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
@@ -73,11 +85,16 @@ export default function HomeCard({ initialView = "home" }) {
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
+  const homeSection = t(`home.sections.${cleanGameFamily}`);
+  const homeTitle = homeSection?.title || t(`gameFamily.${cleanGameFamily}`);
+  const homeParagraphs = Array.isArray(homeSection?.paragraphs)
+    ? homeSection.paragraphs
+    : t("home.paragraphs");
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useFlagFullscreenLock(isSingleplayer && gameMode === GAME_MODE_IDS.FLAG);
   useMusicScene(MUSIC_SCENES.MENU);
-  useScreenReveal(contentRef, [view, isAdminProtectorVisible], {
+  useScreenReveal(contentRef, [view, cleanGameFamily, isAdminProtectorVisible], {
     delay: isAdminProtectorVisible ? 90 : 0,
   });
 
@@ -225,10 +242,10 @@ export default function HomeCard({ initialView = "home" }) {
                 <h1
                   className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]"
                 >
-                  {APP_NAME}
+                  {homeTitle}
                 </h1>
 
-                {t("home.paragraphs").map((paragraph, index) => (
+                {homeParagraphs.map((paragraph, index) => (
                   <p
                     key={paragraph}
                     className={`${
@@ -254,6 +271,8 @@ export default function HomeCard({ initialView = "home" }) {
             <SingleplayerCard
               difficulty={difficulty}
               gameMode={gameMode}
+              gameModeOptions={singleplayerGameModeOptions}
+              playPath={getGameFamilyHref(cleanGameFamily, "singleplayer")}
               roundCount={roundCount}
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
@@ -262,6 +281,7 @@ export default function HomeCard({ initialView = "home" }) {
             />
           ) : (
             <MultiplayerCard
+              gameFamily={cleanGameFamily}
               onTallStepChange={setIsMultiplayerTallStep}
             />
           )}

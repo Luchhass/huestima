@@ -8,8 +8,10 @@ import {
 import {
   applyDifficultyConstraints,
   generateTargetColors,
+  isCartoonColor,
   isFlagColor,
   isGradientColor,
+  withCartoonHex,
   withFlagHex,
   withHex,
   withGradientHex,
@@ -64,6 +66,10 @@ function calculateMatchScore(targetColor, guessColor) {
     return calculateFlagSlotAverage(targetColor, guessColor, calculateColorScore);
   }
 
+  if (isCartoonColor(targetColor) && isCartoonColor(guessColor)) {
+    return calculateColorScore(targetColor.hex, guessColor.hex);
+  }
+
   return calculateColorScore(targetColor.hex, guessColor.hex);
 }
 
@@ -77,6 +83,10 @@ function calculateMatchDistance(targetColor, guessColor) {
 
   if (isFlagColor(targetColor) && isFlagColor(guessColor)) {
     return calculateFlagSlotAverage(targetColor, guessColor, ciede2000Distance);
+  }
+
+  if (isCartoonColor(targetColor) && isCartoonColor(guessColor)) {
+    return ciede2000Distance(targetColor.hex, guessColor.hex);
   }
 
   return ciede2000Distance(targetColor.hex, guessColor.hex);
@@ -123,7 +133,10 @@ function validateGuessColorPayload(targetColor, guessColor) {
     const targetSlots = Array.isArray(targetColor.slots) ? targetColor.slots : [];
 
     if (!targetSlots.length) {
-      const color = validateHsvColor(guessColor);
+      const color = validateHsvColor({
+        ...targetColor,
+        ...guessColor,
+      });
       if (!color.ok) return color;
 
       return {
@@ -143,7 +156,10 @@ function validateGuessColorPayload(targetColor, guessColor) {
       const slotPayload = guessColor?.slots?.find(
         (slotColor) => slotColor?.id === targetSlot.id,
       );
-      const slotResult = validateHsvColor(slotPayload || guessColor);
+      const slotResult = validateHsvColor({
+        ...targetSlot,
+        ...(slotPayload || guessColor),
+      });
 
       if (!slotResult.ok) return slotResult;
 
@@ -160,6 +176,24 @@ function validateGuessColorPayload(targetColor, guessColor) {
           activeSlotId: guessColor?.activeSlotId,
           slots: cleanSlots,
           flagId: targetColor.flagId,
+        }),
+      },
+    };
+  }
+
+  if (isCartoonColor(targetColor)) {
+    const color = validateHsvColor({
+      ...targetColor,
+      ...guessColor,
+    });
+    if (!color.ok) return color;
+
+    return {
+      ok: true,
+      data: {
+        color: withCartoonHex({
+          ...color.data.color,
+          cartoonId: targetColor.cartoonId,
         }),
       },
     };
@@ -319,7 +353,9 @@ export function submitRoundGuess(room, payload) {
     ? withGradientHex(colorResult.data.color)
     : isFlagColor(targetColor)
       ? withFlagHex(colorResult.data.color)
-    : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
+      : isCartoonColor(targetColor)
+        ? withCartoonHex(colorResult.data.color)
+        : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
   const result = {
     round: roundIndex + 1,

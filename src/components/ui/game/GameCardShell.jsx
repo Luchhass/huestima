@@ -1,7 +1,14 @@
 "use client";
 
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
-import { colorToneHex, gradientBackground, isFlagColor, readableTone } from "@/lib/color";
+import {
+  colorToneHex,
+  gradientBackground,
+  isCartoonColor,
+  isFlagColor,
+  readableTone,
+} from "@/lib/color";
+import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 
 export default function GameCardShell({
@@ -9,19 +16,30 @@ export default function GameCardShell({
   children,
   className = "",
   flagOverlayProps = {},
+  cartoonOverlayProps = {},
   isExpanded = false,
   ...props
 }) {
   const cardHeight = useResponsiveCardHeight(isExpanded);
   const isFlagCard = isFlagColor(color);
+  const isCartoonCard = isCartoonColor(color);
   const background = color ? gradientBackground(color) : null;
   const tone = color ? readableTone(colorToneHex(color)) : "dark";
-  const foreground = tone === "dark" ? "#171413" : "#fffaf3";
-  const muted = tone === "dark" ? "rgba(23,20,19,0.64)" : "rgba(255,250,243,0.72)";
+  const foreground = isCartoonCard
+    ? "#fffaf3"
+    : tone === "dark"
+      ? "#171413"
+      : "#fffaf3";
+  const muted = isCartoonCard
+    ? "rgba(255,250,243,0.78)"
+    : tone === "dark"
+      ? "rgba(23,20,19,0.64)"
+      : "rgba(255,250,243,0.72)";
   const cardStyle = {
     background: background || undefined,
     color: color ? foreground : "#ffffff",
     "--game-muted": color ? muted : "rgba(255,255,255,0.72)",
+    textShadow: isCartoonCard ? "0 2px 12px rgba(0,0,0,0.52)" : undefined,
   };
 
   if (cardHeight) {
@@ -35,9 +53,17 @@ export default function GameCardShell({
       {...props}
     >
       {isFlagCard && <FlagOverlay color={color} {...flagOverlayProps} />}
+      {isCartoonCard && (
+        <CartoonOverlay color={color} {...cartoonOverlayProps} />
+      )}
       {isFlagCard && color.flagLabel && (
         <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold lowercase text-current/78 sm:bottom-8 sm:left-8">
           {color.flagLabel}
+        </span>
+      )}
+      {isCartoonCard && color.cartoonLabel && (
+        <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold lowercase text-current/78 sm:bottom-8 sm:left-8">
+          {color.cartoonLabel}
         </span>
       )}
       {children}

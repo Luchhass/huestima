@@ -11,6 +11,8 @@ export const DICTIONARIES = {
     },
     common: {
       backHome: "Back home",
+      openMenu: "Open navigation",
+      closeMenu: "Close navigation",
       loading: "loading",
       lobby: "lobby",
       yes: "Yes",
@@ -34,6 +36,29 @@ export const DICTIONARIES = {
       fullscreenToggle: "Toggle fullscreen",
     },
     home: {
+      sections: {
+        color: {
+          title: "Color",
+          paragraphs: [
+            "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
+            "Recreate it from memory with hue, saturation, and brightness controls. Play one, three, five, or ten levels to test your eye.",
+          ],
+        },
+        flag: {
+          title: "Flag",
+          paragraphs: [
+            "A flag color appears behind a fixed emblem. Read the layout, memorize the shade, and keep the flag in your head.",
+            "Rebuild the hidden color with the same controls. The flag shape stays steady while your color memory gets tested.",
+          ],
+        },
+        cartoon: {
+          title: "Cartoon",
+          paragraphs: [
+            "A cartoon scene appears with one adjustable painted area. Study the character, the scene, and the target color before it disappears.",
+            "Recreate the color from memory with the same hue controls. The mask keeps the scene in place while your guess changes the painted layer.",
+          ],
+        },
+      },
       paragraphs: [
         "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
         "Recreate it from memory with hue, saturation, and brightness controls. Play one, three, five, or ten levels to test your eye.",
@@ -74,7 +99,14 @@ export const DICTIONARIES = {
       timed: "Timed",
       gradient: "Gradient",
       flag: "Flag",
+      cartoon: "Cartoon",
       duel: "Duel",
+    },
+    gameFamily: {
+      label: "Game section",
+      color: "Color",
+      flag: "Flag",
+      cartoon: "Cartoon",
     },
     gameModeDescription: {
       normal: "Five seconds to memorize each color.",
@@ -84,6 +116,7 @@ export const DICTIONARIES = {
       timed: "Three seconds to memorize, three seconds to choose.",
       gradient: "Match the left and right hue of a two-color blend.",
       flag: "Match the background color behind a fixed flag emblem.",
+      cartoon: "Match the main color in a cartoon scene.",
       duel: "Endless PvP survival with round-by-round eliminations.",
     },
     setup: {
@@ -126,6 +159,7 @@ export const DICTIONARIES = {
         timed: "Memorize each color for three seconds, then lock your guess in three seconds.",
         gradient: "Match both sides of a two-color gradient using the left and right hue bars.",
         flag: "Read the flag shape, then tune the background color behind its fixed emblem.",
+        cartoon: "Study the cartoon scene, then rebuild the color of its main painted area.",
         duel: "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
       },
       multiCopy: {
@@ -136,6 +170,7 @@ export const DICTIONARIES = {
         timed: "Everyone gets three seconds to memorize and three seconds to choose.",
         gradient: "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
         flag: "Everyone sees the same flag. The emblem stays fixed while background accuracy decides the room.",
+        cartoon: "Everyone gets the same cartoon scene. Main color accuracy decides the room.",
         duel: "Endless PvP rounds. Close scores survive; clear last-place misses get eliminated.",
       },
       difficultyCopy: {
@@ -240,6 +275,8 @@ export const DICTIONARIES = {
     },
     common: {
       backHome: "Ana sayfaya dön",
+      openMenu: "Navigasyonu ac",
+      closeMenu: "Navigasyonu kapat",
       loading: "yükleniyor",
       lobby: "lobi",
       yes: "Evet",
@@ -263,6 +300,29 @@ export const DICTIONARIES = {
       fullscreenToggle: "Tam ekran tasarımı değiştir",
     },
     home: {
+      sections: {
+        color: {
+          title: "Color",
+          paragraphs: [
+            "Bir renk bes saniye gorunur. Kaybolmadan once tonu ezberle, hue degerini tahmin et ve aklinda tut.",
+            "Rengi hue, saturation ve brightness kontrolleriyle hafizandan yeniden kur. Gozunu test etmek icin 1, 3, 5 veya 10 level oyna.",
+          ],
+        },
+        flag: {
+          title: "Flag",
+          paragraphs: [
+            "Sabit sembollu bir bayrak rengi gorunur. Sekli oku, tonu ezberle ve bayragi aklinda tut.",
+            "Gizlenen rengi ayni kontrollerle yeniden kur. Bayrak sabit kalir, sen sadece rengi hafizandan yakalarsin.",
+          ],
+        },
+        cartoon: {
+          title: "Cartoon",
+          paragraphs: [
+            "Bir cartoon sahnesinde adjustable boyali alan gorunur. Karakteri, sahneyi ve hedef rengi kaybolmadan once incele.",
+            "Rengi hue kontrolleriyle hafizandan yeniden kur. Maske sahneyi sabit tutar, sen boyali layerin rengini degistirirsin.",
+          ],
+        },
+      },
       paragraphs: [
         "Bir renk beş saniye görünür. Kaybolmadan önce tonu ezberle, hue değerini tahmin et ve aklında tut.",
         "Rengi hue, saturation ve brightness kontrolleriyle hafızandan yeniden kur. Gözünü test etmek için 1, 3, 5 veya 10 level oyna.",
@@ -303,7 +363,14 @@ export const DICTIONARIES = {
       timed: "Zamanlı",
       gradient: "Gradient",
       flag: "Bayrak",
+      cartoon: "Cartoon",
       duel: "Duel",
+    },
+    gameFamily: {
+      label: "Oyun bolumu",
+      color: "Color",
+      flag: "Flag",
+      cartoon: "Cartoon",
     },
     gameModeDescription: {
       normal: "Her rengi ezberlemek için beş saniye.",
@@ -313,6 +380,7 @@ export const DICTIONARIES = {
       timed: "Rengi ezberlemek için üç saniye, seçmek için üç saniye.",
       gradient: "İki renkli geçişin sol ve sağ hue değerini eşleştir.",
       flag: "Sabit bayrak sembolünün arkasındaki rengi eşleştir.",
+      cartoon: "Cizgi film sahnesindeki ana rengi eslestir.",
       duel: "Round round eleme yapan sonsuz PvP modu.",
     },
     setup: {
@@ -355,6 +423,7 @@ export const DICTIONARIES = {
         timed: "Her rengi üç saniye ezberle, sonra tahminini üç saniyede kilitle.",
         gradient: "İki renkli gradientin iki tarafını sol ve sağ hue barlarıyla eşleştir.",
         flag: "Bayrağın şeklini oku, sabit sembolün arkasındaki rengi yeniden kur.",
+        cartoon: "Cizgi film sahnesini incele, sonra ana boyali bolgenin rengini yeniden kur.",
         duel: "Duel sadece multiplayer modudur. Oynamak için lobi oluştur.",
       },
       multiCopy: {
@@ -365,6 +434,7 @@ export const DICTIONARIES = {
         timed: "Herkes üç saniye ezberler ve üç saniyede seçimini yapar.",
         gradient: "Herkes aynı iki renkli gradienti görür. Sol ve sağ hue doğruluğu odayı belirler.",
         flag: "Herkes aynı bayrağı görür. Sembol sabit kalır; arka plan doğruluğu odayı belirler.",
+        cartoon: "Herkes ayni cizgi film sahnesini gorur. Ana renk dogrulugu odayi belirler.",
         duel: "Sonsuz PvP turları. Yakın skorlar yaşar; açık ara sonuncular elenir.",
       },
       difficultyCopy: {

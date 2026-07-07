@@ -67,7 +67,7 @@ export function trackMatchEnd({
   trackEvent("post_score", {
     score: totalScore,
     level: rounds,
-    character: gameType,
+    game_category: gameType,
     game_type: gameType,
     difficulty,
     game_mode: gameMode,

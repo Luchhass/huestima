@@ -57,7 +57,7 @@ export const metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: SITE_URL,
+    canonical: `${SITE_URL}/color`,
   },
   icons: {
     icon: [
@@ -74,7 +74,7 @@ export const metadata = {
   openGraph: {
     title: ROUTE_SEO.home.title,
     description: SITE_DESCRIPTION,
-    url: "/",
+    url: "/color",
     siteName: APP_NAME,
     images: [
       {

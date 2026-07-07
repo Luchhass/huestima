@@ -1,8 +1,5 @@
-import { createPageMetadata } from "@/lib/seo";
-import HomeCard from "@/components/sections/home/HomeCard";
+import { redirect } from "next/navigation";
 
-export const metadata = createPageMetadata("multiplayer");
-
-export default function MultiplayerPage() {
-  return <HomeCard initialView="multiplayer" />;
+export default function LegacyMultiplayerPage() {
+  redirect("/color/multiplayer");
 }

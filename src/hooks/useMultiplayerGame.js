@@ -12,10 +12,13 @@ import {
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
 import {
+  createDefaultCartoonGuess,
   createDefaultFlagGuess,
   createDefaultGradientGuess,
+  isCartoonColor,
   isFlagColor,
   isGradientColor,
+  withCartoonHex,
   withFlagHex,
   withGradientHex,
   withHex,
@@ -32,7 +35,11 @@ function createDefaultGuess(difficulty, gameMode, targetColor = null) {
   }
 
   if (gameMode?.id === GAME_MODE_IDS.FLAG) {
-    return createDefaultFlagGuess(targetColor?.flagId);
+    return createDefaultFlagGuess(targetColor);
+  }
+
+  if (gameMode?.id === GAME_MODE_IDS.CARTOON) {
+    return createDefaultCartoonGuess(targetColor);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -45,6 +52,10 @@ function constrainGuessColor(guessColor, difficulty, gameMode) {
 
   if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
     return withFlagHex(guessColor);
+  }
+
+  if (gameMode.id === GAME_MODE_IDS.CARTOON || isCartoonColor(guessColor)) {
+    return withCartoonHex(guessColor);
   }
 
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
@@ -78,6 +89,7 @@ export function useMultiplayerGame({
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
+  const isCartoonMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -139,13 +151,14 @@ export function useMultiplayerGame({
         setTargetColor(nextTargetColor);
       }
 
-      setPhase(GAME_PHASES.MEMORIZE);
+      setPhase(isCartoonMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE);
       return true;
     },
     [
       effectiveDifficulty,
       gameMode,
       gamePayload,
+      isCartoonMode,
       isSequenceMode,
       targetColors,
       t,
@@ -289,6 +302,7 @@ export function useMultiplayerGame({
     isSequenceMode,
     isGradientMode,
     isDuelMode,
+    isCartoonMode,
     isCurrentPlayerEliminated,
     roundCount,
     phase,

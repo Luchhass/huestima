@@ -11,7 +11,7 @@ import ValueSlider from "@/components/ui/color-picker/ValueSlider";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
-import { isFlagColor, isGradientColor } from "@/lib/color";
+import { isCartoonColor, isFlagColor, isGradientColor } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
 import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
@@ -26,7 +26,7 @@ export default function GuessPhase({
   onSubmit,
   guessDurationMs = null,
   progressItems = [],
-  isFlagWidgetExiting = false,
+  isShowcaseWidgetExiting = false,
 }) {
   const { t } = useTranslation();
   const {
@@ -54,6 +54,13 @@ export default function GuessPhase({
 
   const isGradientGuess = isGradientColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
+  const isCartoonGuess = isCartoonColor(guessColor);
+  const isHueGuess =
+    !isGradientGuess &&
+    !isFlagGuess &&
+    !isCartoonGuess &&
+    Number.isFinite(guessColor?.h);
+  const usesShowcaseGuessLayout = isFlagGuess || isCartoonGuess || isHueGuess;
   const sidePickerWidth = 50;
   const pickerWidth = isGradientGuess
     ? sidePickerWidth
@@ -515,7 +522,13 @@ export default function GuessPhase({
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [controlsKey, isAdminModeEnabled, isFlagGuess, isGradientGuess, isTimedGuess]);
+  }, [
+    controlsKey,
+    isAdminModeEnabled,
+    isGradientGuess,
+    isTimedGuess,
+    usesShowcaseGuessLayout,
+  ]);
 
   const renderFlagControls = (orientation) => {
     const isHorizontal = orientation === "horizontal";
@@ -532,9 +545,14 @@ export default function GuessPhase({
         className={
           isHorizontal
             ? "flag-control-stack flag-control-stack--horizontal grid h-full w-full overflow-hidden rounded-[18px] shadow-[0_14px_28px_rgba(0,0,0,0.18)]"
-            : "flag-control-stack flag-control-stack--vertical grid h-full grid-cols-3 overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
+            : "flag-control-stack flag-control-stack--vertical grid h-full overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
         }
-        style={{ "--flag-control-count": controlCount }}
+        style={{
+          "--flag-control-count": controlCount,
+          gridTemplateColumns: isHorizontal
+            ? undefined
+            : `repeat(${controlCount}, minmax(0, 1fr))`,
+        }}
         aria-label={t("colorPicker.controls")}
       >
         {difficulty.controls.includes("h") && (
@@ -577,7 +595,7 @@ export default function GuessPhase({
     );
   };
 
-  if (isFlagGuess) {
+  if (usesShowcaseGuessLayout) {
     return (
       <div ref={scopeRef} className="relative h-full overflow-visible p-6 sm:p-8">
         {pendingUnlock && !isAdminModeEnabled && (
@@ -589,7 +607,7 @@ export default function GuessPhase({
 
         <div
           className={`flag-control-widget flag-control-widget--desktop ${
-            isFlagWidgetExiting ? "flag-control-widget--exiting" : ""
+            isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
           }`}
           style={{ "--flag-control-count": difficulty.controls.length }}
         >
@@ -598,7 +616,7 @@ export default function GuessPhase({
 
         <div
           className={`flag-control-widget flag-control-widget--mobile ${
-            isFlagWidgetExiting ? "flag-control-widget--exiting" : ""
+            isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
           }`}
           style={{ "--flag-control-count": difficulty.controls.length }}
         >
@@ -620,9 +638,28 @@ export default function GuessPhase({
         {progressItems.length > 0 && (
           <div
             ref={progressRef}
-            className="absolute bottom-[5.25rem] left-6 z-20 sm:bottom-[5.75rem] sm:left-8"
+            className={`absolute left-6 z-20 sm:left-8 ${
+              isTimedGuess
+                ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
+                : "bottom-[5.25rem] sm:bottom-[5.75rem]"
+            }`}
           >
             <MultiplayerProgressList items={progressItems} />
+          </div>
+        )}
+
+        {isTimedGuess && (
+          <div
+            ref={timerRef}
+            className="absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"
+          >
+            <CountdownReel
+              key={`guess-countdown-${timedGuessDurationMs}`}
+              durationMs={timedGuessDurationMs}
+              currentCentiseconds={centiseconds}
+              sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
+              className="translate-y-[0.18em]"
+            />
           </div>
         )}
 

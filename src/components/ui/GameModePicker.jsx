@@ -9,6 +9,7 @@ import {
   Flag,
   Infinity,
   Layers,
+  Palette,
   Swords,
   Timer,
   Zap,
@@ -25,6 +26,7 @@ const GAME_MODE_ICONS = {
   timed: Timer,
   gradient: Blend,
   flag: Flag,
+  cartoon: Palette,
   duel: Swords,
 };
 
