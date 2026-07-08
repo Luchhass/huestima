@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import { GAME_MODE_IDS } from "@/lib/constants";
 import { hsvToHex } from "@/lib/color";
@@ -10,9 +10,39 @@ function clamp(value, min, max) {
 }
 
 function CartoonPreviewCard({ color }) {
+  const cardRef = useRef(null);
+  const [canUseCanvas, setCanUseCanvas] = useState(false);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return undefined;
+
+    if (!("IntersectionObserver" in window)) {
+      const fallbackId = window.setTimeout(() => {
+        setCanUseCanvas(true);
+      }, 0);
+
+      return () => window.clearTimeout(fallbackId);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setCanUseCanvas(entry.isIntersecting);
+      },
+      { rootMargin: "640px" },
+    );
+
+    observer.observe(card);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <article className="relative aspect-video overflow-hidden rounded-[22px] bg-black shadow-[0_14px_34px_rgba(31,25,20,0.16),0_6px_14px_rgba(31,25,20,0.08)]">
-      <CartoonOverlay color={color} useCanvas={false} />
+    <article
+      ref={cardRef}
+      className="relative aspect-video overflow-hidden rounded-[22px] bg-black shadow-[0_14px_34px_rgba(31,25,20,0.16),0_6px_14px_rgba(31,25,20,0.08)]"
+    >
+      <CartoonOverlay color={color} useCanvas={canUseCanvas} />
     </article>
   );
 }
