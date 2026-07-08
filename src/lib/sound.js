@@ -1153,26 +1153,68 @@ export function startScoreCountSound({ duration = 2.55, score = 0 } = {}) {
   let isActive = true;
   let timerId = null;
   const durationMs = duration * 1000;
-  const scoreLift = clamp01(score / 10);
+  const scoreLift = clamp01(Number(score) / 10 || 0);
+  const isZeroScore = scoreLift <= 0.005;
+  const isLowScore = scoreLift < 0.25;
   const startedAt = getNowMs();
   const activeNodes = [];
+
+  if (isZeroScore) {
+    scheduleNoise(context, {
+      duration: 0.045,
+      gain: 0.026,
+      delay: Math.min(0.18, duration * 0.22),
+      filterFrequency: 520,
+      filterType: "bandpass",
+      q: 8,
+    });
+
+    scheduleTone(context, {
+      frequency: 138,
+      endFrequency: 62,
+      type: "sine",
+      gain: 0.05,
+      duration: Math.min(0.34, duration * 0.52),
+      delay: Math.min(0.1, duration * 0.16),
+      attack: 0.004,
+    });
+
+    return {
+      stop: () => {
+        isActive = false;
+      },
+
+      finish: () => {
+        if (!isActive) return;
+
+        isActive = false;
+        playScoreResolve(score);
+      },
+    };
+  }
 
   const startTime = context.currentTime;
   const endTime = startTime + duration;
   const riser = context.createOscillator();
   const riserGain = context.createGain();
 
-  riser.type = "triangle";
-  riser.frequency.setValueAtTime(155 + scoreLift * 55, startTime);
-  riser.frequency.exponentialRampToValueAtTime(360 + scoreLift * 135, endTime);
+  riser.type = isLowScore ? "sine" : "triangle";
+  riser.frequency.setValueAtTime(
+    isLowScore ? 172 : 155 + scoreLift * 55,
+    startTime,
+  );
+  riser.frequency.exponentialRampToValueAtTime(
+    isLowScore ? 108 : 360 + scoreLift * 135,
+    endTime,
+  );
 
   riserGain.gain.setValueAtTime(0.0001, startTime);
   riserGain.gain.linearRampToValueAtTime(
-    0.023 + scoreLift * 0.008,
+    isLowScore ? 0.012 : 0.02 + scoreLift * 0.011,
     startTime + 0.16,
   );
   riserGain.gain.linearRampToValueAtTime(
-    0.034 + scoreLift * 0.012,
+    isLowScore ? 0.017 : 0.03 + scoreLift * 0.016,
     Math.max(startTime + 0.18, endTime - 0.18),
   );
   riserGain.gain.exponentialRampToValueAtTime(0.0001, endTime);
@@ -1183,7 +1225,14 @@ export function startScoreCountSound({ duration = 2.55, score = 0 } = {}) {
   riser.stop(endTime + 0.04);
   activeNodes.push(riser);
 
-  const accents = [0.12, 0.29, 0.47, 0.66, 0.83];
+  const accents =
+    scoreLift < 0.25
+      ? [0.38, 0.78]
+      : scoreLift < 0.55
+        ? [0.22, 0.52, 0.82]
+        : scoreLift < 0.85
+          ? [0.16, 0.36, 0.58, 0.8]
+          : [0.12, 0.29, 0.47, 0.66, 0.83];
   let step = 0;
 
   const tick = () => {
@@ -1193,26 +1242,28 @@ export function startScoreCountSound({ duration = 2.55, score = 0 } = {}) {
     const progress = clamp01(elapsed / durationMs);
     if (step >= accents.length) return;
 
-    const root = 190 + scoreLift * 86;
-    const semitone = [0, 3, 7, 10, 14][step] + progress * 5;
+    const root = isLowScore ? 176 : 190 + scoreLift * 86;
+    const semitone = isLowScore
+      ? [0, -3][step] - progress * 2
+      : [0, 3, 7, 10, 14][step] + progress * 5;
     const frequency = root * 2 ** (semitone / 12);
 
     scheduleTone(context, {
       frequency,
-      endFrequency: frequency * 1.045,
-      type: "triangle",
-      gain: 0.024 + progress * 0.018,
-      duration: 0.095,
+      endFrequency: frequency * (isLowScore ? 0.9 : 1.045),
+      type: isLowScore ? "sine" : "triangle",
+      gain: isLowScore ? 0.016 : 0.024 + progress * 0.018,
+      duration: isLowScore ? 0.12 : 0.095,
       attack: 0.004,
       pan: ((step % 3) - 1) * 0.035,
     });
 
     scheduleNoise(context, {
-      duration: 0.01,
-      gain: 0.005 + progress * 0.006,
-      filterFrequency: 2100 + progress * 2100,
-      filterType: "highpass",
-      q: 3,
+      duration: isLowScore ? 0.015 : 0.01,
+      gain: isLowScore ? 0.005 : 0.005 + progress * 0.006,
+      filterFrequency: isLowScore ? 760 : 2100 + progress * 2100,
+      filterType: isLowScore ? "bandpass" : "highpass",
+      q: isLowScore ? 6 : 3,
       pan: ((step % 3) - 1) * 0.035,
     });
 
@@ -1252,27 +1303,120 @@ export function playScoreResolve(score = 0) {
   const context = getPlayableContext();
   if (!context || !allowSound("score-resolve", 180)) return;
 
-  const quality = clamp01(score / 10);
-  const root = 330 + quality * 120;
+  const quality = clamp01(Number(score) / 10 || 0);
+
+  if (quality <= 0.005) {
+    scheduleNoise(context, {
+      duration: 0.055,
+      gain: 0.034,
+      filterFrequency: 420,
+      filterType: "bandpass",
+      q: 7,
+    });
+
+    scheduleTone(context, {
+      frequency: 150,
+      endFrequency: 58,
+      type: "sine",
+      gain: 0.072,
+      duration: 0.28,
+      attack: 0.003,
+    });
+
+    scheduleTone(context, {
+      frequency: 74,
+      endFrequency: 42,
+      type: "triangle",
+      gain: 0.044,
+      duration: 0.22,
+      delay: 0.055,
+      attack: 0.004,
+    });
+
+    return;
+  }
+
+  if (quality < 0.25) {
+    const root = 185 + quality * 32;
+
+    scheduleNoise(context, {
+      duration: 0.034,
+      gain: 0.018,
+      filterFrequency: 780,
+      filterType: "bandpass",
+      q: 6,
+    });
+
+    [
+      { ratio: 1, delay: 0, gain: 0.036, duration: 0.18 },
+      { ratio: 0.84, delay: 0.105, gain: 0.03, duration: 0.22 },
+    ].forEach((note, index) => {
+      scheduleTone(context, {
+        frequency: root * note.ratio,
+        endFrequency: root * note.ratio * 0.9,
+        type: index === 0 ? "triangle" : "sine",
+        gain: note.gain,
+        duration: note.duration,
+        delay: note.delay,
+        attack: 0.008,
+        pan: (index - 0.5) * 0.05,
+      });
+    });
+
+    return;
+  }
+
+  const root = 300 + quality * 150;
+
+  if (quality < 0.55) {
+    scheduleNoise(context, {
+      duration: 0.024,
+      gain: 0.012,
+      filterFrequency: 1450,
+      filterType: "bandpass",
+      q: 5,
+    });
+
+    [
+      { ratio: 1, delay: 0, gain: 0.034 },
+      { ratio: 1.2, delay: 0.075, gain: 0.029 },
+      { ratio: 1.5, delay: 0.165, gain: 0.026 },
+    ].forEach((note, index) => {
+      scheduleTone(context, {
+        frequency: root * note.ratio,
+        endFrequency: root * note.ratio * 0.985,
+        type: index === 0 ? "triangle" : "sine",
+        gain: note.gain,
+        duration: 0.16,
+        delay: note.delay,
+        attack: 0.01,
+        pan: (index - 1) * 0.045,
+      });
+    });
+
+    return;
+  }
 
   scheduleNoise(context, {
-    duration: 0.026,
-    gain: 0.017,
-    filterFrequency: 3200,
+    duration: quality >= 0.85 ? 0.04 : 0.026,
+    gain: quality >= 0.85 ? 0.023 : 0.017,
+    filterFrequency: quality >= 0.85 ? 4300 : 3200,
     filterType: "highpass",
     q: 3,
   });
 
-  [1, 1.25, 1.5, 2].forEach((ratio, index) => {
+  const ratios = quality >= 0.85 ? [1, 1.25, 1.5, 2, 2.5] : [1, 1.25, 1.5, 2];
+
+  ratios.forEach((ratio, index) => {
     scheduleTone(context, {
       frequency: root * ratio,
-      endFrequency: root * ratio * 1.012,
+      endFrequency: root * ratio * (quality >= 0.85 ? 1.018 : 1.012),
       type: index === 0 ? "triangle" : "sine",
-      gain: 0.038 - index * 0.004,
-      duration: index === 3 ? 0.26 : 0.12,
-      delay: index * 0.052,
+      gain: Math.max(0.018, 0.038 + quality * 0.008 - index * 0.004),
+      duration: index >= 3 ? 0.28 : 0.13,
+      delay: index * (quality >= 0.85 ? 0.058 : 0.052),
       attack: 0.008,
-      pan: (index - 1.5) * 0.055,
+      pan: (index - (ratios.length - 1) / 2) * 0.055,
     });
   });
 }

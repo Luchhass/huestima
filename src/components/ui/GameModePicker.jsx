@@ -272,53 +272,69 @@ export default function GameModePicker({
     setOpen(true);
   };
 
-  const handleWheel = (event) => {
-    if (disabled || optionCount < 2) return;
+  const handleWheel = useCallback(
+    (event) => {
+      if (disabled || optionCount < 2) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+      event.preventDefault();
+      event.stopPropagation();
 
-    const normalizedDelta =
-      event.deltaMode === 1
-        ? event.deltaY * 16
-        : event.deltaMode === 2
-          ? event.deltaY * window.innerHeight
-          : event.deltaY;
-    const direction = Math.sign(normalizedDelta);
-    if (direction === 0) return;
+      const normalizedDelta =
+        event.deltaMode === 1
+          ? event.deltaY * 16
+          : event.deltaMode === 2
+            ? event.deltaY * window.innerHeight
+            : event.deltaY;
+      const direction = Math.sign(normalizedDelta);
+      if (direction === 0) return;
 
-    const now = event.timeStamp;
-    const wheelState = wheelStateRef.current;
+      const now = event.timeStamp;
+      const wheelState = wheelStateRef.current;
 
-    if (
-      direction !== wheelState.lastDirection ||
-      now - wheelState.lastEventAt > WHEEL_GESTURE_GAP
-    ) {
-      wheelState.accumulator = 0;
-      wheelState.lastDirection = direction;
-    }
+      if (
+        direction !== wheelState.lastDirection ||
+        now - wheelState.lastEventAt > WHEEL_GESTURE_GAP
+      ) {
+        wheelState.accumulator = 0;
+        wheelState.lastDirection = direction;
+      }
 
-    wheelState.lastEventAt = now;
-    wheelState.accumulator += normalizedDelta;
+      wheelState.lastEventAt = now;
+      wheelState.accumulator += normalizedDelta;
 
-    if (Math.abs(wheelState.accumulator) < WHEEL_DELTA_THRESHOLD) return;
+      if (Math.abs(wheelState.accumulator) < WHEEL_DELTA_THRESHOLD) return;
 
-    if (now - wheelState.lastStepAt < WHEEL_STEP_GUARD) {
-      wheelState.accumulator = 0;
-      return;
-    }
+      if (now - wheelState.lastStepAt < WHEEL_STEP_GUARD) {
+        wheelState.accumulator = 0;
+        return;
+      }
 
-    let steps = 0;
-    while (
-      Math.abs(wheelState.accumulator) >= WHEEL_DELTA_THRESHOLD &&
-      steps < MAX_WHEEL_STEPS_PER_EVENT
-    ) {
-      stepWheel(direction);
-      wheelState.accumulator -= direction * WHEEL_DELTA_THRESHOLD;
-      wheelState.lastStepAt = now;
-      steps += 1;
-    }
-  };
+      let steps = 0;
+      while (
+        Math.abs(wheelState.accumulator) >= WHEEL_DELTA_THRESHOLD &&
+        steps < MAX_WHEEL_STEPS_PER_EVENT
+      ) {
+        stepWheel(direction);
+        wheelState.accumulator -= direction * WHEEL_DELTA_THRESHOLD;
+        wheelState.lastStepAt = now;
+        steps += 1;
+      }
+    },
+    [disabled, optionCount, stepWheel],
+  );
+
+  useEffect(() => {
+    if (!renderOpen) return undefined;
+
+    const wheelArea = wheelAreaRef.current;
+    if (!wheelArea) return undefined;
+
+    wheelArea.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      wheelArea.removeEventListener("wheel", handleWheel);
+    };
+  }, [handleWheel, renderOpen]);
 
   const handleWheelPointerDown = (event) => {
     if (disabled) return;
@@ -492,7 +508,6 @@ export default function GameModePicker({
         >
           <div
             ref={wheelAreaRef}
-            onWheel={handleWheel}
             onPointerDown={handleWheelPointerDown}
             className={`relative h-full cursor-grab overflow-hidden px-1 select-none touch-none active:cursor-grabbing ${
               dragging ? "game-mode-picker__wheel--dragging" : ""

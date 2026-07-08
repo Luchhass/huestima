@@ -1,12 +1,22 @@
 import { CARTOON_ITEMS } from "../../shared/cartoonCatalog.mjs";
 
-const ASSET_ROOT = "/game-modes/cartoon/adventure-time/generated";
+const DEFAULT_CARTOON_PACK = "adventure-time";
 
-function cartoon({ id, label, series, paintLabel, paint }) {
-  const scenePath = `${ASSET_ROOT}/${id}-scene.webp`;
-  const originalScenePath = `${ASSET_ROOT}/${id}-original.webp`;
-  const maskPath = `${ASSET_ROOT}/${id}-scene-mask.png`;
-  const mainLayerPath = `${ASSET_ROOT}/${id}-main-layer.png`;
+function getGeneratedRoot(item) {
+  const sourcePath = item.sourcePath?.replaceAll("\\", "/") || "";
+  const packMatch = sourcePath.match(/^public\/game-modes\/cartoon\/([^/]+)\//);
+  const pack = packMatch?.[1] || DEFAULT_CARTOON_PACK;
+
+  return `/game-modes/cartoon/${pack}/generated`;
+}
+
+function cartoon(item) {
+  const { id, label, series, paintLabel, paint } = item;
+  const assetRoot = getGeneratedRoot(item);
+  const scenePath = `${assetRoot}/${id}-scene.webp`;
+  const originalScenePath = `${assetRoot}/${id}-original.webp`;
+  const maskPath = `${assetRoot}/${id}-scene-mask.png`;
+  const mainLayerPath = `${assetRoot}/${id}-main-layer.png`;
 
   return {
     id,

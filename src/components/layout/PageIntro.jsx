@@ -7,6 +7,7 @@ import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 
 let hasPlayedEntryIntro = false;
+const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon"]);
 
 function subscribeToClientReady() {
   return () => {};
@@ -23,7 +24,7 @@ function getServerReadySnapshot() {
 function isInviteRoomPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
 
-  return segments.length === 1;
+  return segments.length === 1 && !GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
 }
 
 function shouldPlayEntryIntro(pathname) {

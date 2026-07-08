@@ -19,10 +19,18 @@ import {
   resumeAudioIfAllowed,
   startScoreCountSound,
 } from "@/lib/sound";
+import { APP_NAME } from "@/lib/constants";
 import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 
-const SCORE_COUNT_DURATION = 2.55;
+function getScoreCountDuration(score) {
+  const normalizedScore = Math.min(1, Math.max(0, Number(score) / 10 || 0));
+
+  if (normalizedScore <= 0.005) return 0.58;
+  if (normalizedScore < 0.25) return 0.82;
+
+  return 0.95 + normalizedScore * 1.6;
+}
 
 function swatchToneClasses(hex) {
   return readableTone(hex) === "dark" ? "text-zinc-950" : "text-white";
@@ -41,6 +49,52 @@ function formatHsb(color) {
   return `H${Math.round(h)} S${Math.round(s)} B${Math.round(v)}`;
 }
 
+function renderAnimatedResultLine(line) {
+  return line.split(/(\s+)/).map((token, tokenIndex) => {
+    if (!token.trim()) {
+      return <span key={`space-${tokenIndex}`}>{token}</span>;
+    }
+
+    return (
+      <span
+        key={`word-${token}-${tokenIndex}`}
+        className="inline-block whitespace-nowrap"
+      >
+        {Array.from(token).map((char, charIndex) => (
+          <span
+            key={`${char}-${charIndex}`}
+            data-result-char
+            className="inline-block will-change-transform"
+          >
+            {char}
+          </span>
+        ))}
+      </span>
+    );
+  });
+}
+
+function compactTargets(targets) {
+  return targets.filter(Boolean);
+}
+
+function hasTarget(target) {
+  return Array.isArray(target) ? target.length > 0 : Boolean(target);
+}
+
+function setIfTarget(target, vars) {
+  if (hasTarget(target)) {
+    gsap.set(target, vars);
+  }
+}
+
+function visualResultLabel(color) {
+  if (isCartoonColor(color)) return color.cartoonLabel || "";
+  if (isFlagColor(color)) return color.flagLabel || "";
+
+  return "";
+}
+
 export default function ResultPhase({
   result,
   hasNextRound,
@@ -48,12 +102,14 @@ export default function ResultPhase({
   canFinishRun = false,
   onFinishRun,
   roundLabel = result ? `${result.round}/5` : "",
+  visualIntroDelayMs = 0,
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
 
   const roundRef = useRef(null);
   const scoreRef = useRef(null);
+  const scoreCountDuration = getScoreCountDuration(result?.score);
 
   const continueButtonRef = useRef(null);
   const continueButtonCoreRef = useRef(null);
@@ -69,6 +125,9 @@ export default function ResultPhase({
   const originalValueRef = useRef(null);
 
   const resultLineRef = useRef(null);
+  const guessSectionRef = useRef(null);
+  const targetSectionRef = useRef(null);
+  const splitOverlayRef = useRef(null);
 
   useLayoutEffect(() => {
     if (!result) return undefined;
@@ -77,8 +136,27 @@ export default function ResultPhase({
 
     const scoreElement = scoreRef.current;
     const resultLineElement = resultLineRef.current;
+    const guessSectionElement = guessSectionRef.current;
+    const targetSectionElement = targetSectionRef.current;
+    const splitOverlayElement = splitOverlayRef.current;
 
     if (!scoreElement || !resultLineElement) return undefined;
+
+    const canAnimateSplitReveal = Boolean(
+      scopeRef.current &&
+        guessSectionElement &&
+        targetSectionElement &&
+        splitOverlayElement &&
+        (isFlagColor(result.guess) ||
+          isFlagColor(result.target) ||
+          isCartoonColor(result.guess) ||
+          isCartoonColor(result.target))
+    );
+    const introDelay = Math.max(0, Number(visualIntroDelayMs) || 0) / 1000;
+    const splitRevealDuration = canAnimateSplitReveal ? 1.12 : 0;
+    const revealStart = introDelay + splitRevealDuration;
+    const at = (position) => position + revealStart;
+    const scoreStartDelayMs = Math.round((revealStart + 1.56) * 1000);
 
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
@@ -87,7 +165,7 @@ export default function ResultPhase({
     if (reduceMotion.matches) {
       scoreElement.textContent = formatScore(result.score);
 
-      gsap.set([resultLineElement, finishRunButtonRef.current], {
+      setIfTarget(compactTargets([resultLineElement, finishRunButtonRef.current]), {
         autoAlpha: 1,
         scale: 1,
       });
@@ -107,6 +185,42 @@ export default function ResultPhase({
         "[data-result-char]",
         resultLineElement
       );
+      const stackedTextTargets = compactTargets([
+        selectionLabelRef.current,
+        selectionValueRef.current,
+        originalLabelRef.current,
+        originalValueRef.current,
+      ]);
+      const labelTargets = compactTargets([
+        selectionLabelRef.current,
+        originalLabelRef.current,
+      ]);
+      const valueTargets = compactTargets([
+        selectionValueRef.current,
+        originalValueRef.current,
+      ]);
+      const actionButtonTargets = compactTargets([
+        continueButtonRef.current,
+        finishRunButtonRef.current,
+      ]);
+      const hasContinueButton = Boolean(
+        continueButtonRef.current &&
+          continueButtonCoreRef.current &&
+          continueButtonRingRef.current &&
+          continueArrowRef.current
+      );
+      const hasFinishButton = Boolean(
+        finishRunButtonRef.current &&
+          finishRunButtonRingRef.current &&
+          finishRunButtonIconRef.current
+      );
+      const continueButtonCoreTarget = hasContinueButton
+        ? continueButtonCoreRef.current
+        : {};
+      const continueButtonRingTarget = hasContinueButton
+        ? continueButtonRingRef.current
+        : {};
+      const continueArrowTarget = hasContinueButton ? continueArrowRef.current : {};
 
       const startScoreCounter = () => {
         if (scoreStarted || !scoreElement.isConnected) return;
@@ -116,13 +230,13 @@ export default function ResultPhase({
         const state = { value: 0 };
 
         scoreSound = startScoreCountSound({
-          duration: SCORE_COUNT_DURATION,
+          duration: scoreCountDuration,
           score: result.score,
         });
 
         scoreTween = gsap.to(state, {
           value: result.score,
-          duration: SCORE_COUNT_DURATION,
+          duration: scoreCountDuration,
           ease: "power2.out",
           onUpdate: () => {
             scoreElement.textContent = formatScore(state.value);
@@ -135,99 +249,161 @@ export default function ResultPhase({
               autoAlpha: 1,
             });
 
-            resultCharsTween = gsap.to(resultChars, {
-              autoAlpha: 1,
-              scale: 1,
-              duration: 0.2,
-              ease: "power3.out",
-              stagger: 0.018,
-              clearProps: "transform,opacity,visibility",
-            });
+            if (resultChars.length > 0) {
+              resultCharsTween = gsap.to(resultChars, {
+                autoAlpha: 1,
+                scale: 1,
+                duration: 0.2,
+                ease: "power3.out",
+                stagger: 0.018,
+                clearProps: "transform,opacity,visibility",
+              });
+            }
           },
         });
       };
 
       const timeline = gsap.timeline();
 
-      gsap.set(
-        [
-          selectionLabelRef.current,
-          selectionValueRef.current,
-          originalLabelRef.current,
-          originalValueRef.current,
-        ],
-        {
-          yPercent: 120,
+      if (canAnimateSplitReveal) {
+        gsap.set(splitOverlayElement, {
+          autoAlpha: 1,
+          yPercent: 0,
+          top: 0,
+          right: 0,
+          bottom: "auto",
+          left: 0,
+          height: "100%",
+          scale: 1,
+          transformOrigin: "top center",
           force3D: true,
-        }
-      );
+        });
 
-      gsap.set(roundRef.current, {
+        gsap.set(guessSectionElement, {
+          autoAlpha: 1,
+          yPercent: 0,
+          force3D: true,
+        });
+
+        gsap.set(targetSectionElement, {
+          autoAlpha: 1,
+          yPercent: 100,
+          force3D: true,
+        });
+
+        timeline
+          .to(
+            splitOverlayElement,
+            {
+              height: "50%",
+              duration: 0.56,
+              ease: "expo.inOut",
+            },
+            introDelay
+          )
+          .to(
+            targetSectionElement,
+            {
+              yPercent: 0,
+              duration: 0.58,
+              ease: "expo.out",
+              clearProps: "transform,opacity,visibility",
+            },
+            introDelay + 0.5
+          )
+          .to(
+            splitOverlayElement,
+            {
+              autoAlpha: 0,
+              duration: 0.16,
+              ease: "power2.out",
+            },
+            introDelay + 1
+          )
+          .set(
+            splitOverlayElement,
+            {
+              pointerEvents: "none",
+            },
+            introDelay + 1.12
+          );
+      }
+
+      setIfTarget(stackedTextTargets, {
+        yPercent: 120,
+        force3D: true,
+      });
+
+      setIfTarget(roundRef.current, {
         yPercent: -120,
         autoAlpha: 0,
         force3D: true,
       });
 
-      gsap.set(scoreElement, {
+      setIfTarget(scoreElement, {
         yPercent: 120,
         autoAlpha: 0,
         transformOrigin: "right center",
         force3D: true,
       });
 
-      gsap.set(continueButtonRef.current, {
+      setIfTarget(continueButtonRef.current, {
         autoAlpha: 0,
       });
 
-      gsap.set(finishRunButtonRef.current, {
-        scale: 0,
+      if (hasFinishButton) {
+        gsap.set(finishRunButtonRef.current, {
+          scale: 0,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(finishRunButtonRingRef.current, {
+          scale: 0.22,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(finishRunButtonIconRef.current, {
+          scale: 0.74,
+          rotation: 8,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+      }
+
+      if (hasContinueButton) {
+        gsap.set(continueButtonCoreRef.current, {
+          scale: 0,
+          rotation: -10,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(continueButtonRingRef.current, {
+          scale: 0.22,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(continueArrowRef.current, {
+          scale: 0.72,
+          rotation: -8,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+      }
+
+      setIfTarget(resultLineElement, {
         autoAlpha: 0,
-        transformOrigin: "center center",
-        force3D: true,
       });
 
-      gsap.set(finishRunButtonRingRef.current, {
-        scale: 0.22,
-        autoAlpha: 0,
-        transformOrigin: "center center",
-        force3D: true,
-      });
-
-      gsap.set(finishRunButtonIconRef.current, {
-        scale: 0.74,
-        rotation: 8,
-        autoAlpha: 0,
-        transformOrigin: "center center",
-        force3D: true,
-      });
-
-      gsap.set(continueButtonCoreRef.current, {
-        scale: 0,
-        rotation: -10,
-        transformOrigin: "center center",
-        force3D: true,
-      });
-
-      gsap.set(continueButtonRingRef.current, {
-        scale: 0.22,
-        autoAlpha: 0,
-        transformOrigin: "center center",
-        force3D: true,
-      });
-
-      gsap.set(continueArrowRef.current, {
-        scale: 0.72,
-        rotation: -8,
-        autoAlpha: 0,
-        transformOrigin: "center center",
-        force3D: true,
-      });
-
-      gsap.set(resultLineElement, {
-        autoAlpha: 0,
-      });
-
-      gsap.set(resultChars, {
+      setIfTarget(resultChars, {
         autoAlpha: 0,
         scale: 0.97,
         transformOrigin: "center center",
@@ -238,28 +414,31 @@ export default function ResultPhase({
 
       timeline
         .add(() => {
-          scoreStartTimeout = window.setTimeout(startScoreCounter, 1560);
+          scoreStartTimeout = window.setTimeout(
+            startScoreCounter,
+            scoreStartDelayMs
+          );
         }, 0)
         // 1) Your selection + Original aynı anda açılır
         .to(
-          [selectionLabelRef.current, originalLabelRef.current],
+          labelTargets,
           {
             yPercent: 0,
             duration: 0.78,
             ease: "power4.out",
             clearProps: "transform",
           },
-          0
+          at(0)
         )
         .to(
-          [selectionValueRef.current, originalValueRef.current],
+          valueTargets,
           {
             yPercent: 0,
             duration: 0.82,
             ease: "power4.out",
             clearProps: "transform",
           },
-          0.06
+          at(0.06)
         )
 
         // 2) 1/5
@@ -272,105 +451,109 @@ export default function ResultPhase({
             ease: "power4.out",
             clearProps: "transform,opacity,visibility",
           },
-          0.58
+          at(0.58)
         )
 
         // 3) Buton görünür hale gelir
         .set(
-          [continueButtonRef.current, finishRunButtonRef.current],
+          actionButtonTargets,
           {
             autoAlpha: 1,
           },
-          0.68
-        )
+          at(0.68)
+        );
 
-        .to(
-          finishRunButtonRef.current,
-          {
-            scale: 1.14,
-            rotation: -2.4,
-            duration: 0.2,
-            ease: "expo.out",
-          },
-          0.68
-        )
-        .to(
-          finishRunButtonRef.current,
-          {
-            scale: 0.94,
-            rotation: 1,
-            duration: 0.09,
-            ease: "power3.out",
-          },
-          0.88
-        )
-        .to(
-          finishRunButtonRef.current,
-          {
-            scale: 1,
-            rotation: 0,
-            duration: 0.12,
-            ease: "expo.out",
-            clearProps: "transform,opacity,visibility",
-          },
-          0.97
-        )
-        .to(
-          finishRunButtonRingRef.current,
-          {
-            scale: 1.42,
-            autoAlpha: 0.58,
-            duration: 0.25,
-            ease: "expo.out",
-          },
-          0.69
-        )
-        .to(
-          finishRunButtonRingRef.current,
-          {
-            scale: 1.76,
-            autoAlpha: 0,
-            duration: 0.22,
-            ease: "power2.out",
-          },
-          0.88
-        )
-        .to(
-          finishRunButtonIconRef.current,
-          {
-            scale: 1,
-            rotation: 0,
-            autoAlpha: 1,
-            duration: 0.2,
-            ease: "expo.out",
-            clearProps: "transform,opacity,visibility",
-          },
-          0.78
-        )
+      if (hasFinishButton) {
+        timeline
+          .to(
+            finishRunButtonRef.current,
+            {
+              scale: 1.14,
+              rotation: -2.4,
+              duration: 0.2,
+              ease: "expo.out",
+            },
+            at(0.68)
+          )
+          .to(
+            finishRunButtonRef.current,
+            {
+              scale: 0.94,
+              rotation: 1,
+              duration: 0.09,
+              ease: "power3.out",
+            },
+            at(0.88)
+          )
+          .to(
+            finishRunButtonRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              duration: 0.12,
+              ease: "expo.out",
+              clearProps: "transform,opacity,visibility",
+            },
+            at(0.97)
+          )
+          .to(
+            finishRunButtonRingRef.current,
+            {
+              scale: 1.42,
+              autoAlpha: 0.58,
+              duration: 0.25,
+              ease: "expo.out",
+            },
+            at(0.69)
+          )
+          .to(
+            finishRunButtonRingRef.current,
+            {
+              scale: 1.76,
+              autoAlpha: 0,
+              duration: 0.22,
+              ease: "power2.out",
+            },
+            at(0.88)
+          )
+          .to(
+            finishRunButtonIconRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              autoAlpha: 1,
+              duration: 0.2,
+              ease: "expo.out",
+              clearProps: "transform,opacity,visibility",
+            },
+            at(0.78)
+          );
+      }
 
+      timeline
         // Fancy popup core
         .to(
-          continueButtonCoreRef.current,
+          continueButtonCoreTarget,
           {
             scale: 1.18,
             rotation: 2.6,
             duration: 0.2,
             ease: "expo.out",
           },
-          0.68
+          at(0.68)
         )
         .to(
-          continueButtonCoreRef.current,
+          continueButtonCoreTarget,
           {
             scale: 0.94,
             rotation: -1.2,
             duration: 0.09,
             ease: "power3.out",
           },
-          0.88
+          at(0.88)
         )
         .to(
-          continueButtonCoreRef.current,
+          continueButtonCoreTarget,
           {
             scale: 1,
             rotation: 0,
@@ -378,34 +561,34 @@ export default function ResultPhase({
             ease: "expo.out",
             clearProps: "transform",
           },
-          0.97
+          at(0.97)
         )
 
         // Ring burst
         .to(
-          continueButtonRingRef.current,
+          continueButtonRingTarget,
           {
             scale: 1.5,
             autoAlpha: 0.72,
             duration: 0.26,
             ease: "expo.out",
           },
-          0.7
+          at(0.7)
         )
         .to(
-          continueButtonRingRef.current,
+          continueButtonRingTarget,
           {
             scale: 1.82,
             autoAlpha: 0,
             duration: 0.22,
             ease: "power2.out",
           },
-          0.9
+          at(0.9)
         )
 
         // Ok içeride ayrı bir settle alır
         .to(
-          continueArrowRef.current,
+          continueArrowTarget,
           {
             scale: 1.08,
             rotation: 1.8,
@@ -413,10 +596,10 @@ export default function ResultPhase({
             duration: 0.18,
             ease: "expo.out",
           },
-          0.79
+          at(0.79)
         )
         .to(
-          continueArrowRef.current,
+          continueArrowTarget,
           {
             scale: 1,
             rotation: 0,
@@ -424,7 +607,7 @@ export default function ResultPhase({
             ease: "power3.out",
             clearProps: "transform,opacity,visibility",
           },
-          0.97
+          at(0.97)
         )
 
         // 4) Skor sahneye girer
@@ -437,7 +620,7 @@ export default function ResultPhase({
             ease: "expo.out",
             clearProps: "transform,opacity,visibility",
           },
-          0.98
+          at(0.98)
         )
 
         // 5) Skor sayımı başlar
@@ -450,13 +633,13 @@ export default function ResultPhase({
             const state = { value: 0 };
 
             scoreSound = startScoreCountSound({
-              duration: SCORE_COUNT_DURATION,
+              duration: scoreCountDuration,
               score: result.score,
             });
 
             scoreTween = gsap.to(state, {
               value: result.score,
-              duration: SCORE_COUNT_DURATION,
+              duration: scoreCountDuration,
               ease: "power2.out",
               onUpdate: () => {
                 scoreElement.textContent = formatScore(state.value);
@@ -469,19 +652,21 @@ export default function ResultPhase({
                   autoAlpha: 1,
                 });
 
-                resultCharsTween = gsap.to(resultChars, {
-                  autoAlpha: 1,
-                  scale: 1,
-                  duration: 0.2,
-                  ease: "power3.out",
-                  stagger: 0.018,
-                  clearProps: "transform,opacity,visibility",
-                });
+                if (resultChars.length > 0) {
+                  resultCharsTween = gsap.to(resultChars, {
+                    autoAlpha: 1,
+                    scale: 1,
+                    duration: 0.2,
+                    ease: "power3.out",
+                    stagger: 0.018,
+                    clearProps: "transform,opacity,visibility",
+                  });
+                }
               },
             });
           },
           undefined,
-          1.56
+          at(1.56)
         );
     }, scopeRef);
 
@@ -495,7 +680,7 @@ export default function ResultPhase({
       resultCharsTween?.kill();
       ctx.revert();
     };
-  }, [result]);
+  }, [result, scoreCountDuration, visualIntroDelayMs]);
 
   if (!result) return null;
 
@@ -503,6 +688,12 @@ export default function ResultPhase({
   const targetTone = swatchToneClasses(colorToneHex(result.target));
   const isCartoonGuessResult = isCartoonColor(result.guess);
   const isCartoonTargetResult = isCartoonColor(result.target);
+  const isVisualResult =
+    isFlagColor(result.guess) ||
+    isFlagColor(result.target) ||
+    isCartoonGuessResult ||
+    isCartoonTargetResult;
+  const splitOverlayLabel = visualResultLabel(result.guess);
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
 
   return (
@@ -510,8 +701,42 @@ export default function ResultPhase({
       ref={scopeRef}
       className="relative grid h-full grid-rows-2 overflow-hidden"
     >
+      {isVisualResult && (
+        <section
+          ref={splitOverlayRef}
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-[inherit] p-6 sm:p-8 ${guessTone}`}
+          style={{ background: gradientBackground(result.guess) }}
+        >
+          {isFlagColor(result.guess) && <FlagOverlay color={result.guess} />}
+
+          {isCartoonGuessResult && (
+            <CartoonOverlay
+              color={result.guess}
+              variant="guess"
+              size="card"
+            />
+          )}
+
+          <div className="relative z-20">
+            <p className="text-base font-semibold opacity-72">{roundLabel}</p>
+          </div>
+
+          <div className="absolute top-6 right-6 z-20 text-right sm:top-8 sm:right-8">
+            <p className="text-lg font-semibold opacity-42">{APP_NAME}</p>
+          </div>
+
+          {splitOverlayLabel && (
+            <p className="absolute bottom-6 left-6 z-20 max-w-[calc(100%-3rem)] truncate text-sm font-bold sm:bottom-8 sm:left-8">
+              {splitOverlayLabel}
+            </p>
+          )}
+        </section>
+      )}
+
       <section
-        className={`relative p-6 sm:p-8 ${guessTone}`}
+        ref={guessSectionRef}
+        className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${guessTone}`}
         style={{ background: gradientBackground(result.guess) }}
       >
         {isFlagColor(result.guess) && (
@@ -567,24 +792,17 @@ export default function ResultPhase({
 
           <p
             ref={resultLineRef}
-            className="mt-3 text-xl leading-[1.08] font-semibold"
+            className="mt-3 whitespace-normal break-normal text-xl leading-[1.08] font-semibold"
             style={{ opacity: 0, visibility: "hidden" }}
           >
-            {Array.from(resultLine).map((char, index) => (
-              <span
-                key={`${char}-${index}`}
-                data-result-char
-                className="inline-block will-change-transform"
-              >
-                {char === " " ? "\u00A0" : char}
-              </span>
-            ))}
+            {renderAnimatedResultLine(resultLine)}
           </p>
         </div>
       </section>
 
       <section
-        className={`relative p-6 sm:p-8 ${targetTone}`}
+        ref={targetSectionRef}
+        className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${targetTone}`}
         style={{ background: gradientBackground(result.target) }}
       >
         {isFlagColor(result.target) && (

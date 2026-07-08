@@ -18,6 +18,10 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
+const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
+const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
+const SHOWCASE_RESULT_REVEAL_DELAY_MS =
+  SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
 
 export default function SingleplayerGame({
   initialDifficulty,
@@ -52,9 +56,12 @@ export default function SingleplayerGame({
   const homeHref = getGameFamilyHref(getGameFamilyByMode(game.gameMode.id));
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
+  const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
   const usesShowcaseGuessChrome = isFlagMode || isCartoonMode;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
+  const isRenderedShowcaseResultPhase =
+    usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.RESULT;
 
   useGameChrome(isImmersivePhase);
   useCartoonAssetPreload(isCartoonMode, cartoonPreloadTargets);
@@ -69,26 +76,38 @@ export default function SingleplayerGame({
     if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseGuessChrome) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
+        setIsShowcaseResultExpanded(false);
       }, 0);
 
-      const timeoutId = window.setTimeout(() => {
+      const phaseTimeoutId = window.setTimeout(() => {
         setRenderedPhase(game.phase);
         setIsShowcaseWidgetExiting(false);
       }, FLAG_WIDGET_EXIT_DELAY_MS);
 
       return () => {
         window.clearTimeout(exitStartId);
-        window.clearTimeout(timeoutId);
+        window.clearTimeout(phaseTimeoutId);
       };
     }
 
     const timeoutId = window.setTimeout(() => {
       setRenderedPhase(game.phase);
       setIsShowcaseWidgetExiting(false);
+      setIsShowcaseResultExpanded(false);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
   }, [game.phase, renderedPhase, usesShowcaseGuessChrome]);
+
+  useEffect(() => {
+    if (!isRenderedShowcaseResultPhase) return undefined;
+
+    const expandTimeoutId = window.setTimeout(() => {
+      setIsShowcaseResultExpanded(true);
+    }, SHOWCASE_RESULT_CENTER_DELAY_MS);
+
+    return () => window.clearTimeout(expandTimeoutId);
+  }, [isRenderedShowcaseResultPhase]);
 
   useEffect(() => {
     if (startTrackedRef.current) return;
@@ -157,7 +176,8 @@ export default function SingleplayerGame({
   const usesCompactShowcaseCard =
     (isFlagMode || isCartoonMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
-      renderedPhase === GAME_PHASES.GUESS);
+      renderedPhase === GAME_PHASES.GUESS ||
+      (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
 
   return (
     <main
@@ -171,6 +191,8 @@ export default function SingleplayerGame({
       <GameCardShell
         color={shellColor}
         className={`${isRenderedShowcaseGuessPhase ? "flag-game-card-shell" : ""} ${
+          isRenderedShowcaseResultPhase ? "showcase-result-card-shell" : ""
+        } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
         }`}
         flagOverlayProps={
@@ -246,6 +268,11 @@ export default function SingleplayerGame({
               canFinishRun={game.isEndlessMode}
               onFinishRun={game.finishRun}
               onContinue={game.continueFromResult}
+              visualIntroDelayMs={
+                isRenderedShowcaseResultPhase
+                  ? SHOWCASE_RESULT_REVEAL_DELAY_MS
+                  : 0
+              }
             />
           )}
 

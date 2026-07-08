@@ -1,8 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import GameCardShell from "@/components/ui/game/GameCardShell";
+import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import { GAME_MODE_IDS } from "@/lib/constants";
 import { hsvToHex } from "@/lib/color";
 
@@ -10,9 +9,16 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function CartoonPreviewCard({ color }) {
+  return (
+    <article className="relative aspect-video overflow-hidden rounded-[22px] bg-black shadow-[0_14px_34px_rgba(31,25,20,0.16),0_6px_14px_rgba(31,25,20,0.08)]">
+      <CartoonOverlay color={color} useCanvas={false} />
+    </article>
+  );
+}
+
 export default function CartoonMaskTester({ cartoons }) {
   const [hue, setHue] = useState(210);
-  const [pageIndex, setPageIndex] = useState(0);
   const renderHue = useDeferredValue(hue);
   const paintColor = `hsl(${hue} 95% 52%)`;
   const cardColorFor = (cartoon) => {
@@ -75,25 +81,21 @@ export default function CartoonMaskTester({ cartoons }) {
       }),
     [cartoons],
   );
-  const currentIndex = orderedCartoons.length
-    ? clamp(pageIndex, 0, orderedCartoons.length - 1)
-    : 0;
-  const currentCartoon = orderedCartoons[currentIndex];
+  const groupedCartoons = useMemo(() => {
+    const groups = new Map();
 
-  function goToPrevious() {
-    setPageIndex((index) =>
-      orderedCartoons.length ? (index - 1 + orderedCartoons.length) % orderedCartoons.length : 0,
-    );
-  }
+    orderedCartoons.forEach((cartoon) => {
+      const series = cartoon.series || "Other";
+      const currentGroup = groups.get(series) || [];
+      currentGroup.push(cartoon);
+      groups.set(series, currentGroup);
+    });
 
-  function goToNext() {
-    setPageIndex((index) =>
-      orderedCartoons.length ? (index + 1) % orderedCartoons.length : 0,
-    );
-  }
+    return Array.from(groups, ([series, items]) => ({ series, items }));
+  }, [orderedCartoons]);
 
   return (
-    <main className="fixed inset-0 z-50 overflow-hidden bg-white text-zinc-950">
+    <main className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden bg-white text-zinc-950">
       <aside className="fixed left-7 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-5 sm:left-10">
         <div
           aria-label="Hue"
@@ -136,53 +138,29 @@ export default function CartoonMaskTester({ cartoons }) {
         </div>
       </aside>
 
-      <div className="flex h-dvh w-full items-center justify-center px-6 pl-[104px] sm:px-10 sm:pl-[132px]">
-        {currentCartoon && (
-          <section
-            className="relative h-dvh w-full max-w-125"
-            style={{
-              "--test-card-height": "clamp(320px, calc(100dvh - 132px), 390px)",
-            }}
-          >
-            <div className="absolute left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2">
-              <GameCardShell
-                key={currentCartoon.id}
-                color={cardColorFor(currentCartoon)}
-              />
-            </div>
-
-            <div
-              className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center gap-4"
-              style={{
-                top: "calc(50% + (var(--test-card-height) / 2) + 1.25rem)",
-              }}
-            >
-              <button
-                type="button"
-                aria-label="Previous cartoon"
-                title="Previous cartoon"
-                onClick={goToPrevious}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-zinc-950 text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/15"
-              >
-                <ChevronLeft aria-hidden="true" size={22} strokeWidth={2.5} />
-              </button>
-
-              <div className="min-w-16 text-center text-base font-semibold text-zinc-500">
-                {currentIndex + 1}/{orderedCartoons.length}
+      <div className="min-h-dvh w-full px-5 py-10 pl-[104px] sm:px-8 sm:py-12 sm:pl-[132px]">
+        <div className="mx-auto flex w-full max-w-[70rem] flex-col gap-10">
+          {groupedCartoons.map(({ series, items }) => (
+            <section key={series} className="flex flex-col gap-3">
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
+                  {series}
+                </h2>
+                <span className="text-xs font-bold text-zinc-300">
+                  {items.length}
+                </span>
               </div>
-
-              <button
-                type="button"
-                aria-label="Next cartoon"
-                title="Next cartoon"
-                onClick={goToNext}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-zinc-950 text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/15"
-              >
-                <ChevronRight aria-hidden="true" size={22} strokeWidth={2.5} />
-              </button>
-            </div>
-          </section>
-        )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {items.map((cartoon) => (
+                  <CartoonPreviewCard
+                    key={cartoon.id}
+                    color={cardColorFor(cartoon)}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
     </main>
   );

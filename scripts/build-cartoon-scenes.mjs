@@ -8,7 +8,7 @@ const WIDTH = 1920;
 const HEIGHT = 1080;
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSET_ROOT = path.resolve(PROJECT_ROOT, "public", "game-modes", "cartoon");
-const OUTPUT_DIR = path.resolve(ASSET_ROOT, "adventure-time", "generated");
+const DEFAULT_CARTOON_PACK = "adventure-time";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
@@ -163,6 +163,17 @@ async function loadSourceBuffer(item) {
   }
 
   throw new Error(`Missing source for ${item.id}`);
+}
+
+function getCartoonPack(item) {
+  const sourcePath = item.sourcePath?.replaceAll("\\", "/") || "";
+  const packMatch = sourcePath.match(/^public\/game-modes\/cartoon\/([^/]+)\//);
+
+  return packMatch?.[1] || item.pack || DEFAULT_CARTOON_PACK;
+}
+
+function getOutputDir(item) {
+  return path.resolve(ASSET_ROOT, getCartoonPack(item), "generated");
 }
 
 async function normalizeScene(buffer, item) {
@@ -560,6 +571,7 @@ async function makeScene(item) {
   const source = await loadSourceBuffer(item);
   const raw = await normalizeScene(source, item);
   const layers = await buildPaintLayers(raw, item);
+  const outputDir = getOutputDir(item);
   const originalFile = `${item.id}-original.webp`;
   const sceneFile = `${item.id}-scene.webp`;
   const maskFile = `${item.id}-scene-mask.png`;
@@ -568,20 +580,20 @@ async function makeScene(item) {
   await sharp(raw.data, { raw: { width: WIDTH, height: HEIGHT, channels: 3 } })
     .sharpen({ sigma: 0.55, m1: 0.75, m2: 1.35 })
     .webp({ quality: 98, effort: 6, smartSubsample: false })
-    .toFile(path.join(OUTPUT_DIR, originalFile));
+    .toFile(path.join(outputDir, originalFile));
 
   await sharp(layers.neutral, { raw: { width: WIDTH, height: HEIGHT, channels: 3 } })
     .sharpen({ sigma: 0.55, m1: 0.75, m2: 1.35 })
     .webp({ quality: 98, effort: 6, smartSubsample: false })
-    .toFile(path.join(OUTPUT_DIR, sceneFile));
+    .toFile(path.join(outputDir, sceneFile));
 
   await sharp(layers.maskData, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } })
     .png()
-    .toFile(path.join(OUTPUT_DIR, maskFile));
+    .toFile(path.join(outputDir, maskFile));
 
   await sharp(layers.layerData, { raw: { width: WIDTH, height: HEIGHT, channels: 4 } })
     .png()
-    .toFile(path.join(OUTPUT_DIR, layerFile));
+    .toFile(path.join(outputDir, layerFile));
 
   return { id: item.id, originalFile, sceneFile, maskFile, layerFile, coverage: layers.coverage };
 }
@@ -603,12 +615,20 @@ async function mapWithConcurrency(items, limit, worker) {
 }
 
 async function main() {
-  if (!OUTPUT_DIR.startsWith(ASSET_ROOT)) {
-    throw new Error(`Refusing to write outside asset root: ${OUTPUT_DIR}`);
+  const outputDirs = Array.from(new Set(CARTOON_ITEMS.map((item) => getOutputDir(item))));
+
+  for (const outputDir of outputDirs) {
+    if (!outputDir.startsWith(ASSET_ROOT)) {
+      throw new Error(`Refusing to write outside asset root: ${outputDir}`);
+    }
   }
 
-  await fs.rm(OUTPUT_DIR, { recursive: true, force: true });
-  await fs.mkdir(OUTPUT_DIR, { recursive: true });
+  await Promise.all(
+    outputDirs.map(async (outputDir) => {
+      await fs.rm(outputDir, { recursive: true, force: true });
+      await fs.mkdir(outputDir, { recursive: true });
+    }),
+  );
 
   const failures = [];
   const results = await mapWithConcurrency(CARTOON_ITEMS, 4, async (item) => {

@@ -195,11 +195,13 @@ export default function GuessPhase({
         force3D: true,
       });
 
-      gsap.set(rightPickerTracks, {
-        xPercent: 104,
-        autoAlpha: 0,
-        force3D: true,
-      });
+      if (rightPickerTracks.length > 0) {
+        gsap.set(rightPickerTracks, {
+          xPercent: 104,
+          autoAlpha: 0,
+          force3D: true,
+        });
+      }
 
       gsap.set(pickerThumbs, {
         scale: 0,
@@ -257,7 +259,7 @@ export default function GuessPhase({
           clearProps: "transform,opacity,visibility",
         })
         .to(
-          rightPickerTracks,
+          rightPickerTracks.length > 0 ? rightPickerTracks : pickerTracks,
           {
             xPercent: 0,
             autoAlpha: 1,

@@ -34,6 +34,7 @@ export default function CartoonOverlay({
   size = "card",
   slice = "full",
   className = "",
+  useCanvas = true,
 }) {
   const isSceneImage = Boolean(color?.scenePath);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
@@ -88,7 +89,7 @@ export default function CartoonOverlay({
             fill
             sizes="(max-width: 640px) 100vw, 500px"
             unoptimized
-            priority={variant !== "tile"}
+            priority={useCanvas && variant !== "tile"}
             className="object-cover"
           />
           <span
@@ -100,7 +101,7 @@ export default function CartoonOverlay({
               opacity: 1,
             }}
           />
-          {originalScenePath && baseScenePath ? (
+          {useCanvas && originalScenePath && baseScenePath && (
             <CartoonCanvas
               baseSrc={baseScenePath}
               sourceSrc={originalScenePath}
@@ -114,16 +115,6 @@ export default function CartoonOverlay({
                 ]
               }
               color={color}
-            />
-          ) : (
-            <span
-              className="absolute inset-0"
-              style={{
-                ...maskStyle,
-                backgroundColor: color.hex,
-                mixBlendMode: "color",
-                opacity: 1,
-              }}
             />
           )}
           <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />

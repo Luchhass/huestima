@@ -387,6 +387,12 @@ input {
     );
   }
 
+  .showcase-result-card-shell {
+    overflow: hidden !important;
+    transition-duration: 560ms, 560ms;
+    transition-delay: 0ms, 0ms;
+  }
+
   .flag-control-widget {
     position: absolute;
     z-index: 25;

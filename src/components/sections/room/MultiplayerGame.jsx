@@ -20,6 +20,10 @@ import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
+const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
+const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
+const SHOWCASE_RESULT_REVEAL_DELAY_MS =
+  SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
 
 function buildProgressItems(room, currentPlayerId) {
   const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
@@ -114,9 +118,12 @@ export default function MultiplayerGame({
   }, [game.targetColor, game.targetColors, isCartoonMode]);
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
+  const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
   const usesShowcaseGuessChrome = isFlagMode || isCartoonMode;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
+  const isRenderedShowcaseResultPhase =
+    usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.RESULT;
 
   useGameChrome(isImmersivePhase);
   useCartoonAssetPreload(isCartoonMode, cartoonPreloadTargets);
@@ -131,26 +138,38 @@ export default function MultiplayerGame({
     if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseGuessChrome) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
+        setIsShowcaseResultExpanded(false);
       }, 0);
 
-      const timeoutId = window.setTimeout(() => {
+      const phaseTimeoutId = window.setTimeout(() => {
         setRenderedPhase(game.phase);
         setIsShowcaseWidgetExiting(false);
       }, FLAG_WIDGET_EXIT_DELAY_MS);
 
       return () => {
         window.clearTimeout(exitStartId);
-        window.clearTimeout(timeoutId);
+        window.clearTimeout(phaseTimeoutId);
       };
     }
 
     const timeoutId = window.setTimeout(() => {
       setRenderedPhase(game.phase);
       setIsShowcaseWidgetExiting(false);
+      setIsShowcaseResultExpanded(false);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
   }, [game.phase, renderedPhase, usesShowcaseGuessChrome]);
+
+  useEffect(() => {
+    if (!isRenderedShowcaseResultPhase) return undefined;
+
+    const expandTimeoutId = window.setTimeout(() => {
+      setIsShowcaseResultExpanded(true);
+    }, SHOWCASE_RESULT_CENTER_DELAY_MS);
+
+    return () => window.clearTimeout(expandTimeoutId);
+  }, [isRenderedShowcaseResultPhase]);
 
   useEffect(() => {
     if (startTrackedRef.current) return;
@@ -213,7 +232,8 @@ export default function MultiplayerGame({
   const usesCompactShowcaseCard =
     (isFlagMode || isCartoonMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
-      renderedPhase === GAME_PHASES.GUESS);
+      renderedPhase === GAME_PHASES.GUESS ||
+      (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
 
   return (
     <main
@@ -227,6 +247,8 @@ export default function MultiplayerGame({
       <GameCardShell
         color={shellColor}
         className={`${isRenderedShowcaseGuessPhase ? "flag-game-card-shell" : ""} ${
+          isRenderedShowcaseResultPhase ? "showcase-result-card-shell" : ""
+        } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
         }`}
         flagOverlayProps={
@@ -319,6 +341,11 @@ export default function MultiplayerGame({
                   : game.roundIndex + 1 < game.roundCount
               }
               onContinue={game.continueFromResult}
+              visualIntroDelayMs={
+                isRenderedShowcaseResultPhase
+                  ? SHOWCASE_RESULT_REVEAL_DELAY_MS
+                  : 0
+              }
             />
           )}
 

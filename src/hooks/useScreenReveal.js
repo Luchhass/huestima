@@ -37,6 +37,13 @@ function waitForIntro(callback) {
   }
 
   const overlay = document.querySelector("[data-page-intro-overlay]");
+  const isIntroPending =
+    document.documentElement.dataset.pageIntroPending === "true";
+
+  if (!overlay && !isIntroPending) {
+    const settleId = window.setTimeout(callback, 70);
+    return () => window.clearTimeout(settleId);
+  }
 
   let completed = false;
   let fallbackId = null;

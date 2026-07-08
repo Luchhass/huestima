@@ -1,5 +1,7 @@
 const ADVENTURE_TIME_ASSET_ROOT = "public/game-modes/cartoon/adventure-time/assets";
 const ADVENTURE_TIME_MASK_ROOT = "public/game-modes/cartoon/adventure-time/masks";
+const POWERPUFF_GIRLS_ASSET_ROOT = "public/game-modes/cartoon/powerpuff-girls/assets";
+const POWERPUFF_GIRLS_MASK_ROOT = "public/game-modes/cartoon/powerpuff-girls/masks";
 
 export const CARTOON_ITEMS = [
   {
@@ -241,5 +243,65 @@ export const CARTOON_ITEMS = [
     sourcePath: `${ADVENTURE_TIME_ASSET_ROOT}/adventure-time-princess-bubblegum-rainicorn.jpg`,
     sourceTitle: "adventure-time-princess-bubblegum-rainicorn.jpg",
     maskPath: `${ADVENTURE_TIME_MASK_ROOT}/adventure-time-princess-bubblegum-rainicorn.png`,
+  },
+  {
+    id: "powerpuff-girls-bubbles-heart",
+    label: "Bubbles",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 207, s: 43, v: 95 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-bubbles-heart.jpg`,
+    sourceTitle: "powerpuff-girls-bubbles-heart.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-bubbles-heart.png`,
+  },
+  {
+    id: "powerpuff-girls-professor-utonium-lab",
+    label: "Professor Utonium",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 36, s: 25, v: 90 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-professor-utonium-lab.jpg`,
+    sourceTitle: "powerpuff-girls-professor-utonium-lab.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-professor-utonium-lab.png`,
+  },
+  {
+    id: "powerpuff-girls-buttercup-clouds",
+    label: "Buttercup",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 107, s: 45, v: 88 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-buttercup-clouds.jpg`,
+    sourceTitle: "powerpuff-girls-buttercup-clouds.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-buttercup-clouds.png`,
+  },
+  {
+    id: "powerpuff-girls-mayor-couch",
+    label: "Mayor",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 33, s: 20, v: 90 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-mayor-couch.jpg`,
+    sourceTitle: "powerpuff-girls-mayor-couch.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-mayor-couch.png`,
+  },
+  {
+    id: "powerpuff-girls-blossom-couch",
+    label: "Blossom",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 330, s: 62, v: 96 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-blossom-couch.jpg`,
+    sourceTitle: "powerpuff-girls-blossom-couch.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-blossom-couch.png`,
+  },
+  {
+    id: "powerpuff-girls-mojo-jojo-dog-walk",
+    label: "Mojo Jojo",
+    series: "Powerpuff Girls",
+    paintLabel: "cartoon",
+    paint: { h: 301, s: 27, v: 44 },
+    sourcePath: `${POWERPUFF_GIRLS_ASSET_ROOT}/powerpuff-girls-mojo-jojo-dog-walk.jpg`,
+    sourceTitle: "powerpuff-girls-mojo-jojo-dog-walk.jpg",
+    maskPath: `${POWERPUFF_GIRLS_MASK_ROOT}/powerpuff-girls-mojo-jojo-dog-walk.png`,
   },
 ];
