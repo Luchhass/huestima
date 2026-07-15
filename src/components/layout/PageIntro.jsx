@@ -6,7 +6,6 @@ import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 
-let hasPlayedEntryIntro = false;
 const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon"]);
 
 function subscribeToClientReady() {
@@ -27,8 +26,14 @@ function isInviteRoomPath(pathname) {
   return segments.length === 1 && !GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
 }
 
+function isGameFamilyEntryPath(pathname) {
+  const segments = pathname.split("/").filter(Boolean);
+
+  return segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
+}
+
 function shouldPlayEntryIntro(pathname) {
-  return pathname === "/" || isInviteRoomPath(pathname);
+  return pathname === "/" || isInviteRoomPath(pathname) || isGameFamilyEntryPath(pathname);
 }
 
 function readViewportBox() {
@@ -68,10 +73,10 @@ export default function PageIntro() {
     getClientReadySnapshot,
     getServerReadySnapshot,
   );
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissedPath, setDismissedPath] = useState(null);
 
   const shouldRender =
-    isMounted && shouldPlayEntryIntro(pathname) && !hasPlayedEntryIntro && !dismissed;
+    isMounted && shouldPlayEntryIntro(pathname) && dismissedPath !== pathname;
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined;
@@ -91,9 +96,8 @@ export default function PageIntro() {
       !brandTextMask ||
       !brandText
     ) {
-      hasPlayedEntryIntro = true;
       window.__pageIntroDoneForPath = pathname;
-      setDismissed(true);
+      setDismissedPath(pathname);
       return undefined;
     }
 
@@ -132,13 +136,12 @@ export default function PageIntro() {
         introHardTimeoutId = null;
       }
 
-      hasPlayedEntryIntro = true;
       timelineRef.current = null;
       clearTargetCard();
       window.__pageIntroDoneForPath = pathname;
       gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
       dispatchIntroEvent("complete");
-      setDismissed(true);
+      setDismissedPath(pathname);
     };
 
     introHardTimeoutId = window.setTimeout(finishIntro, 6800);

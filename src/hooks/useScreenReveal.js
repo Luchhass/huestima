@@ -31,7 +31,7 @@ function dispatchScreenLifecycleEvent(eventName) {
 }
 
 function waitForIntro(callback) {
-  if (window.__pageIntroDoneForPath) {
+  if (window.__pageIntroDoneForPath === window.location.pathname) {
     const settleId = window.setTimeout(callback, 160);
     return () => window.clearTimeout(settleId);
   }

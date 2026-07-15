@@ -10,11 +10,11 @@ export default function AppFooter() {
       {t("app.createdBy")}{" "}
       <a
         href="https://furkancosar.com"
-        aria-label="Visit furkancosar.com"
+        aria-label="Visit furkantokgoz"
         data-sound="off"
         className="creator-link pointer-events-auto relative inline-block text-inherit no-underline outline-none"
       >
-        furkancosar
+        furkantokgoz
       </a>
     </footer>
   );
