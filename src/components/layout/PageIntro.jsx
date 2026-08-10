@@ -7,6 +7,14 @@ import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 
 const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon"]);
+const NON_INVITE_ENTRY_PATHS = new Set([
+  "how-it-works",
+  "test",
+  "icon.svg",
+  "manifest.webmanifest",
+  "robots.txt",
+  "sitemap.xml",
+]);
 
 function subscribeToClientReady() {
   return () => {};
@@ -23,17 +31,15 @@ function getServerReadySnapshot() {
 function isInviteRoomPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
 
-  return segments.length === 1 && !GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
-}
-
-function isGameFamilyEntryPath(pathname) {
-  const segments = pathname.split("/").filter(Boolean);
-
-  return segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
+  return (
+    segments.length === 1 &&
+    !GAME_FAMILY_ENTRY_PATHS.has(segments[0]) &&
+    !NON_INVITE_ENTRY_PATHS.has(segments[0])
+  );
 }
 
 function shouldPlayEntryIntro(pathname) {
-  return pathname === "/" || isInviteRoomPath(pathname) || isGameFamilyEntryPath(pathname);
+  return pathname === "/" || isInviteRoomPath(pathname);
 }
 
 function readViewportBox() {

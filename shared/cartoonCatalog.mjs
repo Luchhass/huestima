@@ -187,16 +187,6 @@ export const CARTOON_ITEMS = [
     maskPath: `${ADVENTURE_TIME_MASK_ROOT}/adventure-time-cinnamon-bun-party.png`,
   },
   {
-    id: "adventure-time-neptr-running",
-    label: "NEPTR Running",
-    series: "Adventure Time",
-    paintLabel: "cartoon",
-    paint: { h: 132, s: 19, v: 45 },
-    sourcePath: `${ADVENTURE_TIME_ASSET_ROOT}/adventure-time-neptr-running.jpg`,
-    sourceTitle: "adventure-time-neptr-running.jpg",
-    maskPath: `${ADVENTURE_TIME_MASK_ROOT}/adventure-time-neptr-running.png`,
-  },
-  {
     id: "adventure-time-business-men",
     label: "Business Men",
     series: "Adventure Time",

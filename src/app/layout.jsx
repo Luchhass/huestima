@@ -156,7 +156,9 @@ export default function RootLayout({ children }) {
         const fullscreen = window.localStorage.getItem("${FULLSCREEN_STORAGE_KEY}");
         document.documentElement.dataset.fullscreenMode = fullscreen === "on" || fullscreen === "true" ? "on" : "off";
         const pathSegments = window.location.pathname.split("/").filter(Boolean);
-        const shouldPlayIntro = window.location.pathname === "/" || pathSegments.length === 1;
+        const isGameFamilyPath = ["color", "flag", "cartoon"].includes(pathSegments[0]);
+        const isStaticUtilityPath = ["how-it-works", "test", "icon.svg", "manifest.webmanifest", "robots.txt", "sitemap.xml"].includes(pathSegments[0]);
+        const shouldPlayIntro = window.location.pathname === "/" || (pathSegments.length === 1 && !isGameFamilyPath && !isStaticUtilityPath);
         if (shouldPlayIntro) {
           document.documentElement.dataset.pageIntroPending = "true";
           window.setTimeout(() => {

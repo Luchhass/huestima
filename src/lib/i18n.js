@@ -9,6 +9,39 @@ export const DICTIONARIES = {
       homeAria: `${APP_NAME} home`,
       createdBy: "created by",
     },
+    howItWorks: {
+      footerLink: "How it works",
+      eyebrow: "How it works",
+      title: "How does the cartoon color system work?",
+      intro:
+        "Most color-memory games recolor one simple theme area. Huestima's cartoon mode does something different: it masks the whole paintable character area, then moves the original colors together instead of flattening them into one color.",
+      navigation: "How it works steps",
+      previous: "Back",
+      next: "Continue",
+      goToStep: "Go to step {step}",
+      steps: {
+        classic: {
+          title: "Classic games recolor one area.",
+          copy:
+            "In many color games, the image is prepared with one transparent cutout: usually the character's most recognizable color area. A separate color layer sits behind that hole, and the player controls that layer. Scoring is simple because there is only one target color, but the system can only test that single area.",
+        },
+        whole: {
+          title: "Huestima uses the whole character.",
+          copy:
+            "Huestima uses the same idea as a memory game, but the target is no longer one small cutout. The full paintable character area becomes part of the guess. This makes the round feel closer to the real scene, because the player remembers the character's overall color identity instead of one isolated patch.",
+        },
+        flat: {
+          title: "But there is one problem.",
+          copy:
+            "Making the whole character paintable seems like a good solution, but this method creates a major obstacle. If the full mask uses one player color, every selected pixel becomes identical. Hair, skin, stripes, shadows, and accent colors merge into one whole. The whole character becomes paintable, but its main shapes and details are lost.",
+        },
+        delta: {
+          title: "Delta mapping keeps every color in place.",
+          copy:
+            "Huestima keeps the full mask, but it does not fill it with one color. A base color is chosen, and every masked pixel stores its own distance from that base in hue, saturation, and brightness. When the player moves the bar, the base color moves first; the other pixels follow while keeping those saved relationships. So one bar can recolor the whole character without destroying its original color structure.",
+        },
+      },
+    },
     common: {
       backHome: "Back home",
       openMenu: "Open navigation",
@@ -272,6 +305,39 @@ export const DICTIONARIES = {
     app: {
       homeAria: `${APP_NAME} ana sayfa`,
       createdBy: "oluşturan",
+    },
+    howItWorks: {
+      footerLink: "Nasıl çalışır",
+      eyebrow: "Nasıl çalışır",
+      title: "Çizgi film renk sistemi nasıl çalışıyor?",
+      intro:
+        "Bu tarz renk hafızası oyunlarında genelde tek bir tema rengi değiştirilir. Huestima'nın çizgi film modunda sistem farklı çalışır: boyanabilir karakter alanının tamamı maskelenir, sonra orijinal renkler tek renge ezilmeden birlikte kaydırılır.",
+      navigation: "Nasıl çalışır adımları",
+      previous: "Geri git",
+      next: "Devam et",
+      goToStep: "{step}. adıma git",
+      steps: {
+        classic: {
+          title: "Klasik oyunlar tek alanı renklendirir.",
+          copy:
+            "Bu tarz renk oyunlarında görsel genelde tek bir şeffaf boşlukla hazırlanır: çoğu zaman karakterin en belirgin renk alanı kesilir. O boşluğun arkasına ayrı bir renk katmanı konur ve oyuncu bu katmanı kontrol eder. Puanlama kolaydır çünkü hedef tek renktir, ama sistem sadece o tek alanı test edebilir.",
+        },
+        whole: {
+          title: "Huestima tüm karakteri kullanır.",
+          copy:
+            "Huestima aynı hafıza fikrini kullanır, ama hedef artık küçük bir kesik alan değildir. Karakterin boyanabilir kısmının tamamı tahmine dahil olur. Böylece oyuncu tek bir renk lekesini değil, sahnedeki karakterin genel renk kimliğini aklında tutar.",
+        },
+        flat: {
+          title: "Ama bir sorun var.",
+          copy:
+            "Tüm karakteri boyanabilir yapmak iyi bir çözüm gibi görünür, ama bu yöntemi uyguladığınızda karşınıza büyük bir engel çıkar. Tam maske tek oyuncu rengiyle boyanırsa seçili her piksel aynı renge dönüşür. Saç, ten, şerit, gölge ve vurgu renkleri de tek bir bütün olup birleşir. Tüm karakter boyanabilir hale gelir, ama karakterin ana hatları ve detayları kaybolur.",
+        },
+        delta: {
+          title: "Delta eşleme her rengi yerinde tutar.",
+          copy:
+            "Huestima tam maskeyi korur, ama maskeyi tek renkle doldurmaz. Önce bir ana renk seçilir; maskenin içindeki her pikselin bu ana renge göre ton, doygunluk ve parlaklık uzaklığı saklanır. Oyuncu barı oynattığında önce ana renk kayar; diğer pikseller de bu saklı ilişkiyi koruyarak onu takip eder. Böylece tek bar tüm karakteri değiştirir, ama karakterin orijinal renk yapısı bozulmaz.",
+        },
+      },
     },
     common: {
       backHome: "Ana sayfaya dön",

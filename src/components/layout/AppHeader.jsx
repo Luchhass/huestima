@@ -99,7 +99,6 @@ export default function AppHeader() {
               <SoundToggle />
               <MusicToggle />
               <ThemeToggle />
-              <FullscreenToggle />
             </div>
           </nav>
         </div>
@@ -158,6 +157,10 @@ export default function AppHeader() {
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
+          <FullscreenToggle />
+        </div>
+
+        <div className="md:hidden">
           <FullscreenToggle />
         </div>
 
