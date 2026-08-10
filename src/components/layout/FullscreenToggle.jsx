@@ -53,7 +53,7 @@ export default function FullscreenToggle() {
         if (isLocked) return;
         toggleFullscreen();
       }}
-      className={`grid size-11 shrink-0 place-items-center rounded-full text-zinc-950 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 ${
+      className={`fullscreen-toggle grid size-11 shrink-0 place-items-center rounded-full text-zinc-950 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 ${
         isLocked
           ? "cursor-not-allowed opacity-30"
           : "hover:scale-[1.06] active:scale-[0.94]"

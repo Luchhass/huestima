@@ -732,6 +732,10 @@ input {
     transform: translateY(-100%);
   }
 
+  html[data-fullscreen-mode="on"] .app-header .fullscreen-toggle {
+    color: rgb(255 255 255);
+  }
+
   html[data-fullscreen-mode="on"][data-game-immersive="true"] .creator-tag,
   html[data-fullscreen-mode="on"][data-app-chrome-hidden="true"] .creator-tag {
     opacity: 0;
