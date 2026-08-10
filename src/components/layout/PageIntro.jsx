@@ -39,7 +39,19 @@ function isInviteRoomPath(pathname) {
 }
 
 function shouldPlayEntryIntro(pathname) {
-  return pathname === "/" || isInviteRoomPath(pathname);
+  const segments = pathname.split("/").filter(Boolean);
+
+  return (
+    pathname === "/" ||
+    (segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0])) ||
+    isInviteRoomPath(pathname)
+  );
+}
+
+function readIntroPending() {
+  if (typeof document === "undefined") return false;
+
+  return document.documentElement.dataset.pageIntroPending === "true";
 }
 
 function readViewportBox() {
@@ -80,9 +92,13 @@ export default function PageIntro() {
     getServerReadySnapshot,
   );
   const [dismissedPath, setDismissedPath] = useState(null);
+  const [introPending] = useState(readIntroPending);
 
   const shouldRender =
-    isMounted && shouldPlayEntryIntro(pathname) && dismissedPath !== pathname;
+    isMounted &&
+    introPending &&
+    shouldPlayEntryIntro(pathname) &&
+    dismissedPath !== pathname;
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined;
