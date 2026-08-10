@@ -12,6 +12,11 @@ import {
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
 import {
+  earnsHint,
+  getInitialHintCount,
+  normalizeHintsEnabled,
+} from "@/lib/hints";
+import {
   createDefaultCartoonGuess,
   createDefaultFlagGuess,
   createDefaultGradientGuess,
@@ -24,6 +29,7 @@ import {
   withHex,
 } from "@/lib/color";
 import { emitWithAck } from "@/lib/socket";
+import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 
 function responseData(response) {
   return response?.data || response || {};
@@ -102,6 +108,14 @@ export function useMultiplayerGame({
 
     return Number.isFinite(value) && value > 0 ? value : ROUND_COUNT;
   }, [gamePayload?.roundCount, room?.game?.roundCount, room?.roundCount]);
+  const hintsEnabled = useMemo(
+    () =>
+      normalizeHintsEnabled(
+        gamePayload?.hintsEnabled ?? room?.game?.hintsEnabled ?? room?.hintsEnabled,
+        true,
+      ),
+    [gamePayload?.hintsEnabled, room?.game?.hintsEnabled, room?.hintsEnabled],
+  );
   const serverTargetColors = gamePayload?.targetColors || [];
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
   const [roundIndex, setRoundIndex] = useState(() => gamePayload?.currentRoundIndex || 0);
@@ -119,6 +133,10 @@ export function useMultiplayerGame({
   const [localLeaderboard, setLocalLeaderboard] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hintCount, setHintCount] = useState(() =>
+    hintsEnabled ? getInitialHintCount(roundCount) : 0,
+  );
+  const [hintActive, setHintActive] = useState(false);
   const currentRoomPlayer = useMemo(
     () => room?.players?.find((player) => player.id === playerId) || null,
     [playerId, room?.players],
@@ -126,9 +144,15 @@ export function useMultiplayerGame({
   const isCurrentPlayerEliminated = Boolean(currentRoomPlayer?.eliminated);
   const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
 
+  useEffect(() => {
+    setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
+    setHintActive(false);
+  }, [gamePayload?.seed, hintsEnabled, roundCount]);
+
   const prepareRound = useCallback(
     (nextRoundIndex) => {
       const colors = gamePayload?.targetColors || targetColors;
+      setHintActive(false);
 
       if (!colors.length) {
         setError(t("game.waitingError"));
@@ -186,6 +210,13 @@ export function useMultiplayerGame({
     [effectiveDifficulty, gameMode, targetColor],
   );
 
+  const useHint = useCallback(() => {
+    if (!hintsEnabled || hintCount <= 0 || hintActive) return;
+
+    setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    setHintActive(true);
+  }, [hintActive, hintCount, hintsEnabled]);
+
   const submitGuess = useCallback(async () => {
     if (isSubmitting) return;
 
@@ -207,12 +238,15 @@ export function useMultiplayerGame({
     setIsSubmitting(false);
 
     if (!response.ok) {
-      setError(response.error || t("game.submitError"));
+      setError(getMultiplayerErrorMessage(response, t, "game.submitError"));
       return;
     }
 
     const data = responseData(response);
     const nextResult = toResultPhaseShape(data.result);
+    if (hintsEnabled && earnsHint(nextResult.score)) {
+      setHintCount((currentCount) => currentCount + 1);
+    }
 
     setResults((currentResults) => {
       const withoutDuplicate = currentResults.filter(
@@ -232,6 +266,7 @@ export function useMultiplayerGame({
     effectiveDifficulty,
     gameMode,
     guessColor,
+    hintsEnabled,
     isSubmitting,
     playerId,
     roomCode,
@@ -313,6 +348,9 @@ export function useMultiplayerGame({
     isCartoonMode,
     isCurrentPlayerEliminated,
     roundCount,
+    hintsEnabled,
+    hintCount,
+    hintActive,
     phase,
     roundIndex,
     targetColor,
@@ -328,6 +366,7 @@ export function useMultiplayerGame({
     finishIntro,
     finishMemorize,
     updateGuess,
+    useHint,
     submitGuess,
     continueFromResult,
     showLeaderboard,

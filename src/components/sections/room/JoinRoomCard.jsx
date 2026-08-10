@@ -7,6 +7,7 @@ import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
+import PushNotification from "@/components/ui/PushNotification";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 
@@ -32,6 +33,7 @@ export default function JoinRoomCard({
   const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [hiddenRemoteError, setHiddenRemoteError] = useState("");
+  const [notification, setNotification] = useState(null);
   const requiresPassword = Boolean(room?.hasPassword);
   const actionError =
     nameError || passwordError || (error !== hiddenRemoteError ? error : "");
@@ -40,6 +42,12 @@ export default function JoinRoomCard({
 
   useEffect(() => {
     if (!actionError) return undefined;
+
+    setNotification({
+      id: `error-${Date.now()}`,
+      message: actionError,
+      variant: "error",
+    });
 
     const timeoutId = window.setTimeout(() => {
       if (nameError) setNameError("");
@@ -76,6 +84,11 @@ export default function JoinRoomCard({
 
   return (
     <div ref={scopeRef} className="relative flex h-full flex-col bg-black p-6 text-white sm:p-8">
+      <PushNotification
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
+
       <Link
         href="/color"
         aria-label={t("common.backHome")}
@@ -138,22 +151,10 @@ export default function JoinRoomCard({
             type="button"
             disabled={isJoining}
             onClick={handleJoin}
-            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base ${
-              actionError
-                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                : "rgb-hover-button bg-white text-zinc-950"
-            }`}
+            className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:text-base"
           >
-            {actionError && (
-              <X
-                className="relative z-10 shrink-0"
-                size={17}
-                strokeWidth={2.4}
-              />
-            )}
-
             <span className="relative z-10 min-w-0 truncate">
-              {actionError || (isJoining ? t("room.joining") : t("room.join"))}
+              {isJoining ? t("room.joining") : t("room.join")}
             </span>
           </button>
         </div>

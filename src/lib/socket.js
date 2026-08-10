@@ -4,6 +4,13 @@ import { io } from "socket.io-client";
 
 let socket = null;
 
+export const SOCKET_ERROR_CODES = {
+  BROWSER_UNAVAILABLE: "browser_unavailable",
+  SERVER_UNAVAILABLE: "server_unavailable",
+  SERVER_TIMEOUT: "server_timeout",
+  UNEXPECTED_RESPONSE: "unexpected_response",
+};
+
 function waitForSocketConnection(activeSocket, timeoutMs) {
   if (activeSocket.connected) {
     return Promise.resolve({ ok: true });
@@ -14,6 +21,7 @@ function waitForSocketConnection(activeSocket, timeoutMs) {
 
     const cleanup = () => {
       activeSocket.off("connect", handleConnect);
+      activeSocket.off("connect_error", handleConnectError);
       window.clearTimeout(timeoutId);
     };
 
@@ -29,14 +37,24 @@ function waitForSocketConnection(activeSocket, timeoutMs) {
       finish({ ok: true });
     };
 
+    const handleConnectError = () => {
+      finish({
+        ok: false,
+        errorCode: SOCKET_ERROR_CODES.SERVER_UNAVAILABLE,
+        error: "Multiplayer server is unavailable right now.",
+      });
+    };
+
     const timeoutId = window.setTimeout(() => {
       finish({
         ok: false,
-        error: "The multiplayer server did not respond. Try again.",
+        errorCode: SOCKET_ERROR_CODES.SERVER_TIMEOUT,
+        error: "The multiplayer server did not respond in time.",
       });
     }, timeoutMs);
 
     activeSocket.once("connect", handleConnect);
+    activeSocket.once("connect_error", handleConnectError);
     activeSocket.connect();
   });
 }
@@ -64,6 +82,7 @@ export async function emitWithAck(eventName, payload = {}, timeoutMs = 8000) {
   if (!activeSocket) {
     return Promise.resolve({
       ok: false,
+      errorCode: SOCKET_ERROR_CODES.BROWSER_UNAVAILABLE,
       error: "Multiplayer is unavailable in this browser.",
     });
   }
@@ -82,12 +101,23 @@ export async function emitWithAck(eventName, payload = {}, timeoutMs = 8000) {
       if (error) {
         resolve({
           ok: false,
-          error: "The multiplayer server did not respond. Try again.",
+          errorCode: activeSocket.connected
+            ? SOCKET_ERROR_CODES.SERVER_TIMEOUT
+            : SOCKET_ERROR_CODES.SERVER_UNAVAILABLE,
+          error: activeSocket.connected
+            ? "The multiplayer server did not respond in time."
+            : "Multiplayer server is unavailable right now.",
         });
         return;
       }
 
-      resolve(response || { ok: false, error: "Unexpected multiplayer response." });
+      resolve(
+        response || {
+          ok: false,
+          errorCode: SOCKET_ERROR_CODES.UNEXPECTED_RESPONSE,
+          error: "Unexpected multiplayer response.",
+        },
+      );
     });
   });
 }

@@ -13,6 +13,7 @@ export default async function FlagSingleplayerPage({ searchParams }) {
       initialDifficulty={setup.difficulty}
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
+      initialHintsEnabled={setup.hintsEnabled}
     />
   );
 }

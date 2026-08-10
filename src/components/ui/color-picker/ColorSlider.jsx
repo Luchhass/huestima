@@ -16,6 +16,9 @@ export default function ColorSlider({
   handleClassName = "",
   showLabel = true,
   orientation = "vertical",
+  hintValue = null,
+  showHint = false,
+  hintColor = "rgba(255,255,255,0.78)",
 }) {
   const trackRef = useRef(null);
   const lastSoundStepRef = useRef(null);
@@ -80,12 +83,20 @@ export default function ColorSlider({
   };
 
   const percentage = ((value - min) / (max - min)) * 100;
+  const hintPercentage =
+    Number.isFinite(hintValue) && max !== min
+      ? clamp(((hintValue - min) / (max - min)) * 100, 0, 100)
+      : null;
   const orientedGradient = isHorizontal
     ? String(gradient).replace("to top", "to right")
     : gradient;
   const handlePositionStyle = isHorizontal
     ? { left: `${percentage}%` }
     : { bottom: `${percentage}%` };
+  const hintSpotPosition = hintPercentage ?? 50;
+  const hintCutoutStyle = isHorizontal
+    ? { left: `${hintSpotPosition}%` }
+    : { bottom: `${hintSpotPosition}%` };
 
   return (
     <div className={isHorizontal ? "flex w-full flex-col gap-2" : "flex h-full w-full flex-col items-center gap-3"}>
@@ -109,8 +120,24 @@ export default function ColorSlider({
         className={`relative h-50.5 w-10 touch-none rounded-full border border-white/28 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08),0_14px_28px_rgba(0,0,0,0.18)] outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:h-57.5 sm:w-11 ${trackClassName}`}
         style={{ background: orientedGradient }}
       >
+        {showHint && hintPercentage !== null && (
+          <span
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
+            aria-hidden="true"
+          >
+            <span
+              className={`absolute rounded-full shadow-[0_0_0_9999px_rgba(0,0,0,0.76)] ${
+                isHorizontal
+                  ? "top-1/2 h-10 w-28 -translate-x-1/2 -translate-y-1/2"
+                  : "left-1/2 h-28 w-10 -translate-x-1/2 translate-y-1/2"
+              }`}
+              style={hintCutoutStyle}
+            />
+          </span>
+        )}
+
         <span
-          className={`absolute grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
+          className={`absolute z-10 grid size-8 place-items-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.26)] ${
             isHorizontal
               ? "top-1/2 -translate-x-1/2 -translate-y-1/2"
               : "left-1/2 -translate-x-1/2 translate-y-1/2"

@@ -11,6 +11,9 @@ export default function HueSlider({
   handleClassName,
   showLabel,
   orientation,
+  hintValue,
+  showHint,
+  hintColor,
 }) {
   const { t } = useTranslation();
 
@@ -27,6 +30,9 @@ export default function HueSlider({
       handleClassName={handleClassName}
       showLabel={showLabel}
       orientation={orientation}
+      hintValue={hintValue}
+      showHint={showHint}
+      hintColor={hintColor}
     />
   );
 }

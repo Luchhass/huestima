@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
+import HintToggleButton from "@/components/ui/HintToggleButton";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -14,6 +15,7 @@ import {
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
 import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
+import { getInitialHintCount, serializeHintsEnabled } from "@/lib/hints";
 
 const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
   GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
@@ -25,10 +27,12 @@ export default function SingleplayerCard({
   gameModeOptions = SINGLEPLAYER_GAME_MODE_OPTIONS,
   playPath = "/color/singleplayer",
   roundCount = DEFAULT_ROUND_COUNT,
+  hintsEnabled = true,
   onDifficultyChange,
   onDifficultyFeedback,
   onGameModeChange,
   onRoundCountChange,
+  onHintsEnabledChange,
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
@@ -38,6 +42,7 @@ export default function SingleplayerCard({
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
+  const hintsLocked = getInitialHintCount(roundCount) <= 0;
 
   useGameModeShock(scopeRef, gameMode);
 
@@ -81,7 +86,7 @@ export default function SingleplayerCard({
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-3 w-full">
-        <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
           <div data-game-mode-shock-target className="min-w-0">
             <GameModePicker
               value={gameMode}
@@ -91,9 +96,18 @@ export default function SingleplayerCard({
             />
           </div>
 
+          <div data-game-mode-shock-target className="min-w-0">
+            <HintToggleButton
+              enabled={hintsEnabled}
+              onToggle={onHintsEnabledChange}
+              disabled={hintsLocked}
+              compact
+            />
+          </div>
+
           <Link
             data-game-mode-shock-target
-            href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}`}
+            href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
             className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
           >
             <span className="relative z-10">{t("setup.play")}</span>

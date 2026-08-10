@@ -27,11 +27,13 @@ export default function SingleplayerGame({
   initialDifficulty,
   initialGameMode,
   initialRoundCount,
+  initialHintsEnabled = true,
 }) {
   const game = useSingleplayerGame(
     initialDifficulty,
     initialGameMode,
     initialRoundCount,
+    initialHintsEnabled,
   );
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
@@ -256,6 +258,10 @@ export default function SingleplayerGame({
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
+              hintCount={game.hintCount}
+              hintActive={game.hintActive}
+              hintsEnabled={game.hintsEnabled}
+              onUseHint={game.useHint}
             />
           )}
 

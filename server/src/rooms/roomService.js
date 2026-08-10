@@ -169,6 +169,7 @@ export function getRoomSnapshot(room) {
     gameMode: room.gameMode,
     difficulty: room.difficulty,
     roundCount: room.roundCount,
+    hintsEnabled: room.hintsEnabled !== false,
     maxPlayers: room.maxPlayers,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
@@ -199,6 +200,7 @@ function getRoomListSnapshot(room) {
     gameMode: room.gameMode,
     difficulty: room.difficulty,
     roundCount: room.roundCount,
+    hintsEnabled: room.hintsEnabled !== false,
     status: room.status,
     playerCount: Array.from(room.players.values()).filter(
       (player) => !player.kicked,
@@ -323,6 +325,7 @@ function validateRoomCreatePayload(payload) {
       difficulty.data.difficulty,
     ),
     roundCount: roundCount.data.roundCount,
+    hintsEnabled: payload.hintsEnabled !== false,
     roomName: roomName.data.roomName,
     visibility: visibility.data.visibility,
     password: password.data.password,
@@ -347,6 +350,7 @@ export function createRoom(payload) {
     gameMode: validation.data.gameMode,
     difficulty: validation.data.difficulty,
     roundCount: validation.data.roundCount,
+    hintsEnabled: validation.data.hintsEnabled,
     maxPlayers: env.maxPlayersPerRoom,
     createdAt,
     updatedAt: createdAt,
@@ -541,6 +545,10 @@ export function updateRoomSettings(payload) {
     if (!roundCount.ok) return roundCount;
 
     room.roundCount = roundCount.data.roundCount;
+  }
+
+  if (payload.hintsEnabled !== undefined) {
+    room.hintsEnabled = payload.hintsEnabled !== false;
   }
 
   room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);

@@ -13,6 +13,9 @@ export default function SaturationSlider({
   handleClassName,
   showLabel,
   orientation,
+  hintValue,
+  showHint,
+  hintColor,
 }) {
   const { t } = useTranslation();
 
@@ -31,6 +34,9 @@ export default function SaturationSlider({
       handleClassName={handleClassName}
       showLabel={showLabel}
       orientation={orientation}
+      hintValue={hintValue}
+      showHint={showHint}
+      hintColor={hintColor}
     />
   );
 }

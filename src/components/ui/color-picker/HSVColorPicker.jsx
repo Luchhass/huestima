@@ -11,6 +11,8 @@ export default function HSVColorPicker({
   onChange,
   controls = ["h", "s", "v"],
   edge = false,
+  hintColor = null,
+  showHint = false,
 }) {
   const { t } = useTranslation();
 
@@ -40,9 +42,12 @@ export default function HSVColorPicker({
             onChange={(h) => update({ h })}
             trackClassName={`${trackClassName} rounded-l-[26px]`}
             handleClassName={handleClassName}
-            showLabel={false}
-          />
-        )}
+          showLabel={false}
+          hintValue={hintColor?.h}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
+        />
+      )}
 
         {showSaturation && (
           <SaturationSlider
@@ -52,9 +57,12 @@ export default function HSVColorPicker({
             onChange={(s) => update({ s })}
             trackClassName={trackClassName}
             handleClassName={handleClassName}
-            showLabel={false}
-          />
-        )}
+          showLabel={false}
+          hintValue={hintColor?.s}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
+        />
+      )}
 
         {showValue && (
           <ValueSlider
@@ -64,9 +72,12 @@ export default function HSVColorPicker({
             onChange={(v) => update({ v })}
             trackClassName={trackClassName}
             handleClassName={handleClassName}
-            showLabel={false}
-          />
-        )}
+          showLabel={false}
+          hintValue={hintColor?.v}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
+        />
+      )}
       </div>
     );
   }
@@ -77,6 +88,9 @@ export default function HSVColorPicker({
         <HueSlider
           value={value.h}
           onChange={(h) => update({ h })}
+          hintValue={hintColor?.h}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
         />
       )}
 
@@ -86,6 +100,9 @@ export default function HSVColorPicker({
           brightness={value.v}
           value={value.s}
           onChange={(s) => update({ s })}
+          hintValue={hintColor?.s}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
         />
       )}
       
@@ -95,6 +112,9 @@ export default function HSVColorPicker({
           saturation={value.s}
           value={value.v}
           onChange={(v) => update({ v })}
+          hintValue={hintColor?.v}
+          showHint={showHint}
+          hintColor={hintColor?.hex}
         />
       )}
     </div>

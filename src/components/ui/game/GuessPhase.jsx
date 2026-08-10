@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, Lightbulb } from "lucide-react";
 import AdminProtectorOverlay from "@/components/admin/AdminProtectorOverlay";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
@@ -16,6 +16,21 @@ import { APP_NAME } from "@/lib/constants";
 import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
+function getTargetHintColor(targetColor, guessColor) {
+  if (!targetColor) return null;
+
+  if (isFlagColor(targetColor)) {
+    const activeSlotId = guessColor?.activeSlotId || targetColor.activeSlotId;
+    return (
+      targetColor.slots?.find((slotColor) => slotColor.id === activeSlotId) ||
+      targetColor.slots?.[0] ||
+      targetColor
+    );
+  }
+
+  return targetColor;
+}
+
 export default function GuessPhase({
   round,
   roundLabel = `${round}/5`,
@@ -27,6 +42,10 @@ export default function GuessPhase({
   guessDurationMs = null,
   progressItems = [],
   isShowcaseWidgetExiting = false,
+  hintCount = 0,
+  hintActive = false,
+  hintsEnabled = true,
+  onUseHint,
 }) {
   const { t } = useTranslation();
   const {
@@ -50,6 +69,10 @@ export default function GuessPhase({
   const submitButtonCoreRef = useRef(null);
   const submitButtonRingRef = useRef(null);
   const submitIconRef = useRef(null);
+  const hintButtonRef = useRef(null);
+  const hintButtonCoreRef = useRef(null);
+  const hintButtonRingRef = useRef(null);
+  const hintIconRef = useRef(null);
   const [timerRunning, setTimerRunning] = useState(false);
 
   const isGradientGuess = isGradientColor(guessColor);
@@ -65,8 +88,12 @@ export default function GuessPhase({
   const contentLeftSm = pickerWidth + 32;
   const contentRight = rightPickerWidth + 24;
   const contentRightSm = rightPickerWidth + 32;
-  const actionReserveWidth = isAdminModeEnabled ? 156 : 88;
+  const showHintButton = typeof onUseHint === "function";
+  const canUseHint = showHintButton && hintsEnabled && hintCount > 0;
+  const actionReserveWidth =
+    88 + (showHintButton ? 68 : 0) + (isAdminModeEnabled ? 68 : 0);
   const controlsKey = difficulty.controls.join("-");
+  const hintColor = getTargetHintColor(targetColor, guessColor);
   const timedGuessDurationMs =
     Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
   const isTimedGuess = timedGuessDurationMs > 0;
@@ -211,6 +238,34 @@ export default function GuessPhase({
       });
 
       // Fancy submit button initial state
+      if (hintButtonRef.current) {
+        gsap.set(hintButtonRef.current, {
+          autoAlpha: 0,
+        });
+
+        gsap.set(hintButtonCoreRef.current, {
+          scale: 0,
+          rotation: 9,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(hintButtonRingRef.current, {
+          scale: 0.22,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+
+        gsap.set(hintIconRef.current, {
+          scale: 0.72,
+          rotation: -8,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+      }
+
       gsap.set(submitButtonRef.current, {
         autoAlpha: 0,
       });
@@ -500,6 +555,70 @@ export default function GuessPhase({
           );
       }
 
+      if (hintButtonRef.current) {
+        timeline
+          .set(
+            hintButtonRef.current,
+            {
+              autoAlpha: 1,
+            },
+            0.5,
+          )
+          .to(
+            hintButtonCoreRef.current,
+            {
+              scale: 1.12,
+              rotation: -2,
+              duration: 0.18,
+              ease: "expo.out",
+            },
+            0.5,
+          )
+          .to(
+            hintButtonCoreRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              duration: 0.13,
+              ease: "power3.out",
+              clearProps: "transform",
+            },
+            0.69,
+          )
+          .to(
+            hintButtonRingRef.current,
+            {
+              scale: 1.36,
+              autoAlpha: 0.44,
+              duration: 0.22,
+              ease: "expo.out",
+            },
+            0.52,
+          )
+          .to(
+            hintButtonRingRef.current,
+            {
+              scale: 1.62,
+              autoAlpha: 0,
+              duration: 0.2,
+              ease: "power2.out",
+            },
+            0.72,
+          )
+          .to(
+            hintIconRef.current,
+            {
+              scale: 1,
+              rotation: 0,
+              autoAlpha: 1,
+              duration: 0.2,
+              ease: "expo.out",
+              clearProps: "transform,opacity,visibility",
+            },
+            0.58,
+          );
+      }
+
       if (isTimedGuess) {
         timeline.call(() => setTimerRunning(true), [], 0.86);
       }
@@ -521,6 +640,7 @@ export default function GuessPhase({
     return () => ctx.revert();
   }, [
     controlsKey,
+    showHintButton,
     isAdminModeEnabled,
     isGradientGuess,
     isTimedGuess,
@@ -560,6 +680,9 @@ export default function GuessPhase({
             handleClassName={handleClassName}
             showLabel={false}
             orientation={orientation}
+            hintValue={hintColor?.h}
+            showHint={hintActive}
+            hintColor={hintColor?.hex}
           />
         )}
 
@@ -573,6 +696,9 @@ export default function GuessPhase({
             handleClassName={handleClassName}
             showLabel={false}
             orientation={orientation}
+            hintValue={hintColor?.s}
+            showHint={hintActive}
+            hintColor={hintColor?.hex}
           />
         )}
 
@@ -586,6 +712,9 @@ export default function GuessPhase({
             handleClassName={handleClassName}
             showLabel={false}
             orientation={orientation}
+            hintValue={hintColor?.v}
+            showHint={hintActive}
+            hintColor={hintColor?.hex}
           />
         )}
       </div>
@@ -666,7 +795,9 @@ export default function GuessPhase({
             type="button"
             aria-label="Set perfect admin guess"
             onClick={handleAdminPerfectGuess}
-            className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
+            className={`card-action-size absolute bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:bottom-8 ${
+              showHintButton ? "right-[9.5rem] sm:right-[10.25rem]" : "right-[5.75rem] sm:right-[6.25rem]"
+            }`}
           >
             <span
               ref={adminButtonCoreRef}
@@ -683,6 +814,36 @@ export default function GuessPhase({
               className="relative z-10 grid place-items-center text-white"
             >
               <Crown size={27} strokeWidth={2.25} />
+            </span>
+          </button>
+        )}
+
+        {showHintButton && (
+          <button
+            ref={hintButtonRef}
+            type="button"
+            aria-label={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
+            title={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
+            disabled={!canUseHint}
+            onClick={onUseHint}
+            className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none disabled:opacity-45 sm:right-[6.25rem] sm:bottom-8"
+          >
+            <span
+              ref={hintButtonRingRef}
+              className="pointer-events-none absolute inset-0 rounded-full border border-current/30"
+            />
+            <span
+              ref={hintButtonCoreRef}
+              className="absolute inset-0 rounded-full border-2 border-white bg-transparent text-white shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+            />
+            <span
+              ref={hintIconRef}
+              className="relative z-10 grid place-items-center text-white"
+            >
+              <Lightbulb className="size-7" strokeWidth={2.15} />
+            </span>
+            <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
+              {hintCount}
             </span>
           </button>
         )}
@@ -736,6 +897,9 @@ export default function GuessPhase({
               trackClassName={`${edgeTrackClassName} rounded-l-[26px]`}
               handleClassName={edgeHandleClassName}
               showLabel={false}
+              hintValue={targetColor?.left?.h}
+              showHint={hintActive}
+              hintColor={targetColor?.left?.hex}
             />
           </div>
         ) : (
@@ -744,6 +908,8 @@ export default function GuessPhase({
             controls={difficulty.controls}
             onChange={onGuessChange}
             edge
+            hintColor={hintColor}
+            showHint={hintActive}
           />
         )}
       </div>
@@ -760,6 +926,9 @@ export default function GuessPhase({
               trackClassName={`${edgeTrackClassName} guess-picker-track--right rounded-r-[26px]`}
               handleClassName={edgeHandleClassName}
               showLabel={false}
+              hintValue={targetColor?.right?.h}
+              showHint={hintActive}
+              hintColor={targetColor?.right?.hex}
             />
           </div>
         </div>
@@ -839,8 +1008,8 @@ export default function GuessPhase({
           onClick={handleAdminPerfectGuess}
           className="card-action-size absolute right-(--admin-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--admin-right-sm) sm:bottom-8"
           style={{
-            "--admin-right": `${contentRight + 68}px`,
-            "--admin-right-sm": `${contentRightSm + 74}px`,
+            "--admin-right": `${contentRight + (showHintButton ? 136 : 68)}px`,
+            "--admin-right-sm": `${contentRightSm + (showHintButton ? 148 : 74)}px`,
           }}
         >
           <span
@@ -858,6 +1027,40 @@ export default function GuessPhase({
             className="relative z-10 grid place-items-center text-white"
           >
             <Crown size={27} strokeWidth={2.25} />
+          </span>
+        </button>
+      )}
+
+      {showHintButton && (
+        <button
+          ref={hintButtonRef}
+          type="button"
+          aria-label={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
+          title={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
+          disabled={!canUseHint}
+          onClick={onUseHint}
+          className="card-action-size absolute right-(--hint-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none disabled:opacity-45 sm:right-(--hint-right-sm) sm:bottom-8"
+          style={{
+            "--hint-right": `${contentRight + 68}px`,
+            "--hint-right-sm": `${contentRightSm + 74}px`,
+          }}
+        >
+          <span
+            ref={hintButtonRingRef}
+            className="pointer-events-none absolute inset-0 rounded-full border border-current/30"
+          />
+          <span
+            ref={hintButtonCoreRef}
+            className="absolute inset-0 rounded-full border-2 border-white bg-transparent text-white shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+          />
+          <span
+            ref={hintIconRef}
+            className="relative z-10 grid place-items-center text-white"
+          >
+            <Lightbulb className="size-7" strokeWidth={2.15} />
+          </span>
+          <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
+            {hintCount}
           </span>
         </button>
       )}

@@ -27,6 +27,11 @@ import {
   getDifficultyOption,
 } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
+import {
+  earnsHint,
+  getInitialHintCount,
+  normalizeHintsEnabled,
+} from "@/lib/hints";
 import { normalizeRoundCount } from "@/lib/roundCount";
 import {
   calculateColorMatchDistance,
@@ -96,12 +101,17 @@ export function useSingleplayerGame(
   difficultyId = DEFAULT_DIFFICULTY_ID,
   gameModeId = DEFAULT_GAME_MODE_ID,
   roundCountValue,
+  hintsEnabledValue = true,
 ) {
   const difficulty = useMemo(() => getDifficultyOption(difficultyId), [difficultyId]);
   const gameMode = useMemo(() => getGameModeOption(gameModeId), [gameModeId]);
   const roundCount = useMemo(
     () => normalizeRoundCount(roundCountValue),
     [roundCountValue],
+  );
+  const hintsEnabled = useMemo(
+    () => normalizeHintsEnabled(hintsEnabledValue, true),
+    [hintsEnabledValue],
   );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
@@ -121,9 +131,14 @@ export function useSingleplayerGame(
     createDefaultGuess(effectiveDifficulty, gameMode),
   );
   const [results, setResults] = useState([]);
+  const [hintCount, setHintCount] = useState(() =>
+    hintsEnabled ? getInitialHintCount(roundCount) : 0,
+  );
+  const [hintActive, setHintActive] = useState(false);
 
   const startRound = useCallback((nextRoundIndex) => {
     setRoundIndex(nextRoundIndex);
+    setHintActive(false);
 
     if (isSequenceMode) {
       const sequenceColors = createTargetColors(
@@ -182,6 +197,13 @@ export function useSingleplayerGame(
     targetColors,
   ]);
 
+  const useHint = useCallback(() => {
+    if (!hintsEnabled || hintCount <= 0 || hintActive) return;
+
+    setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    setHintActive(true);
+  }, [hintActive, hintCount, hintsEnabled]);
+
   const finishIntro = useCallback(() => {
     startRound(roundIndex);
   }, [roundIndex, startRound]);
@@ -239,11 +261,15 @@ export function useSingleplayerGame(
     };
 
     setResults((currentResults) => [...currentResults, result]);
+    if (hintsEnabled && earnsHint(score)) {
+      setHintCount((currentCount) => currentCount + 1);
+    }
     setPhase(GAME_PHASES.RESULT);
   }, [
     effectiveDifficulty,
     gameMode,
     guessColor,
+    hintsEnabled,
     isSequenceMode,
     roundIndex,
     targetColor,
@@ -291,8 +317,10 @@ export function useSingleplayerGame(
     setTargetColor(null);
     setTargetColors([]);
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
+    setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
+    setHintActive(false);
     setPhase(GAME_PHASES.INTRO);
-  }, [effectiveDifficulty, gameMode]);
+  }, [effectiveDifficulty, gameMode, hintsEnabled, roundCount]);
 
   const summary = useMemo(() => {
     const totalScore = roundScore(results.reduce((sum, result) => sum + result.score, 0));
@@ -315,6 +343,9 @@ export function useSingleplayerGame(
     isEndlessMode,
     isCartoonMode,
     roundCount,
+    hintsEnabled,
+    hintCount,
+    hintActive,
     phase,
     roundIndex,
     targetColor,
@@ -328,6 +359,7 @@ export function useSingleplayerGame(
     finishIntro,
     finishMemorize,
     updateGuess,
+    useHint,
     submitGuess,
     continueFromResult,
     finishRun,

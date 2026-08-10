@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Globe2, Lock, LogIn, Plus, Search, Users, X } from "lucide-react";
+import { Eye, EyeOff, Globe2, Lock, LogIn, Plus, Search, Users } from "lucide-react";
 import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
+import HintToggleButton from "@/components/ui/HintToggleButton";
+import PushNotification from "@/components/ui/PushNotification";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
@@ -20,6 +22,7 @@ import {
 } from "@/lib/gameFamily";
 import { getGameModeOption } from "@/lib/gameMode";
 import { emitWithAck, getSocket } from "@/lib/socket";
+import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 import {
   createPlayerId,
   markInviteCopied,
@@ -324,6 +327,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
   const scopeRef = useRef(null);
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
+  const [hintsEnabled, setHintsEnabled] = useState(true);
   const [lobbyName, setLobbyName] = useState("");
   const [isLobbyNameDirty, setIsLobbyNameDirty] = useState(false);
   const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
@@ -333,6 +337,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
   const [joinPassword, setJoinPassword] = useState("");
   const [formError, setFormError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [notification, setNotification] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
@@ -372,6 +377,16 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
     if (submitError) setSubmitError("");
   };
 
+  const showNotification = (message, variant = "error") => {
+    if (!message) return;
+
+    setNotification({
+      id: `${variant}-${Date.now()}`,
+      message,
+      variant,
+    });
+  };
+
   const updatePlayerName = (value) => {
     setPlayerName(value);
     writeStoredPlayerName(value);
@@ -389,7 +404,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
     setIsLoadingRooms(false);
 
     if (!response.ok) {
-      setSubmitError(response.error || t("room.couldNotReachServer"));
+      setSubmitError(getMultiplayerErrorMessage(response, t));
       return;
     }
 
@@ -443,6 +458,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
 
   useEffect(() => {
     if (!actionError) return undefined;
+
+    showNotification(actionError, "error");
 
     const timeoutId = window.setTimeout(() => {
       setFormError("");
@@ -512,11 +529,12 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       password: isPrivate ? cleanLobbyPassword(password) : "",
       difficulty: defaultDifficulty,
       gameMode: defaultGameMode,
+      hintsEnabled,
     });
 
     if (!response.ok) {
       setIsCreating(false);
-      setSubmitError(response.error || t("setup.couldNotCreate"));
+      setSubmitError(getMultiplayerErrorMessage(response, t, "setup.couldNotCreate"));
       return;
     }
 
@@ -530,11 +548,15 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       game_type: "multiplayer",
       difficulty: defaultDifficulty,
       game_mode: defaultGameMode,
+      hints_enabled: hintsEnabled,
       visibility,
     });
 
     void copyInviteLink(response.room.code);
-    router.push(`/${response.room.code}`);
+    showNotification(t("setup.lobbyCreated"), "success");
+    window.setTimeout(() => {
+      router.push(`/${response.room.code}`);
+    }, 520);
   };
 
   const handleJoinSelectedRoom = async () => {
@@ -580,7 +602,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
     setIsJoining(false);
 
     if (!response.ok) {
-      setSubmitError(response.error || t("room.couldNotJoin"));
+      setSubmitError(getMultiplayerErrorMessage(response, t, "room.couldNotJoin"));
       return;
     }
 
@@ -597,11 +619,19 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       visibility: selectedRoom.visibility,
     });
 
-    router.push(`/${selectedRoom.code}`);
+    showNotification(t("setup.lobbyJoined"), "success");
+    window.setTimeout(() => {
+      router.push(`/${selectedRoom.code}`);
+    }, 420);
   };
 
   return (
     <div ref={scopeRef} className="home-view-panel flex h-full flex-col">
+      <PushNotification
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
+
       <div data-screen-reveal className="home-view-copy max-w-[23rem] pr-10">
         <h1
           data-game-mode-shock-target
@@ -705,27 +735,24 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
                 disabled={isCreating}
               />
 
+              <HintToggleButton
+                enabled={hintsEnabled}
+                onToggle={(nextEnabled) => {
+                  setHintsEnabled(nextEnabled);
+                  clearActionError();
+                }}
+                disabled={isCreating}
+                compact
+              />
+
               <button
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating}
-                className={`card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-                  actionError
-                    ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                    : "rgb-hover-button bg-white text-zinc-950"
-                }`}
+                className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base"
               >
-                {actionError && (
-                  <X
-                    className="relative z-10 shrink-0"
-                    size={17}
-                    strokeWidth={2.4}
-                  />
-                )}
-
                 <span className="relative z-10 min-w-0 truncate">
-                  {actionError ||
-                    (isCreating ? t("setup.creating") : t("setup.createLobby"))}
+                  {isCreating ? t("setup.creating") : t("setup.createLobby")}
                 </span>
               </button>
             </div>
@@ -810,22 +837,10 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
                 type="button"
                 disabled={isJoining || !selectedRoom}
                 onClick={handleJoinSelectedRoom}
-                className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-55 sm:px-5 sm:text-base ${
-                  actionError
-                    ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                    : "rgb-hover-button bg-white text-zinc-950"
-                }`}
+                className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-55 sm:px-5 sm:text-base"
               >
-                {actionError && (
-                  <X
-                    className="relative z-10 shrink-0"
-                    size={17}
-                    strokeWidth={2.4}
-                  />
-                )}
-
                 <span className="relative z-10 min-w-0 truncate">
-                  {actionError || (isJoining ? t("room.joining") : t("room.join"))}
+                  {isJoining ? t("room.joining") : t("room.join")}
                 </span>
               </button>
             </div>

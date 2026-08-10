@@ -39,9 +39,13 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
   return (
     <div
       data-how-visual
-      className="flex w-full items-center justify-center gap-4 sm:gap-5"
+      className="flex w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-5"
     >
-      <div data-how-bar className="w-[50px] shrink-0" style={{ height: cardHeight }}>
+      <div
+        data-how-bar
+        className="hidden w-[50px] shrink-0 md:block"
+        style={{ height: cardHeight }}
+      >
         <div
           className="flag-control-stack flag-control-stack--vertical grid h-full overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
           style={{
@@ -67,6 +71,24 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
       >
         {children}
       </section>
+
+      <div data-how-bar-mobile className="h-[50px] w-full max-w-125 shrink-0 md:hidden">
+        <div
+          className="flag-control-stack flag-control-stack--horizontal grid h-full w-full overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
+          style={{
+            "--flag-control-count": 1,
+          }}
+        >
+          <HueSlider
+            value={hue}
+            onChange={onHueChange}
+            trackClassName="guess-picker-track !h-full !w-full rounded-none border-0 shadow-none"
+            handleClassName="guess-picker-thumb size-8 shadow-[0_8px_22px_rgba(0,0,0,0.26)]"
+            showLabel={false}
+            orientation="horizontal"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -208,16 +230,16 @@ export default function HowItWorksPage() {
   if (!example) return null;
 
   return (
-    <main className="app-gradient h-dvh w-full overflow-hidden px-5 pb-21 pt-24 text-zinc-950 dark:text-zinc-50 sm:px-8 sm:pb-24 sm:pt-28">
+    <main className="app-gradient h-dvh w-full overflow-y-auto px-5 pb-32 pt-24 text-zinc-950 dark:text-zinc-50 md:overflow-hidden md:px-8 md:pb-24 md:pt-28">
       <section
         data-route-transition-scope
-        className="mx-auto flex h-full w-full max-w-[68rem] flex-col justify-center gap-4"
+        className="mx-auto flex min-h-full w-full max-w-[68rem] flex-col justify-start gap-6 md:h-full md:justify-center md:gap-4"
       >
         <div
           key={currentStep.key}
-          className="grid min-h-0 flex-1 items-center gap-8 lg:grid-cols-[minmax(0,0.84fr)_minmax(27rem,1fr)]"
+          className="grid min-h-0 flex-1 items-start gap-6 md:items-center md:gap-8 lg:grid-cols-[minmax(0,0.84fr)_minmax(27rem,1fr)]"
         >
-          <article className="flex h-[20rem] min-w-0 flex-col justify-center sm:h-[21rem] lg:h-[22rem]">
+          <article className="flex min-w-0 flex-col justify-center md:h-[21rem] lg:h-[22rem]">
             <LineRevealText
               as="h1"
               text={title}
@@ -243,10 +265,10 @@ export default function HowItWorksPage() {
         </div>
 
         <nav
-          className="relative flex shrink-0 items-center justify-between gap-4"
+          className="relative flex shrink-0 flex-col items-center gap-5 pb-2 md:flex-row md:justify-between md:gap-4 md:pb-0"
           aria-label={t("howItWorks.navigation")}
         >
-          <div className="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
+          <div className="pointer-events-auto flex items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
             {STEPS.map((step, index) => (
               <button
                 key={step.key}
@@ -266,7 +288,7 @@ export default function HowItWorksPage() {
             ))}
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-3 self-end md:self-auto">
             <button
               type="button"
               onClick={() => setActiveStep((step) => Math.max(0, step - 1))}

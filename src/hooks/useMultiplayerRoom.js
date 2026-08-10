@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { emitWithAck, getSocket } from "@/lib/socket";
+import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 
 function responseData(response) {
   return response?.data || response || {};
@@ -80,7 +81,7 @@ export function useMultiplayerRoom(roomCode) {
     };
 
     const handleConnectError = () => {
-      setConnectionError(t("room.couldNotReachServer"));
+      setConnectionError(t("room.serverUnavailable"));
     };
 
     const handleConnect = () => {
@@ -126,11 +127,14 @@ export function useMultiplayerRoom(roomCode) {
             : data.game || nextRoom?.game || null,
         );
         if (data.leaderboard) setLeaderboard(data.leaderboard);
+        setConnectionError("");
+      } else {
+        setConnectionError(getMultiplayerErrorMessage(response, t));
       }
 
       return response;
     },
-    [roomCode],
+    [roomCode, t],
   );
 
   const joinRoom = useCallback(
@@ -146,11 +150,14 @@ export function useMultiplayerRoom(roomCode) {
         const data = responseData(response);
         setRoom(data.room);
         setStartedGame(data.game || data.room?.game || null);
+        setConnectionError("");
+      } else {
+        setConnectionError(getMultiplayerErrorMessage(response, t, "room.couldNotJoin"));
       }
 
       return response;
     },
-    [roomCode],
+    [roomCode, t],
   );
 
   const leaveRoom = useCallback(
@@ -200,13 +207,14 @@ export function useMultiplayerRoom(roomCode) {
   );
 
   const updateSettings = useCallback(
-    async ({ playerId, gameMode, difficulty, roundCount }) => {
+    async ({ playerId, gameMode, difficulty, roundCount, hintsEnabled }) => {
       const response = await emitWithAck("room:updateSettings", {
         roomCode,
         playerId,
         gameMode,
         difficulty,
         roundCount,
+        hintsEnabled,
       });
 
       if (response.ok) {

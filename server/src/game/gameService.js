@@ -247,6 +247,7 @@ export function buildGamePayload(room) {
     gameMode: room.game.mode,
     difficulty: room.game.difficulty,
     roundCount: room.game.roundCount,
+    hintsEnabled: room.game.hintsEnabled !== false,
     currentRoundIndex: room.game.currentRoundIndex || 0,
     isElimination: Boolean(room.game.isElimination),
     eliminationGapThreshold: room.game.isElimination
@@ -275,6 +276,7 @@ export function startGameForRoom(room) {
     mode: room.gameMode,
     difficulty,
     roundCount,
+    hintsEnabled: room.hintsEnabled !== false,
     currentRoundIndex: 0,
     isElimination,
     lastElimination: null,

@@ -327,6 +327,10 @@ export default function MultiplayerGame({
               guessDurationMs={game.guessDurationMs}
               progressItems={progressItems}
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
+              hintCount={game.hintCount}
+              hintActive={game.hintActive}
+              hintsEnabled={game.hintsEnabled}
+              onUseHint={game.useHint}
             />
           )}
 

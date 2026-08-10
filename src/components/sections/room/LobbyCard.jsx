@@ -9,7 +9,9 @@ import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
+import HintToggleButton from "@/components/ui/HintToggleButton";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
+import PushNotification from "@/components/ui/PushNotification";
 import {
   DEFAULT_ROUND_COUNT,
   DIFFICULTY_IDS,
@@ -18,6 +20,7 @@ import {
 } from "@/lib/constants";
 import { getGameFamilyByMode } from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
+import { getInitialHintCount } from "@/lib/hints";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -44,6 +47,7 @@ export default function LobbyCard({
   onGameModeChange,
   onDifficultyChange,
   onRoundCountChange,
+  onHintsEnabledChange,
   onBackHome,
   isStarting,
   canStartGame = true,
@@ -56,6 +60,7 @@ export default function LobbyCard({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
+  const [notification, setNotification] = useState(null);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const scopeRef = useRef(null);
   const copiedTimerRef = useRef(null);
@@ -78,19 +83,9 @@ export default function LobbyCard({
   );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
+  const hintsLocked = getInitialHintCount(room?.roundCount) <= 0;
 
   const activeActionError = error && error !== hiddenActionError ? error : "";
-  const copyActionError = activeActionError && lastAction === "copy";
-  const startActionError = activeActionError && lastAction === "start";
-  const settingsActionError = activeActionError && lastAction === "settings";
-  const kickActionError =
-    activeActionError &&
-    typeof lastAction === "string" &&
-    lastAction.startsWith("kick:");
-  const visibleActionError =
-    copyActionError || startActionError || settingsActionError
-      ? activeActionError
-      : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
   useCartoonAssetPreload(
@@ -142,6 +137,12 @@ export default function LobbyCard({
   useEffect(() => {
     if (!activeActionError) return undefined;
 
+    setNotification({
+      id: `error-${Date.now()}`,
+      message: activeActionError,
+      variant: "error",
+    });
+
     const timeoutId = window.setTimeout(() => {
       setHiddenActionError(activeActionError);
       setLastAction(null);
@@ -172,6 +173,11 @@ export default function LobbyCard({
     }
 
     setIsInviteCopied(true);
+    setNotification({
+      id: `success-${Date.now()}`,
+      message: t("room.linkCopied"),
+      variant: "success",
+    });
 
     copiedTimerRef.current = window.setTimeout(() => {
       setIsInviteCopied(false);
@@ -212,6 +218,11 @@ export default function LobbyCard({
 
   return (
     <div className="lobby-card relative isolate flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+      <PushNotification
+        notification={notification}
+        onClose={() => setNotification(null)}
+      />
+
       {difficultyBurst && (
         <span
           key={difficultyBurst.key}
@@ -320,11 +331,6 @@ export default function LobbyCard({
             })}
           </div>
 
-          {kickActionError && (
-            <p className="mt-3 text-xs font-semibold text-red-200">
-              {activeActionError}
-            </p>
-          )}
         </div>
 
         {isSettingsOpen && (
@@ -372,12 +378,6 @@ export default function LobbyCard({
           </div>
         )}
 
-        {visibleActionError && (
-          <p className="mt-3 text-xs font-semibold text-red-200">
-            {visibleActionError}
-          </p>
-        )}
-
         <div data-game-mode-shock-target data-screen-reveal className="lobby-actions mt-3 w-full">
           <div className="flex w-full items-center gap-3">
             {isHost && (
@@ -419,16 +419,12 @@ export default function LobbyCard({
                   ? "game-action-pop card-action-size grid shrink-0 place-items-center"
                   : "card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 px-4 text-center text-sm font-semibold leading-tight sm:text-base"
               } ${
-                copyActionError
-                  ? "border-red-500 bg-red-500 text-white"
-                  : isInviteCopied
+                isInviteCopied
                     ? "border-emerald-400 bg-emerald-400 text-white"
                     : "border-white/95 bg-transparent text-white hover:bg-white/10"
               }`}
             >
-              {copyActionError ? (
-                <X size={20} strokeWidth={2.35} />
-              ) : isInviteCopied ? (
+              {isInviteCopied ? (
                 <Check size={20} strokeWidth={2.35} />
               ) : (
                 <Clipboard size={19} strokeWidth={2.15} />
@@ -442,34 +438,30 @@ export default function LobbyCard({
             </button>
 
             {isHost ? (
-              <button
-                type="button"
-                onClick={handleStartGame}
-                disabled={isStarting || !canStartGame}
-                className={`lobby-primary-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-70 sm:text-base ${
-                  startActionError
-                    ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                    : "rgb-hover-button bg-white text-zinc-950"
-                }`}
-              >
-                {startActionError && (
-                  <X
-                    className="relative z-10 shrink-0"
-                    size={17}
-                    strokeWidth={2.4}
-                  />
-                )}
+              <>
+                <HintToggleButton
+                  enabled={room?.hintsEnabled !== false}
+                  onToggle={onHintsEnabledChange}
+                  disabled={hintsLocked || isUpdatingSettings || room?.status !== "lobby"}
+                  compact
+                  className="shrink-0"
+                />
 
-                <span className="relative z-10 min-w-0 truncate">
-                  {startActionError
-                    ? activeActionError
-                    : isStarting
-                      ? t("room.starting")
-                      : !canStartGame && startDisabledLabel
-                        ? startDisabledLabel
-                        : t("room.startGame")}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={handleStartGame}
+                  disabled={isStarting || !canStartGame}
+                  className="rgb-hover-button lobby-primary-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-70 sm:text-base"
+                >
+                  <span className="relative z-10 min-w-0 truncate">
+                    {isStarting
+                        ? t("room.starting")
+                        : !canStartGame && startDisabledLabel
+                          ? startDisabledLabel
+                          : t("room.startGame")}
+                  </span>
+                </button>
+              </>
             ) : (
               <div className="card-action-height flex min-w-0 flex-1 items-center justify-center rounded-full bg-white/5.5 px-4 text-center text-sm font-semibold leading-tight text-white/58 ring-1 ring-white/12 sm:text-base">
                 <span className="min-w-0 truncate">{t("room.waitingForHost")}</span>

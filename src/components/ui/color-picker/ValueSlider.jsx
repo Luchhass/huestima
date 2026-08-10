@@ -13,6 +13,9 @@ export default function ValueSlider({
   handleClassName,
   showLabel,
   orientation,
+  hintValue,
+  showHint,
+  hintColor,
 }) {
   const { t } = useTranslation();
 
@@ -31,6 +34,9 @@ export default function ValueSlider({
       handleClassName={handleClassName}
       showLabel={showLabel}
       orientation={orientation}
+      hintValue={hintValue}
+      showHint={showHint}
+      hintColor={hintColor}
     />
   );
 }

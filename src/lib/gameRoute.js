@@ -10,6 +10,7 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
+import { normalizeHintsEnabled } from "@/lib/hints";
 import { normalizeRoundCount } from "@/lib/roundCount";
 
 export function resolveSingleplayerRoute(searchParams, gameFamily = "color") {
@@ -41,11 +42,13 @@ export function resolveSingleplayerRoute(searchParams, gameFamily = "color") {
     availableGameModeOptions[0];
   const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
   const roundCount = normalizeRoundCount(searchParams?.roundCount ?? searchParams?.levels);
+  const hintsEnabled = normalizeHintsEnabled(searchParams?.hints, true);
 
   return {
     difficulty,
     gameMode,
     roundCount,
+    hintsEnabled,
   };
 }
 

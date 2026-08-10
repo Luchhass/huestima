@@ -9,6 +9,7 @@ import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 import { getGameFamilyByMode, getGameFamilyHref } from "@/lib/gameFamily";
+import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
 import LobbyCard from "./LobbyCard";
@@ -95,7 +96,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
       const response = await requestState(session?.playerId);
 
       if (!response.ok) {
-        setError(response.error || t("room.lobbyNotFound"));
+        setError(getMultiplayerErrorMessage(response, t, "room.lobbyNotFound"));
         setView("not-found");
         return;
       }
@@ -147,7 +148,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsJoining(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotJoin"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotJoin"));
       return;
     }
 
@@ -184,7 +185,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsStarting(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotStart"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotStart"));
       return;
     }
 
@@ -209,7 +210,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     });
 
     if (!response.ok) {
-      setError(response.error);
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
 
     return response;
@@ -230,7 +231,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsUpdatingSettings(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotUpdateSettings"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
   };
 
@@ -248,7 +249,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsUpdatingSettings(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotUpdateSettings"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
   };
 
@@ -266,7 +267,25 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsUpdatingSettings(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotUpdateSettings"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
+    }
+  };
+
+  const handleUpdateHintsEnabled = async (hintsEnabled) => {
+    if (!player) return;
+
+    setIsUpdatingSettings(true);
+    setError("");
+
+    const response = await updateSettings({
+      playerId: player.playerId,
+      hintsEnabled,
+    });
+
+    setIsUpdatingSettings(false);
+
+    if (!response.ok) {
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
   };
 
@@ -281,7 +300,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setIsReturningLobby(false);
 
     if (!response.ok) {
-      setError(response.error || t("room.couldNotReturnToLobby"));
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotReturnToLobby"));
       return;
     }
 
@@ -442,6 +461,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
           onGameModeChange={handleUpdateGameMode}
           onDifficultyChange={handleUpdateDifficulty}
           onRoundCountChange={handleUpdateRoundCount}
+          onHintsEnabledChange={handleUpdateHintsEnabled}
           onBackHome={handleBackHome}
           isStarting={isStarting}
           canStartGame={canStartGame}
