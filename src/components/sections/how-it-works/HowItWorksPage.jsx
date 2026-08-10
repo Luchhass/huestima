@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
 import CartoonCanvas from "@/components/ui/game/CartoonCanvas";
@@ -39,12 +39,16 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
   return (
     <div
       data-how-visual
-      className="flex w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-5"
+      className="flex w-full flex-col items-center justify-center gap-3 lg:flex-row lg:gap-5"
+      style={{
+        "--how-card-height": cardHeight,
+        "--how-card-mobile-height": "clamp(150px,30dvh,218px)",
+        "--how-card-tablet-height": "clamp(220px,34dvh,280px)",
+      }}
     >
       <div
         data-how-bar
-        className="hidden w-[50px] shrink-0 md:block"
-        style={{ height: cardHeight }}
+        className="hidden h-[var(--how-card-height)] w-[50px] shrink-0 lg:block"
       >
         <div
           className="flag-control-stack flag-control-stack--vertical grid h-full overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
@@ -66,13 +70,12 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
 
       <section
         data-how-card
-        className="relative w-full max-w-125 overflow-hidden rounded-[26px] bg-surface shadow-[0_18px_38px_rgba(31,25,20,0.18),0_8px_18px_rgba(31,25,20,0.1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.52),0_8px_18px_rgba(0,0,0,0.32)]"
-        style={{ height: cardHeight }}
+        className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[0_18px_38px_rgba(31,25,20,0.18),0_8px_18px_rgba(31,25,20,0.1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.52),0_8px_18px_rgba(0,0,0,0.32)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
       >
         {children}
       </section>
 
-      <div data-how-bar-mobile className="h-[50px] w-full max-w-125 shrink-0 md:hidden">
+      <div data-how-bar-mobile className="h-[50px] w-full max-w-125 shrink-0 lg:hidden">
         <div
           className="flag-control-stack flag-control-stack--horizontal grid h-full w-full overflow-hidden rounded-[22px] shadow-[0_18px_34px_rgba(0,0,0,0.2)]"
           style={{
@@ -89,6 +92,23 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function VisualPlaceholder() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex w-full flex-col items-center justify-center gap-3 opacity-0 pointer-events-none lg:flex-row lg:gap-5"
+      style={{
+        "--how-card-height": "300px",
+        "--how-card-mobile-height": "clamp(150px,30dvh,218px)",
+        "--how-card-tablet-height": "clamp(220px,34dvh,280px)",
+      }}
+    >
+      <div className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 md:h-[var(--how-card-tablet-height)] lg:h-[var(--how-card-height)]" />
+      <div className="h-[50px] w-full max-w-125 shrink-0 lg:hidden" />
     </div>
   );
 }
@@ -230,16 +250,20 @@ export default function HowItWorksPage() {
   if (!example) return null;
 
   return (
-    <main className="app-gradient h-dvh w-full overflow-y-auto px-5 pb-32 pt-24 text-zinc-950 dark:text-zinc-50 md:overflow-hidden md:px-8 md:pb-24 md:pt-28">
+    <main className="app-gradient h-dvh w-full overflow-hidden px-5 pb-6 pt-21 text-zinc-950 dark:text-zinc-50 md:px-8 md:pb-10 md:pt-24 lg:pb-24 lg:pt-28">
       <section
         data-route-transition-scope
-        className="mx-auto flex min-h-full w-full max-w-[68rem] flex-col justify-start gap-6 md:h-full md:justify-center md:gap-4"
+        className="mx-auto flex h-full w-full max-w-125 flex-col items-center justify-center gap-4 md:max-w-[42rem] md:gap-5 lg:max-w-[68rem] lg:items-stretch lg:gap-4"
       >
         <div
           key={currentStep.key}
-          className="grid min-h-0 flex-1 items-start gap-6 md:items-center md:gap-8 lg:grid-cols-[minmax(0,0.84fr)_minmax(27rem,1fr)]"
+          className={`grid min-h-0 w-full flex-none items-start gap-4 md:gap-5 lg:flex-1 lg:items-center lg:gap-8 ${
+            "lg:grid-cols-[minmax(27rem,1fr)_minmax(0,0.84fr)]"
+          }`}
         >
-          <article className="flex min-w-0 flex-col justify-center md:h-[21rem] lg:h-[22rem]">
+          <article
+            className="order-2 mx-auto flex h-[13.25rem] w-full max-w-125 min-w-0 flex-col justify-start lg:order-2 lg:mx-0 lg:h-[22rem] lg:max-w-none lg:justify-center"
+          >
             <LineRevealText
               as="h1"
               text={title}
@@ -247,12 +271,12 @@ export default function HowItWorksPage() {
             />
             <LineRevealText
               text={copy}
-              className="mt-4 max-w-[42rem] text-[clamp(0.95rem,1.28vw,1.08rem)] font-medium leading-[1.42] text-zinc-700 dark:text-zinc-300"
+              className="mt-3 max-w-[42rem] text-[clamp(0.88rem,1.28vw,1.08rem)] font-medium leading-[1.36] text-zinc-700 dark:text-zinc-300 md:mt-4 md:leading-[1.42]"
             />
           </article>
 
-          {currentStep.visual ? (
-            <div className="min-w-0">
+          <div className="order-1 mx-auto w-full max-w-125 min-w-0 lg:order-1 lg:mx-0 lg:max-w-none">
+            {currentStep.visual ? (
               <StepVisual
                 type={currentStep.visual}
                 example={example}
@@ -260,15 +284,18 @@ export default function HowItWorksPage() {
                 setters={setters}
                 cardHeight={cardHeight}
               />
-            </div>
-          ) : null}
+            ) : (
+              <VisualPlaceholder />
+            )}
+          </div>
         </div>
 
         <nav
-          className="relative flex shrink-0 flex-col items-center gap-5 pb-2 md:flex-row md:justify-between md:gap-4 md:pb-0"
+          className="relative mx-auto flex w-full max-w-125 shrink-0 flex-col items-center gap-3 pb-1 md:flex-row md:justify-between md:gap-4 md:pb-0 lg:max-w-none"
           aria-label={t("howItWorks.navigation")}
         >
-          <div className="pointer-events-auto flex items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2">
+          {/*
+          <div className="pointer-events-auto order-2 flex items-center gap-2 md:absolute md:left-1/2 md:order-1 md:-translate-x-1/2">
             {STEPS.map((step, index) => (
               <button
                 key={step.key}
@@ -287,8 +314,9 @@ export default function HowItWorksPage() {
               </button>
             ))}
           </div>
+          */}
 
-          <div className="ml-auto flex items-center gap-3 self-end md:self-auto">
+          <div className="order-1 ml-auto flex items-center gap-3 self-end md:order-2 md:self-auto">
             <button
               type="button"
               onClick={() => setActiveStep((step) => Math.max(0, step - 1))}
@@ -305,9 +333,12 @@ export default function HowItWorksPage() {
               type="button"
               onClick={() => setActiveStep((step) => Math.min(STEPS.length - 1, step + 1))}
               disabled={!hasNext}
-              className="rgb-hover-button inline-flex h-12 min-w-32 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25 dark:bg-white dark:text-black"
+              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-black text-white shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25 dark:bg-white dark:text-black"
+              aria-label={t("howItWorks.next")}
             >
-              <span className="relative z-10">{t("howItWorks.next")}</span>
+              <span className="relative z-10 inline-flex items-center justify-center">
+                <ChevronRight size={19} strokeWidth={2.2} />
+              </span>
             </button>
           </div>
         </nav>

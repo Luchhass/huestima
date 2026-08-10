@@ -45,6 +45,9 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const CARD_RESIZE_DURATION_MS = 700;
 const DIFFICULTY_BURST_LIFETIME_MS = 3900;
+const ADMIN_TAP_WINDOW_MS = 5000;
+const ADMIN_TAP_COUNT = 5;
+const ADMIN_SETTLE_DELAY_MS = 3000;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -69,7 +72,14 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
     cleanGameFamily,
   );
-  const { cancelUnlockRequest, enableAdmin, protectorRequestId } = useAdminMode();
+  const {
+    cancelUnlockRequest,
+    disableAdmin,
+    enableAdmin,
+    enabled: isAdminModeEnabled,
+    protectorRequestId,
+    requestProtector,
+  } = useAdminMode();
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(defaultDifficulty);
   const [gameMode, setGameMode] = useState(defaultGameMode);
@@ -80,6 +90,8 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
   const contentRef = useRef(null);
   const difficultyBurstTimerRef = useRef(null);
+  const adminTapTimesRef = useRef([]);
+  const adminSettleTimerRef = useRef(null);
   const isChangingViewRef = useRef(false);
   const lastProtectorRequestRef = useRef(0);
 
@@ -115,6 +127,10 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     return () => {
       if (difficultyBurstTimerRef.current) {
         window.clearTimeout(difficultyBurstTimerRef.current);
+      }
+
+      if (adminSettleTimerRef.current) {
+        window.clearTimeout(adminSettleTimerRef.current);
       }
     };
   }, []);
@@ -209,6 +225,35 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     setIsAdminProtectorVisible(false);
   };
 
+  const handleAdminTriggerTap = () => {
+    if (view !== "home" || isAdminProtectorVisible) return;
+
+    if (adminSettleTimerRef.current) {
+      window.clearTimeout(adminSettleTimerRef.current);
+      adminSettleTimerRef.current = null;
+    }
+
+    const now = Date.now();
+    adminTapTimesRef.current = [...adminTapTimesRef.current, now].filter(
+      (time) => now - time <= ADMIN_TAP_WINDOW_MS,
+    );
+
+    if (adminTapTimesRef.current.length < ADMIN_TAP_COUNT) return;
+
+    adminTapTimesRef.current = [];
+
+    adminSettleTimerRef.current = window.setTimeout(() => {
+      adminSettleTimerRef.current = null;
+
+      if (isAdminModeEnabled) {
+        disableAdmin();
+        return;
+      }
+
+      requestProtector();
+    }, ADMIN_SETTLE_DELAY_MS);
+  };
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -252,6 +297,14 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
             />
           ) : view === "home" ? (
             <>
+              <button
+                type="button"
+                aria-hidden="true"
+                tabIndex={-1}
+                onPointerDown={handleAdminTriggerTap}
+                className="absolute right-0 bottom-0 z-30 size-16 cursor-default opacity-0 focus:outline-none sm:size-20"
+              />
+
               <div data-screen-reveal className="home-copy max-w-[23.5rem]">
                 <h1
                   className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]"
