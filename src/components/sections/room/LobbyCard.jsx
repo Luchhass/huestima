@@ -53,6 +53,7 @@ export default function LobbyCard({
   canStartGame = true,
   startDisabledLabel = "",
   isUpdatingSettings = false,
+  isLeavingHome = false,
   error,
 }) {
   const { t } = useTranslation();
@@ -62,6 +63,7 @@ export default function LobbyCard({
   const [hiddenActionError, setHiddenActionError] = useState("");
   const [notification, setNotification] = useState(null);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const scopeRef = useRef(null);
   const copiedTimerRef = useRef(null);
   const difficultyBurstTimerRef = useRef(null);
@@ -216,12 +218,53 @@ export default function LobbyCard({
     await onRoundCountChange?.(roundCount);
   };
 
+  const handleBackHome = () => {
+    setIsLeaveConfirmOpen(true);
+  };
+
+  const handleConfirmBackHome = () => {
+    setIsLeaveConfirmOpen(false);
+    onBackHome?.();
+  };
+
   return (
     <div className="lobby-card relative isolate flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       <PushNotification
         notification={notification}
         onClose={() => setNotification(null)}
       />
+
+      {isLeaveConfirmOpen && (
+        <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
+          <div className="pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.42)] sm:px-6 sm:py-6">
+            <div className="max-w-[18.5rem]">
+              <h3 className="text-lg font-semibold leading-tight text-white sm:text-xl">
+                {t("common.backHome")}
+              </h3>
+              <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">
+                {isHost ? t("room.confirmLeaveHost") : t("room.confirmLeaveGuest")}
+              </p>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLeaveConfirmOpen(false)}
+                className="inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white transition hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                {t("common.no")}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBackHome}
+                className="inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 transition hover:bg-white/92 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                {t("common.yes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {difficultyBurst && (
         <span
@@ -235,12 +278,17 @@ export default function LobbyCard({
         />
       )}
 
-      <div ref={scopeRef} className="relative z-10 flex h-full flex-col">
+      <div
+        ref={scopeRef}
+        className={`relative z-10 flex h-full flex-col transition-opacity duration-200 ${
+          isLeavingHome ? "opacity-0" : "opacity-100"
+        }`}
+      >
       <button
         data-game-mode-shock-target
         type="button"
         aria-label={t("common.backHome")}
-        onClick={onBackHome}
+        onClick={handleBackHome}
         className="lobby-close-button solo-close-button absolute right-0 top-0 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:size-9"
       >
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
@@ -354,6 +402,15 @@ export default function LobbyCard({
             </div>
 
             <div className="order-2 min-w-0">
+              <LevelCountPicker
+                value={room?.roundCount}
+                onChange={handleRoundCountChange}
+                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+                className="w-full"
+              />
+            </div>
+
+            <div className="order-3 min-w-0">
               <GameModePicker
                 value={room?.gameMode}
                 onChange={handleGameModeChange}
@@ -368,11 +425,14 @@ export default function LobbyCard({
               />
             </div>
 
-            <div className="order-3 col-span-2 flex min-w-0 justify-end">
-              <LevelCountPicker
-                value={room?.roundCount}
-                onChange={handleRoundCountChange}
-                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+            <div className="order-4 min-w-0">
+              <HintToggleButton
+                enabled={room?.hintsEnabled !== false}
+                onToggle={onHintsEnabledChange}
+                disabled={
+                  hintsLocked || isUpdatingSettings || room?.status !== "lobby"
+                }
+                className="w-full"
               />
             </div>
           </div>
@@ -439,14 +499,6 @@ export default function LobbyCard({
 
             {isHost ? (
               <>
-                <HintToggleButton
-                  enabled={room?.hintsEnabled !== false}
-                  onToggle={onHintsEnabledChange}
-                  disabled={hintsLocked || isUpdatingSettings || room?.status !== "lobby"}
-                  compact
-                  className="shrink-0"
-                />
-
                 <button
                   type="button"
                   onClick={handleStartGame}

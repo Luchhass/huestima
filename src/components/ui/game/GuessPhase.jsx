@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Check, Crown, Lightbulb } from "lucide-react";
+import { Check, Crown, KeyRound } from "lucide-react";
 import AdminProtectorOverlay from "@/components/admin/AdminProtectorOverlay";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
@@ -840,7 +840,7 @@ export default function GuessPhase({
               ref={hintIconRef}
               className="relative z-10 grid place-items-center text-white"
             >
-              <Lightbulb className="size-7" strokeWidth={2.15} />
+              <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
             </span>
             <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
               {hintCount}
@@ -1057,7 +1057,7 @@ export default function GuessPhase({
             ref={hintIconRef}
             className="relative z-10 grid place-items-center text-white"
           >
-            <Lightbulb className="size-7" strokeWidth={2.15} />
+            <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
           </span>
           <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
             {hintCount}

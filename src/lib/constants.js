@@ -5,7 +5,7 @@ export const HOME_PARAGRAPHS = [
   "Recreate it from memory with hue, saturation, and brightness controls. Play one, three, five, or ten levels to test your eye.",
 ];
 
-export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10];
+export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10, 20];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;

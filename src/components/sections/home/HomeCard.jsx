@@ -63,7 +63,7 @@ function waitForCardResize() {
 }
 
 export default function HomeCard({ initialView = "home", gameFamily = "color" }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
   const defaultDifficulty =
@@ -119,9 +119,13 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
       gameMode === GAME_MODE_IDS.CARTOON,
   );
   useMusicScene(MUSIC_SCENES.MENU);
-  useScreenReveal(contentRef, [view, cleanGameFamily, isAdminProtectorVisible], {
-    delay: isAdminProtectorVisible ? 90 : 0,
-  });
+  useScreenReveal(
+    contentRef,
+    [view, cleanGameFamily, isAdminProtectorVisible, locale],
+    {
+      delay: isAdminProtectorVisible ? 90 : 0,
+    },
+  );
 
   useEffect(() => {
     return () => {

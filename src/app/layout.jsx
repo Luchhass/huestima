@@ -158,7 +158,11 @@ export default function RootLayout({ children }) {
         const pathSegments = window.location.pathname.split("/").filter(Boolean);
         const isGameFamilyPath = ["color", "flag", "cartoon"].includes(pathSegments[0]);
         const isStaticUtilityPath = ["how-it-works", "test", "icon.svg", "manifest.webmanifest", "robots.txt", "sitemap.xml"].includes(pathSegments[0]);
-        const shouldPlayIntro = window.location.pathname === "/" || (pathSegments.length === 1 && (isGameFamilyPath || !isStaticUtilityPath));
+        const isInviteRoomPath = pathSegments.length === 2 && isGameFamilyPath && /^\\d{6}$/.test(pathSegments[1]);
+        const shouldPlayIntro =
+          window.location.pathname === "/" ||
+          (pathSegments.length === 1 && isGameFamilyPath) ||
+          isInviteRoomPath;
         if (shouldPlayIntro) {
           document.documentElement.dataset.pageIntroPending = "true";
           window.setTimeout(() => {
@@ -177,11 +181,13 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         suppressHydrationWarning
         className="h-full overflow-hidden bg-background text-foreground"
       >
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <GoogleAnalytics />
         <StructuredData />
         <InteractionAudio />

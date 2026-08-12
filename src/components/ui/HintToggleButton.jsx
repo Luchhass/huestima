@@ -1,6 +1,6 @@
 "use client";
 
-import { Lightbulb } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 
 export default function HintToggleButton({
@@ -26,7 +26,10 @@ export default function HintToggleButton({
           : "border-white/28 bg-transparent text-white/58 hover:border-white/46 hover:text-white/80"
       } ${compact ? "card-action-size px-0" : ""} ${className}`}
     >
-      <Lightbulb className="relative z-10 size-4 shrink-0" strokeWidth={2.35} />
+      <KeyRound
+        className="relative z-10 size-[1.18rem] shrink-0"
+        strokeWidth={2.1}
+      />
       {!compact && (
         <span className="relative z-10 min-w-0 truncate">
           {enabled ? t("setup.hintsOn") : t("setup.hintsOff")}

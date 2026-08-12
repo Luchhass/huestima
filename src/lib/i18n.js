@@ -217,6 +217,11 @@ export const DICTIONARIES = {
         normal: "Normal adds saturation while brightness stays fixed.",
         hard: "Hard unlocks hue, saturation, and brightness for the full match.",
       },
+      hintCopy: {
+        on: "Hints stay on and narrow the playable hue range when you use one.",
+        off: "Hints stay off, so every round is played on the full hue range.",
+        locked: "This round count starts without hints, so the full hue range stays open.",
+      },
     },
     room: {
       joinLobby: "join lobby",
@@ -245,6 +250,10 @@ export const DICTIONARIES = {
       couldNotStart: "Could not start the game.",
       couldNotUpdateSettings: "Could not update lobby settings.",
       couldNotReturnToLobby: "Could not return to the lobby.",
+      confirmLeaveHost:
+        "Are you sure you want to leave? If you exit now, the lobby will close for everyone.",
+      confirmLeaveGuest:
+        "Are you sure you want to leave this lobby?",
       couldNotReachServer: "Could not reach the multiplayer server.",
       serverUnavailable:
         "Multiplayer is offline right now. Singleplayer still works.",
@@ -526,6 +535,11 @@ export const DICTIONARIES = {
         normal: "Normalde hue ve saturation ayarlanır, brightness sabit kalır.",
         hard: "Zorda hue, saturation ve brightness tamamen açılır.",
       },
+      hintCopy: {
+        on: "İpuçları açık kalır; kullandığında oynanabilir hue aralığı daralır.",
+        off: "İpuçları kapalı kalır; her round tam hue aralığında oynanır.",
+        locked: "Bu level sayısında ipucu verilmez; tam hue aralığı açık kalır.",
+      },
     },
     room: {
       joinLobby: "lobiye katıl",
@@ -554,6 +568,9 @@ export const DICTIONARIES = {
       couldNotStart: "Oyun başlatılamadı.",
       couldNotUpdateSettings: "Lobi ayarları güncellenemedi.",
       couldNotReturnToLobby: "Lobiye dönülemedi.",
+      confirmLeaveHost:
+        "Çıkmak istediğine emin misin? Şimdi çıkarsan lobi herkes için kapanır.",
+      confirmLeaveGuest: "Bu lobiden çıkmak istediğine emin misin?",
       couldNotReachServer: "Multiplayer sunucusuna ulaşılamadı.",
       serverUnavailable:
         "Multiplayer şu an kapalı. Tek oyunculu modlar çalışıyor.",

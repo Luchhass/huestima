@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -600,22 +609,21 @@ input {
   }
 
   .level-count-picker {
-    --level-count-index: 2;
     position: relative;
   }
 
   .level-count-picker__thumb {
     position: absolute;
     top: 50%;
-    left: calc(12.5% + (var(--level-count-index) * 25%));
-    height: calc(100% - 8px);
+    left: 50%;
+    height: 100%;
     aspect-ratio: 1;
     width: auto;
     border-radius: 999px;
     background: #ffffff;
     box-shadow: 0 10px 24px rgb(0 0 0 / 0.18);
-    transition: left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     transform: translate(-50%, -50%);
+    pointer-events: none;
   }
 
   .game-mode-picker__panel {

@@ -492,10 +492,6 @@ export default function GameModePicker({
           </span>
         </span>
 
-        <ChevronDown
-          className="hidden size-4.5 shrink-0 text-white/62 transition-transform duration-300 sm:block"
-          strokeWidth={2.2}
-        />
       </button>
 
       {renderOpen && (
@@ -598,12 +594,6 @@ export default function GameModePicker({
                     </span>
                   </span>
 
-                  <ChevronDown
-                    className={`hidden size-4.5 shrink-0 rotate-180 text-white/62 transition-opacity duration-200 sm:block ${
-                      active ? "opacity-100" : "opacity-0"
-                    }`}
-                    strokeWidth={2.2}
-                  />
                 </button>
               );
             })}

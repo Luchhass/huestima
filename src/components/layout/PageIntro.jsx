@@ -32,9 +32,9 @@ function isInviteRoomPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
 
   return (
-    segments.length === 1 &&
-    !GAME_FAMILY_ENTRY_PATHS.has(segments[0]) &&
-    !NON_INVITE_ENTRY_PATHS.has(segments[0])
+    segments.length === 2 &&
+    GAME_FAMILY_ENTRY_PATHS.has(segments[0]) &&
+    /^\d{6}$/.test(segments[1])
   );
 }
 

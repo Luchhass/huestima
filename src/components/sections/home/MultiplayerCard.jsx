@@ -2,7 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Globe2, Lock, LogIn, Plus, Search, Users } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Globe2,
+  LoaderCircle,
+  Lock,
+  LogIn,
+  Plus,
+  Search,
+  Users,
+} from "lucide-react";
 import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
@@ -18,6 +28,7 @@ import {
 import {
   getDefaultGameModeForFamily,
   getGameFamilyByMode,
+  getGameFamilyHref,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getGameModeOption } from "@/lib/gameMode";
@@ -45,6 +56,7 @@ const MAX_LOBBY_NAME_LENGTH = 28;
 const MIN_LOBBY_NAME_LENGTH = 2;
 const MIN_LOBBY_PASSWORD_LENGTH = 3;
 const EXPANDED_REVEAL_DELAY = 320;
+const NOTIFICATION_LIFETIME_MS = 3000;
 const PLAYER_NAME_SESSION_KEY = "huestima-player-name";
 
 function responseData(response) {
@@ -112,20 +124,6 @@ function defaultLobbyNameForPlayer(value) {
   const cleanName = cleanPlayerName(value);
 
   return cleanName ? `${cleanName}'s lobby` : "";
-}
-
-async function copyInviteLink(roomCode) {
-  const inviteUrl = `${window.location.origin}/${roomCode}`;
-
-  try {
-    if (!navigator.clipboard) return false;
-    await navigator.clipboard.writeText(inviteUrl);
-    markInviteCopied(roomCode);
-  } catch {
-    return false;
-  }
-
-  return true;
 }
 
 function TextField({
@@ -350,7 +348,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       ? t(isPrivate ? "setup.createPrivateCopy" : "setup.createPublicCopy")
       : panel === PANELS.JOIN
         ? t("setup.joinListCopy")
-      : t("setup.chooseMultiplayerAction");
+        : t("setup.chooseMultiplayerAction");
 
   useScreenReveal(scopeRef, [panel], {
     delay: isJoinListStep ? EXPANDED_REVEAL_DELAY : 0,
@@ -386,6 +384,12 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       variant,
     });
   };
+
+  const buildRoomHref = useCallback(
+    (roomCode, roomGameMode = defaultGameMode) =>
+      `${getGameFamilyHref(getGameFamilyByMode(roomGameMode))}/${roomCode}`,
+    [defaultGameMode],
+  );
 
   const updatePlayerName = (value) => {
     setPlayerName(value);
@@ -552,11 +556,14 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       visibility,
     });
 
-    void copyInviteLink(response.room.code);
+    void navigator.clipboard
+      ?.writeText(`${window.location.origin}${buildRoomHref(response.room.code, response.room.gameMode)}`)
+      .then(() => markInviteCopied(response.room.code))
+      .catch(() => false);
     showNotification(t("setup.lobbyCreated"), "success");
     window.setTimeout(() => {
-      router.push(`/${response.room.code}`);
-    }, 520);
+      router.push(buildRoomHref(response.room.code, response.room.gameMode));
+    }, NOTIFICATION_LIFETIME_MS);
   };
 
   const handleJoinSelectedRoom = async () => {
@@ -621,8 +628,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
 
     showNotification(t("setup.lobbyJoined"), "success");
     window.setTimeout(() => {
-      router.push(`/${selectedRoom.code}`);
-    }, 420);
+      router.push(buildRoomHref(selectedRoom.code, selectedRoom.gameMode));
+    }, NOTIFICATION_LIFETIME_MS);
   };
 
   return (
@@ -630,6 +637,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       <PushNotification
         notification={notification}
         onClose={() => setNotification(null)}
+        durationMs={NOTIFICATION_LIFETIME_MS}
       />
 
       <div data-screen-reveal className="home-view-copy max-w-[23rem] pr-10">
@@ -735,25 +743,22 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
                 disabled={isCreating}
               />
 
-              <HintToggleButton
-                enabled={hintsEnabled}
-                onToggle={(nextEnabled) => {
-                  setHintsEnabled(nextEnabled);
-                  clearActionError();
-                }}
-                disabled={isCreating}
-                compact
-              />
-
               <button
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating}
                 className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base"
               >
-                <span className="relative z-10 min-w-0 truncate">
-                  {isCreating ? t("setup.creating") : t("setup.createLobby")}
-                </span>
+                {isCreating ? (
+                  <LoaderCircle
+                    className="relative z-10 size-5 animate-spin"
+                    strokeWidth={2.4}
+                  />
+                ) : (
+                  <span className="relative z-10 min-w-0 truncate">
+                    {t("setup.createLobby")}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -839,9 +844,16 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
                 onClick={handleJoinSelectedRoom}
                 className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-55 sm:px-5 sm:text-base"
               >
-                <span className="relative z-10 min-w-0 truncate">
-                  {isJoining ? t("room.joining") : t("room.join")}
-                </span>
+                {isJoining ? (
+                  <LoaderCircle
+                    className="relative z-10 size-5 animate-spin"
+                    strokeWidth={2.4}
+                  />
+                ) : (
+                  <span className="relative z-10 min-w-0 truncate">
+                    {t("room.join")}
+                  </span>
+                )}
               </button>
             </div>
           </div>

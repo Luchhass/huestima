@@ -64,6 +64,7 @@ export default function LeaderboardCard({
   onBackHome,
   onBackLobby,
   isReturningLobby = false,
+  isLeavingHome = false,
   error = "",
 }) {
   const { t } = useTranslation();
@@ -111,7 +112,12 @@ export default function LeaderboardCard({
   };
 
   return (
-    <div ref={scopeRef} className="leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+    <div
+      ref={scopeRef}
+      className={`leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white transition-opacity duration-200 sm:p-8 ${
+        isLeavingHome ? "opacity-0" : "opacity-100"
+      }`}
+    >
       <button
         type="button"
         onClick={handleBackHome}

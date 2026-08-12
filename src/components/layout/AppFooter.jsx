@@ -57,7 +57,7 @@ export default function AppFooter() {
 
   return (
     <>
-      <footer className="creator-tag pointer-events-none fixed bottom-6 left-6 z-40 text-[11px] font-medium tracking-wider text-zinc-500 dark:text-zinc-500 sm:bottom-8 sm:left-8">
+      <footer className="creator-tag pointer-events-none fixed bottom-6 left-6 z-40 text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-500 sm:bottom-8 sm:left-8">
         {t("app.createdBy")}{" "}
         <a
           href="https://furkancosar.com"
@@ -76,7 +76,7 @@ export default function AppFooter() {
           onClick={() => {
             void handleHowItWorksClick();
           }}
-          className="creator-tag pointer-events-auto fixed right-6 bottom-6 z-40 border-0 bg-transparent p-0 text-[11px] font-medium uppercase tracking-wider text-zinc-500 no-underline outline-none transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50 sm:right-8 sm:bottom-8"
+          className="creator-tag pointer-events-auto fixed right-6 bottom-6 z-40 border-0 bg-transparent p-0 text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline outline-none transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50 sm:right-8 sm:bottom-8"
         >
           {t("howItWorks.footerLink")}
         </button>

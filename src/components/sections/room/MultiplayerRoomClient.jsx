@@ -8,7 +8,11 @@ import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
-import { getGameFamilyByMode, getGameFamilyHref } from "@/lib/gameFamily";
+import {
+  getGameFamilyByMode,
+  getGameFamilyHref,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
@@ -19,6 +23,7 @@ import MultiplayerGame from "./MultiplayerGame";
 
 const ROOM_CODE_PATTERN = /^\d{6}$/;
 const CARD_RESIZE_DURATION_MS = 700;
+const CARD_CONTENT_FADE_DURATION_MS = 220;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -35,8 +40,8 @@ function findRoomPlayer(room, playerId) {
   return room?.players?.find((roomPlayer) => roomPlayer.id === playerId) || null;
 }
 
-async function copyInviteLink(roomCode) {
-  const inviteUrl = `${window.location.origin}/${roomCode}`;
+async function copyInviteLink(roomCode, gameFamily) {
+  const inviteUrl = `${window.location.origin}${getGameFamilyHref(gameFamily)}/${roomCode}`;
   if (!navigator.clipboard) {
     throw new Error("Clipboard unavailable");
   }
@@ -44,9 +49,10 @@ async function copyInviteLink(roomCode) {
   await navigator.clipboard.writeText(inviteUrl);
 }
 
-export default function MultiplayerRoomClient({ roomCode }) {
+export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
   const {
     room,
     leaderboard,
@@ -70,9 +76,11 @@ export default function MultiplayerRoomClient({ roomCode }) {
   const [isStarting, setIsStarting] = useState(false);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   const [isReturningLobby, setIsReturningLobby] = useState(false);
+  const [isLeavingHome, setIsLeavingHome] = useState(false);
   const [error, setError] = useState("");
   const [renderedView, setRenderedView] = useState("loading");
   const [isRenderedShellExpanded, setIsRenderedShellExpanded] = useState(false);
+  const [isRenderedCardLeaving, setIsRenderedCardLeaving] = useState(false);
 
   useMusicScene(renderedView === "game" ? null : MUSIC_SCENES.MENU);
 
@@ -166,7 +174,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
     setError("");
 
     try {
-      await copyInviteLink(roomCode);
+      await copyInviteLink(roomCode, room?.gameMode ? getGameFamilyByMode(room.gameMode) : cleanGameFamily);
       return true;
     } catch {
       setError(t("room.couldNotCopy"));
@@ -314,6 +322,15 @@ export default function MultiplayerRoomClient({ roomCode }) {
   const canStartGame = room?.status === "lobby" && !duelNeedsPlayers;
 
   const handleBackHome = async () => {
+    if (isLeavingHome) return;
+
+    setIsLeavingHome(true);
+    setIsRenderedCardLeaving(true);
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, CARD_CONTENT_FADE_DURATION_MS);
+    });
+
     if (
       player?.playerId &&
       (room?.status === "lobby" || currentRoomPlayer?.returnedToLobby)
@@ -321,7 +338,19 @@ export default function MultiplayerRoomClient({ roomCode }) {
       await leaveRoom(player.playerId);
     }
 
-    router.push(getGameFamilyHref(getGameFamilyByMode(room?.gameMode)));
+    if (isExpandedRoomView(renderedView)) {
+      setIsRenderedShellExpanded(false);
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+      });
+    }
+
+    router.push(
+      getGameFamilyHref(
+        room?.gameMode ? getGameFamilyByMode(room.gameMode) : cleanGameFamily,
+      ),
+    );
   };
 
   const activeGame = startedGame || room?.game;
@@ -473,6 +502,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
                 : ""
           }
           isUpdatingSettings={isUpdatingSettings}
+          isLeavingHome={isRenderedCardLeaving}
           error={error || connectionError}
         />
       )}
@@ -484,6 +514,7 @@ export default function MultiplayerRoomClient({ roomCode }) {
           onBackHome={handleBackHome}
           onBackLobby={handleReturnToLobby}
           isReturningLobby={isReturningLobby}
+          isLeavingHome={isRenderedCardLeaving}
           error={error || connectionError}
         />
       )}

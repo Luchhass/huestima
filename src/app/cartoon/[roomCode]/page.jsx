@@ -12,13 +12,13 @@ export const metadata = {
   },
 };
 
-export default async function RoomPage({ params }) {
+export default async function CartoonRoomPage({ params }) {
   const { roomCode } = await params;
 
   return (
     <>
       <PageIntro />
-      <MultiplayerRoomClient roomCode={roomCode} />
+      <MultiplayerRoomClient roomCode={roomCode} gameFamily="cartoon" />
     </>
   );
 }

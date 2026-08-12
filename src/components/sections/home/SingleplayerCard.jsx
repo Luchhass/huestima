@@ -36,13 +36,20 @@ export default function SingleplayerCard({
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
-  const description = `${t(
-    `setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`,
-  )} ${t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`)}`;
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
   const hintsLocked = getInitialHintCount(roundCount) <= 0;
+  const hintCopyKey = hintsLocked
+    ? "setup.hintCopy.locked"
+    : hintsEnabled
+      ? "setup.hintCopy.on"
+      : "setup.hintCopy.off";
+  const description = [
+    t(`setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`),
+    t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`),
+    t(hintCopyKey),
+  ].join(" ");
 
   useGameModeShock(scopeRef, gameMode);
 
@@ -75,33 +82,38 @@ export default function SingleplayerCard({
             />
           </div>
 
-          <div data-game-mode-shock-target className="min-w-0">
-            <LevelCountPicker
-              value={roundCount}
-              onChange={onRoundCountChange}
-              disabled={roundCountLocked}
-            />
+          <div
+            data-game-mode-shock-target
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3"
+          >
+            <div className="min-w-0">
+              <LevelCountPicker
+                value={roundCount}
+                onChange={onRoundCountChange}
+                disabled={roundCountLocked}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <HintToggleButton
+                enabled={hintsEnabled}
+                onToggle={onHintsEnabledChange}
+                disabled={hintsLocked}
+                compact
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-3 w-full">
-        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
           <div data-game-mode-shock-target className="min-w-0">
             <GameModePicker
               value={gameMode}
               onChange={onGameModeChange}
               options={gameModeOptions}
               disabled={gameModeOptions.length < 2}
-            />
-          </div>
-
-          <div data-game-mode-shock-target className="min-w-0">
-            <HintToggleButton
-              enabled={hintsEnabled}
-              onToggle={onHintsEnabledChange}
-              disabled={hintsLocked}
-              compact
             />
           </div>
 

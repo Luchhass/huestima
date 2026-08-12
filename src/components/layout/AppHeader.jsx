@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
@@ -20,11 +21,158 @@ export default function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isNavRendered, setIsNavRendered] = useState(false);
   const isNavigatingRef = useRef(false);
+  const menuButtonRef = useRef(null);
+  const mobileOverlayRef = useRef(null);
+  const mobileBubbleRef = useRef(null);
+  const mobileContentRef = useRef(null);
+  const mobileMenuTimelineRef = useRef(null);
+  const closeMenuRef = useRef(() => {});
 
   useEffect(() => {
     isNavigatingRef.current = false;
   }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      mobileMenuTimelineRef.current?.kill();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isNavRendered) {
+      return undefined;
+    }
+
+    const overlay = mobileOverlayRef.current;
+    const bubble = mobileBubbleRef.current;
+    const content = mobileContentRef.current;
+    const button = menuButtonRef.current;
+
+    if (!overlay || !bubble || !content || !button) {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+
+    if (mediaQuery.matches) {
+      setIsNavOpen(false);
+      setIsNavRendered(false);
+      return undefined;
+    }
+
+    const buttonRect = button.getBoundingClientRect();
+    const overlayRect = overlay.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const centerX = buttonRect.left + buttonRect.width / 2;
+    const centerY = buttonRect.top + buttonRect.height / 2;
+    const maxRadius = Math.hypot(
+      Math.max(centerX, viewportWidth - centerX),
+      Math.max(centerY, viewportHeight - centerY),
+    );
+    const bubbleSize = Math.max(maxRadius * 2, 120);
+    const bubbleLeft = centerX - overlayRect.left - bubbleSize / 2;
+    const bubbleTop = centerY - overlayRect.top - bubbleSize / 2;
+    const navTargets = content.querySelectorAll("[data-mobile-menu-nav-item]");
+    const controlTargets = content.querySelectorAll("[data-mobile-menu-control]");
+
+    mobileMenuTimelineRef.current?.kill();
+
+    gsap.set(overlay, { autoAlpha: 1 });
+    gsap.set(bubble, {
+      width: bubbleSize,
+      height: bubbleSize,
+      left: bubbleLeft,
+      top: bubbleTop,
+      scale: 0,
+      transformOrigin: "50% 50%",
+    });
+    gsap.set(content, { autoAlpha: 0 });
+    gsap.set(navTargets, {
+      autoAlpha: 1,
+      position: "relative",
+      left: "-120%",
+      clipPath: "inset(-32px -120vw -32px 0px)",
+    });
+    gsap.set(controlTargets, {
+      autoAlpha: 1,
+      y: 32,
+      clipPath: "inset(100% 0 0 0)",
+      willChange: "transform,clip-path",
+    });
+
+    const tl = gsap.timeline({ defaults: { overwrite: "auto" } });
+    mobileMenuTimelineRef.current = tl;
+
+    tl.to(bubble, {
+      scale: 1,
+      duration: 0.76,
+      ease: "power3.inOut",
+    })
+      .set(content, { autoAlpha: 1 })
+      .to(
+        navTargets,
+        {
+          left: "0%",
+          clipPath: "inset(0 0 0 0%)",
+          duration: 0.62,
+          stagger: 0.07,
+          ease: "power3.out",
+        }
+      )
+      .to(
+        controlTargets,
+        {
+          y: 0,
+          clipPath: "inset(0 0 0 0)",
+          duration: 0.58,
+          stagger: 0.075,
+          ease: "power3.out",
+          clearProps: "transform,clipPath,willChange",
+        },
+        "-=0.16",
+      );
+
+    closeMenuRef.current = () => {
+      const closeTl = gsap.timeline({
+        defaults: { overwrite: "auto" },
+        onComplete: () => {
+          setIsNavOpen(false);
+          setIsNavRendered(false);
+        },
+      });
+
+      mobileMenuTimelineRef.current = closeTl;
+
+      closeTl
+        .to([...navTargets, ...controlTargets], {
+          autoAlpha: 0,
+          duration: 0.16,
+          stagger: 0.018,
+          ease: "power1.out",
+        })
+        .to(
+          content,
+          {
+            autoAlpha: 0,
+            duration: 0.1,
+            ease: "none",
+          },
+          "<",
+        )
+        .to(bubble, {
+          scale: 0,
+          duration: 0.44,
+          ease: "power3.inOut",
+        });
+    };
+
+    return () => {
+      mobileMenuTimelineRef.current?.kill();
+    };
+  }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
     const scope =
@@ -44,7 +192,9 @@ export default function AppHeader() {
 
   const handleFamilyNavigation = (event, href, active) => {
     if (active) {
-      setIsNavOpen(false);
+      if (isNavRendered) {
+        closeMenuRef.current();
+      }
       return;
     }
 
@@ -55,9 +205,22 @@ export default function AppHeader() {
 
     event.preventDefault();
     isNavigatingRef.current = true;
-    setIsNavOpen(false);
+
+    if (isNavRendered) {
+      closeMenuRef.current();
+    }
 
     void playRouteTransition(href);
+  };
+
+  const handleMenuToggle = () => {
+    if (isNavRendered) {
+      closeMenuRef.current();
+      return;
+    }
+
+    setIsNavOpen(true);
+    setIsNavRendered(true);
   };
 
   return (
@@ -65,42 +228,73 @@ export default function AppHeader() {
       className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8"
       data-nav-open={isNavOpen ? "true" : undefined}
     >
-      {isNavOpen && (
-        <div className="pointer-events-auto fixed inset-0 z-0 bg-white/96 p-6 text-zinc-950 backdrop-blur-xl dark:bg-black/94 dark:text-white sm:p-8 md:hidden">
-          <nav
-            aria-label={t("gameFamily.label")}
-            className="flex h-full flex-col items-start gap-3 pt-28 text-[clamp(2.85rem,13vw,4.9rem)] font-semibold leading-[0.96] tracking-normal"
-          >
-            {GAME_FAMILY_OPTIONS.map((option) => {
-              const active =
-                pathname === option.href || pathname?.startsWith(`${option.href}/`);
+      {isNavRendered && (
+        <div
+          ref={mobileOverlayRef}
+          className="pointer-events-auto fixed inset-0 z-0 overflow-hidden p-6 text-zinc-950 md:hidden"
+        >
+          <div
+            ref={mobileBubbleRef}
+            className="absolute rounded-full bg-[#f6f6f6]/96 backdrop-blur-xl dark:bg-[#0f0f11]/94"
+          />
 
-              return (
-                <Link
-                  key={option.id}
-                  href={option.href}
-                  aria-current={active ? "page" : undefined}
-                  onClick={(event) =>
-                    handleFamilyNavigation(event, option.href, active)
-                  }
-                  className={`transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
-                    active
-                      ? "text-zinc-950 dark:text-white"
-                      : "text-zinc-950/34 hover:text-zinc-950 dark:text-white/34 dark:hover:text-white"
-                  }`}
-                >
-                  {t(`gameFamily.${option.id}`)}
-                </Link>
-              );
-            })}
+          <div
+            ref={mobileContentRef}
+            className="relative flex h-full flex-col items-start pt-28"
+          >
+            <nav
+              aria-label={t("gameFamily.label")}
+              className="flex w-full flex-col items-start gap-3 text-[clamp(2.85rem,13vw,4.9rem)] font-semibold leading-[0.96] tracking-normal"
+            >
+              {GAME_FAMILY_OPTIONS.map((option) => {
+                const active =
+                  pathname === option.href || pathname?.startsWith(`${option.href}/`);
+
+                return (
+                  <div key={option.id} className="overflow-hidden">
+                    <Link
+                      href={option.href}
+                      aria-current={active ? "page" : undefined}
+                      data-mobile-menu-nav-item
+                      onClick={(event) =>
+                        handleFamilyNavigation(event, option.href, active)
+                      }
+                      className={`block transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
+                        active
+                          ? "text-zinc-950 dark:text-white"
+                          : "text-zinc-950/34 hover:text-zinc-950 dark:text-white/34 dark:hover:text-white"
+                      }`}
+                    >
+                      {t(`gameFamily.${option.id}`)}
+                    </Link>
+                  </div>
+                );
+              })}
+            </nav>
 
             <div className="mt-auto flex items-center gap-1 pb-1">
-              <LanguageToggle />
-              <SoundToggle />
-              <MusicToggle />
-              <ThemeToggle />
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
+                  <LanguageToggle />
+                </div>
+              </div>
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
+                  <SoundToggle />
+                </div>
+              </div>
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
+                  <MusicToggle />
+                </div>
+              </div>
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
+                  <ThemeToggle />
+                </div>
+              </div>
             </div>
-          </nav>
+          </div>
         </div>
       )}
 
@@ -165,16 +359,17 @@ export default function AppHeader() {
         </div>
 
         <button
+          ref={menuButtonRef}
           type="button"
-          aria-label={isNavOpen ? t("common.closeMenu") : t("common.openMenu")}
-          aria-expanded={isNavOpen}
-          onClick={() => setIsNavOpen((value) => !value)}
+          aria-label={isNavRendered ? t("common.closeMenu") : t("common.openMenu")}
+          aria-expanded={isNavRendered}
+          onClick={handleMenuToggle}
           className="grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 md:hidden"
         >
           <span className="sr-only">
-            {isNavOpen ? t("common.closeMenu") : t("common.openMenu")}
+            {isNavRendered ? t("common.closeMenu") : t("common.openMenu")}
           </span>
-          {isNavOpen ? (
+          {isNavRendered ? (
             <X size={29} strokeWidth={2.15} />
           ) : (
             <Menu size={30} strokeWidth={2.15} />
