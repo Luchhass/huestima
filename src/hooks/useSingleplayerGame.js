@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
@@ -142,7 +142,9 @@ export function useSingleplayerGame(
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isFlagMode = isFlagFamily(cleanGameFamily);
+  const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -171,6 +173,7 @@ export function useSingleplayerGame(
   );
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
+  const [phaseStartedAt, setPhaseStartedAt] = useState(() => Date.now());
   const [roundIndex, setRoundIndex] = useState(0);
   const [targetColor, setTargetColor] = useState(null);
   const [targetColors, setTargetColors] = useState([]);
@@ -182,11 +185,24 @@ export function useSingleplayerGame(
     hintsEnabled ? getInitialHintCount(roundCount) : 0,
   );
   const [hintActive, setHintActive] = useState(false);
+  const [resumeSavedAt, setResumeSavedAt] = useState(null);
+  const restoredFromSession = Boolean(initialGameSession);
+  const snapshotRef = useRef(null);
+
+  const transitionToPhase = useCallback((nextPhase) => {
+    setPhaseStartedAt(Date.now());
+    setPhase(nextPhase);
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       if (initialGameSession) {
         setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        setPhaseStartedAt(
+          Number.isFinite(initialGameSession.phaseStartedAt)
+            ? initialGameSession.phaseStartedAt
+            : Date.now(),
+        );
         setRoundIndex(Number(initialGameSession.roundIndex) || 0);
         setTargetColor(initialGameSession.targetColor || null);
         setTargetColors(initialGameSession.targetColors || []);
@@ -203,6 +219,14 @@ export function useSingleplayerGame(
               : 0,
         );
         setHintActive(Boolean(initialGameSession.hintActive));
+        setResumeSavedAt(
+          Number.isFinite(initialGameSession.savedAt)
+            ? initialGameSession.savedAt
+            : Date.now(),
+        );
+      } else {
+        setPhaseStartedAt(Date.now());
+        setResumeSavedAt(null);
       }
 
       setHasRestoredSession(true);
@@ -223,6 +247,7 @@ export function useSingleplayerGame(
 
     saveGameSession(gameSessionKey, {
       phase,
+      phaseStartedAt,
       roundIndex,
       targetColor,
       targetColors,
@@ -238,11 +263,53 @@ export function useSingleplayerGame(
     hintActive,
     hintCount,
     phase,
+    phaseStartedAt,
     results,
     roundIndex,
     targetColor,
     targetColors,
   ]);
+
+  useEffect(() => {
+    snapshotRef.current = {
+      phase,
+      phaseStartedAt,
+      roundIndex,
+      targetColor,
+      targetColors,
+      guessColor,
+      results,
+      hintCount,
+      hintActive,
+    };
+  }, [
+    guessColor,
+    hintActive,
+    hintCount,
+    phase,
+    phaseStartedAt,
+    results,
+    roundIndex,
+    targetColor,
+    targetColors,
+  ]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return undefined;
+
+    const persistLatestSnapshot = () => {
+      if (!snapshotRef.current) return;
+      saveGameSession(gameSessionKey, snapshotRef.current);
+    };
+
+    window.addEventListener("pagehide", persistLatestSnapshot);
+    window.addEventListener("beforeunload", persistLatestSnapshot);
+
+    return () => {
+      window.removeEventListener("pagehide", persistLatestSnapshot);
+      window.removeEventListener("beforeunload", persistLatestSnapshot);
+    };
+  }, [gameSessionKey, hasRestoredSession]);
 
   const startRound = useCallback((nextRoundIndex) => {
     setRoundIndex(nextRoundIndex);
@@ -265,7 +332,7 @@ export function useSingleplayerGame(
           sequenceColors[0],
         ),
       );
-      setPhase(GAME_PHASES.MEMORIZE);
+      transitionToPhase(GAME_PHASES.MEMORIZE);
       return;
     }
 
@@ -286,7 +353,9 @@ export function useSingleplayerGame(
           nextTargetColor,
         ),
       );
-      setPhase(GAME_PHASES.MEMORIZE);
+      transitionToPhase(
+        isFlagRecallMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE,
+      );
       return;
     }
 
@@ -307,7 +376,9 @@ export function useSingleplayerGame(
           nextTargetColor,
         ),
       );
-      setPhase(GAME_PHASES.GUESS);
+      transitionToPhase(
+        isCartoonSceneMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE,
+      );
       return;
     }
 
@@ -323,16 +394,19 @@ export function useSingleplayerGame(
         nextTargetColor,
       ),
     );
-    setPhase(GAME_PHASES.MEMORIZE);
+    transitionToPhase(GAME_PHASES.MEMORIZE);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
     gameMode,
+    isFlagRecallMode,
     isCartoonMode,
+    isCartoonSceneMode,
     isFlagMode,
     isSequenceMode,
     roundCount,
     targetColors,
+    transitionToPhase,
   ]);
 
   const useHint = useCallback(() => {
@@ -351,8 +425,8 @@ export function useSingleplayerGame(
       setTargetColor(targetColors[roundIndex] || null);
     }
 
-    setPhase(GAME_PHASES.GUESS);
-  }, [isSequenceMode, roundIndex, targetColors]);
+    transitionToPhase(GAME_PHASES.GUESS);
+  }, [isSequenceMode, roundIndex, targetColors, transitionToPhase]);
 
   const updateGuess = useCallback((nextGuess) => {
     const activeTarget = isSequenceMode
@@ -410,7 +484,7 @@ export function useSingleplayerGame(
     if (hintsEnabled && earnsHint(score)) {
       setHintCount((currentCount) => currentCount + 1);
     }
-    setPhase(GAME_PHASES.RESULT);
+    transitionToPhase(GAME_PHASES.RESULT);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -421,11 +495,12 @@ export function useSingleplayerGame(
     roundIndex,
     targetColor,
     targetColors,
+    transitionToPhase,
   ]);
 
   const continueFromResult = useCallback(() => {
     if (!isEndlessMode && roundIndex + 1 >= roundCount) {
-      setPhase(GAME_PHASES.FINAL);
+      transitionToPhase(GAME_PHASES.FINAL);
       return;
     }
 
@@ -436,12 +511,12 @@ export function useSingleplayerGame(
 
     if (isSequenceMode) {
       setTargetColor(targetColors[nextRoundIndex] || null);
-      setPhase(GAME_PHASES.GUESS);
+      transitionToPhase(GAME_PHASES.GUESS);
       return;
     }
 
     setTargetColor(null);
-    setPhase(GAME_PHASES.INTRO);
+    transitionToPhase(GAME_PHASES.INTRO);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -451,13 +526,14 @@ export function useSingleplayerGame(
     roundCount,
     roundIndex,
     targetColors,
+    transitionToPhase,
   ]);
 
   const finishRun = useCallback(() => {
     if (!results.length) return;
 
-    setPhase(GAME_PHASES.FINAL);
-  }, [results.length]);
+    transitionToPhase(GAME_PHASES.FINAL);
+  }, [results.length, transitionToPhase]);
 
   const playAgain = useCallback(() => {
     clearGameSession(gameSessionKey);
@@ -468,7 +544,9 @@ export function useSingleplayerGame(
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
     setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
     setHintActive(false);
+    setPhaseStartedAt(Date.now());
     setPhase(GAME_PHASES.INTRO);
+    setResumeSavedAt(null);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -477,6 +555,10 @@ export function useSingleplayerGame(
     hintsEnabled,
     roundCount,
   ]);
+
+  const abandonSession = useCallback(() => {
+    clearGameSession(gameSessionKey);
+  }, [gameSessionKey]);
 
   const summary = useMemo(() => {
     const totalScore = roundScore(results.reduce((sum, result) => sum + result.score, 0));
@@ -504,11 +586,15 @@ export function useSingleplayerGame(
     hintCount,
     hintActive,
     phase,
+    phaseStartedAt,
     roundIndex,
     targetColor,
     targetColors,
     revealDurationMs: gameMode.revealDurationMs,
     guessDurationMs: gameMode.guessDurationMs || null,
+    hasRestoredSession,
+    restoredFromSession,
+    resumeSavedAt,
     guessColor,
     results,
     summary,
@@ -521,5 +607,6 @@ export function useSingleplayerGame(
     continueFromResult,
     finishRun,
     playAgain,
+    abandonSession,
   };
 }

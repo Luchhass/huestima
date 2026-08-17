@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import {
   buildGameSessionKey,
+  clearGameSession,
   getGameSession,
   saveGameSession,
 } from "@/hooks/useGameSession";
@@ -120,7 +121,9 @@ export function useMultiplayerGame({
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
+  const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -160,6 +163,7 @@ export function useMultiplayerGame({
   );
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
+  const [phaseStartedAt, setPhaseStartedAt] = useState(() => Date.now());
   const [roundIndex, setRoundIndex] = useState(
     () => gamePayload?.currentRoundIndex || 0,
   );
@@ -181,6 +185,9 @@ export function useMultiplayerGame({
     hintsEnabled ? getInitialHintCount(roundCount) : 0,
   );
   const [hintActive, setHintActive] = useState(false);
+  const [resumeSavedAt, setResumeSavedAt] = useState(null);
+  const restoredFromSession = Boolean(initialGameSession);
+  const snapshotRef = useRef(null);
   const currentRoomPlayer = useMemo(
     () => room?.players?.find((player) => player.id === playerId) || null,
     [playerId, room?.players],
@@ -188,6 +195,11 @@ export function useMultiplayerGame({
   const isCurrentPlayerEliminated = Boolean(currentRoomPlayer?.eliminated);
   const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
   const currentSeed = gamePayload?.seed || room?.game?.seed || null;
+
+  const transitionToPhase = useCallback((nextPhase) => {
+    setPhaseStartedAt(Date.now());
+    setPhase(nextPhase);
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -197,6 +209,11 @@ export function useMultiplayerGame({
 
       if (canRestoreSession) {
         setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        setPhaseStartedAt(
+          Number.isFinite(initialGameSession.phaseStartedAt)
+            ? initialGameSession.phaseStartedAt
+            : Date.now(),
+        );
         setRoundIndex(
           Number(initialGameSession.roundIndex) ||
             gamePayload?.currentRoundIndex ||
@@ -217,6 +234,14 @@ export function useMultiplayerGame({
               : 0,
         );
         setHintActive(Boolean(initialGameSession.hintActive));
+        setResumeSavedAt(
+          Number.isFinite(initialGameSession.savedAt)
+            ? initialGameSession.savedAt
+            : Date.now(),
+        );
+      } else {
+        setPhaseStartedAt(Date.now());
+        setResumeSavedAt(null);
       }
 
       setHasRestoredSession(true);
@@ -288,7 +313,12 @@ export function useMultiplayerGame({
         setTargetColor(nextTargetColor);
       }
 
-      setPhase(isCartoonMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE);
+      transitionToPhase(
+        (isFlagFamily(cleanGameFamily) && isFlagRecallMode) ||
+          (isCartoonMode && isCartoonSceneMode)
+          ? GAME_PHASES.GUESS
+          : GAME_PHASES.MEMORIZE,
+      );
       return true;
     },
     [
@@ -296,10 +326,13 @@ export function useMultiplayerGame({
       effectiveDifficulty,
       gameMode,
       gamePayload,
+      isFlagRecallMode,
       isCartoonMode,
+      isCartoonSceneMode,
       isSequenceMode,
       targetColors,
       t,
+      transitionToPhase,
     ],
   );
 
@@ -312,8 +345,8 @@ export function useMultiplayerGame({
       setTargetColor(targetColors[roundIndex] || null);
     }
 
-    setPhase(GAME_PHASES.GUESS);
-  }, [isSequenceMode, roundIndex, targetColors]);
+    transitionToPhase(GAME_PHASES.GUESS);
+  }, [isSequenceMode, roundIndex, targetColors, transitionToPhase]);
 
   const updateGuess = useCallback(
     (nextGuess) => {
@@ -382,7 +415,7 @@ export function useMultiplayerGame({
       setLocalLeaderboard(data.leaderboard);
     }
 
-    setPhase(GAME_PHASES.RESULT);
+    transitionToPhase(GAME_PHASES.RESULT);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -395,6 +428,7 @@ export function useMultiplayerGame({
     roundIndex,
     targetColor,
     t,
+    transitionToPhase,
   ]);
 
   useEffect(() => {
@@ -403,6 +437,7 @@ export function useMultiplayerGame({
     saveGameSession(gameSessionKey, {
       seed: currentSeed,
       phase,
+      phaseStartedAt,
       roundIndex,
       targetColor,
       targetColors,
@@ -421,6 +456,7 @@ export function useMultiplayerGame({
     hintActive,
     hintCount,
     phase,
+    phaseStartedAt,
     results,
     roundIndex,
     revealDurationMs,
@@ -429,14 +465,61 @@ export function useMultiplayerGame({
     targetColors,
   ]);
 
+  useEffect(() => {
+    snapshotRef.current = {
+      seed: currentSeed,
+      phase,
+      phaseStartedAt,
+      roundIndex,
+      targetColor,
+      targetColors,
+      guessColor,
+      results,
+      hintCount,
+      hintActive,
+      revealDurationMs,
+      guessDurationMs,
+    };
+  }, [
+    currentSeed,
+    guessColor,
+    guessDurationMs,
+    hintActive,
+    hintCount,
+    phase,
+    phaseStartedAt,
+    results,
+    revealDurationMs,
+    roundIndex,
+    targetColor,
+    targetColors,
+  ]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return undefined;
+
+    const persistLatestSnapshot = () => {
+      if (!snapshotRef.current) return;
+      saveGameSession(gameSessionKey, snapshotRef.current);
+    };
+
+    window.addEventListener("pagehide", persistLatestSnapshot);
+    window.addEventListener("beforeunload", persistLatestSnapshot);
+
+    return () => {
+      window.removeEventListener("pagehide", persistLatestSnapshot);
+      window.removeEventListener("beforeunload", persistLatestSnapshot);
+    };
+  }, [gameSessionKey, hasRestoredSession]);
+
   const continueFromResult = useCallback(() => {
     if (isDuelMode) {
-      setPhase("waiting");
+      transitionToPhase("waiting");
       return;
     }
 
     if (!isEndlessMode && roundIndex + 1 >= roundCount) {
-      setPhase("waiting");
+      transitionToPhase("waiting");
       return;
     }
 
@@ -448,11 +531,11 @@ export function useMultiplayerGame({
 
     if (isSequenceMode) {
       setTargetColor(targetColors[nextRoundIndex] || null);
-      setPhase(GAME_PHASES.GUESS);
+      transitionToPhase(GAME_PHASES.GUESS);
       return;
     }
 
-    setPhase(GAME_PHASES.INTRO);
+    transitionToPhase(GAME_PHASES.INTRO);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -463,11 +546,16 @@ export function useMultiplayerGame({
     roundCount,
     roundIndex,
     targetColors,
+    transitionToPhase,
   ]);
 
   const showLeaderboard = useCallback(() => {
-    setPhase("leaderboard");
-  }, []);
+    transitionToPhase("leaderboard");
+  }, [transitionToPhase]);
+
+  const abandonSession = useCallback(() => {
+    clearGameSession(gameSessionKey);
+  }, [gameSessionKey]);
 
   useEffect(() => {
     if (!isDuelMode || phase !== "waiting") return undefined;
@@ -479,7 +567,7 @@ export function useMultiplayerGame({
       setRoundIndex(serverRoundIndex);
       setTargetColor(null);
       setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
-      setPhase(GAME_PHASES.INTRO);
+      transitionToPhase(GAME_PHASES.INTRO);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -494,6 +582,7 @@ export function useMultiplayerGame({
     room?.status,
     roundIndex,
     serverRoundIndex,
+    transitionToPhase,
   ]);
 
   return {
@@ -511,11 +600,15 @@ export function useMultiplayerGame({
     hintCount,
     hintActive,
     phase,
+    phaseStartedAt,
     roundIndex,
     targetColor,
     targetColors,
     revealDurationMs,
     guessDurationMs,
+    hasRestoredSession,
+    restoredFromSession,
+    resumeSavedAt,
     guessColor,
     results,
     latestResult: results[results.length - 1] || null,
@@ -530,5 +623,6 @@ export function useMultiplayerGame({
     continueFromResult,
     showLeaderboard,
     setTargetColor,
+    abandonSession,
   };
 }

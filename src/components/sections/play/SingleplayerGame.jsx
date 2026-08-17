@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { GAME_MODE_IDS } from "@/lib/constants";
 import {
   getGameFamilyHref,
@@ -27,6 +28,8 @@ const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
   SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
+const CARD_RESIZE_DURATION_MS = 700;
+const FINAL_HOME_FADE_DURATION_MS = 240;
 
 export default function SingleplayerGame({
   initialDifficulty,
@@ -35,6 +38,7 @@ export default function SingleplayerGame({
   initialHintsEnabled = true,
   gameFamily = "color",
 }) {
+  const router = useRouter();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const game = useSingleplayerGame(
     initialDifficulty,
@@ -43,6 +47,7 @@ export default function SingleplayerGame({
     initialHintsEnabled,
     cleanGameFamily,
   );
+  const { abandonSession } = game;
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
@@ -64,28 +69,108 @@ export default function SingleplayerGame({
     return game.targetColor ? [game.targetColor] : [];
   }, [game.targetColor, game.targetColors, isCartoonMode, isFlagMode]);
   const homeHref = getGameFamilyHref(cleanGameFamily);
-  const [renderedPhase, setRenderedPhase] = useState(game.phase);
+  const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
+  const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
   const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
-  const usesShowcaseGuessChrome = isFlagMode || isCartoonMode;
+  const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
+  const [resumePhase, setResumePhase] = useState(null);
+  const isPageUnloadRef = useRef(false);
+  const usesShowcaseGuessChrome =
+    (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
+    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON);
+  const usesShowcaseTransition = true;
+  const usesExternalGuessChrome =
+    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
-  const isRenderedShowcaseResultPhase =
-    usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.RESULT;
+  const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
   const isResultToIntroTransition =
     renderedPhase === GAME_PHASES.RESULT && game.phase === GAME_PHASES.INTRO;
+  const initialResumeElapsedMs =
+    game.restoredFromSession &&
+    Number.isFinite(game.resumeSavedAt) &&
+    Number.isFinite(game.phaseStartedAt)
+      ? Math.max(0, game.resumeSavedAt - game.phaseStartedAt)
+      : 0;
+
+  const resumeElapsedMs =
+    resumePhase && resumePhase === renderedPhase
+      ? initialResumeElapsedMs
+      : 0;
 
   useGameChrome(isImmersivePhase);
   useCartoonAssetPreload(isFlagMode || isCartoonMode, visualPreloadTargets);
   useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
-    renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
+    renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
+      ? "silent"
+      : MUSIC_SCENES.GAME,
   );
 
   useEffect(() => {
+    if (!game.hasRestoredSession) return undefined;
+    if (renderedPhase !== null) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setRenderedPhase(game.phase);
+      if (game.restoredFromSession) {
+        setResumePhase(game.phase);
+        if (
+          game.phase === GAME_PHASES.RESULT &&
+          initialResumeElapsedMs >= SHOWCASE_RESULT_CENTER_DELAY_MS
+        ) {
+          setIsShowcaseResultExpanded(true);
+        }
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    game.hasRestoredSession,
+    game.phase,
+    game.restoredFromSession,
+    initialResumeElapsedMs,
+    renderedPhase,
+  ]);
+
+  useEffect(() => {
+    if (!resumePhase || renderedPhase !== resumePhase) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setResumePhase(null);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [renderedPhase, resumePhase]);
+
+  useEffect(() => {
+    const markUnload = () => {
+      isPageUnloadRef.current = true;
+    };
+
+    window.addEventListener("pagehide", markUnload);
+    window.addEventListener("beforeunload", markUnload);
+
+    return () => {
+      window.removeEventListener("pagehide", markUnload);
+      window.removeEventListener("beforeunload", markUnload);
+    };
+  }, []);
+
+  useEffect(() => {
+    return function cleanupAbandonedSession() {
+      if (!isPageUnloadRef.current) {
+        abandonSession();
+      }
+    };
+  }, [abandonSession]);
+
+  useEffect(() => {
+    if (renderedPhase === null) return undefined;
     if (game.phase === renderedPhase) return undefined;
 
-    if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseGuessChrome) {
+    if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseTransition) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
         setIsShowcaseResultExpanded(false);
@@ -109,7 +194,29 @@ export default function SingleplayerGame({
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [game.phase, renderedPhase, usesShowcaseGuessChrome]);
+  }, [game.phase, renderedPhase, usesShowcaseTransition]);
+
+  useEffect(() => {
+    let resetId = null;
+    if (!usesExternalGuessChrome) {
+      resetId = window.setTimeout(() => {
+        setIsShowcaseWidgetEntering(false);
+      }, 0);
+      return () => window.clearTimeout(resetId);
+    }
+
+    resetId = window.setTimeout(() => {
+      setIsShowcaseWidgetEntering(false);
+    }, 0);
+    const revealId = window.setTimeout(() => {
+      setIsShowcaseWidgetEntering(true);
+    }, 560);
+
+    return () => {
+      window.clearTimeout(resetId);
+      window.clearTimeout(revealId);
+    };
+  }, [usesExternalGuessChrome]);
 
   useEffect(() => {
     if (!isRenderedShowcaseResultPhase) return undefined;
@@ -165,6 +272,25 @@ export default function SingleplayerGame({
     });
     game.playAgain();
   };
+
+  const handleBackHome = async () => {
+    if (isLeavingFinalHome) return;
+
+    setIsLeavingFinalHome(true);
+    game.abandonSession();
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, FINAL_HOME_FADE_DURATION_MS);
+    });
+
+    setIsShowcaseResultExpanded(false);
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+    });
+
+    router.push(homeHref);
+  };
   const shellColor =
     renderedPhase === GAME_PHASES.INTRO
       ? "#000000"
@@ -179,18 +305,25 @@ export default function SingleplayerGame({
       renderedPhase === GAME_PHASES.GUESS ||
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
 
+  if (!game.hasRestoredSession || renderedPhase === null) {
+    return null;
+  }
+
   return (
     <main
       className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8"
       style={
-        isRenderedShowcaseGuessPhase
+        usesExternalGuessChrome
           ? { "--flag-control-count": game.difficulty?.controls?.length || 3 }
           : undefined
       }
     >
       <GameCardShell
         color={shellColor}
-        className={`${isRenderedShowcaseGuessPhase ? "flag-game-card-shell" : ""} ${
+        overlayToneSource={
+          isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
+        }
+        className={`${usesExternalGuessChrome ? "flag-game-card-shell" : ""} ${
           isRenderedShowcaseResultPhase ? "showcase-result-card-shell" : ""
         } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
@@ -206,13 +339,15 @@ export default function SingleplayerGame({
             : undefined
         }
         heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
-        isExpanded={renderedPhase === GAME_PHASES.FINAL}
+        isExpanded={renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome}
       >
         <div className="h-full min-h-[inherit]">
           {renderedPhase === GAME_PHASES.INTRO && (
             <IntroPhase
               key={`intro-${game.roundIndex}`}
               onComplete={game.finishIntro}
+              resumeElapsedMs={resumeElapsedMs}
+              resumeInstantly={resumePhase === GAME_PHASES.INTRO}
             />
           )}
 
@@ -225,6 +360,7 @@ export default function SingleplayerGame({
                 roundCount={game.roundCount}
                 onColorChange={game.setTargetColor}
                 onComplete={game.finishMemorize}
+                resumeElapsedMs={resumeElapsedMs}
               />
             ) : (
               <MemorizePhase
@@ -233,6 +369,8 @@ export default function SingleplayerGame({
                 roundLabel={currentRoundLabel}
                 durationMs={game.revealDurationMs}
                 onComplete={game.finishMemorize}
+                resumeElapsedMs={resumeElapsedMs}
+                resumeInstantly={resumePhase === GAME_PHASES.MEMORIZE}
               />
             )
           )}
@@ -248,6 +386,10 @@ export default function SingleplayerGame({
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
+              showcaseLayoutEnabled={usesShowcaseGuessChrome}
+              resumeElapsedMs={resumeElapsedMs}
+              resumeInstantly={resumePhase === GAME_PHASES.GUESS}
+              isShowcaseWidgetEntering={isShowcaseWidgetEntering}
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
               hintCount={game.hintCount}
               hintActive={game.hintActive}
@@ -270,6 +412,7 @@ export default function SingleplayerGame({
                   ? SHOWCASE_RESULT_REVEAL_DELAY_MS
                   : 0
               }
+              resumeInstantly={resumePhase === GAME_PHASES.RESULT}
             />
           )}
 
@@ -280,7 +423,8 @@ export default function SingleplayerGame({
               averageScore={game.summary.averageScore}
               maxScore={game.summary.maxScore}
               onPlayAgain={handlePlayAgain}
-              homeHref={homeHref}
+              onBackHome={handleBackHome}
+              isLeavingHome={isLeavingFinalHome}
             />
           )}
 

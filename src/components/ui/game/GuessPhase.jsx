@@ -11,7 +11,13 @@ import ValueSlider from "@/components/ui/color-picker/ValueSlider";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
-import { isCartoonColor, isFlagColor, isGradientColor } from "@/lib/color";
+import {
+  colorToneHex,
+  isCartoonColor,
+  isFlagColor,
+  isGradientColor,
+  readableOverlayTone,
+} from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
 import { playHintReveal } from "@/lib/sound";
 import CountdownReel from "./CountdownReel";
@@ -42,7 +48,11 @@ export default function GuessPhase({
   onSubmit,
   guessDurationMs = null,
   progressItems = [],
+  isShowcaseWidgetEntering = true,
   isShowcaseWidgetExiting = false,
+  showcaseLayoutEnabled = true,
+  resumeElapsedMs = 0,
+  resumeInstantly = false,
   hintCount = 0,
   hintActive = false,
   hintsEnabled = true,
@@ -79,12 +89,40 @@ export default function GuessPhase({
   const isGradientGuess = isGradientColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
   const isCartoonGuess = isCartoonColor(guessColor);
-  const usesShowcaseGuessLayout = isFlagGuess || isCartoonGuess;
+  const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
+  const usesShowcaseGuessLayout =
+    showcaseLayoutEnabled && usesExternalControlWidget;
+  const showcaseTone =
+    usesShowcaseGuessLayout && (targetColor || guessColor)
+      ? readableOverlayTone(colorToneHex(targetColor || guessColor))
+      : "light";
+  const showcaseTextStyle =
+    showcaseTone === "dark"
+      ? {
+          color: "rgba(23,20,19,0.82)",
+          textShadow: "0 1px 2px rgba(255,250,243,0.14)",
+        }
+      : {
+          color: "rgba(255,250,243,0.92)",
+          textShadow: "0 2px 10px rgba(0,0,0,0.4)",
+        };
+  const showcaseBrandStyle =
+    showcaseTone === "dark"
+      ? {
+          color: "rgba(23,20,19,0.72)",
+          textShadow: "0 1px 2px rgba(255,250,243,0.12)",
+        }
+      : {
+          color: "rgba(255,250,243,0.8)",
+          textShadow: "0 2px 10px rgba(0,0,0,0.34)",
+        };
   const sidePickerWidth = 50;
-  const pickerWidth = isGradientGuess
+  const embeddedPickerWidth = isGradientGuess
     ? sidePickerWidth
     : difficulty.controls.length * sidePickerWidth;
-  const rightPickerWidth = isGradientGuess ? sidePickerWidth : 0;
+  const pickerWidth = usesExternalControlWidget ? 0 : embeddedPickerWidth;
+  const rightPickerWidth =
+    usesExternalControlWidget ? 0 : isGradientGuess ? sidePickerWidth : 0;
   const contentLeft = pickerWidth + 24;
   const contentLeftSm = pickerWidth + 32;
   const contentRight = rightPickerWidth + 24;
@@ -139,6 +177,7 @@ export default function GuessPhase({
     durationMs: timedGuessDurationMs,
     isRunning: isTimedGuess && timerRunning,
     onComplete: handleTimedSubmit,
+    initialElapsedMs: resumeElapsedMs,
   });
   const edgeTrackClassName =
     "guess-picker-track h-full w-[50px] rounded-none border-0 shadow-none sm:h-full sm:w-[50px]";
@@ -170,6 +209,37 @@ export default function GuessPhase({
 
   useLayoutEffect(() => {
     timedSubmitRef.current = false;
+
+    if (resumeInstantly) {
+      const timerStartId = window.setTimeout(() => {
+        setTimerRunning(true);
+      }, 0);
+
+      const targets = [
+        roundRef.current,
+        timerRef.current,
+        brandRef.current,
+        progressRef.current,
+        adminButtonRef.current,
+        adminButtonCoreRef.current,
+        adminButtonRingRef.current,
+        adminIconRef.current,
+        hintButtonRef.current,
+        hintButtonCoreRef.current,
+        hintButtonRingRef.current,
+        hintIconRef.current,
+        submitButtonRef.current,
+        submitButtonCoreRef.current,
+        submitButtonRingRef.current,
+        submitIconRef.current,
+      ].filter(Boolean);
+
+      gsap.set(targets, {
+        clearProps: "all",
+      });
+
+      return () => window.clearTimeout(timerStartId);
+    }
 
     const ctx = gsap.context(() => {
       const pickerTracks = gsap.utils.toArray(
@@ -660,6 +730,8 @@ export default function GuessPhase({
     isGradientGuess,
     isTimedGuess,
     usesShowcaseGuessLayout,
+    resumeInstantly,
+    resumeElapsedMs,
   ]);
 
   useLayoutEffect(() => {
@@ -813,6 +885,32 @@ export default function GuessPhase({
     );
   };
 
+  const renderExternalControlWidgets = () => (
+    <>
+      <div
+        className={`flag-control-widget flag-control-widget--desktop ${
+          !isShowcaseWidgetEntering ? "flag-control-widget--waiting" : ""
+        } ${
+          isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
+        }`}
+        style={{ "--flag-control-count": difficulty.controls.length }}
+      >
+        {renderFlagControls("vertical")}
+      </div>
+
+      <div
+        className={`flag-control-widget flag-control-widget--mobile ${
+          !isShowcaseWidgetEntering ? "flag-control-widget--waiting" : ""
+        } ${
+          isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
+        }`}
+        style={{ "--flag-control-count": difficulty.controls.length }}
+      >
+        {renderFlagControls("horizontal")}
+      </div>
+    </>
+  );
+
   if (usesShowcaseGuessLayout) {
     return (
       <div ref={scopeRef} className="relative h-full overflow-visible p-6 sm:p-8">
@@ -823,32 +921,24 @@ export default function GuessPhase({
           />
         )}
 
-        <div
-          className={`flag-control-widget flag-control-widget--desktop ${
-            isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
-          }`}
-          style={{ "--flag-control-count": difficulty.controls.length }}
-        >
-          {renderFlagControls("vertical")}
-        </div>
-
-        <div
-          className={`flag-control-widget flag-control-widget--mobile ${
-            isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
-          }`}
-          style={{ "--flag-control-count": difficulty.controls.length }}
-        >
-          {renderFlagControls("horizontal")}
-        </div>
+        {renderExternalControlWidgets()}
 
         <div className="absolute top-6 left-6 z-10 overflow-hidden sm:top-8 sm:left-8">
-          <p ref={roundRef} className="text-base font-semibold text-current/78">
+          <p
+            ref={roundRef}
+            className="text-base font-semibold"
+            style={showcaseTextStyle}
+          >
             {roundLabel}
           </p>
         </div>
 
         <div className="absolute top-6 right-6 z-10 overflow-hidden text-right sm:top-8 sm:right-8">
-          <p ref={brandRef} className="text-lg font-semibold text-current/72">
+          <p
+            ref={brandRef}
+            className="text-lg font-semibold"
+            style={showcaseBrandStyle}
+          >
             {APP_NAME}
           </p>
         </div>
@@ -998,7 +1088,10 @@ export default function GuessPhase({
   }
 
   return (
-    <div ref={scopeRef} className="relative h-full overflow-hidden">
+    <div
+      ref={scopeRef}
+      className={`relative h-full ${usesExternalControlWidget ? "overflow-visible" : "overflow-hidden"}`}
+    >
       {pendingUnlock && !isAdminModeEnabled && (
         <AdminProtectorOverlay
           onCancel={cancelUnlockRequest}
@@ -1006,53 +1099,59 @@ export default function GuessPhase({
         />
       )}
 
-      <div className="absolute inset-y-0 left-0 z-10">
-        {isGradientGuess ? (
-          <div
-            className="flex h-full items-stretch gap-0"
-            aria-label={t("colorPicker.controls")}
-          >
-            <HueSlider
-              value={guessColor.left.h}
-              onChange={(h) => handleGradientHueChange("left", h)}
-              trackClassName={`${edgeTrackClassName} rounded-l-[26px]`}
-              handleClassName={edgeHandleClassName}
-              showLabel={false}
-              hintValue={targetColor?.left?.h}
-              showHint={hintActive}
-              hintColor={targetColor?.left?.hex}
-            />
+      {usesExternalControlWidget ? (
+        renderExternalControlWidgets()
+      ) : (
+        <>
+          <div className="absolute inset-y-0 left-0 z-10">
+            {isGradientGuess ? (
+              <div
+                className="flex h-full items-stretch gap-0"
+                aria-label={t("colorPicker.controls")}
+              >
+                <HueSlider
+                  value={guessColor.left.h}
+                  onChange={(h) => handleGradientHueChange("left", h)}
+                  trackClassName={`${edgeTrackClassName} rounded-l-[26px]`}
+                  handleClassName={edgeHandleClassName}
+                  showLabel={false}
+                  hintValue={targetColor?.left?.h}
+                  showHint={hintActive}
+                  hintColor={targetColor?.left?.hex}
+                />
+              </div>
+            ) : (
+              <HSVColorPicker
+                value={guessColor}
+                controls={difficulty.controls}
+                onChange={onGuessChange}
+                edge
+                hintColor={hintColor}
+                showHint={hintActive}
+              />
+            )}
           </div>
-        ) : (
-          <HSVColorPicker
-            value={guessColor}
-            controls={difficulty.controls}
-            onChange={onGuessChange}
-            edge
-            hintColor={hintColor}
-            showHint={hintActive}
-          />
-        )}
-      </div>
 
-      {isGradientGuess && (
-        <div className="absolute inset-y-0 right-0 z-10">
-          <div
-            className="flex h-full items-stretch gap-0"
-            aria-label={t("colorPicker.controls")}
-          >
-            <HueSlider
-              value={guessColor.right.h}
-              onChange={(h) => handleGradientHueChange("right", h)}
-              trackClassName={`${edgeTrackClassName} guess-picker-track--right rounded-r-[26px]`}
-              handleClassName={edgeHandleClassName}
-              showLabel={false}
-              hintValue={targetColor?.right?.h}
-              showHint={hintActive}
-              hintColor={targetColor?.right?.hex}
-            />
-          </div>
-        </div>
+          {isGradientGuess && (
+            <div className="absolute inset-y-0 right-0 z-10">
+              <div
+                className="flex h-full items-stretch gap-0"
+                aria-label={t("colorPicker.controls")}
+              >
+                <HueSlider
+                  value={guessColor.right.h}
+                  onChange={(h) => handleGradientHueChange("right", h)}
+                  trackClassName={`${edgeTrackClassName} guess-picker-track--right rounded-r-[26px]`}
+                  handleClassName={edgeHandleClassName}
+                  showLabel={false}
+                  hintValue={targetColor?.right?.h}
+                  showHint={hintActive}
+                  hintColor={targetColor?.right?.hex}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <div
@@ -1064,14 +1163,14 @@ export default function GuessPhase({
       >
         <p
           ref={roundRef}
-          className="text-base font-semibold text-current/64"
+          className="text-base font-semibold text-current/78"
         >
           {roundLabel}
         </p>
       </div>
 
       <div
-        className="absolute right-(--guess-right) top-6 overflow-hidden sm:right-(--guess-right-sm) sm:top-8"
+        className="absolute right-(--guess-right) top-6 overflow-hidden text-right sm:right-(--guess-right-sm) sm:top-8"
         style={{
           "--guess-right": `${contentRight}px`,
           "--guess-right-sm": `${contentRightSm}px`,
@@ -1079,7 +1178,7 @@ export default function GuessPhase({
       >
         <p
           ref={brandRef}
-          className="text-lg font-semibold text-current/42"
+          className="text-lg font-semibold text-current/72"
         >
           {APP_NAME}
         </p>
@@ -1091,7 +1190,7 @@ export default function GuessPhase({
           className={`absolute z-20 ${
             isTimedGuess
               ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
-              : "bottom-6 sm:bottom-8"
+              : "bottom-[5.25rem] sm:bottom-[5.75rem]"
           }`}
           style={{
             left: `${contentLeft}px`,

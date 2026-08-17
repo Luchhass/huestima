@@ -2,23 +2,59 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export function useCountdown({ durationMs, isRunning, onComplete }) {
+export function useCountdown({
+  durationMs,
+  isRunning,
+  onComplete,
+  initialElapsedMs = 0,
+}) {
   const durationCentiseconds = Math.ceil(durationMs / 10);
-  const [remainingCentiseconds, setRemainingCentiseconds] = useState(durationCentiseconds);
+  const normalizedInitialElapsedMs = Math.min(
+    Math.max(0, initialElapsedMs),
+    durationMs,
+  );
+  const initialRemainingCentiseconds = Math.ceil(
+    Math.max(durationMs - normalizedInitialElapsedMs, 0) / 10,
+  );
+  const [remainingCentiseconds, setRemainingCentiseconds] = useState(
+    initialRemainingCentiseconds,
+  );
   const completedRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
-  const previousCentisecondsRef = useRef(durationCentiseconds);
+  const previousCentisecondsRef = useRef(initialRemainingCentiseconds);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
   useEffect(() => {
+    const nextRemainingCentiseconds = Math.ceil(
+      Math.max(durationMs - normalizedInitialElapsedMs, 0) / 10,
+    );
+    const timeoutId = window.setTimeout(() => {
+      previousCentisecondsRef.current = nextRemainingCentiseconds;
+      setRemainingCentiseconds(nextRemainingCentiseconds);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [durationMs, normalizedInitialElapsedMs]);
+
+  useEffect(() => {
     if (!isRunning) return undefined;
 
-    const startTime = performance.now();
+    if (durationMs - normalizedInitialElapsedMs <= 0) {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        onCompleteRef.current?.();
+      }
+      return undefined;
+    }
+
+    const startTime = performance.now() - normalizedInitialElapsedMs;
     completedRef.current = false;
-    previousCentisecondsRef.current = durationCentiseconds;
+    previousCentisecondsRef.current = Math.ceil(
+      Math.max(durationMs - normalizedInitialElapsedMs, 0) / 10,
+    );
 
     const intervalId = window.setInterval(() => {
       const now = performance.now();
@@ -43,7 +79,7 @@ export function useCountdown({ durationMs, isRunning, onComplete }) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [durationCentiseconds, durationMs, isRunning]);
+  }, [durationCentiseconds, durationMs, isRunning, normalizedInitialElapsedMs]);
 
   return {
     centiseconds: remainingCentiseconds,

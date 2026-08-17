@@ -5,7 +5,19 @@ import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { playIntroStep } from "@/lib/sound";
 
-export default function IntroPhase({ onComplete }) {
+const INTRO_TOTAL_DURATION_MS = 2420;
+
+function getResumedStepIndex(elapsedMs) {
+  if (elapsedMs < 740) return 0;
+  if (elapsedMs < 1520) return 1;
+  return 2;
+}
+
+export default function IntroPhase({
+  onComplete,
+  resumeElapsedMs = 0,
+  resumeInstantly = false,
+}) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const wordRefs = useRef([]);
@@ -27,7 +39,26 @@ export default function IntroPhase({ onComplete }) {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  useEffect(() => {
+    if (!resumeInstantly) return undefined;
+
+    const remainingMs = Math.max(INTRO_TOTAL_DURATION_MS - resumeElapsedMs, 0);
+
+    if (remainingMs <= 0) {
+      onCompleteRef.current?.();
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      onCompleteRef.current?.();
+    }, remainingMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [resumeElapsedMs, resumeInstantly]);
+
   useLayoutEffect(() => {
+    if (resumeInstantly) return undefined;
+
     const ctx = gsap.context(() => {
       const words = wordRefs.current.filter(Boolean);
 
@@ -108,7 +139,25 @@ export default function IntroPhase({ onComplete }) {
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [steps]);
+  }, [resumeInstantly, steps]);
+
+  if (resumeInstantly) {
+    const currentStep = steps[getResumedStepIndex(resumeElapsedMs)] || steps[2];
+
+    return (
+      <div
+        ref={scopeRef}
+        data-fullscreen-surface-transition
+        className="relative h-full bg-black p-6 text-white sm:p-8"
+      >
+        <div className="pointer-events-none absolute top-6 right-6 text-7xl leading-none font-semibold tracking-normal lowercase sm:top-8 sm:right-8 sm:text-[7rem]">
+          <div data-intro-word-mask className="relative overflow-hidden pb-[0.12em]">
+            <span className="block select-none">{currentStep}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

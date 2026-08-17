@@ -22,6 +22,7 @@ export default function SequenceMemorizePhase({
   onColorChange,
   onComplete,
   progressItems = [],
+  resumeElapsedMs = 0,
 }) {
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -48,13 +49,27 @@ export default function SequenceMemorizePhase({
     if (!visibleColors.length) return undefined;
 
     const totalDuration = visibleColors.length * durationMs;
-    const startTime = performance.now();
+    const clampedResumeElapsedMs = Math.min(
+      Math.max(0, resumeElapsedMs),
+      totalDuration,
+    );
+    const initialIndex = Math.min(
+      Math.floor(clampedResumeElapsedMs / durationMs),
+      Math.max(visibleColors.length - 1, 0),
+    );
+    const initialElapsedInColor = clampedResumeElapsedMs - initialIndex * durationMs;
+    const initialRemainingMs = Math.max(durationMs - initialElapsedInColor, 0);
+    const startTime = performance.now() - clampedResumeElapsedMs;
     const stopMechanism = startMemorizeMechanism(totalDuration);
     let completed = false;
 
-    lastColorIndexRef.current = 0;
-    lastSecondRef.current = Math.ceil(durationMs / 1000);
-    playSequenceColorStep(0);
+    const initializeResumeStateId = window.setTimeout(() => {
+      setActiveIndex(initialIndex);
+      setRemainingMs(initialRemainingMs);
+    }, 0);
+    lastColorIndexRef.current = initialIndex;
+    lastSecondRef.current = Math.ceil(initialRemainingMs / 1000);
+    onColorChangeRef.current?.(visibleColors[initialIndex]);
 
     const intervalId = window.setInterval(() => {
       const elapsed = performance.now() - startTime;
@@ -93,10 +108,11 @@ export default function SequenceMemorizePhase({
     }, 50);
 
     return () => {
+      window.clearTimeout(initializeResumeStateId);
       window.clearInterval(intervalId);
       stopMechanism();
     };
-  }, [durationMs, visibleColors]);
+  }, [durationMs, resumeElapsedMs, visibleColors]);
 
   const activeColor = visibleColors[activeIndex];
   const remainingCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));

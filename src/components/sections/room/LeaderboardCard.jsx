@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
-import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 import {
   colorToneHex,
   getVisualLabel,
@@ -72,7 +72,6 @@ export default function LeaderboardCard({
   const scopeRef = useRef(null);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
-  const [isNavigatingHome, setIsNavigatingHome] = useState(false);
 
   useAppChromeHidden(true);
   useScreenReveal(scopeRef, [leaderboard?.completedAt], {
@@ -100,14 +99,11 @@ export default function LeaderboardCard({
   }, [activeActionError]);
 
   const handleBackHome = () => {
-    if (isNavigatingHome) return;
+    if (isLeavingHome) return;
 
-    setIsNavigatingHome(true);
     setHiddenActionError("");
     setLastAction("home");
-    void playScreenFadeOut(scopeRef, { duration: 0.24 }).then(() => {
-      onBackHome?.();
-    });
+    onBackHome?.();
   };
 
   const handleBackLobby = () => {
@@ -122,7 +118,7 @@ export default function LeaderboardCard({
     <div
       ref={scopeRef}
       className={`leaderboard-card relative flex h-full flex-col overflow-hidden bg-black p-6 text-white transition-opacity duration-200 sm:p-8 ${
-        isLeavingHome || isNavigatingHome ? "opacity-0" : "opacity-100"
+        isLeavingHome ? "opacity-0" : "opacity-100"
       }`}
     >
       <button

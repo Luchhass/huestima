@@ -2,10 +2,12 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
+import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
@@ -15,6 +17,7 @@ import {
 } from "@/lib/constants";
 import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
 import { serializeHintsEnabled } from "@/lib/hints";
+import { GAME_FAMILY_IDS } from "@/lib/gameFamily";
 
 const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
   GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
@@ -23,6 +26,7 @@ const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
 export default function SingleplayerCard({
   difficulty,
   gameMode,
+  gameFamily = GAME_FAMILY_IDS.COLOR,
   gameModeOptions = SINGLEPLAYER_GAME_MODE_OPTIONS,
   playPath = "/color/singleplayer",
   roundCount = DEFAULT_ROUND_COUNT,
@@ -33,21 +37,43 @@ export default function SingleplayerCard({
   onRoundCountChange,
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const scopeRef = useRef(null);
+  const isNavigatingRef = useRef(false);
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
   const roundCountLabel = roundCountLocked
     ? t("levelCount.infinity")
     : String(roundCount);
+  const setupCopyKey =
+    gameFamily === GAME_FAMILY_IDS.CARTOON &&
+    (gameMode === "normal" || gameMode === "endless" || gameMode === "timed")
+      ? `cartoon${gameMode[0].toUpperCase()}${gameMode.slice(1)}`
+      : gameMode || DEFAULT_GAME_MODE_ID;
   const description = [
-    t(`setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`, {
+    t(`setup.singleCopy.${setupCopyKey}`, {
       roundCount: roundCountLabel,
     }),
     t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`),
   ].join(" ");
 
   useGameModeShock(scopeRef, gameMode);
+
+  const handlePlay = async (event) => {
+    if (isNavigatingRef.current) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    isNavigatingRef.current = true;
+
+    await playScreenFadeOut(scopeRef, { duration: 0.28 });
+    router.push(
+      `${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`,
+    );
+  };
 
   return (
     <div ref={scopeRef} className="home-view-panel flex h-full flex-col">
@@ -110,6 +136,7 @@ export default function SingleplayerCard({
           <Link
             data-game-mode-shock-target
             href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
+            onClick={handlePlay}
             className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
           >
             <span className="relative z-10">{t("setup.play")}</span>

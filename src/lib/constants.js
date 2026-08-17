@@ -62,6 +62,7 @@ export const GAME_MODE_IDS = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
+  FLAG_RECALL: "flagRecall",
   CARTOON: "cartoon",
   DUEL: "duel",
 };
@@ -116,9 +117,15 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
+    id: GAME_MODE_IDS.FLAG_RECALL,
+    label: "Recall",
+    description: "Keep the flag visible while you tune the background color from memory.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+  },
+  {
     id: GAME_MODE_IDS.CARTOON,
-    label: "Cartoon",
-    description: "Memorize the main color in a cartoon scene.",
+    label: "Recall",
+    description: "Keep the cartoon scene visible while you tune its main painted color from memory.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
@@ -147,8 +154,10 @@ export const GAME_MODE_CARD_COPY = {
       "Match both sides of a two-color gradient using the left and right hue bars.",
     [GAME_MODE_IDS.FLAG]:
       "Read the flag shape, then tune the background color behind its fixed emblem.",
+    [GAME_MODE_IDS.FLAG_RECALL]:
+      "Keep the full flag visible while you rebuild the background color across {roundCount} levels.",
     [GAME_MODE_IDS.CARTOON]:
-      "Study the cartoon scene, then rebuild the color of its main painted area.",
+      "Keep the cartoon scene visible while you rebuild the main painted character color across {roundCount} levels.",
     [GAME_MODE_IDS.DUEL]:
       "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
   },
@@ -167,8 +176,10 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
     [GAME_MODE_IDS.FLAG]:
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
+    [GAME_MODE_IDS.FLAG_RECALL]:
+      "Everyone keeps the same flag visible on screen while background accuracy decides the room.",
     [GAME_MODE_IDS.CARTOON]:
-      "Everyone gets the same cartoon scene. Main color accuracy decides the room.",
+      "Everyone keeps the same cartoon scene visible on screen while main color accuracy decides the room.",
     [GAME_MODE_IDS.DUEL]:
       "Endless PvP rounds. The last player is eliminated only when the score gap is wide enough.",
   },

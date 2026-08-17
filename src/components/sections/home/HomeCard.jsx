@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
+import PushNotification from "@/components/ui/PushNotification";
 import ComingSoonCard from "./ComingSoonCard";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
@@ -11,6 +12,7 @@ import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
+import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
@@ -88,6 +90,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
+  const [notification, setNotification] = useState(null);
   const contentRef = useRef(null);
   const difficultyBurstTimerRef = useRef(null);
   const adminTapTimesRef = useRef([]);
@@ -106,6 +109,8 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
   const homeParagraphs = Array.isArray(homeSection?.paragraphs)
     ? homeSection.paragraphs
     : t("home.paragraphs");
+  const adminEnabledMessage =
+    locale === "tr" ? "Admin modu acildi." : "Admin mode enabled.";
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useCartoonAssetPreload(
@@ -127,6 +132,10 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
       delay: isAdminProtectorVisible ? 90 : 0,
     },
   );
+
+  useEffect(() => {
+    clearAllGameSessions();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -220,6 +229,11 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
 
   const handleAdminUnlock = async () => {
     enableAdmin();
+    setNotification({
+      id: `admin-${Date.now()}`,
+      message: adminEnabledMessage,
+      variant: "admin",
+    });
     await playScreenFadeOut(contentRef, { duration: 0.24 });
     setIsAdminProtectorVisible(false);
   };
@@ -268,6 +282,11 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
         }`}
         style={cardStyle}
       >
+        <PushNotification
+          notification={notification}
+          onClose={() => setNotification(null)}
+        />
+
         {difficultyBurst && (
           <span
             key={difficultyBurst.key}
@@ -316,6 +335,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
                     aria-hidden="true"
                     tabIndex={-1}
                     onPointerDown={handleAdminTriggerTap}
+                    data-sound="off"
                     className="absolute right-0 bottom-0 z-30 size-16 cursor-default opacity-0 focus:outline-none sm:size-20"
                   />
 
@@ -352,6 +372,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
             <SingleplayerCard
               difficulty={difficulty}
               gameMode={gameMode}
+              gameFamily={cleanGameFamily}
               gameModeOptions={singleplayerGameModeOptions}
               playPath={getGameFamilyHref(cleanGameFamily, "singleplayer")}
               roundCount={roundCount}

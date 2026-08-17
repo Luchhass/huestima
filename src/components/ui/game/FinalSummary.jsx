@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
@@ -61,12 +60,12 @@ export default function FinalSummary({
   averageScore,
   maxScore: providedMaxScore,
   onPlayAgain,
-  homeHref = "/",
+  onBackHome,
+  isLeavingHome = false,
 }) {
-  const router = useRouter();
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
-  const [isLeavingHome, setIsLeavingHome] = useState(false);
+  const [isBackHomeLocked, setIsBackHomeLocked] = useState(false);
 
   useAppChromeHidden(true);
   useScreenReveal(scopeRef, [results.length], {
@@ -89,11 +88,11 @@ export default function FinalSummary({
   const hasFlagTiles = results.some((result) => isFlagColor(result.target));
 
   const handleBackHome = async () => {
-    if (isLeavingHome) return;
+    if (isLeavingHome || isBackHomeLocked) return;
 
-    setIsLeavingHome(true);
+    setIsBackHomeLocked(true);
     await playScreenFadeOut(scopeRef, { duration: 0.24 });
-    router.push(homeHref);
+    await onBackHome?.();
   };
 
   useLayoutEffect(() => {

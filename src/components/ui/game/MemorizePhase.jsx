@@ -18,6 +18,8 @@ export default function MemorizePhase({
   onComplete,
   durationMs = MEMORIZE_DURATION_MS,
   progressItems = [],
+  resumeElapsedMs = 0,
+  resumeInstantly = false,
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
@@ -29,10 +31,26 @@ export default function MemorizePhase({
     durationMs,
     isRunning: true,
     onComplete,
+    initialElapsedMs: resumeElapsedMs,
   });
 
   useLayoutEffect(() => {
-    const stopMechanism = startMemorizeMechanism(durationMs);
+    const remainingDurationMs = Math.max(durationMs - resumeElapsedMs, 0);
+    const stopMechanism = startMemorizeMechanism(
+      resumeInstantly ? remainingDurationMs : durationMs,
+    );
+
+    if (resumeInstantly) {
+      gsap.set([roundRef.current, brandRef.current, progressRef.current], {
+        yPercent: 0,
+        autoAlpha: 1,
+        clearProps: "transform,opacity,visibility",
+      });
+
+      return () => {
+        stopMechanism();
+      };
+    }
 
     const ctx = gsap.context(() => {
       const uiTimeline = gsap.timeline();
@@ -90,7 +108,7 @@ export default function MemorizePhase({
       stopMechanism();
       ctx.revert();
     };
-  }, [durationMs]);
+  }, [durationMs, resumeElapsedMs, resumeInstantly]);
 
   return (
     <div

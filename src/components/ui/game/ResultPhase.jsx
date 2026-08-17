@@ -97,6 +97,7 @@ export default function ResultPhase({
   onFinishRun,
   roundLabel = result ? `${result.round}/5` : "",
   visualIntroDelayMs = 0,
+  resumeInstantly = false,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -164,6 +165,41 @@ export default function ResultPhase({
     const splitOverlayElement = splitOverlayRef.current;
 
     if (!scoreElement || !resultLineElement) return undefined;
+
+    if (resumeInstantly) {
+      scoreElement.textContent = formatScore(result.score);
+      gsap.set(
+        [
+          roundRef.current,
+          selectionLabelRef.current,
+          selectionValueRef.current,
+          originalLabelRef.current,
+          originalValueRef.current,
+          continueButtonRef.current,
+          continueButtonCoreRef.current,
+          continueButtonRingRef.current,
+          continueArrowRef.current,
+          finishRunButtonRef.current,
+          finishRunButtonRingRef.current,
+          finishRunButtonIconRef.current,
+          resultLineElement,
+          guessSectionElement,
+          targetSectionElement,
+        ].filter(Boolean),
+        {
+          clearProps: "all",
+        },
+      );
+
+      if (splitOverlayElement) {
+        gsap.set(splitOverlayElement, {
+          autoAlpha: 0,
+          pointerEvents: "none",
+        });
+      }
+
+      return undefined;
+    }
 
     const canAnimateSplitReveal = Boolean(
       scopeRef.current &&
@@ -703,7 +739,7 @@ export default function ResultPhase({
       resultCharsTween?.kill();
       ctx.revert();
     };
-  }, [result, scoreCountDuration, visualIntroDelayMs]);
+  }, [result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
 
   if (!result) return null;
 

@@ -55,6 +55,28 @@ export function clearGameSession(key) {
   }
 }
 
+export function clearAllGameSessions() {
+  if (!canUseStorage()) return;
+
+  try {
+    const keysToRemove = [];
+
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+
+      if (key?.startsWith(STORAGE_PREFIX)) {
+        keysToRemove.push(key);
+      }
+    }
+
+    keysToRemove.forEach((key) => {
+      window.sessionStorage.removeItem(key);
+    });
+  } catch {
+    // Ignore unavailable sessionStorage.
+  }
+}
+
 export function useGameSession(key) {
   const [session, setSession] = useState(() => getGameSession(key));
 
