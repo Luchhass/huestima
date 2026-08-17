@@ -4,7 +4,6 @@ import { useRef } from "react";
 import Link from "next/link";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
-import HintToggleButton from "@/components/ui/HintToggleButton";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -15,7 +14,7 @@ import {
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
 import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
-import { getInitialHintCount, serializeHintsEnabled } from "@/lib/hints";
+import { serializeHintsEnabled } from "@/lib/hints";
 
 const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
   GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
@@ -32,40 +31,36 @@ export default function SingleplayerCard({
   onDifficultyFeedback,
   onGameModeChange,
   onRoundCountChange,
-  onHintsEnabledChange,
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
-  const hintsLocked = getInitialHintCount(roundCount) <= 0;
-  const hintCopyKey = hintsLocked
-    ? "setup.hintCopy.locked"
-    : hintsEnabled
-      ? "setup.hintCopy.on"
-      : "setup.hintCopy.off";
   const description = [
     t(`setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`),
     t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`),
-    t(hintCopyKey),
+    t("setup.hintCopy.on"),
   ].join(" ");
 
   useGameModeShock(scopeRef, gameMode);
 
   return (
     <div ref={scopeRef} className="home-view-panel flex h-full flex-col">
-      <div data-screen-reveal className="home-view-copy max-w-[23rem] pr-10">
+      <div
+        data-screen-reveal
+        className="home-view-copy w-[min(35rem,calc(100%-3.75rem))] sm:w-[min(35rem,calc(100%-5.5rem))]"
+      >
         <h1
           data-game-mode-shock-target
-          className="text-[clamp(2.15rem,10.5vw,3.15rem)] font-semibold lowercase leading-[0.88] tracking-normal text-white sm:text-[4.05rem]"
+          className="text-[clamp(2.3rem,9.2vw,3.2rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.05rem]"
         >
           {t("setup.singleplayer")}
         </h1>
 
         <p
           data-game-mode-shock-target
-          className="mt-4 text-[0.92rem] font-medium leading-[1.22] text-white/82 sm:text-[0.98rem]"
+          className="mt-3.5 max-w-[35.5rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.98rem]"
         >
           {description}
         </p>
@@ -84,24 +79,13 @@ export default function SingleplayerCard({
 
           <div
             data-game-mode-shock-target
-            className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:gap-3"
+            className="min-w-0"
           >
-            <div className="min-w-0">
-              <LevelCountPicker
-                value={roundCount}
-                onChange={onRoundCountChange}
-                disabled={roundCountLocked}
-              />
-            </div>
-
-            <div className="min-w-0">
-              <HintToggleButton
-                enabled={hintsEnabled}
-                onToggle={onHintsEnabledChange}
-                disabled={hintsLocked}
-                compact
-              />
-            </div>
+            <LevelCountPicker
+              value={roundCount}
+              onChange={onRoundCountChange}
+              disabled={roundCountLocked}
+            />
           </div>
         </div>
       </div>

@@ -80,7 +80,6 @@ export const GAME_MODE_OPTIONS = [
     label: "Endless",
     description: "Classic five-second rounds with no final limit.",
     revealDurationMs: MEMORIZE_DURATION_MS,
-    singleplayerOnly: true,
     isEndless: true,
   },
   {
@@ -157,7 +156,7 @@ export const GAME_MODE_CARD_COPY = {
     [GAME_MODE_IDS.NORMAL]:
       "Everyone sees the same five-second colors. Closest guesses climb the room.",
     [GAME_MODE_IDS.ENDLESS]:
-      "Endless is a singleplayer-only mode.",
+      "Classic rounds keep going without a fixed finish line. Keep matching as long as the room survives.",
     [GAME_MODE_IDS.FLASH]:
       "Everyone gets the same one-second flashes. Fast eyes win.",
     [GAME_MODE_IDS.SEQUENCE]:

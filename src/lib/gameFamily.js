@@ -34,8 +34,16 @@ export const GAME_FAMILY_MODE_IDS = {
     GAME_MODE_IDS.GRADIENT,
     GAME_MODE_IDS.DUEL,
   ],
-  [GAME_FAMILY_IDS.FLAG]: [GAME_MODE_IDS.FLAG],
-  [GAME_FAMILY_IDS.CARTOON]: [GAME_MODE_IDS.CARTOON],
+  [GAME_FAMILY_IDS.FLAG]: [
+    GAME_MODE_IDS.FLAG,
+    GAME_MODE_IDS.ENDLESS,
+    GAME_MODE_IDS.TIMED,
+  ],
+  [GAME_FAMILY_IDS.CARTOON]: [
+    GAME_MODE_IDS.CARTOON,
+    GAME_MODE_IDS.ENDLESS,
+    GAME_MODE_IDS.TIMED,
+  ],
 };
 
 export const DEFAULT_GAME_MODE_BY_FAMILY = {
@@ -69,4 +77,12 @@ export function getGameFamilyHref(gameFamily, suffix = "") {
   const cleanSuffix = suffix ? `/${suffix.replace(/^\/+/, "")}` : "";
 
   return `/${cleanFamily}${cleanSuffix}`;
+}
+
+export function isFlagFamily(gameFamily) {
+  return normalizeGameFamily(gameFamily) === GAME_FAMILY_IDS.FLAG;
+}
+
+export function isCartoonFamily(gameFamily) {
+  return normalizeGameFamily(gameFamily) === GAME_FAMILY_IDS.CARTOON;
 }

@@ -17,7 +17,6 @@ import PlayerNameField, {
   cleanPlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
-import HintToggleButton from "@/components/ui/HintToggleButton";
 import PushNotification from "@/components/ui/PushNotification";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -58,6 +57,10 @@ const MIN_LOBBY_PASSWORD_LENGTH = 3;
 const EXPANDED_REVEAL_DELAY = 320;
 const NOTIFICATION_LIFETIME_MS = 3000;
 const PLAYER_NAME_SESSION_KEY = "huestima-player-name";
+
+function getRoomFamily(room, fallbackFamily = "color") {
+  return room?.gameFamily || getGameFamilyByMode(room?.gameMode) || fallbackFamily;
+}
 
 function responseData(response) {
   return response?.data || response || {};
@@ -242,7 +245,7 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
 }
 
 function roomMatchesSearch(room, query, gameFamily) {
-  if (gameFamily && getGameFamilyByMode(room.gameMode) !== gameFamily) {
+  if (gameFamily && getRoomFamily(room, gameFamily) !== gameFamily) {
     return false;
   }
 
@@ -325,7 +328,6 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
   const scopeRef = useRef(null);
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
-  const [hintsEnabled, setHintsEnabled] = useState(true);
   const [lobbyName, setLobbyName] = useState("");
   const [isLobbyNameDirty, setIsLobbyNameDirty] = useState(false);
   const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
@@ -386,9 +388,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
   };
 
   const buildRoomHref = useCallback(
-    (roomCode, roomGameMode = defaultGameMode) =>
-      `${getGameFamilyHref(getGameFamilyByMode(roomGameMode))}/${roomCode}`,
-    [defaultGameMode],
+    (roomCode) => `${getGameFamilyHref(cleanGameFamily)}/${roomCode}`,
+    [cleanGameFamily],
   );
 
   const updatePlayerName = (value) => {
@@ -413,7 +414,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
     }
 
     const nextRooms = (responseData(response).rooms || []).filter(
-      (room) => getGameFamilyByMode(room.gameMode) === cleanGameFamily,
+      (room) => getRoomFamily(room, cleanGameFamily) === cleanGameFamily,
     );
     setRooms(nextRooms);
 
@@ -440,7 +441,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
 
     const handleListUpdated = (payload = {}) => {
       const nextRooms = (payload.rooms || []).filter(
-        (room) => getGameFamilyByMode(room.gameMode) === cleanGameFamily,
+        (room) => getRoomFamily(room, cleanGameFamily) === cleanGameFamily,
       );
       setRooms(nextRooms);
       setSelectedRoomCode((currentCode) => {
@@ -533,7 +534,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       password: isPrivate ? cleanLobbyPassword(password) : "",
       difficulty: defaultDifficulty,
       gameMode: defaultGameMode,
-      hintsEnabled,
+      gameFamily: cleanGameFamily,
+      hintsEnabled: true,
     });
 
     if (!response.ok) {
@@ -552,17 +554,17 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       game_type: "multiplayer",
       difficulty: defaultDifficulty,
       game_mode: defaultGameMode,
-      hints_enabled: hintsEnabled,
+      hints_enabled: true,
       visibility,
     });
 
-    void navigator.clipboard
-      ?.writeText(`${window.location.origin}${buildRoomHref(response.room.code, response.room.gameMode)}`)
+      void navigator.clipboard
+      ?.writeText(`${window.location.origin}${buildRoomHref(response.room.code)}`)
       .then(() => markInviteCopied(response.room.code))
       .catch(() => false);
     showNotification(t("setup.lobbyCreated"), "success");
     window.setTimeout(() => {
-      router.push(buildRoomHref(response.room.code, response.room.gameMode));
+      router.push(buildRoomHref(response.room.code));
     }, NOTIFICATION_LIFETIME_MS);
   };
 
@@ -628,7 +630,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
 
     showNotification(t("setup.lobbyJoined"), "success");
     window.setTimeout(() => {
-      router.push(buildRoomHref(selectedRoom.code, selectedRoom.gameMode));
+      router.push(buildRoomHref(selectedRoom.code));
     }, NOTIFICATION_LIFETIME_MS);
   };
 
@@ -640,10 +642,13 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
         durationMs={NOTIFICATION_LIFETIME_MS}
       />
 
-      <div data-screen-reveal className="home-view-copy max-w-[23rem] pr-10">
+      <div
+        data-screen-reveal
+        className="home-view-copy w-[min(35rem,calc(100%-3.75rem))] sm:w-[min(35rem,calc(100%-5.5rem))]"
+      >
         <h1
           data-game-mode-shock-target
-          className="text-[clamp(2.15rem,10.5vw,3.15rem)] font-semibold lowercase leading-[0.88] tracking-normal text-white sm:text-[4.05rem]"
+          className="text-[clamp(2.3rem,9.2vw,3.2rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.05rem]"
         >
           {panel === PANELS.CREATE
             ? t("setup.createLobbyTitle")
@@ -654,7 +659,7 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
 
         <p
           data-game-mode-shock-target
-          className="mt-4 text-[0.92rem] font-medium leading-[1.22] text-white/82 sm:text-[0.98rem]"
+          className="mt-3.5 max-w-[35.5rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.98rem]"
         >
           {description}
         </p>

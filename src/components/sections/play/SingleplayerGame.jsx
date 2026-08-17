@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS } from "@/lib/constants";
-import { getGameFamilyByMode, getGameFamilyHref } from "@/lib/gameFamily";
+import {
+  getGameFamilyHref,
+  isCartoonFamily,
+  isFlagFamily,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
@@ -28,12 +33,15 @@ export default function SingleplayerGame({
   initialGameMode,
   initialRoundCount,
   initialHintsEnabled = true,
+  gameFamily = "color",
 }) {
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
   const game = useSingleplayerGame(
     initialDifficulty,
     initialGameMode,
     initialRoundCount,
     initialHintsEnabled,
+    cleanGameFamily,
   );
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
@@ -48,14 +56,14 @@ export default function SingleplayerGame({
         ? `${latestResult.round}/${latestResult.round}`
         : `${latestResult.round}/${game.roundCount}`
       : undefined;
-  const isFlagMode = game.gameMode.id === GAME_MODE_IDS.FLAG;
-  const isCartoonMode = game.gameMode.id === GAME_MODE_IDS.CARTOON;
-  const cartoonPreloadTargets = useMemo(() => {
-    if (!isCartoonMode) return [];
+  const isFlagMode = isFlagFamily(cleanGameFamily);
+  const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const visualPreloadTargets = useMemo(() => {
+    if (!isFlagMode && !isCartoonMode) return [];
     if (game.targetColors.length) return game.targetColors;
     return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isCartoonMode]);
-  const homeHref = getGameFamilyHref(getGameFamilyByMode(game.gameMode.id));
+  }, [game.targetColor, game.targetColors, isCartoonMode, isFlagMode]);
+  const homeHref = getGameFamilyHref(cleanGameFamily);
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
@@ -64,9 +72,11 @@ export default function SingleplayerGame({
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.RESULT;
+  const isResultToIntroTransition =
+    renderedPhase === GAME_PHASES.RESULT && game.phase === GAME_PHASES.INTRO;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isCartoonMode, cartoonPreloadTargets);
+  useCartoonAssetPreload(isFlagMode || isCartoonMode, visualPreloadTargets);
   useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
     renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
@@ -155,18 +165,6 @@ export default function SingleplayerGame({
     });
     game.playAgain();
   };
-  const handleFlagSlotSelect = (slotId) => {
-    const selectedSlot = game.guessColor.slots?.find((slotColor) => slotColor.id === slotId);
-
-    game.updateGuess({
-      ...game.guessColor,
-      activeSlotId: slotId,
-      h: selectedSlot?.h ?? game.guessColor.h,
-      s: selectedSlot?.s ?? game.guessColor.s,
-      v: selectedSlot?.v ?? game.guessColor.v,
-    });
-  };
-
   const shellColor =
     renderedPhase === GAME_PHASES.INTRO
       ? "#000000"
@@ -197,15 +195,6 @@ export default function SingleplayerGame({
         } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
         }`}
-        flagOverlayProps={
-          isFlagMode && isRenderedShowcaseGuessPhase
-            ? {
-                isInteractive: true,
-                activeSlotId: game.guessColor.activeSlotId,
-                onSlotSelect: handleFlagSlotSelect,
-              }
-            : undefined
-        }
         cartoonOverlayProps={
           isCartoonMode
             ? {
@@ -290,6 +279,13 @@ export default function SingleplayerGame({
               maxScore={game.summary.maxScore}
               onPlayAgain={handlePlayAgain}
               homeHref={homeHref}
+            />
+          )}
+
+          {isResultToIntroTransition && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-70 rounded-[inherit] bg-black"
             />
           )}
         </div>

@@ -17,6 +17,11 @@ import {
   normalizeHintsEnabled,
 } from "@/lib/hints";
 import {
+  isCartoonFamily,
+  isFlagFamily,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
+import {
   createDefaultCartoonGuess,
   createDefaultFlagGuess,
   createDefaultGradientGuess,
@@ -35,32 +40,38 @@ function responseData(response) {
   return response?.data || response || {};
 }
 
-function createDefaultGuess(difficulty, gameMode, targetColor = null) {
+function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null) {
   if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
     return createDefaultGradientGuess();
   }
 
-  if (gameMode?.id === GAME_MODE_IDS.FLAG) {
+  if (isFlagFamily(gameFamily)) {
     return createDefaultFlagGuess(targetColor, difficulty);
   }
 
-  if (gameMode?.id === GAME_MODE_IDS.CARTOON) {
+  if (isCartoonFamily(gameFamily)) {
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
 }
 
-function constrainGuessColor(guessColor, difficulty, gameMode, targetColor = null) {
+function constrainGuessColor(
+  guessColor,
+  difficulty,
+  gameMode,
+  gameFamily,
+  targetColor = null,
+) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
   }
 
-  if (gameMode.id === GAME_MODE_IDS.FLAG || isFlagColor(guessColor)) {
+  if (isFlagFamily(gameFamily) || isFlagColor(guessColor)) {
     return withFlagDifficultyHex(guessColor, targetColor, difficulty);
   }
 
-  if (gameMode.id === GAME_MODE_IDS.CARTOON || isCartoonColor(guessColor)) {
+  if (isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 
@@ -85,17 +96,26 @@ export function useMultiplayerGame({
   playerId,
   difficultyId = DEFAULT_DIFFICULTY_ID,
   gameModeId = DEFAULT_GAME_MODE_ID,
+  gameFamily = "color",
   gamePayload,
   room,
   incomingLeaderboard,
 }) {
   const { t } = useTranslation();
+  const cleanGameFamily = useMemo(
+    () => normalizeGameFamily(gameFamily),
+    [gameFamily],
+  );
   const difficulty = useMemo(() => getDifficultyOption(difficultyId), [difficultyId]);
-  const gameMode = useMemo(() => getGameModeOption(gameModeId), [gameModeId]);
+  const gameMode = useMemo(
+    () => getGameModeOption(gameModeId, undefined, cleanGameFamily),
+    [cleanGameFamily, gameModeId],
+  );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
-  const isCartoonMode = gameMode.id === GAME_MODE_IDS.CARTOON;
+  const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -127,7 +147,7 @@ export function useMultiplayerGame({
   const guessDurationMs =
     gamePayload?.guessDurationMs || gameMode.guessDurationMs || null;
   const [guessColor, setGuessColor] = useState(() =>
-    createDefaultGuess(effectiveDifficulty, gameMode),
+    createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
   );
   const [results, setResults] = useState([]);
   const [localLeaderboard, setLocalLeaderboard] = useState(null);
@@ -145,8 +165,12 @@ export function useMultiplayerGame({
   const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
 
   useEffect(() => {
-    setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
-    setHintActive(false);
+    const timeoutId = window.setTimeout(() => {
+      setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
+      setHintActive(false);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [gamePayload?.seed, hintsEnabled, roundCount]);
 
   const prepareRound = useCallback(
@@ -167,7 +191,14 @@ export function useMultiplayerGame({
         ? colors[0]
         : colors[nextRoundIndex];
 
-      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, nextTargetColor));
+      setGuessColor(
+        createDefaultGuess(
+          effectiveDifficulty,
+          gameMode,
+          cleanGameFamily,
+          nextTargetColor,
+        ),
+      );
 
       if (isSequenceMode) {
         setTargetColor(nextTargetColor);
@@ -179,6 +210,7 @@ export function useMultiplayerGame({
       return true;
     },
     [
+      cleanGameFamily,
       effectiveDifficulty,
       gameMode,
       gamePayload,
@@ -204,10 +236,16 @@ export function useMultiplayerGame({
   const updateGuess = useCallback(
     (nextGuess) => {
       setGuessColor(
-        constrainGuessColor(nextGuess, effectiveDifficulty, gameMode, targetColor),
+        constrainGuessColor(
+          nextGuess,
+          effectiveDifficulty,
+          gameMode,
+          cleanGameFamily,
+          targetColor,
+        ),
       );
     },
-    [effectiveDifficulty, gameMode, targetColor],
+    [cleanGameFamily, effectiveDifficulty, gameMode, targetColor],
   );
 
   const useHint = useCallback(() => {
@@ -231,6 +269,7 @@ export function useMultiplayerGame({
         guessColor,
         effectiveDifficulty,
         gameMode,
+        cleanGameFamily,
         targetColor,
       ),
     });
@@ -263,6 +302,7 @@ export function useMultiplayerGame({
 
     setPhase(GAME_PHASES.RESULT);
   }, [
+    cleanGameFamily,
     effectiveDifficulty,
     gameMode,
     guessColor,
@@ -281,7 +321,7 @@ export function useMultiplayerGame({
       return;
     }
 
-    if (roundIndex + 1 >= roundCount) {
+    if (!isEndlessMode && roundIndex + 1 >= roundCount) {
       setPhase("waiting");
       return;
     }
@@ -290,7 +330,7 @@ export function useMultiplayerGame({
 
     setRoundIndex(nextRoundIndex);
     setTargetColor(null);
-    setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
+    setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
 
     if (isSequenceMode) {
       setTargetColor(targetColors[nextRoundIndex] || null);
@@ -300,8 +340,10 @@ export function useMultiplayerGame({
 
     setPhase(GAME_PHASES.INTRO);
   }, [
+    cleanGameFamily,
     effectiveDifficulty,
     gameMode,
+    isEndlessMode,
     isDuelMode,
     isSequenceMode,
     roundCount,
@@ -322,12 +364,13 @@ export function useMultiplayerGame({
     const timeoutId = window.setTimeout(() => {
       setRoundIndex(serverRoundIndex);
       setTargetColor(null);
-      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode));
+      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
       setPhase(GAME_PHASES.INTRO);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
   }, [
+    cleanGameFamily,
     effectiveDifficulty,
     gameMode,
     incomingLeaderboard,
@@ -342,6 +385,8 @@ export function useMultiplayerGame({
   return {
     difficulty: effectiveDifficulty,
     gameMode,
+    gameFamily: cleanGameFamily,
+    isEndlessMode,
     isSequenceMode,
     isGradientMode,
     isDuelMode,

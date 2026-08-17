@@ -217,46 +217,44 @@ export function randomGradientTargetColor(random = Math.random) {
 
 export function withFlagHex(color) {
   const flag = getFlagOption(color?.flagId || DEFAULT_FLAG_ID);
-  const slotDefinitions = flag.slots?.length
-    ? flag.slots
-    : [{ id: "base", ...flag.background }];
-  const incomingSlots = Array.isArray(color?.slots) ? color.slots : [];
-  const requestedSlotId =
-    color?.activeSlotId ||
-    incomingSlots.find((slotColor) => slotDefinitions.some((slot) => slot.id === slotColor.id))?.id ||
-    slotDefinitions[0].id;
-
-  const cleanSlots = slotDefinitions.map((slotDefinition, index) => {
-    const incomingSlot = incomingSlots.find((slotColor) => slotColor.id === slotDefinition.id);
-    const shouldApplyDirectColor =
-      slotDefinition.id === requestedSlotId &&
-      [color?.h, color?.s, color?.v].some(Number.isFinite);
-
-    return withHex({
-      ...slotDefinition,
-      ...(incomingSlot || {}),
-      ...(shouldApplyDirectColor || (!incomingSlots.length && index === 0) ? color || {} : {}),
-      id: slotDefinition.id,
-    });
+  const cleanColor = withHex({
+    ...(flag?.paint || {}),
+    ...(color || {}),
   });
 
-  const activeSlot =
-    cleanSlots.find((slotColor) => slotColor.id === requestedSlotId) || cleanSlots[0];
-  const toneHex = averageManyRgbHex(cleanSlots.map((slotColor) => slotColor.hex));
+  if (!flag) {
+    return cleanColor;
+  }
 
   return {
     type: GAME_MODE_IDS.FLAG,
     flagId: flag.id,
     flagLabel: flag.label,
-    motif: flag.motif,
-    motifColor: flag.motifColor || "#ffffff",
-    activeSlotId: activeSlot.id,
-    slots: cleanSlots,
-    h: activeSlot.h,
-    s: activeSlot.s,
-    v: activeSlot.v,
-    hex: activeSlot.hex,
-    toneHex,
+    flagLabels: flag.labels,
+    paintLabel: flag.paintLabel,
+    originalScenePath: flag.originalScenePath,
+    baseScenePath: flag.baseScenePath,
+    scenePath: flag.scenePath,
+    imagePath: flag.imagePath,
+    maskPath: flag.maskPath,
+    assetPath: flag.assetPath || flag.imagePath,
+    paintBase: flag.paint,
+    layers: flag.layers,
+    activeSlotId: "main",
+    slots: [
+      {
+        id: "main",
+        h: cleanColor.h,
+        s: cleanColor.s,
+        v: cleanColor.v,
+        hex: cleanColor.hex,
+      },
+    ],
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: cleanColor.hex,
   };
 }
 
@@ -265,56 +263,29 @@ export function withFlagDifficultyHex(guessColor, targetColor, difficulty) {
     return withFlagHex(guessColor);
   }
 
-  const flag = getFlagOption(targetColor.flagId || guessColor?.flagId || DEFAULT_FLAG_ID);
-  const targetSlots = Array.isArray(targetColor.slots) && targetColor.slots.length
-    ? targetColor.slots
-    : flag.slots || [{ id: "base", ...flag.background }];
-  const guessSlots = Array.isArray(guessColor?.slots) ? guessColor.slots : [];
-  const activeSlotId =
-    guessColor?.activeSlotId || targetColor.activeSlotId || targetSlots[0]?.id;
-  const slots = targetSlots.map((targetSlot) => {
-    const guessSlot =
-      guessSlots.find((slotColor) => slotColor?.id === targetSlot.id) || {};
-    const mergedGuess =
-      targetSlot.id === activeSlotId
-        ? {
-            ...guessSlot,
-            h: Number.isFinite(guessColor?.h) ? guessColor.h : guessSlot.h,
-            s: Number.isFinite(guessColor?.s) ? guessColor.s : guessSlot.s,
-            v: Number.isFinite(guessColor?.v) ? guessColor.v : guessSlot.v,
-          }
-        : guessSlot;
-
-    return {
-      id: targetSlot.id,
-      h: channelValue({
-        difficulty,
-        channel: "h",
-        targetValue: targetSlot.h,
-        guessValue: mergedGuess.h,
-        fallbackValue: targetSlot.h ?? 0,
-      }),
-      s: channelValue({
-        difficulty,
-        channel: "s",
-        targetValue: targetSlot.s,
-        guessValue: mergedGuess.s,
-        fallbackValue: targetSlot.s ?? 82,
-      }),
-      v: channelValue({
-        difficulty,
-        channel: "v",
-        targetValue: targetSlot.v,
-        guessValue: mergedGuess.v,
-        fallbackValue: targetSlot.v ?? 78,
-      }),
-    };
-  });
-
   return withFlagHex({
     flagId: targetColor.flagId,
-    activeSlotId,
-    slots,
+    h: channelValue({
+      difficulty,
+      channel: "h",
+      targetValue: targetColor.h,
+      guessValue: guessColor?.h,
+      fallbackValue: 210,
+    }),
+    s: channelValue({
+      difficulty,
+      channel: "s",
+      targetValue: targetColor.s,
+      guessValue: guessColor?.s,
+      fallbackValue: 50,
+    }),
+    v: channelValue({
+      difficulty,
+      channel: "v",
+      targetValue: targetColor.v,
+      guessValue: guessColor?.v,
+      fallbackValue: 78,
+    }),
   });
 }
 
@@ -345,6 +316,7 @@ export function withCartoonHex(color) {
     type: GAME_MODE_IDS.CARTOON,
     cartoonId: cartoon.id,
     cartoonLabel: cartoon.label,
+    cartoonLabels: cartoon.labels,
     cartoonSeries: cartoon.series,
     paintLabel: cartoon.paintLabel,
     originalScenePath: cartoon.originalScenePath,
@@ -437,31 +409,6 @@ export function createDefaultCartoonGuess(
   return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
 }
 
-const FLAG_GUESS_START_HUES = [210, 22, 132, 286, 48, 342, 172];
-
-function createRandomFlagGuessSlot(slotColor, index, random, difficulty) {
-  const hueBase = FLAG_GUESS_START_HUES[index % FLAG_GUESS_START_HUES.length];
-
-  return {
-    id: slotColor.id,
-    h: (hueBase + Math.floor(random() * 44) - 22 + 360) % 360,
-    s: channelValue({
-      difficulty,
-      channel: "s",
-      targetValue: slotColor.s,
-      guessValue: Math.floor(48 + random() * 42),
-      fallbackValue: 82,
-    }),
-    v: channelValue({
-      difficulty,
-      channel: "v",
-      targetValue: slotColor.v,
-      guessValue: Math.floor(50 + random() * 40),
-      fallbackValue: 78,
-    }),
-  };
-}
-
 export function createDefaultFlagGuess(
   targetOrFlagId = DEFAULT_FLAG_ID,
   difficultyOrRandom,
@@ -469,22 +416,16 @@ export function createDefaultFlagGuess(
 ) {
   const targetColor =
     targetOrFlagId && typeof targetOrFlagId === "object" ? targetOrFlagId : null;
-  const flagId = targetColor?.flagId || targetOrFlagId || DEFAULT_FLAG_ID;
-  const flag = getFlagOption(flagId);
-  const targetSlots = Array.isArray(targetColor?.slots)
-    ? targetColor.slots
-    : flag.slots || [{ id: "base", ...flag.background }];
   const difficulty =
     typeof difficultyOrRandom === "function" ? undefined : difficultyOrRandom;
   const randomFn =
     typeof difficultyOrRandom === "function" ? difficultyOrRandom : random;
 
   return withFlagDifficultyHex({
-    flagId,
-    activeSlotId: targetColor?.activeSlotId || targetSlots[0]?.id,
-    slots: targetSlots.map((slotColor, index) =>
-      createRandomFlagGuessSlot(slotColor, index, randomFn, difficulty),
-    ),
+    flagId: targetColor?.flagId || targetOrFlagId || DEFAULT_FLAG_ID,
+    h: Math.floor(randomFn() * 360),
+    s: Math.floor(48 + randomFn() * 42),
+    v: Math.floor(50 + randomFn() * 40),
   }, targetColor, difficulty);
 }
 
@@ -600,6 +541,35 @@ export function relativeLuminance(hex) {
 
 export function readableTone(hex) {
   return relativeLuminance(hex) > 0.42 ? "dark" : "light";
+}
+
+export function readableOverlayTone(hex) {
+  return relativeLuminance(hex) > 0.58 ? "dark" : "light";
+}
+
+export function pickLocalizedLabel(labels, locale, fallback = "") {
+  if (!labels || typeof labels !== "object") return fallback;
+
+  if (locale === "tr" && labels.tr) return labels.tr;
+  if (labels.en) return labels.en;
+
+  return Object.values(labels).find(Boolean) || fallback;
+}
+
+export function getVisualLabel(color, locale = "en") {
+  if (isFlagColor(color)) {
+    return pickLocalizedLabel(color.flagLabels, locale, color.flagLabel || "");
+  }
+
+  if (isCartoonColor(color)) {
+    return pickLocalizedLabel(
+      color.cartoonLabels,
+      locale,
+      color.cartoonLabel || "",
+    );
+  }
+
+  return "";
 }
 
 export function hueGradient() {

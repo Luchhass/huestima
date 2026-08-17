@@ -10,7 +10,6 @@ import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
 
-const EXAMPLE_ID = "adventure-time-lady-rainicorn";
 const CLASSIC_CUTOUT_SRC = "/adventure-time-lady-rainicorn.png";
 const DEMO_SATURATION = 50;
 const DEMO_VALUE = 98;
@@ -226,9 +225,7 @@ export default function HowItWorksPage() {
   const [flatHue, setFlatHue] = useState(145);
   const [deltaHue, setDeltaHue] = useState(145);
   const example = useMemo(
-    () =>
-      CARTOON_OPTIONS.find((item) => item.id === EXAMPLE_ID) ||
-      CARTOON_OPTIONS[0],
+    () => CARTOON_OPTIONS[0],
     [],
   );
   const currentStep = STEPS[activeStep];

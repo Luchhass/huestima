@@ -758,6 +758,61 @@ export function playDifficultySelect(difficultyId = "normal", index = 1) {
   }
 }
 
+export function playHintReveal() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("hint-reveal", 220)) return;
+
+  scheduleNoise(context, {
+    duration: 0.07,
+    gain: 0.028,
+    filterFrequency: 1450,
+    filterType: "bandpass",
+    q: 5.2,
+  });
+
+  scheduleTone(context, {
+    frequency: 246,
+    endFrequency: 412,
+    type: "triangle",
+    gain: 0.04,
+    duration: 0.24,
+    attack: 0.012,
+    pan: -0.08,
+  });
+
+  scheduleTone(context, {
+    frequency: 522,
+    endFrequency: 784,
+    type: "sine",
+    gain: 0.03,
+    duration: 0.28,
+    delay: 0.035,
+    attack: 0.016,
+    pan: 0.05,
+  });
+
+  scheduleTone(context, {
+    frequency: 940,
+    endFrequency: 1310,
+    type: "triangle",
+    gain: 0.018,
+    duration: 0.22,
+    delay: 0.085,
+    attack: 0.01,
+    pan: 0.12,
+  });
+
+  scheduleNoise(context, {
+    duration: 0.035,
+    gain: 0.014,
+    delay: 0.12,
+    filterFrequency: 4200,
+    filterType: "highpass",
+    q: 3,
+    pan: 0.1,
+  });
+}
+
 export function playGameModeSelect(gameModeId = "normal", index = 0) {
   const context = getPlayableContext();
   if (!context || !allowSound(`game-mode-select-${gameModeId}`, 105)) return;
@@ -1138,6 +1193,42 @@ export function playSliderRatchet(position = 0.5) {
     duration: 0.042,
     delay: 0.004,
     attack: 0.004,
+  });
+}
+
+export function playLevelCountStep(index = 0, total = 5) {
+  const context = getPlayableContext();
+  if (!context || !allowSound("level-count-step", 34)) return;
+
+  const normalized = total > 1 ? clamp01(index / (total - 1)) : 0;
+  const accent = index === total - 1 ? 1.16 : index === 0 ? 1.08 : 1;
+  const pitch = 188 + normalized * 58;
+
+  scheduleNoise(context, {
+    duration: 0.01,
+    gain: 0.0085 * accent,
+    filterFrequency: 1800 + normalized * 1200,
+    filterType: "bandpass",
+    q: 8,
+  });
+
+  scheduleTone(context, {
+    frequency: pitch,
+    endFrequency: pitch * 0.92,
+    type: "triangle",
+    gain: 0.018 * accent,
+    duration: 0.04,
+    attack: 0.002,
+  });
+
+  scheduleTone(context, {
+    frequency: pitch * 2.22,
+    endFrequency: pitch * 1.88,
+    type: "square",
+    gain: 0.0068 * accent,
+    duration: 0.022,
+    delay: 0.003,
+    attack: 0.001,
   });
 }
 

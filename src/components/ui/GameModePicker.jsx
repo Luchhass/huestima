@@ -105,12 +105,17 @@ export default function GameModePicker({
     options.findIndex((option) => option.id === value),
     0,
   );
+  const optionCount = options.length;
   const selectedOption = options[selectedIndex] || options[0];
   const SelectedIcon = GAME_MODE_ICONS[selectedOption?.id] || Eye;
+  const usesFamilyAsOnlyMode =
+    optionCount === 1 &&
+    (selectedOption?.id === "flag" || selectedOption?.id === "cartoon");
   const selectedLabel = selectedOption
-    ? t(`gameMode.${selectedOption.id}`)
+    ? usesFamilyAsOnlyMode
+      ? t("gameMode.normal")
+      : t(`gameMode.${selectedOption.id}`)
     : t("gameMode.label");
-  const optionCount = options.length;
   const panelHeight = itemHeight + PANEL_EXTRA_HEIGHT;
 
   const commitMode = useCallback(

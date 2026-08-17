@@ -1,12 +1,14 @@
 "use client";
 
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
+import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
+  getVisualLabel,
   gradientBackground,
   isCartoonColor,
   isFlagColor,
-  readableTone,
+  readableOverlayTone,
 } from "@/lib/color";
 import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
@@ -21,21 +23,16 @@ export default function GameCardShell({
   heightMode = "normal",
   ...props
 }) {
+  const { locale } = useTranslation();
   const cardHeight = useResponsiveCardHeight(isExpanded, heightMode);
   const isFlagCard = isFlagColor(color);
   const isCartoonCard = isCartoonColor(color);
   const background = color ? gradientBackground(color) : null;
-  const tone = color ? readableTone(colorToneHex(color)) : "dark";
-  const foreground = isCartoonCard
-    ? "#fffaf3"
-    : tone === "dark"
-      ? "#171413"
-      : "#fffaf3";
-  const muted = isCartoonCard
-    ? "rgba(255,250,243,0.78)"
-    : tone === "dark"
-      ? "rgba(23,20,19,0.64)"
-      : "rgba(255,250,243,0.72)";
+  const tone = color ? readableOverlayTone(colorToneHex(color)) : "dark";
+  const foreground = tone === "dark" ? "#171413" : "#fffaf3";
+  const muted =
+    tone === "dark" ? "rgba(23,20,19,0.74)" : "rgba(255,250,243,0.8)";
+  const visualLabel = getVisualLabel(color, locale);
   const cardStyle = {
     background: background || undefined,
     color: color ? foreground : "#ffffff",
@@ -56,14 +53,14 @@ export default function GameCardShell({
       {isCartoonCard && (
         <CartoonOverlay color={color} {...cartoonOverlayProps} />
       )}
-      {isFlagCard && color.flagLabel && (
-        <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold lowercase text-current/78 sm:bottom-8 sm:left-8">
-          {color.flagLabel}
+      {isFlagCard && visualLabel && (
+        <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold text-current/78 sm:bottom-8 sm:left-8">
+          {visualLabel}
         </span>
       )}
-      {isCartoonCard && color.cartoonLabel && (
-        <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold lowercase text-current/78 sm:bottom-8 sm:left-8">
-          {color.cartoonLabel}
+      {isCartoonCard && visualLabel && (
+        <span className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold text-current/78 sm:bottom-8 sm:left-8">
+          {visualLabel}
         </span>
       )}
       {children}

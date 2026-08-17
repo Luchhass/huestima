@@ -7,6 +7,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import {
   colorToneHex,
+  getVisualLabel,
   gradientBackground,
   isCartoonColor,
   isFlagColor,
@@ -31,17 +32,17 @@ function tileGradient(result) {
   return gradientBackground(result.guess);
 }
 
-function colorTitleLabel(color) {
+function colorTitleLabel(color, locale) {
   if (color?.left && color?.right) {
     return `${color.left.hex} / ${color.right.hex}`;
   }
 
   if (isFlagColor(color)) {
-    return color.hex;
+    return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
   if (isCartoonColor(color)) {
-    return `${color.cartoonLabel || "Cartoon"} ${color.hex}`;
+    return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
   return color?.hex || "";
@@ -67,7 +68,7 @@ export default function LeaderboardCard({
   isLeavingHome = false,
   error = "",
 }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
@@ -192,8 +193,8 @@ export default function LeaderboardCard({
                     style={{ background: gradientBackground(result.target) }}
                     title={t("room.roundTitle", {
                       round: result.round,
-                      target: colorTitleLabel(result.target),
-                      guess: colorTitleLabel(result.guess),
+                      target: colorTitleLabel(result.target, locale),
+                      guess: colorTitleLabel(result.guess, locale),
                     })}
                   >
                     <span

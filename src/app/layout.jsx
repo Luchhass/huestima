@@ -4,14 +4,10 @@ import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
 import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
+import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
 import StructuredData from "@/components/seo/StructuredData";
 import { AdminModeProvider } from "@/hooks/useAdminMode";
-import {
-  APP_NAME,
-  FULLSCREEN_STORAGE_KEY,
-  LANGUAGE_STORAGE_KEY,
-  THEME_STORAGE_KEY,
-} from "@/lib/constants";
+import { APP_NAME } from "@/lib/constants";
 import {
   ROUTE_SEO,
   SEO_KEYWORDS,
@@ -140,41 +136,6 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }) {
-  const themeScript = `
-    (() => {
-      try {
-        const key = "${THEME_STORAGE_KEY}";
-        const stored = window.localStorage.getItem(key);
-        const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        const theme = stored === "light" || stored === "dark" ? stored : preferred;
-        document.documentElement.classList.toggle("dark", theme === "dark");
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
-        const language = window.localStorage.getItem("${LANGUAGE_STORAGE_KEY}") === "tr" ? "tr" : "en";
-        document.documentElement.lang = language;
-        document.documentElement.dataset.locale = language;
-        const fullscreen = window.localStorage.getItem("${FULLSCREEN_STORAGE_KEY}");
-        document.documentElement.dataset.fullscreenMode = fullscreen === "on" || fullscreen === "true" ? "on" : "off";
-        const pathSegments = window.location.pathname.split("/").filter(Boolean);
-        const isGameFamilyPath = ["color", "flag", "cartoon"].includes(pathSegments[0]);
-        const isStaticUtilityPath = ["how-it-works", "test", "icon.svg", "manifest.webmanifest", "robots.txt", "sitemap.xml"].includes(pathSegments[0]);
-        const isInviteRoomPath = pathSegments.length === 2 && isGameFamilyPath && /^\\d{6}$/.test(pathSegments[1]);
-        const shouldPlayIntro =
-          window.location.pathname === "/" ||
-          (pathSegments.length === 1 && isGameFamilyPath) ||
-          isInviteRoomPath;
-        if (shouldPlayIntro) {
-          document.documentElement.dataset.pageIntroPending = "true";
-          window.setTimeout(() => {
-            if (document.documentElement.dataset.pageIntroPending === "true") {
-              delete document.documentElement.dataset.pageIntroPending;
-            }
-          }, 8200);
-        }
-      } catch (error) {}
-    })();
-  `;
-
   return (
     <html
       lang="en"
@@ -182,7 +143,7 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeBootstrap />
       </head>
       <body
         suppressHydrationWarning

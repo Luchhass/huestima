@@ -203,7 +203,7 @@ export const DICTIONARIES = {
       },
       multiCopy: {
         normal: "Everyone sees the same five-second colors. Closest guesses climb the room.",
-        endless: "Endless is a singleplayer-only mode.",
+        endless: "Classic rounds keep going without a fixed finish line. Keep matching as long as the room survives.",
         flash: "Everyone gets the same one-second flashes. Fast eyes win.",
         sequence: "Everyone studies the same color sequence, then rebuilds it in order.",
         timed: "Everyone gets three seconds to memorize and three seconds to choose.",
@@ -521,7 +521,7 @@ export const DICTIONARIES = {
       },
       multiCopy: {
         normal: "Herkes aynı beş saniyelik renkleri görür. En yakın tahminler lobide yükselir.",
-        endless: "Sonsuz sadece singleplayer modudur.",
+        endless: "Klasik turlar sabit bir final olmadan devam eder. Oda sürdükçe eşleştirmeye devam et.",
         flash: "Herkes aynı bir saniyelik parlamaları görür. Hızlı göz kazanır.",
         sequence: "Herkes aynı renk dizisini çalışır, sonra sırayla yeniden kurar.",
         timed: "Herkes üç saniye ezberler ve üç saniyede seçimini yapar.",

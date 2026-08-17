@@ -13,20 +13,12 @@ export function getInitialHintCount(roundCountValue) {
   return 0;
 }
 
-export function normalizeHintsEnabled(value, fallback = true) {
-  if (value === false || value === "off" || value === "false" || value === "0") {
-    return false;
-  }
-
-  if (value === true || value === "on" || value === "true" || value === "1") {
-    return true;
-  }
-
-  return fallback;
+export function normalizeHintsEnabled() {
+  return true;
 }
 
-export function serializeHintsEnabled(enabled) {
-  return enabled ? "on" : "off";
+export function serializeHintsEnabled() {
+  return "on";
 }
 
 export function earnsHint(score) {

@@ -102,6 +102,7 @@ export default function ColorSlider({
     <div className={isHorizontal ? "flex w-full flex-col gap-2" : "flex h-full w-full flex-col items-center gap-3"}>
       <div
         ref={trackRef}
+        data-hint-reveal-track
         role="slider"
         aria-orientation={isHorizontal ? "horizontal" : "vertical"}
         tabIndex={0}
@@ -122,10 +123,12 @@ export default function ColorSlider({
       >
         {showHint && hintPercentage !== null && (
           <span
+            data-hint-reveal-overlay
             className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
             aria-hidden="true"
           >
             <span
+              data-hint-cutout
               className={`absolute rounded-full shadow-[0_0_0_9999px_rgba(0,0,0,0.76)] ${
                 isHorizontal
                   ? "top-1/2 h-10 w-28 -translate-x-1/2 -translate-y-1/2"

@@ -14,6 +14,7 @@ export default async function FlagSingleplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      gameFamily="flag"
     />
   );
 }

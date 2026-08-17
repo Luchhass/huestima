@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import { isCartoonColor } from "@/lib/color";
 import CartoonCanvas from "./CartoonCanvas";
 
@@ -37,6 +38,7 @@ export default function CartoonOverlay({
   useCanvas = true,
 }) {
   const isSceneImage = Boolean(color?.scenePath);
+  const [isSurfaceReady, setIsSurfaceReady] = useState(false);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
   const originalScenePath = color?.originalScenePath;
   const baseScenePath = color?.baseScenePath || color?.scenePath;
@@ -89,17 +91,7 @@ export default function CartoonOverlay({
             fill
             sizes="(max-width: 640px) 100vw, 500px"
             unoptimized
-            priority={useCanvas && variant !== "tile"}
-            className="object-cover"
-          />
-          <span
-            className="absolute inset-0"
-            style={{
-              ...maskStyle,
-              backgroundColor: color.hex,
-              mixBlendMode: "color",
-              opacity: 1,
-            }}
+            className={`object-cover ${isSurfaceReady ? "invisible" : "visible"}`}
           />
           {useCanvas && originalScenePath && baseScenePath && (
             <CartoonCanvas
@@ -115,6 +107,7 @@ export default function CartoonOverlay({
                 ]
               }
               color={color}
+              onReady={() => setIsSurfaceReady(true)}
             />
           )}
           <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />

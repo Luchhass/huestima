@@ -1,6 +1,7 @@
 "use client";
 
 const imageCache = new Map();
+const resolvedImageCache = new Map();
 
 function unique(values) {
   return Array.from(new Set(values.filter(Boolean)));
@@ -43,17 +44,23 @@ export function loadCartoonImage(src) {
         // Some browsers reject decode for already decoded/cached images.
       }
 
+      resolvedImageCache.set(src, image);
       resolve(image);
     };
     image.onerror = () => reject(new Error(`Could not load cartoon image: ${src}`));
     image.src = src;
   }).catch((error) => {
     imageCache.delete(src);
+    resolvedImageCache.delete(src);
     throw error;
   });
 
   imageCache.set(src, promise);
   return promise;
+}
+
+export function getCachedCartoonImage(src) {
+  return resolvedImageCache.get(src) || null;
 }
 
 export async function preloadCartoonAssets(cartoons, options = {}) {

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build:cartoons": "node scripts/build-cartoon-scenes.mjs",
+    "build:flags": "node scripts/build-flag-scenes.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

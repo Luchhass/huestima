@@ -2,6 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
+import {
+  isCartoonFamily,
+  isFlagFamily,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameChrome } from "@/hooks/useGameChrome";
@@ -75,6 +80,7 @@ export default function MultiplayerGame({
   playerId,
   difficultyId,
   gameModeId,
+  gameFamily = "color",
   gamePayload,
   room,
   leaderboard,
@@ -83,6 +89,7 @@ export default function MultiplayerGame({
   isReturningLobby,
   error = "",
 }) {
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
   const { t } = useTranslation();
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
@@ -91,6 +98,7 @@ export default function MultiplayerGame({
     playerId,
     difficultyId,
     gameModeId,
+    gameFamily: cleanGameFamily,
     gamePayload,
     room,
     incomingLeaderboard: leaderboard,
@@ -109,13 +117,13 @@ export default function MultiplayerGame({
     phase === GAME_PHASES.GUESS ||
     phase === GAME_PHASES.RESULT ||
     phase === "waiting";
-  const isFlagMode = game.gameMode.id === GAME_MODE_IDS.FLAG;
-  const isCartoonMode = game.gameMode.id === GAME_MODE_IDS.CARTOON;
-  const cartoonPreloadTargets = useMemo(() => {
-    if (!isCartoonMode) return [];
+  const isFlagMode = isFlagFamily(cleanGameFamily);
+  const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const visualPreloadTargets = useMemo(() => {
+    if (!isFlagMode && !isCartoonMode) return [];
     if (game.targetColors.length) return game.targetColors;
     return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isCartoonMode]);
+  }, [game.targetColor, game.targetColors, isCartoonMode, isFlagMode]);
   const [renderedPhase, setRenderedPhase] = useState(game.phase);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
@@ -124,9 +132,11 @@ export default function MultiplayerGame({
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.RESULT;
+  const isResultToIntroTransition =
+    renderedPhase === GAME_PHASES.RESULT && game.phase === GAME_PHASES.INTRO;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isCartoonMode, cartoonPreloadTargets);
+  useCartoonAssetPreload(isFlagMode || isCartoonMode, visualPreloadTargets);
   useFlagFullscreenLock(isFlagMode || isCartoonMode);
   useMusicScene(
     renderedPhase === GAME_PHASES.INTRO ? "silent" : MUSIC_SCENES.GAME,
@@ -251,27 +261,6 @@ export default function MultiplayerGame({
         } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
         }`}
-        flagOverlayProps={
-          isFlagMode && isRenderedShowcaseGuessPhase
-            ? {
-                isInteractive: true,
-                activeSlotId: game.guessColor.activeSlotId,
-                onSlotSelect: (slotId) => {
-                  const selectedSlot = game.guessColor.slots?.find(
-                    (slotColor) => slotColor.id === slotId,
-                  );
-
-                  game.updateGuess({
-                    ...game.guessColor,
-                    activeSlotId: slotId,
-                    h: selectedSlot?.h ?? game.guessColor.h,
-                    s: selectedSlot?.s ?? game.guessColor.s,
-                    v: selectedSlot?.v ?? game.guessColor.v,
-                  });
-                },
-              }
-            : undefined
-        }
         cartoonOverlayProps={
           isCartoonMode
             ? {
@@ -379,6 +368,13 @@ export default function MultiplayerGame({
             <p className="absolute bottom-4 left-6 right-6 z-30 rounded-full bg-black/70 px-4 py-2 text-center text-xs font-semibold text-red-200">
               {game.error}
             </p>
+          )}
+
+          {isResultToIntroTransition && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-70 rounded-[inherit] bg-black"
+            />
           )}
         </div>
       </GameCardShell>

@@ -1,16 +1,17 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ArrowRight, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
+  getVisualLabel,
   gradientBackground,
   isCartoonColor,
   isFlagColor,
   isGradientColor,
-  readableTone,
+  readableOverlayTone,
 } from "@/lib/color";
 import { getResultLineKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
@@ -33,7 +34,7 @@ function getScoreCountDuration(score) {
 }
 
 function swatchToneClasses(hex) {
-  return readableTone(hex) === "dark" ? "text-zinc-950" : "text-white";
+  return readableOverlayTone(hex) === "dark" ? "text-zinc-950" : "text-white";
 }
 
 function formatHsb(color) {
@@ -88,13 +89,6 @@ function setIfTarget(target, vars) {
   }
 }
 
-function visualResultLabel(color) {
-  if (isCartoonColor(color)) return color.cartoonLabel || "";
-  if (isFlagColor(color)) return color.flagLabel || "";
-
-  return "";
-}
-
 export default function ResultPhase({
   result,
   hasNextRound,
@@ -104,8 +98,10 @@ export default function ResultPhase({
   roundLabel = result ? `${result.round}/5` : "",
   visualIntroDelayMs = 0,
 }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
+  const continueFadeRef = useRef(null);
+  const isContinuingRef = useRef(false);
 
   const roundRef = useRef(null);
   const scoreRef = useRef(null);
@@ -128,6 +124,33 @@ export default function ResultPhase({
   const guessSectionRef = useRef(null);
   const targetSectionRef = useRef(null);
   const splitOverlayRef = useRef(null);
+
+  const handleContinueClick = useCallback(() => {
+    if (isContinuingRef.current) return;
+
+    if (!hasNextRound || !continueFadeRef.current) {
+      onContinue();
+      return;
+    }
+
+    isContinuingRef.current = true;
+
+    gsap.killTweensOf(continueFadeRef.current);
+    gsap.set(continueFadeRef.current, {
+      autoAlpha: 0,
+      backgroundColor: "#000000",
+      pointerEvents: "auto",
+    });
+
+    gsap.to(continueFadeRef.current, {
+      autoAlpha: 1,
+      duration: 0.26,
+      ease: "power2.out",
+      onComplete: () => {
+        onContinue();
+      },
+    });
+  }, [hasNextRound, onContinue]);
 
   useLayoutEffect(() => {
     if (!result) return undefined;
@@ -693,7 +716,7 @@ export default function ResultPhase({
     isFlagColor(result.target) ||
     isCartoonGuessResult ||
     isCartoonTargetResult;
-  const splitOverlayLabel = visualResultLabel(result.guess);
+  const splitOverlayLabel = getVisualLabel(result.guess, locale);
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
 
   return (
@@ -701,6 +724,12 @@ export default function ResultPhase({
       ref={scopeRef}
       className="relative grid h-full grid-rows-2 overflow-hidden"
     >
+      <div
+        ref={continueFadeRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-60 rounded-[inherit] bg-black opacity-0"
+      />
+
       {isVisualResult && (
         <section
           ref={splitOverlayRef}
@@ -861,7 +890,7 @@ export default function ResultPhase({
           aria-label={
             hasNextRound ? t("game.goNextRound") : t("game.showFinalScore")
           }
-          onClick={onContinue}
+          onClick={handleContinueClick}
           className="soft-icon-button result-action-button result-next-button card-action-size group absolute right-6 bottom-6 z-30 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
         >
           <span

@@ -9,7 +9,6 @@ import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 import {
-  getGameFamilyByMode,
   getGameFamilyHref,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -174,7 +173,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     setError("");
 
     try {
-      await copyInviteLink(roomCode, room?.gameMode ? getGameFamilyByMode(room.gameMode) : cleanGameFamily);
+      await copyInviteLink(roomCode, cleanGameFamily);
       return true;
     } catch {
       setError(t("room.couldNotCopy"));
@@ -233,6 +232,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     const response = await updateSettings({
       playerId: player.playerId,
       gameMode,
+      gameFamily: cleanGameFamily,
       difficulty: GAME_MODE_LOCKED_DIFFICULTIES[gameMode],
     });
 
@@ -270,24 +270,6 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     const response = await updateSettings({
       playerId: player.playerId,
       roundCount,
-    });
-
-    setIsUpdatingSettings(false);
-
-    if (!response.ok) {
-      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
-    }
-  };
-
-  const handleUpdateHintsEnabled = async (hintsEnabled) => {
-    if (!player) return;
-
-    setIsUpdatingSettings(true);
-    setError("");
-
-    const response = await updateSettings({
-      playerId: player.playerId,
-      hintsEnabled,
     });
 
     setIsUpdatingSettings(false);
@@ -347,9 +329,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     }
 
     router.push(
-      getGameFamilyHref(
-        room?.gameMode ? getGameFamilyByMode(room.gameMode) : cleanGameFamily,
-      ),
+      getGameFamilyHref(cleanGameFamily),
     );
   };
 
@@ -427,6 +407,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
         playerId={player.playerId}
         difficultyId={room.difficulty}
         gameModeId={room.gameMode}
+        gameFamily={cleanGameFamily}
         gamePayload={activeGame}
         room={room}
         leaderboard={leaderboard}
@@ -484,13 +465,13 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
         <LobbyCard
           room={room}
           currentPlayerId={player.playerId}
+          gameFamily={cleanGameFamily}
           onCopyInvite={handleCopyInvite}
           onStartGame={handleStartGame}
           onKickPlayer={handleKickPlayer}
           onGameModeChange={handleUpdateGameMode}
           onDifficultyChange={handleUpdateDifficulty}
           onRoundCountChange={handleUpdateRoundCount}
-          onHintsEnabledChange={handleUpdateHintsEnabled}
           onBackHome={handleBackHome}
           isStarting={isStarting}
           canStartGame={canStartGame}

@@ -84,7 +84,6 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
   const [difficulty, setDifficulty] = useState(defaultDifficulty);
   const [gameMode, setGameMode] = useState(defaultGameMode);
   const [roundCount, setRoundCount] = useState(DEFAULT_ROUND_COUNT);
-  const [hintsEnabled, setHintsEnabled] = useState(true);
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
@@ -345,12 +344,11 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
               gameModeOptions={singleplayerGameModeOptions}
               playPath={getGameFamilyHref(cleanGameFamily, "singleplayer")}
               roundCount={roundCount}
-              hintsEnabled={hintsEnabled}
+              hintsEnabled
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
               onRoundCountChange={setRoundCount}
-              onHintsEnabledChange={setHintsEnabled}
             />
           ) : (
             <MultiplayerCard

@@ -13,6 +13,7 @@ import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
 import { isCartoonColor, isFlagColor, isGradientColor } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
+import { playHintReveal } from "@/lib/sound";
 import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
@@ -97,6 +98,13 @@ export default function GuessPhase({
   const timedGuessDurationMs =
     Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
   const isTimedGuess = timedGuessDurationMs > 0;
+  const hintLockedForRound = showHintButton && hintActive;
+  const hintButtonDisabled = !canUseHint;
+  const hintButtonLabel = canUseHint
+    ? t("game.useHint")
+    : hintLockedForRound
+      ? `${t("game.useHint")} • ${roundLabel}`
+      : t("game.hintUnavailable");
 
   const handleTimedSubmit = useCallback(() => {
     if (timedSubmitRef.current) return;
@@ -119,6 +127,13 @@ export default function GuessPhase({
 
     onGuessChange(targetColor);
   }, [isAdminModeEnabled, onGuessChange, targetColor]);
+
+  const handleUseHintClick = useCallback(() => {
+    if (!canUseHint) return;
+
+    playHintReveal();
+    onUseHint?.();
+  }, [canUseHint, onUseHint]);
 
   const { centiseconds } = useCountdown({
     durationMs: timedGuessDurationMs,
@@ -647,6 +662,83 @@ export default function GuessPhase({
     usesShowcaseGuessLayout,
   ]);
 
+  useLayoutEffect(() => {
+    if (!hintActive) return undefined;
+
+    const ctx = gsap.context(() => {
+      const tracks = gsap.utils.toArray("[data-hint-reveal-track]");
+      const overlays = gsap.utils.toArray("[data-hint-reveal-overlay]");
+      const cutouts = gsap.utils.toArray("[data-hint-cutout]");
+
+      if (!tracks.length) return;
+
+      gsap.killTweensOf([...tracks, ...overlays, ...cutouts]);
+
+      gsap.fromTo(
+        tracks,
+        {
+          boxShadow:
+            "inset 0 0 0 1px rgba(0,0,0,0.08), 0 14px 28px rgba(0,0,0,0.18)",
+          filter: "saturate(1) brightness(1)",
+        },
+        {
+          keyframes: [
+            {
+              boxShadow:
+                "inset 0 0 0 1px rgba(255,255,255,0.14), 0 0 0 1px rgba(255,255,255,0.18), 0 18px 40px rgba(0,0,0,0.26), 0 0 24px rgba(255,255,255,0.22)",
+              filter: "saturate(1.08) brightness(1.04)",
+              duration: 0.28,
+              ease: "power2.out",
+            },
+            {
+              boxShadow:
+                "inset 0 0 0 1px rgba(0,0,0,0.08), 0 14px 28px rgba(0,0,0,0.18)",
+              filter: "saturate(1) brightness(1)",
+              duration: 0.55,
+              ease: "power3.out",
+            },
+          ],
+          stagger: 0.04,
+          overwrite: "auto",
+        },
+      );
+
+      if (overlays.length) {
+        gsap.fromTo(
+          overlays,
+          { autoAlpha: 0.24 },
+          {
+            keyframes: [
+              { autoAlpha: 1, duration: 0.22, ease: "power2.out" },
+              { autoAlpha: 1, duration: 0.08, ease: "none" },
+              { autoAlpha: 1, duration: 0.28, ease: "power2.out" },
+            ],
+            stagger: 0.03,
+            overwrite: "auto",
+          },
+        );
+      }
+
+      if (cutouts.length) {
+        gsap.fromTo(
+          cutouts,
+          { scale: 0.72, autoAlpha: 0.2 },
+          {
+            keyframes: [
+              { scale: 1.04, autoAlpha: 1, duration: 0.24, ease: "expo.out" },
+              { scale: 1, autoAlpha: 1, duration: 0.28, ease: "power2.out" },
+            ],
+            transformOrigin: "center center",
+            stagger: 0.04,
+            overwrite: "auto",
+          },
+        );
+      }
+    }, scopeRef);
+
+    return () => ctx.revert();
+  }, [hintActive]);
+
   const renderFlagControls = (orientation) => {
     const isHorizontal = orientation === "horizontal";
     const controlCount = difficulty.controls.length;
@@ -822,27 +914,56 @@ export default function GuessPhase({
           <button
             ref={hintButtonRef}
             type="button"
-            aria-label={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
-            title={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
-            disabled={!canUseHint}
-            onClick={onUseHint}
-            className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none disabled:opacity-45 sm:right-[6.25rem] sm:bottom-8"
+            aria-label={hintButtonLabel}
+            title={hintButtonLabel}
+            disabled={hintButtonDisabled}
+            onClick={handleUseHintClick}
+            data-hint-state={hintLockedForRound ? "used" : hintButtonDisabled ? "empty" : "ready"}
+            className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none sm:right-[6.25rem] sm:bottom-8"
           >
             <span
               ref={hintButtonRingRef}
-              className="pointer-events-none absolute inset-0 rounded-full border border-current/30"
+              className={`pointer-events-none absolute inset-0 rounded-full border transition-opacity ${
+                hintLockedForRound
+                  ? "border-white/14 opacity-100"
+                  : hintButtonDisabled
+                    ? "border-white/18 opacity-55"
+                    : "border-current/30 opacity-100"
+              }`}
             />
             <span
               ref={hintButtonCoreRef}
-              className="absolute inset-0 rounded-full border-2 border-white bg-transparent text-white shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+              className={`absolute inset-0 rounded-full border-2 text-white transition-[border-color,background-color,box-shadow,opacity] ${
+                hintLockedForRound
+                  ? "border-white/22 bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
+                  : hintButtonDisabled
+                    ? "border-white/22 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
+                    : "border-white bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+              }`}
             />
             <span
               ref={hintIconRef}
-              className="relative z-10 grid place-items-center text-white"
+              className={`relative z-10 grid place-items-center transition-opacity ${
+                hintLockedForRound ? "text-white/62 opacity-88" : hintButtonDisabled ? "text-white/62 opacity-72" : "text-white"
+              }`}
             >
               <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
             </span>
-            <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
+            {hintLockedForRound && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-white/12"
+              />
+            )}
+            <span
+              className={`absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full text-[0.72rem] font-bold leading-none shadow-[0_6px_14px_rgba(0,0,0,0.24)] ${
+                hintLockedForRound
+                  ? "bg-white/92 text-zinc-950"
+                  : hintButtonDisabled
+                    ? "bg-white/86 text-zinc-950"
+                    : "bg-white text-zinc-950"
+              }`}
+            >
               {hintCount}
             </span>
           </button>
@@ -1035,11 +1156,12 @@ export default function GuessPhase({
         <button
           ref={hintButtonRef}
           type="button"
-          aria-label={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
-          title={canUseHint ? t("game.useHint") : t("game.hintUnavailable")}
-          disabled={!canUseHint}
-          onClick={onUseHint}
-          className="card-action-size absolute right-(--hint-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none disabled:opacity-45 sm:right-(--hint-right-sm) sm:bottom-8"
+          aria-label={hintButtonLabel}
+          title={hintButtonLabel}
+          disabled={hintButtonDisabled}
+          onClick={handleUseHintClick}
+          data-hint-state={hintLockedForRound ? "used" : hintButtonDisabled ? "empty" : "ready"}
+          className="card-action-size absolute right-(--hint-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none sm:right-(--hint-right-sm) sm:bottom-8"
           style={{
             "--hint-right": `${contentRight + 68}px`,
             "--hint-right-sm": `${contentRightSm + 74}px`,
@@ -1047,19 +1169,47 @@ export default function GuessPhase({
         >
           <span
             ref={hintButtonRingRef}
-            className="pointer-events-none absolute inset-0 rounded-full border border-current/30"
+            className={`pointer-events-none absolute inset-0 rounded-full border transition-opacity ${
+              hintLockedForRound
+                ? "border-white/14 opacity-100"
+                : hintButtonDisabled
+                  ? "border-white/18 opacity-55"
+                  : "border-current/30 opacity-100"
+            }`}
           />
           <span
             ref={hintButtonCoreRef}
-            className="absolute inset-0 rounded-full border-2 border-white bg-transparent text-white shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+            className={`absolute inset-0 rounded-full border-2 text-white transition-[border-color,background-color,box-shadow,opacity] ${
+              hintLockedForRound
+                ? "border-white/22 bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
+                : hintButtonDisabled
+                  ? "border-white/22 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
+                  : "border-white bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+            }`}
           />
           <span
             ref={hintIconRef}
-            className="relative z-10 grid place-items-center text-white"
+            className={`relative z-10 grid place-items-center transition-opacity ${
+              hintLockedForRound ? "text-white/62 opacity-88" : hintButtonDisabled ? "text-white/62 opacity-72" : "text-white"
+            }`}
           >
             <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
           </span>
-          <span className="absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full bg-white text-[0.72rem] font-bold leading-none text-zinc-950 shadow-[0_6px_14px_rgba(0,0,0,0.24)]">
+          {hintLockedForRound && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-white/12"
+            />
+          )}
+          <span
+            className={`absolute -right-1 -top-1 z-20 grid size-5 place-items-center rounded-full text-[0.72rem] font-bold leading-none shadow-[0_6px_14px_rgba(0,0,0,0.24)] ${
+              hintLockedForRound
+                ? "bg-white/92 text-zinc-950"
+                : hintButtonDisabled
+                  ? "bg-white/86 text-zinc-950"
+                  : "bg-white text-zinc-950"
+            }`}
+          >
             {hintCount}
           </span>
         </button>

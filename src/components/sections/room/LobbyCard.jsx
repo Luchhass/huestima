@@ -9,7 +9,6 @@ import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
-import HintToggleButton from "@/components/ui/HintToggleButton";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import PushNotification from "@/components/ui/PushNotification";
 import {
@@ -18,9 +17,13 @@ import {
   GAME_MODE_IDS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
-import { getGameFamilyByMode } from "@/lib/gameFamily";
+import { FLAG_OPTIONS } from "@/lib/flags";
+import {
+  isCartoonFamily,
+  isFlagFamily,
+  normalizeGameFamily,
+} from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
-import { getInitialHintCount } from "@/lib/hints";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -41,13 +44,13 @@ const DIFFICULTY_BURST_LIFETIME_MS = 3900;
 export default function LobbyCard({
   room,
   currentPlayerId,
+  gameFamily = "color",
   onCopyInvite,
   onStartGame,
   onKickPlayer,
   onGameModeChange,
   onDifficultyChange,
   onRoundCountChange,
-  onHintsEnabledChange,
   onBackHome,
   isStarting,
   canStartGame = true,
@@ -56,6 +59,7 @@ export default function LobbyCard({
   isLeavingHome = false,
   error,
 }) {
+  const cleanGameFamily = normalizeGameFamily(gameFamily);
   const { t } = useTranslation();
   const [isInviteCopied, setIsInviteCopied] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -74,30 +78,27 @@ export default function LobbyCard({
       ?.lockedDifficultyId,
   );
   const players = room?.players || [];
-  const gameFamily = getGameFamilyByMode(room?.gameMode);
   const multiplayerGameModeOptions = useMemo(
     () =>
       getAvailableGameModeOptions(
         GAME_MODE_OPTIONS.filter((option) => !option.singleplayerOnly),
-        gameFamily,
+        cleanGameFamily,
       ),
-    [gameFamily],
+    [cleanGameFamily],
   );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
-  const hintsLocked = getInitialHintCount(room?.roundCount) <= 0;
 
   const activeActionError = error && error !== hiddenActionError ? error : "";
 
   useGameModeShock(scopeRef, room?.gameMode);
   useCartoonAssetPreload(
-    room?.gameMode === GAME_MODE_IDS.CARTOON,
-    undefined,
+    isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
+    isFlagFamily(cleanGameFamily) ? FLAG_OPTIONS : undefined,
     "scene",
   );
   useFlagFullscreenLock(
-    room?.gameMode === GAME_MODE_IDS.FLAG ||
-      room?.gameMode === GAME_MODE_IDS.CARTOON,
+    isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
   );
   useScreenReveal(scopeRef, [room?.code], {
     delay: EXPANDED_REVEAL_DELAY,
@@ -410,7 +411,7 @@ export default function LobbyCard({
               />
             </div>
 
-            <div className="order-3 min-w-0">
+            <div className="order-3 col-span-2 min-w-0">
               <GameModePicker
                 value={room?.gameMode}
                 onChange={handleGameModeChange}
@@ -420,17 +421,6 @@ export default function LobbyCard({
                   !isHost ||
                   isUpdatingSettings ||
                   room?.status !== "lobby"
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="order-4 min-w-0">
-              <HintToggleButton
-                enabled={room?.hintsEnabled !== false}
-                onToggle={onHintsEnabledChange}
-                disabled={
-                  hintsLocked || isUpdatingSettings || room?.status !== "lobby"
                 }
                 className="w-full"
               />
