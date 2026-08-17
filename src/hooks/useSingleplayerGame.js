@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
@@ -43,6 +43,12 @@ import {
   calculateColorMatchScore,
   getGradeLabel,
 } from "@/lib/scoring";
+import {
+  buildGameSessionKey,
+  clearGameSession,
+  getGameSession,
+  saveGameSession,
+} from "@/hooks/useGameSession";
 
 export const GAME_PHASES = {
   INTRO: "intro",
@@ -142,6 +148,28 @@ export function useSingleplayerGame(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
     [difficulty, lockedDifficultyId],
   );
+  const gameSessionKey = useMemo(
+    () =>
+      buildGameSessionKey("singleplayer", [
+        cleanGameFamily,
+        effectiveDifficulty.id,
+        gameMode.id,
+        roundCount,
+        hintsEnabled ? "hints-on" : "hints-off",
+      ]),
+    [
+      cleanGameFamily,
+      effectiveDifficulty.id,
+      gameMode.id,
+      hintsEnabled,
+      roundCount,
+    ],
+  );
+  const initialGameSession = useMemo(
+    () => getGameSession(gameSessionKey),
+    [gameSessionKey],
+  );
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
   const [roundIndex, setRoundIndex] = useState(0);
   const [targetColor, setTargetColor] = useState(null);
@@ -154,6 +182,67 @@ export function useSingleplayerGame(
     hintsEnabled ? getInitialHintCount(roundCount) : 0,
   );
   const [hintActive, setHintActive] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (initialGameSession) {
+        setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        setRoundIndex(Number(initialGameSession.roundIndex) || 0);
+        setTargetColor(initialGameSession.targetColor || null);
+        setTargetColors(initialGameSession.targetColors || []);
+        setGuessColor(
+          initialGameSession.guessColor ||
+            createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
+        );
+        setResults(initialGameSession.results || []);
+        setHintCount(
+          Number.isFinite(initialGameSession.hintCount)
+            ? initialGameSession.hintCount
+            : hintsEnabled
+              ? getInitialHintCount(roundCount)
+              : 0,
+        );
+        setHintActive(Boolean(initialGameSession.hintActive));
+      }
+
+      setHasRestoredSession(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    cleanGameFamily,
+    effectiveDifficulty,
+    gameMode,
+    hintsEnabled,
+    initialGameSession,
+    roundCount,
+  ]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return;
+
+    saveGameSession(gameSessionKey, {
+      phase,
+      roundIndex,
+      targetColor,
+      targetColors,
+      guessColor,
+      results,
+      hintCount,
+      hintActive,
+    });
+  }, [
+    gameSessionKey,
+    guessColor,
+    hasRestoredSession,
+    hintActive,
+    hintCount,
+    phase,
+    results,
+    roundIndex,
+    targetColor,
+    targetColors,
+  ]);
 
   const startRound = useCallback((nextRoundIndex) => {
     setRoundIndex(nextRoundIndex);
@@ -371,6 +460,7 @@ export function useSingleplayerGame(
   }, [results.length]);
 
   const playAgain = useCallback(() => {
+    clearGameSession(gameSessionKey);
     setResults([]);
     setRoundIndex(0);
     setTargetColor(null);
@@ -379,7 +469,14 @@ export function useSingleplayerGame(
     setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
     setHintActive(false);
     setPhase(GAME_PHASES.INTRO);
-  }, [cleanGameFamily, effectiveDifficulty, gameMode, hintsEnabled, roundCount]);
+  }, [
+    cleanGameFamily,
+    effectiveDifficulty,
+    gameMode,
+    gameSessionKey,
+    hintsEnabled,
+    roundCount,
+  ]);
 
   const summary = useMemo(() => {
     const totalScore = roundScore(results.reduce((sum, result) => sum + result.score, 0));

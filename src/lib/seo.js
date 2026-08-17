@@ -66,6 +66,12 @@ export const ROUTE_SEO = {
       "Play Huestima Cartoon, a cartoon scene color guessing game with adjustable character masks.",
     path: "/cartoon",
   },
+  brand: {
+    title: "Huestima Brand",
+    description:
+      "Coming soon: a brand logo memory game where you rebuild familiar logo colors from memory.",
+    path: "/brand",
+  },
   colorSingleplayer: {
     title: "Huestima Color Singleplayer",
     description:

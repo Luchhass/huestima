@@ -200,6 +200,8 @@ export default function SingleplayerGame({
             ? {
                 variant:
                   renderedPhase === GAME_PHASES.GUESS ? "guess" : "reference",
+                highlightPulse: renderedPhase === GAME_PHASES.GUESS,
+                pulseKey: game.roundIndex,
               }
             : undefined
         }

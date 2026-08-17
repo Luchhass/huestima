@@ -1,11 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
-import Link from "next/link";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
-import { useScreenReveal } from "@/hooks/useScreenReveal";
+import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
 import {
@@ -63,8 +63,10 @@ export default function FinalSummary({
   onPlayAgain,
   homeHref = "/",
 }) {
+  const router = useRouter();
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
+  const [isLeavingHome, setIsLeavingHome] = useState(false);
 
   useAppChromeHidden(true);
   useScreenReveal(scopeRef, [results.length], {
@@ -85,6 +87,14 @@ export default function FinalSummary({
   const assessmentWords = assessment.split(" ");
   const hasWrappedTiles = results.length > ROUND_COUNT;
   const hasFlagTiles = results.some((result) => isFlagColor(result.target));
+
+  const handleBackHome = async () => {
+    if (isLeavingHome) return;
+
+    setIsLeavingHome(true);
+    await playScreenFadeOut(scopeRef, { duration: 0.24 });
+    router.push(homeHref);
+  };
 
   useLayoutEffect(() => {
     resumeAudioIfAllowed();
@@ -340,16 +350,19 @@ export default function FinalSummary({
   return (
     <div
       ref={scopeRef}
-      className="final-summary relative flex h-full min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8"
+      className={`final-summary relative flex h-full min-h-0 flex-col overflow-hidden bg-black p-6 text-white transition-opacity duration-200 sm:p-8 ${
+        isLeavingHome ? "opacity-0" : "opacity-100"
+      }`}
     >
-      <Link
+      <button
         ref={closeRef}
-        href={homeHref}
+        type="button"
+        onClick={handleBackHome}
         aria-label={t("common.backHome")}
         className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
       >
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </Link>
+      </button>
 
       <div data-screen-reveal className="max-w-100 pr-10">
         <div>

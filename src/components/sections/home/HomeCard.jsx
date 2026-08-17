@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
+import ComingSoonCard from "./ComingSoonCard";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
@@ -96,6 +97,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
+  const isComingSoonFamily = cleanGameFamily === GAME_FAMILY_IDS.BRAND;
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
@@ -261,7 +263,9 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
-        className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8"
+        className={`home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8 ${
+          isComingSoonFamily ? "home-card--coming-soon" : ""
+        }`}
         style={cardStyle}
       >
         {difficultyBurst && (
@@ -300,42 +304,49 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
             />
           ) : view === "home" ? (
             <>
-              <button
-                type="button"
-                aria-hidden="true"
-                tabIndex={-1}
-                onPointerDown={handleAdminTriggerTap}
-                className="absolute right-0 bottom-0 z-30 size-16 cursor-default opacity-0 focus:outline-none sm:size-20"
-              />
-
-              <div data-screen-reveal className="home-copy max-w-[23.5rem]">
-                <h1
-                  className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]"
-                >
-                  {homeTitle}
-                </h1>
-
-                {homeParagraphs.map((paragraph, index) => (
-                  <p
-                    key={paragraph}
-                    className={`${
-                      index === 0 ? "mt-5" : "mt-4"
-                    } text-[0.95rem] font-medium leading-[1.22] text-white/82 sm:text-base`}
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-
-              <div
-                data-screen-reveal
-                className="home-actions mt-auto self-start"
-              >
-                <ModeSelector
-                  onSingleplayer={() => changeView("singleplayer")}
-                  onMultiplayer={() => changeView("multiplayer")}
+              {isComingSoonFamily ? (
+                <ComingSoonCard
+                  title={homeTitle}
+                  paragraphs={homeParagraphs}
                 />
-              </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    onPointerDown={handleAdminTriggerTap}
+                    className="absolute right-0 bottom-0 z-30 size-16 cursor-default opacity-0 focus:outline-none sm:size-20"
+                  />
+
+                  <div data-screen-reveal className="home-copy max-w-[23.5rem]">
+                    <h1 className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]">
+                      {homeTitle}
+                    </h1>
+
+                    {homeParagraphs.map((paragraph, index) => (
+                      <p
+                        key={paragraph}
+                        className={`${
+                          index === 0 ? "mt-5" : "mt-4"
+                        } text-[0.95rem] font-medium leading-[1.22] text-white/82 sm:text-base`}
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div
+                    data-screen-reveal
+                    className="home-actions mt-auto self-start"
+                  >
+                    <ModeSelector
+                      onSingleplayer={() => changeView("singleplayer")}
+                      onMultiplayer={() => changeView("multiplayer")}
+                    />
+                  </div>
+                </>
+              )}
             </>
           ) : isSingleplayer ? (
             <SingleplayerCard

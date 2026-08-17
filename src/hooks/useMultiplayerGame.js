@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import {
+  buildGameSessionKey,
+  getGameSession,
+  saveGameSession,
+} from "@/hooks/useGameSession";
+import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_GAME_MODE_ID,
   GAME_MODE_IDS,
@@ -121,6 +126,19 @@ export function useMultiplayerGame({
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
     [difficulty, lockedDifficultyId],
   );
+  const gameSessionKey = useMemo(
+    () =>
+      buildGameSessionKey("multiplayer", [
+        roomCode,
+        playerId,
+        gamePayload?.seed || room?.game?.seed || "pending",
+      ]),
+    [gamePayload?.seed, playerId, room?.game?.seed, roomCode],
+  );
+  const initialGameSession = useMemo(
+    () => getGameSession(gameSessionKey),
+    [gameSessionKey],
+  );
   const roundCount = useMemo(() => {
     const value = Number(
       gamePayload?.roundCount ?? room?.game?.roundCount ?? room?.roundCount ?? ROUND_COUNT,
@@ -136,9 +154,15 @@ export function useMultiplayerGame({
       ),
     [gamePayload?.hintsEnabled, room?.game?.hintsEnabled, room?.hintsEnabled],
   );
-  const serverTargetColors = gamePayload?.targetColors || [];
+  const serverTargetColors = useMemo(
+    () => gamePayload?.targetColors || [],
+    [gamePayload?.targetColors],
+  );
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const [phase, setPhase] = useState(GAME_PHASES.INTRO);
-  const [roundIndex, setRoundIndex] = useState(() => gamePayload?.currentRoundIndex || 0);
+  const [roundIndex, setRoundIndex] = useState(
+    () => gamePayload?.currentRoundIndex || 0,
+  );
   const [targetColor, setTargetColor] = useState(null);
   const [targetColors, setTargetColors] = useState(serverTargetColors);
   const [revealDurationMs, setRevealDurationMs] = useState(
@@ -163,15 +187,73 @@ export function useMultiplayerGame({
   );
   const isCurrentPlayerEliminated = Boolean(currentRoomPlayer?.eliminated);
   const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
+  const currentSeed = gamePayload?.seed || room?.game?.seed || null;
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const canRestoreSession =
+        initialGameSession &&
+        (!currentSeed || !initialGameSession.seed || initialGameSession.seed === currentSeed);
+
+      if (canRestoreSession) {
+        setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        setRoundIndex(
+          Number(initialGameSession.roundIndex) ||
+            gamePayload?.currentRoundIndex ||
+            0,
+        );
+        setTargetColor(initialGameSession.targetColor || null);
+        setTargetColors(initialGameSession.targetColors || serverTargetColors);
+        setGuessColor(
+          initialGameSession.guessColor ||
+            createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
+        );
+        setResults(initialGameSession.results || []);
+        setHintCount(
+          Number.isFinite(initialGameSession.hintCount)
+            ? initialGameSession.hintCount
+            : hintsEnabled
+              ? getInitialHintCount(roundCount)
+              : 0,
+        );
+        setHintActive(Boolean(initialGameSession.hintActive));
+      }
+
+      setHasRestoredSession(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    cleanGameFamily,
+    currentSeed,
+    effectiveDifficulty,
+    gameMode,
+    gamePayload?.currentRoundIndex,
+    hintsEnabled,
+    initialGameSession,
+    roundCount,
+    serverTargetColors,
+  ]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return undefined;
+    if (initialGameSession?.seed && initialGameSession.seed === currentSeed) {
+      return undefined;
+    }
+
     const timeoutId = window.setTimeout(() => {
       setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
       setHintActive(false);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [gamePayload?.seed, hintsEnabled, roundCount]);
+  }, [
+    currentSeed,
+    hasRestoredSession,
+    hintsEnabled,
+    initialGameSession?.seed,
+    roundCount,
+  ]);
 
   const prepareRound = useCallback(
     (nextRoundIndex) => {
@@ -313,6 +395,38 @@ export function useMultiplayerGame({
     roundIndex,
     targetColor,
     t,
+  ]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return;
+
+    saveGameSession(gameSessionKey, {
+      seed: currentSeed,
+      phase,
+      roundIndex,
+      targetColor,
+      targetColors,
+      guessColor,
+      results,
+      hintCount,
+      hintActive,
+      revealDurationMs,
+      guessDurationMs,
+    });
+  }, [
+    currentSeed,
+    gameSessionKey,
+    guessColor,
+    hasRestoredSession,
+    hintActive,
+    hintCount,
+    phase,
+    results,
+    roundIndex,
+    revealDurationMs,
+    guessDurationMs,
+    targetColor,
+    targetColors,
   ]);
 
   const continueFromResult = useCallback(() => {

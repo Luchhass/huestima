@@ -37,10 +37,14 @@ export default function SingleplayerCard({
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless);
+  const roundCountLabel = roundCountLocked
+    ? t("levelCount.infinity")
+    : String(roundCount);
   const description = [
-    t(`setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`),
+    t(`setup.singleCopy.${gameMode || DEFAULT_GAME_MODE_ID}`, {
+      roundCount: roundCountLabel,
+    }),
     t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`),
-    t("setup.hintCopy.on"),
   ].join(" ");
 
   useGameModeShock(scopeRef, gameMode);
@@ -64,6 +68,7 @@ export default function SingleplayerCard({
         >
           {description}
         </p>
+
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-auto w-full">
@@ -84,6 +89,7 @@ export default function SingleplayerCard({
             <LevelCountPicker
               value={roundCount}
               onChange={onRoundCountChange}
+              isEndless={roundCountLocked}
               disabled={roundCountLocked}
             />
           </div>

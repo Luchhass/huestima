@@ -6,7 +6,7 @@ import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import BrandLogoMark from "./BrandLogoMark";
 
-const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon"]);
+const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon", "brand"]);
 const NON_INVITE_ENTRY_PATHS = new Set([
   "how-it-works",
   "test",

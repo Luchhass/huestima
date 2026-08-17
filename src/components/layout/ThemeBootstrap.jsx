@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-before-interactive-script-outside-document */
+import Script from "next/script";
 import {
   FULLSCREEN_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
@@ -32,7 +34,7 @@ const bootstrapScript = `
       fullscreen === "on" || fullscreen === "true" ? "on" : "off";
 
     const pathSegments = window.location.pathname.split("/").filter(Boolean);
-    const isGameFamilyPath = ["color", "flag", "cartoon"].includes(pathSegments[0]);
+    const isGameFamilyPath = ["color", "flag", "cartoon", "brand"].includes(pathSegments[0]);
     const isInviteRoomPath =
       pathSegments.length === 2 &&
       isGameFamilyPath &&
@@ -56,5 +58,11 @@ const bootstrapScript = `
 `;
 
 export default function ThemeBootstrap() {
-  return <script dangerouslySetInnerHTML={{ __html: bootstrapScript }} />;
+  return (
+    <Script
+      id="theme-bootstrap"
+      strategy="beforeInteractive"
+      dangerouslySetInnerHTML={{ __html: bootstrapScript }}
+    />
+  );
 }

@@ -266,6 +266,8 @@ export default function MultiplayerGame({
             ? {
                 variant:
                   renderedPhase === GAME_PHASES.GUESS ? "guess" : "reference",
+                highlightPulse: renderedPhase === GAME_PHASES.GUESS,
+                pulseKey: game.roundIndex,
               }
             : undefined
         }

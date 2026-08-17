@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import { isCartoonColor } from "@/lib/color";
 import CartoonCanvas from "./CartoonCanvas";
 
@@ -36,13 +37,17 @@ export default function CartoonOverlay({
   slice = "full",
   className = "",
   useCanvas = true,
+  highlightPulse = false,
+  pulseKey = null,
 }) {
   const isSceneImage = Boolean(color?.scenePath);
-  const [isSurfaceReady, setIsSurfaceReady] = useState(false);
+  const pulseRef = useRef(null);
+  const [readySurfacePath, setReadySurfacePath] = useState(null);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
   const originalScenePath = color?.originalScenePath;
   const baseScenePath = color?.baseScenePath || color?.scenePath;
   const maskPath = color?.maskPath || imagePath;
+  const isSurfaceReady = readySurfacePath === imagePath;
   const variantStyle = VARIANT_CLASSES[variant] || VARIANT_CLASSES.reference;
   const scenePlacementStyle =
     slice === "top"
@@ -61,8 +66,6 @@ export default function CartoonOverlay({
           }
         : { inset: "-1px" };
 
-  if (!isCartoonColor(color) || !imagePath) return null;
-
   const maskStyle = {
     WebkitMaskImage: `url("${maskPath}")`,
     maskImage: `url("${maskPath}")`,
@@ -73,6 +76,42 @@ export default function CartoonOverlay({
     WebkitMaskSize: isSceneImage ? "cover" : "contain",
     maskSize: isSceneImage ? "cover" : "contain",
   };
+
+  useLayoutEffect(() => {
+    const pulse = pulseRef.current;
+    if (!pulse || !highlightPulse || !isSurfaceReady) return undefined;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(pulse, { autoAlpha: 0 });
+      return undefined;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(pulse);
+      gsap.fromTo(
+        pulse,
+        { autoAlpha: 0, scale: 0.99 },
+        {
+          autoAlpha: 0.58,
+          scale: 1.012,
+          duration: 1 / 6,
+          repeat: 5,
+          yoyo: true,
+          ease: "sine.inOut",
+          transformOrigin: "center center",
+          force3D: true,
+          onComplete: () =>
+            gsap.set(pulse, {
+              clearProps: "transform,opacity,visibility",
+            }),
+        },
+      );
+    }, pulse.parentElement);
+
+    return () => ctx.revert();
+  }, [highlightPulse, imagePath, isSurfaceReady, pulseKey]);
+
+  if (!isCartoonColor(color) || !imagePath) return null;
 
   if (isSceneImage) {
     return (
@@ -107,7 +146,21 @@ export default function CartoonOverlay({
                 ]
               }
               color={color}
-              onReady={() => setIsSurfaceReady(true)}
+              onReady={() => setReadySurfacePath(imagePath)}
+            />
+          )}
+          {highlightPulse && (
+            <span
+              ref={pulseRef}
+              data-cartoon-highlight-pulse
+              className="absolute inset-0 opacity-0"
+              style={{
+                ...maskStyle,
+                backgroundColor: "rgba(255,255,255,0.24)",
+                filter:
+                  "drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 24px rgba(255,245,190,0.88)) drop-shadow(0 0 42px rgba(255,214,112,0.58))",
+                mixBlendMode: "screen",
+              }}
             />
           )}
           <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />

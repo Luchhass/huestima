@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { Infinity } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { DEFAULT_ROUND_COUNT, ROUND_COUNT_OPTIONS } from "@/lib/constants";
 import { normalizeRoundCount } from "@/lib/roundCount";
@@ -16,6 +17,7 @@ function clampIndex(index) {
 export default function LevelCountPicker({
   value = DEFAULT_ROUND_COUNT,
   onChange,
+  isEndless = false,
   disabled = false,
   className = "",
 }) {
@@ -26,14 +28,16 @@ export default function LevelCountPicker({
     ROUND_COUNT_OPTIONS.findIndex((option) => option === selectedRoundCount),
   );
   const thumbProgress =
-    ROUND_COUNT_OPTIONS.length > 1
+    isEndless
+      ? 1
+      : ROUND_COUNT_OPTIONS.length > 1
       ? selectedIndex / (ROUND_COUNT_OPTIONS.length - 1)
       : 0;
   const thumbLeft = `calc(${thumbProgress} * (100% - var(--level-count-thumb-size)) + (var(--level-count-thumb-size) / 2))`;
   const railProgress = `${thumbProgress * 100}%`;
 
   const handleIndexChange = (nextIndex) => {
-    if (disabled) return;
+    if (disabled || isEndless) return;
 
     const clampedIndex = clampIndex(nextIndex);
     const nextRoundCount = ROUND_COUNT_OPTIONS[clampedIndex];
@@ -69,29 +73,33 @@ export default function LevelCountPicker({
           <input
             id={inputId}
             type="range"
-            min="0"
-            max={String(ROUND_COUNT_OPTIONS.length - 1)}
-            step="1"
-            value={selectedIndex}
-            disabled={disabled}
-            onChange={(event) => {
-              handleIndexChange(Number(event.target.value));
-            }}
-            className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
-            aria-label={t("levelCount.label")}
-            aria-valuetext={t("levelCount.option", { count: selectedRoundCount })}
-          />
+          min="0"
+          max={String(ROUND_COUNT_OPTIONS.length - 1)}
+          step="1"
+          value={selectedIndex}
+          disabled={disabled || isEndless}
+          onChange={(event) => {
+            handleIndexChange(Number(event.target.value));
+          }}
+          className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+          aria-label={t("levelCount.label")}
+          aria-valuetext={
+            isEndless
+              ? t("levelCount.infinity")
+              : t("levelCount.option", { count: selectedRoundCount })
+          }
+        />
 
-          <div className="pointer-events-none absolute inset-0 z-10">
-            <div
-              aria-hidden="true"
-              className="level-count-picker__thumb absolute top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-[1.02rem] font-black leading-none text-zinc-950 transition-[left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              style={{ left: thumbLeft }}
-            >
-              {selectedRoundCount}
-            </div>
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <div
+            aria-hidden="true"
+            className="level-count-picker__thumb absolute top-1/2 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-[1.02rem] font-black leading-none text-zinc-950 transition-[left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ left: thumbLeft }}
+          >
+              {isEndless ? <Infinity className="size-[1.1em]" strokeWidth={2.4} /> : selectedRoundCount}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

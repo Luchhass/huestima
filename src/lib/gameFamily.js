@@ -4,6 +4,7 @@ export const GAME_FAMILY_IDS = {
   COLOR: "color",
   FLAG: "flag",
   CARTOON: "cartoon",
+  BRAND: "brand",
 };
 
 export const GAME_FAMILY_OPTIONS = [
@@ -21,6 +22,11 @@ export const GAME_FAMILY_OPTIONS = [
     id: GAME_FAMILY_IDS.CARTOON,
     label: "Cartoon",
     href: "/cartoon",
+  },
+  {
+    id: GAME_FAMILY_IDS.BRAND,
+    label: "Brand",
+    href: "/brand",
   },
 ];
 
@@ -44,12 +50,14 @@ export const GAME_FAMILY_MODE_IDS = {
     GAME_MODE_IDS.ENDLESS,
     GAME_MODE_IDS.TIMED,
   ],
+  [GAME_FAMILY_IDS.BRAND]: [],
 };
 
 export const DEFAULT_GAME_MODE_BY_FAMILY = {
   [GAME_FAMILY_IDS.COLOR]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.FLAG]: GAME_MODE_IDS.FLAG,
   [GAME_FAMILY_IDS.CARTOON]: GAME_MODE_IDS.CARTOON,
+  [GAME_FAMILY_IDS.BRAND]: GAME_MODE_IDS.NORMAL,
 };
 
 export function normalizeGameFamily(gameFamily) {

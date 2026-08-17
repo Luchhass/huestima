@@ -71,7 +71,7 @@ export const DEFAULT_GAME_MODE_ID = GAME_MODE_IDS.NORMAL;
 export const GAME_MODE_OPTIONS = [
   {
     id: GAME_MODE_IDS.NORMAL,
-    label: "Normal",
+    label: "Classic",
     description: "Five seconds to memorize each color.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },

@@ -406,6 +406,7 @@ export default function LobbyCard({
               <LevelCountPicker
                 value={room?.roundCount}
                 onChange={handleRoundCountChange}
+                isEndless={room?.gameMode === GAME_MODE_IDS.ENDLESS}
                 disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
                 className="w-full"
               />
@@ -425,6 +426,7 @@ export default function LobbyCard({
                 className="w-full"
               />
             </div>
+
           </div>
         )}
 
