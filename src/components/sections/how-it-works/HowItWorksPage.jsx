@@ -10,13 +10,14 @@ import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
 
-const CLASSIC_CUTOUT_SRC = "/adventure-time-lady-rainicorn.png";
+const HOW_IT_WORKS_CARTOON_ID = "adventure-time-9596374";
+const CLASSIC_CUTOUT_SRC = "/bunu kullan amk.png";
 const DEMO_SATURATION = 50;
 const DEMO_VALUE = 98;
 
 const STEPS = [
   { key: "classic", visual: "classic" },
-  { key: "whole", visual: null },
+  { key: "whole", visual: "whole" },
   { key: "flat", visual: "flat" },
   { key: "delta", visual: "delta" },
 ];
@@ -112,12 +113,12 @@ function VisualPlaceholder() {
   );
 }
 
-function ThemeColorDemo({ color }) {
+function ThemeColorDemo({ color, imageSrc }) {
   return (
     <>
       <span className="absolute inset-0" style={{ backgroundColor: color.hex }} />
       <Image
-        src={CLASSIC_CUTOUT_SRC}
+        src={imageSrc}
         alt=""
         fill
         sizes="(max-width: 768px) 78vw, 500px"
@@ -126,6 +127,22 @@ function ThemeColorDemo({ color }) {
         className="object-cover"
       />
       <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />
+    </>
+  );
+}
+
+function WholeCharacterDemo({ item }) {
+  return (
+    <>
+      <Image
+        src={item.sourceImagePath || item.originalScenePath}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 78vw, 500px"
+        priority
+        unoptimized
+        className="object-cover"
+      />
     </>
   );
 }
@@ -189,8 +206,36 @@ function StepVisual({ type, example, colors, cardHeight, setters }) {
         onHueChange={setters.theme}
         cardHeight={cardHeight}
       >
-        <ThemeColorDemo color={colors.theme} />
+        <ThemeColorDemo color={colors.theme} imageSrc={CLASSIC_CUTOUT_SRC} />
       </VisualShell>
+    );
+  }
+
+  if (type === "whole") {
+    return (
+      <div
+        data-how-visual
+        className="flex w-full flex-col items-center justify-center gap-3 lg:flex-row lg:gap-5"
+        style={{
+          "--how-card-height": cardHeight,
+          "--how-card-mobile-height": "clamp(150px,30dvh,218px)",
+          "--how-card-tablet-height": "clamp(220px,34dvh,280px)",
+        }}
+      >
+        <div
+          aria-hidden="true"
+          className="hidden h-[var(--how-card-height)] w-[50px] shrink-0 opacity-0 lg:block"
+        />
+
+        <section
+          data-how-card
+          className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[0_18px_38px_rgba(31,25,20,0.18),0_8px_18px_rgba(31,25,20,0.1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.52),0_8px_18px_rgba(0,0,0,0.32)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
+        >
+          <WholeCharacterDemo item={example} />
+        </section>
+
+        <div aria-hidden="true" className="h-[50px] w-full max-w-125 shrink-0 opacity-0 lg:hidden" />
+      </div>
     );
   }
 
@@ -225,7 +270,10 @@ export default function HowItWorksPage() {
   const [flatHue, setFlatHue] = useState(145);
   const [deltaHue, setDeltaHue] = useState(145);
   const example = useMemo(
-    () => CARTOON_OPTIONS[0],
+    () =>
+      CARTOON_OPTIONS.find((item) => item.id === HOW_IT_WORKS_CARTOON_ID) ||
+      CARTOON_OPTIONS.find((item) => item.pack === "adventure-time") ||
+      CARTOON_OPTIONS[0],
     [],
   );
   const currentStep = STEPS[activeStep];

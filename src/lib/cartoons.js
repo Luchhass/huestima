@@ -62,10 +62,23 @@ const CARTOON_LABELS = {
   "ben-10-9521759": { en: "Steam Smythe", tr: "Steam Smythe" },
 };
 
-function getGeneratedRoot(item) {
+function toPublicUrl(filePath) {
+  if (!filePath) return null;
+
+  return filePath.startsWith("public/")
+    ? `/${filePath.slice("public/".length)}`
+    : filePath;
+}
+
+function getCartoonPack(item) {
   const sourcePath = item.sourcePath?.replaceAll("\\", "/") || "";
   const packMatch = sourcePath.match(/^public\/game-modes\/cartoon\/([^/]+)\//);
-  const pack = packMatch?.[1] || DEFAULT_CARTOON_PACK;
+
+  return packMatch?.[1] || DEFAULT_CARTOON_PACK;
+}
+
+function getGeneratedRoot(item) {
+  const pack = getCartoonPack(item);
 
   return `/game-modes/cartoon/${pack}/generated`;
 }
@@ -83,7 +96,11 @@ function cartoon(item) {
     label: CARTOON_LABELS[id]?.en || label,
     labels: CARTOON_LABELS[id] || { en: label, tr: label },
     series,
+    pack: getCartoonPack(item),
     paintLabel,
+    sourceImagePath: toPublicUrl(item.sourcePath),
+    sourceMaskPath: toPublicUrl(item.maskPath),
+    sourceTitle: item.sourceTitle || null,
     originalScenePath,
     baseScenePath: scenePath,
     scenePath,
