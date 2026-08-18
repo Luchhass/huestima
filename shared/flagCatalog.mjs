@@ -7,7 +7,7 @@ export const FLAG_ITEMS = [
       "s": 85,
       "v": 26
     },
-    "sourcePath": "public/Country Flags/afghanistan.png"
+    "sourcePath": "public/game-modes/flag/source/afghanistan.png"
   },
   {
     "id": "albania",
@@ -17,7 +17,7 @@ export const FLAG_ITEMS = [
       "s": 87,
       "v": 78
     },
-    "sourcePath": "public/Country Flags/albania.png"
+    "sourcePath": "public/game-modes/flag/source/albania.png"
   },
   {
     "id": "algeria",
@@ -27,7 +27,7 @@ export const FLAG_ITEMS = [
       "s": 20,
       "v": 66
     },
-    "sourcePath": "public/Country Flags/algeria.png"
+    "sourcePath": "public/game-modes/flag/source/algeria.png"
   },
   {
     "id": "andorra",
@@ -37,7 +37,7 @@ export const FLAG_ITEMS = [
       "s": 47,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/andorra.png"
+    "sourcePath": "public/game-modes/flag/source/andorra.png"
   },
   {
     "id": "angola",
@@ -47,7 +47,7 @@ export const FLAG_ITEMS = [
       "s": 84,
       "v": 44
     },
-    "sourcePath": "public/Country Flags/angola.png"
+    "sourcePath": "public/game-modes/flag/source/angola.png"
   },
   {
     "id": "antigua-and-barbuda",
@@ -57,7 +57,7 @@ export const FLAG_ITEMS = [
       "s": 62,
       "v": 54
     },
-    "sourcePath": "public/Country Flags/antigua-and-barbuda.png"
+    "sourcePath": "public/game-modes/flag/source/antigua-and-barbuda.png"
   },
   {
     "id": "argentina",
@@ -67,7 +67,7 @@ export const FLAG_ITEMS = [
       "s": 30,
       "v": 89
     },
-    "sourcePath": "public/Country Flags/argentina.png"
+    "sourcePath": "public/game-modes/flag/source/argentina.png"
   },
   {
     "id": "armenia",
@@ -77,7 +77,7 @@ export const FLAG_ITEMS = [
       "s": 61,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/armenia.png"
+    "sourcePath": "public/game-modes/flag/source/armenia.png"
   },
   {
     "id": "australia",
@@ -87,7 +87,7 @@ export const FLAG_ITEMS = [
       "s": 76,
       "v": 55
     },
-    "sourcePath": "public/Country Flags/australia.png"
+    "sourcePath": "public/game-modes/flag/source/australia.png"
   },
   {
     "id": "austria",
@@ -97,7 +97,7 @@ export const FLAG_ITEMS = [
       "s": 54,
       "v": 95
     },
-    "sourcePath": "public/Country Flags/austria.png"
+    "sourcePath": "public/game-modes/flag/source/austria.png"
   },
   {
     "id": "azerbaijan",
@@ -107,7 +107,7 @@ export const FLAG_ITEMS = [
       "s": 37,
       "v": 47
     },
-    "sourcePath": "public/Country Flags/azerbaijan.png"
+    "sourcePath": "public/game-modes/flag/source/azerbaijan.png"
   },
   {
     "id": "bahamas",
@@ -117,7 +117,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/bahamas.png"
+    "sourcePath": "public/game-modes/flag/source/bahamas.png"
   },
   {
     "id": "bahrain",
@@ -127,7 +127,7 @@ export const FLAG_ITEMS = [
       "s": 60,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/bahrain.png"
+    "sourcePath": "public/game-modes/flag/source/bahrain.png"
   },
   {
     "id": "bangladesh",
@@ -137,7 +137,7 @@ export const FLAG_ITEMS = [
       "s": 38,
       "v": 36
     },
-    "sourcePath": "public/Country Flags/bangladesh.png"
+    "sourcePath": "public/game-modes/flag/source/bangladesh.png"
   },
   {
     "id": "barbados",
@@ -147,7 +147,7 @@ export const FLAG_ITEMS = [
       "s": 22,
       "v": 38
     },
-    "sourcePath": "public/Country Flags/barbados.png"
+    "sourcePath": "public/game-modes/flag/source/barbados.png"
   },
   {
     "id": "belarus",
@@ -157,7 +157,7 @@ export const FLAG_ITEMS = [
       "s": 55,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/belarus.png"
+    "sourcePath": "public/game-modes/flag/source/belarus.png"
   },
   {
     "id": "belgium",
@@ -167,7 +167,7 @@ export const FLAG_ITEMS = [
       "s": 75,
       "v": 64
     },
-    "sourcePath": "public/Country Flags/belgium.png"
+    "sourcePath": "public/game-modes/flag/source/belgium.png"
   },
   {
     "id": "belize",
@@ -177,7 +177,7 @@ export const FLAG_ITEMS = [
       "s": 32,
       "v": 52
     },
-    "sourcePath": "public/Country Flags/belize.png"
+    "sourcePath": "public/game-modes/flag/source/belize.png"
   },
   {
     "id": "benin",
@@ -187,7 +187,7 @@ export const FLAG_ITEMS = [
       "s": 64,
       "v": 57
     },
-    "sourcePath": "public/Country Flags/benin.png"
+    "sourcePath": "public/game-modes/flag/source/benin.png"
   },
   {
     "id": "bhutan",
@@ -197,7 +197,7 @@ export const FLAG_ITEMS = [
       "s": 70,
       "v": 91
     },
-    "sourcePath": "public/Country Flags/bhutan.png"
+    "sourcePath": "public/game-modes/flag/source/bhutan.png"
   },
   {
     "id": "bolivia",
@@ -207,7 +207,7 @@ export const FLAG_ITEMS = [
       "s": 83,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/bolivia.png"
+    "sourcePath": "public/game-modes/flag/source/bolivia.png"
   },
   {
     "id": "bosnia-and-herzegovina",
@@ -217,7 +217,7 @@ export const FLAG_ITEMS = [
       "s": 6,
       "v": 41
     },
-    "sourcePath": "public/Country Flags/bosnia-and-herzegovina.png"
+    "sourcePath": "public/game-modes/flag/source/bosnia-and-herzegovina.png"
   },
   {
     "id": "botswana",
@@ -227,7 +227,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 73
     },
-    "sourcePath": "public/Country Flags/botswana.png"
+    "sourcePath": "public/game-modes/flag/source/botswana.png"
   },
   {
     "id": "brazil",
@@ -237,7 +237,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/brazil.png"
+    "sourcePath": "public/game-modes/flag/source/brazil.png"
   },
   {
     "id": "brunei",
@@ -247,7 +247,7 @@ export const FLAG_ITEMS = [
       "s": 66,
       "v": 80
     },
-    "sourcePath": "public/Country Flags/brunei.png"
+    "sourcePath": "public/game-modes/flag/source/brunei.png"
   },
   {
     "id": "bulgaria",
@@ -257,7 +257,7 @@ export const FLAG_ITEMS = [
       "s": 18,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/bulgaria.png"
+    "sourcePath": "public/game-modes/flag/source/bulgaria.png"
   },
   {
     "id": "burkina-faso",
@@ -267,7 +267,7 @@ export const FLAG_ITEMS = [
       "s": 52,
       "v": 48
     },
-    "sourcePath": "public/Country Flags/burkina-faso.png"
+    "sourcePath": "public/game-modes/flag/source/burkina-faso.png"
   },
   {
     "id": "burundi",
@@ -277,7 +277,7 @@ export const FLAG_ITEMS = [
       "s": 30,
       "v": 67
     },
-    "sourcePath": "public/Country Flags/burundi.png"
+    "sourcePath": "public/game-modes/flag/source/burundi.png"
   },
   {
     "id": "cabo-verde",
@@ -287,7 +287,7 @@ export const FLAG_ITEMS = [
       "s": 59,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/cabo-verde.png"
+    "sourcePath": "public/game-modes/flag/source/cabo-verde.png"
   },
   {
     "id": "cambodia",
@@ -297,7 +297,7 @@ export const FLAG_ITEMS = [
       "s": 62,
       "v": 45
     },
-    "sourcePath": "public/Country Flags/cambodia.png"
+    "sourcePath": "public/game-modes/flag/source/cambodia.png"
   },
   {
     "id": "cameroon",
@@ -307,7 +307,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/cameroon.png"
+    "sourcePath": "public/game-modes/flag/source/cameroon.png"
   },
   {
     "id": "canada",
@@ -317,7 +317,7 @@ export const FLAG_ITEMS = [
       "s": 52,
       "v": 100
     },
-    "sourcePath": "public/Country Flags/canada.png"
+    "sourcePath": "public/game-modes/flag/source/canada.png"
   },
   {
     "id": "central-african-republic",
@@ -327,7 +327,7 @@ export const FLAG_ITEMS = [
       "s": 37,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/central-african-republic.png"
+    "sourcePath": "public/game-modes/flag/source/central-african-republic.png"
   },
   {
     "id": "chad",
@@ -337,7 +337,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 59
     },
-    "sourcePath": "public/Country Flags/chad.png"
+    "sourcePath": "public/game-modes/flag/source/chad.png"
   },
   {
     "id": "chile",
@@ -347,7 +347,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 76
     },
-    "sourcePath": "public/Country Flags/chile.png"
+    "sourcePath": "public/game-modes/flag/source/chile.png"
   },
   {
     "id": "china",
@@ -357,7 +357,7 @@ export const FLAG_ITEMS = [
       "s": 93,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/china.png"
+    "sourcePath": "public/game-modes/flag/source/china.png"
   },
   {
     "id": "colombia",
@@ -367,7 +367,7 @@ export const FLAG_ITEMS = [
       "s": 68,
       "v": 70
     },
-    "sourcePath": "public/Country Flags/colombia.png"
+    "sourcePath": "public/game-modes/flag/source/colombia.png"
   },
   {
     "id": "comoros",
@@ -377,7 +377,7 @@ export const FLAG_ITEMS = [
       "s": 29,
       "v": 65
     },
-    "sourcePath": "public/Country Flags/comoros.png"
+    "sourcePath": "public/game-modes/flag/source/comoros.png"
   },
   {
     "id": "congo-democratic-republic-of-the",
@@ -387,7 +387,7 @@ export const FLAG_ITEMS = [
       "s": 54,
       "v": 68
     },
-    "sourcePath": "public/Country Flags/congo-democratic-republic-of-the.png"
+    "sourcePath": "public/game-modes/flag/source/congo-democratic-republic-of-the.png"
   },
   {
     "id": "congo-republic-of-the",
@@ -397,7 +397,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/congo-republic-of-the.png"
+    "sourcePath": "public/game-modes/flag/source/congo-republic-of-the.png"
   },
   {
     "id": "costa-rica",
@@ -407,7 +407,7 @@ export const FLAG_ITEMS = [
       "s": 32,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/costa-rica.png"
+    "sourcePath": "public/game-modes/flag/source/costa-rica.png"
   },
   {
     "id": "cote-d-ivoire",
@@ -417,7 +417,7 @@ export const FLAG_ITEMS = [
       "s": 35,
       "v": 71
     },
-    "sourcePath": "public/Country Flags/cote-d-ivoire.png"
+    "sourcePath": "public/game-modes/flag/source/cote-d-ivoire.png"
   },
   {
     "id": "croatia",
@@ -427,7 +427,7 @@ export const FLAG_ITEMS = [
       "s": 49,
       "v": 68
     },
-    "sourcePath": "public/Country Flags/croatia.png"
+    "sourcePath": "public/game-modes/flag/source/croatia.png"
   },
   {
     "id": "cuba",
@@ -437,7 +437,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 66
     },
-    "sourcePath": "public/Country Flags/cuba.png"
+    "sourcePath": "public/game-modes/flag/source/cuba.png"
   },
   {
     "id": "cyprus",
@@ -447,7 +447,7 @@ export const FLAG_ITEMS = [
       "s": 8,
       "v": 99
     },
-    "sourcePath": "public/Country Flags/cyprus.png"
+    "sourcePath": "public/game-modes/flag/source/cyprus.png"
   },
   {
     "id": "czech-republic",
@@ -457,7 +457,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 71
     },
-    "sourcePath": "public/Country Flags/czech-republic.png"
+    "sourcePath": "public/game-modes/flag/source/czech-republic.png"
   },
   {
     "id": "denmark",
@@ -467,7 +467,7 @@ export const FLAG_ITEMS = [
       "s": 65,
       "v": 83
     },
-    "sourcePath": "public/Country Flags/denmark.png"
+    "sourcePath": "public/game-modes/flag/source/denmark.png"
   },
   {
     "id": "djibouti",
@@ -477,7 +477,7 @@ export const FLAG_ITEMS = [
       "s": 40,
       "v": 77
     },
-    "sourcePath": "public/Country Flags/djibouti.png"
+    "sourcePath": "public/game-modes/flag/source/djibouti.png"
   },
   {
     "id": "dominica",
@@ -487,7 +487,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 43
     },
-    "sourcePath": "public/Country Flags/dominica.png"
+    "sourcePath": "public/game-modes/flag/source/dominica.png"
   },
   {
     "id": "dominican-republic",
@@ -497,7 +497,7 @@ export const FLAG_ITEMS = [
       "s": 32,
       "v": 59
     },
-    "sourcePath": "public/Country Flags/dominican-republic.png"
+    "sourcePath": "public/game-modes/flag/source/dominican-republic.png"
   },
   {
     "id": "east-timor",
@@ -507,7 +507,7 @@ export const FLAG_ITEMS = [
       "s": 83,
       "v": 85
     },
-    "sourcePath": "public/Country Flags/east-timor.png"
+    "sourcePath": "public/game-modes/flag/source/east-timor.png"
   },
   {
     "id": "ecuador",
@@ -517,7 +517,7 @@ export const FLAG_ITEMS = [
       "s": 74,
       "v": 73
     },
-    "sourcePath": "public/Country Flags/ecuador.png"
+    "sourcePath": "public/game-modes/flag/source/ecuador.png"
   },
   {
     "id": "egypt",
@@ -527,7 +527,7 @@ export const FLAG_ITEMS = [
       "s": 42,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/egypt.png"
+    "sourcePath": "public/game-modes/flag/source/egypt.png"
   },
   {
     "id": "el-salvador",
@@ -537,7 +537,7 @@ export const FLAG_ITEMS = [
       "s": 54,
       "v": 77
     },
-    "sourcePath": "public/Country Flags/el-salvador.png"
+    "sourcePath": "public/game-modes/flag/source/el-salvador.png"
   },
   {
     "id": "equatorial-guinea",
@@ -547,7 +547,7 @@ export const FLAG_ITEMS = [
       "s": 36,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/equatorial-guinea.png"
+    "sourcePath": "public/game-modes/flag/source/equatorial-guinea.png"
   },
   {
     "id": "eritrea",
@@ -557,7 +557,7 @@ export const FLAG_ITEMS = [
       "s": 34,
       "v": 55
     },
-    "sourcePath": "public/Country Flags/eritrea.png"
+    "sourcePath": "public/game-modes/flag/source/eritrea.png"
   },
   {
     "id": "estonia",
@@ -567,7 +567,7 @@ export const FLAG_ITEMS = [
       "s": 31,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/estonia.png"
+    "sourcePath": "public/game-modes/flag/source/estonia.png"
   },
   {
     "id": "eswatini",
@@ -577,7 +577,7 @@ export const FLAG_ITEMS = [
       "s": 35,
       "v": 54
     },
-    "sourcePath": "public/Country Flags/eswatini.png"
+    "sourcePath": "public/game-modes/flag/source/eswatini.png"
   },
   {
     "id": "ethiopia",
@@ -587,7 +587,7 @@ export const FLAG_ITEMS = [
       "s": 53,
       "v": 49
     },
-    "sourcePath": "public/Country Flags/ethiopia.png"
+    "sourcePath": "public/game-modes/flag/source/ethiopia.png"
   },
   {
     "id": "fiji",
@@ -597,7 +597,7 @@ export const FLAG_ITEMS = [
       "s": 31,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/fiji.png"
+    "sourcePath": "public/game-modes/flag/source/fiji.png"
   },
   {
     "id": "finland",
@@ -607,7 +607,7 @@ export const FLAG_ITEMS = [
       "s": 26,
       "v": 80
     },
-    "sourcePath": "public/Country Flags/finland.png"
+    "sourcePath": "public/game-modes/flag/source/finland.png"
   },
   {
     "id": "france",
@@ -617,7 +617,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 64
     },
-    "sourcePath": "public/Country Flags/france.png"
+    "sourcePath": "public/game-modes/flag/source/france.png"
   },
   {
     "id": "gabon",
@@ -627,7 +627,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 64
     },
-    "sourcePath": "public/Country Flags/gabon.png"
+    "sourcePath": "public/game-modes/flag/source/gabon.png"
   },
   {
     "id": "gambia",
@@ -637,7 +637,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 47
     },
-    "sourcePath": "public/Country Flags/gambia.png"
+    "sourcePath": "public/game-modes/flag/source/gambia.png"
   },
   {
     "id": "georgia",
@@ -647,7 +647,7 @@ export const FLAG_ITEMS = [
       "s": 36,
       "v": 100
     },
-    "sourcePath": "public/Country Flags/georgia.png"
+    "sourcePath": "public/game-modes/flag/source/georgia.png"
   },
   {
     "id": "germany",
@@ -657,7 +657,7 @@ export const FLAG_ITEMS = [
       "s": 100,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/germany.png"
+    "sourcePath": "public/game-modes/flag/source/germany.png"
   },
   {
     "id": "ghana",
@@ -667,7 +667,7 @@ export const FLAG_ITEMS = [
       "s": 72,
       "v": 57
     },
-    "sourcePath": "public/Country Flags/ghana.png"
+    "sourcePath": "public/game-modes/flag/source/ghana.png"
   },
   {
     "id": "greece",
@@ -677,7 +677,7 @@ export const FLAG_ITEMS = [
       "s": 48,
       "v": 81
     },
-    "sourcePath": "public/Country Flags/greece.png"
+    "sourcePath": "public/game-modes/flag/source/greece.png"
   },
   {
     "id": "grenada",
@@ -687,7 +687,7 @@ export const FLAG_ITEMS = [
       "s": 68,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/grenada.png"
+    "sourcePath": "public/game-modes/flag/source/grenada.png"
   },
   {
     "id": "guatemala",
@@ -697,7 +697,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 86
     },
-    "sourcePath": "public/Country Flags/guatemala.png"
+    "sourcePath": "public/game-modes/flag/source/guatemala.png"
   },
   {
     "id": "guinea",
@@ -707,7 +707,7 @@ export const FLAG_ITEMS = [
       "s": 66,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/guinea.png"
+    "sourcePath": "public/game-modes/flag/source/guinea.png"
   },
   {
     "id": "guinea-bissau",
@@ -717,7 +717,7 @@ export const FLAG_ITEMS = [
       "s": 69,
       "v": 57
     },
-    "sourcePath": "public/Country Flags/guinea-bissau.png"
+    "sourcePath": "public/game-modes/flag/source/guinea-bissau.png"
   },
   {
     "id": "guyana",
@@ -727,7 +727,7 @@ export const FLAG_ITEMS = [
       "s": 52,
       "v": 56
     },
-    "sourcePath": "public/Country Flags/guyana.png"
+    "sourcePath": "public/game-modes/flag/source/guyana.png"
   },
   {
     "id": "haiti",
@@ -737,7 +737,7 @@ export const FLAG_ITEMS = [
       "s": 71,
       "v": 42
     },
-    "sourcePath": "public/Country Flags/haiti.png"
+    "sourcePath": "public/game-modes/flag/source/haiti.png"
   },
   {
     "id": "honduras",
@@ -747,7 +747,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/honduras.png"
+    "sourcePath": "public/game-modes/flag/source/honduras.png"
   },
   {
     "id": "hungary",
@@ -757,7 +757,7 @@ export const FLAG_ITEMS = [
       "s": 19,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/hungary.png"
+    "sourcePath": "public/game-modes/flag/source/hungary.png"
   },
   {
     "id": "iceland",
@@ -767,7 +767,7 @@ export const FLAG_ITEMS = [
       "s": 43,
       "v": 58
     },
-    "sourcePath": "public/Country Flags/iceland.png"
+    "sourcePath": "public/game-modes/flag/source/iceland.png"
   },
   {
     "id": "india",
@@ -777,7 +777,7 @@ export const FLAG_ITEMS = [
       "s": 42,
       "v": 69
     },
-    "sourcePath": "public/Country Flags/india.png"
+    "sourcePath": "public/game-modes/flag/source/india.png"
   },
   {
     "id": "indonesia",
@@ -787,7 +787,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/indonesia.png"
+    "sourcePath": "public/game-modes/flag/source/indonesia.png"
   },
   {
     "id": "iran",
@@ -797,7 +797,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 70
     },
-    "sourcePath": "public/Country Flags/iran.png"
+    "sourcePath": "public/game-modes/flag/source/iran.png"
   },
   {
     "id": "iraq",
@@ -807,7 +807,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 57
     },
-    "sourcePath": "public/Country Flags/iraq.png"
+    "sourcePath": "public/game-modes/flag/source/iraq.png"
   },
   {
     "id": "ireland",
@@ -817,7 +817,7 @@ export const FLAG_ITEMS = [
       "s": 30,
       "v": 75
     },
-    "sourcePath": "public/Country Flags/ireland.png"
+    "sourcePath": "public/game-modes/flag/source/ireland.png"
   },
   {
     "id": "israel",
@@ -827,7 +827,7 @@ export const FLAG_ITEMS = [
       "s": 31,
       "v": 89
     },
-    "sourcePath": "public/Country Flags/israel.png"
+    "sourcePath": "public/game-modes/flag/source/israel.png"
   },
   {
     "id": "italy",
@@ -837,7 +837,7 @@ export const FLAG_ITEMS = [
       "s": 18,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/italy.png"
+    "sourcePath": "public/game-modes/flag/source/italy.png"
   },
   {
     "id": "jamaica",
@@ -847,7 +847,7 @@ export const FLAG_ITEMS = [
       "s": 79,
       "v": 52
     },
-    "sourcePath": "public/Country Flags/jamaica.png"
+    "sourcePath": "public/game-modes/flag/source/jamaica.png"
   },
   {
     "id": "japan",
@@ -857,7 +857,7 @@ export const FLAG_ITEMS = [
       "s": 15,
       "v": 95
     },
-    "sourcePath": "public/Country Flags/japan.png"
+    "sourcePath": "public/game-modes/flag/source/japan.png"
   },
   {
     "id": "jordan",
@@ -867,7 +867,7 @@ export const FLAG_ITEMS = [
       "s": 16,
       "v": 37
     },
-    "sourcePath": "public/Country Flags/jordan.png"
+    "sourcePath": "public/game-modes/flag/source/jordan.png"
   },
   {
     "id": "kazakhstan",
@@ -877,7 +877,7 @@ export const FLAG_ITEMS = [
       "s": 90,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/kazakhstan.png"
+    "sourcePath": "public/game-modes/flag/source/kazakhstan.png"
   },
   {
     "id": "kenya",
@@ -887,7 +887,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 33
     },
-    "sourcePath": "public/Country Flags/kenya.png"
+    "sourcePath": "public/game-modes/flag/source/kenya.png"
   },
   {
     "id": "kiribati",
@@ -897,7 +897,7 @@ export const FLAG_ITEMS = [
       "s": 43,
       "v": 64
     },
-    "sourcePath": "public/Country Flags/kiribati.png"
+    "sourcePath": "public/game-modes/flag/source/kiribati.png"
   },
   {
     "id": "kosovo",
@@ -907,7 +907,7 @@ export const FLAG_ITEMS = [
       "s": 73,
       "v": 57
     },
-    "sourcePath": "public/Country Flags/kosovo.png"
+    "sourcePath": "public/game-modes/flag/source/kosovo.png"
   },
   {
     "id": "kuwait",
@@ -917,7 +917,7 @@ export const FLAG_ITEMS = [
       "s": 25,
       "v": 54
     },
-    "sourcePath": "public/Country Flags/kuwait.png"
+    "sourcePath": "public/game-modes/flag/source/kuwait.png"
   },
   {
     "id": "kyrgyzstan",
@@ -927,7 +927,7 @@ export const FLAG_ITEMS = [
       "s": 84,
       "v": 92
     },
-    "sourcePath": "public/Country Flags/kyrgyzstan.png"
+    "sourcePath": "public/game-modes/flag/source/kyrgyzstan.png"
   },
   {
     "id": "laos",
@@ -937,7 +937,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 49
     },
-    "sourcePath": "public/Country Flags/laos.png"
+    "sourcePath": "public/game-modes/flag/source/laos.png"
   },
   {
     "id": "latvia",
@@ -947,7 +947,7 @@ export const FLAG_ITEMS = [
       "s": 50,
       "v": 70
     },
-    "sourcePath": "public/Country Flags/latvia.png"
+    "sourcePath": "public/game-modes/flag/source/latvia.png"
   },
   {
     "id": "lebanon",
@@ -957,7 +957,7 @@ export const FLAG_ITEMS = [
       "s": 42,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/lebanon.png"
+    "sourcePath": "public/game-modes/flag/source/lebanon.png"
   },
   {
     "id": "lesotho",
@@ -967,7 +967,7 @@ export const FLAG_ITEMS = [
       "s": 42,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/lesotho.png"
+    "sourcePath": "public/game-modes/flag/source/lesotho.png"
   },
   {
     "id": "liberia",
@@ -977,7 +977,7 @@ export const FLAG_ITEMS = [
       "s": 46,
       "v": 80
     },
-    "sourcePath": "public/Country Flags/liberia.png"
+    "sourcePath": "public/game-modes/flag/source/liberia.png"
   },
   {
     "id": "libya",
@@ -987,7 +987,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 28
     },
-    "sourcePath": "public/Country Flags/libya.png"
+    "sourcePath": "public/game-modes/flag/source/libya.png"
   },
   {
     "id": "liechtenstein",
@@ -997,7 +997,7 @@ export const FLAG_ITEMS = [
       "s": 69,
       "v": 43
     },
-    "sourcePath": "public/Country Flags/liechtenstein.png"
+    "sourcePath": "public/game-modes/flag/source/liechtenstein.png"
   },
   {
     "id": "lithuania",
@@ -1007,7 +1007,7 @@ export const FLAG_ITEMS = [
       "s": 70,
       "v": 58
     },
-    "sourcePath": "public/Country Flags/lithuania.png"
+    "sourcePath": "public/game-modes/flag/source/lithuania.png"
   },
   {
     "id": "luxembourg",
@@ -1017,7 +1017,7 @@ export const FLAG_ITEMS = [
       "s": 14,
       "v": 70
     },
-    "sourcePath": "public/Country Flags/luxembourg.png"
+    "sourcePath": "public/game-modes/flag/source/luxembourg.png"
   },
   {
     "id": "madagascar",
@@ -1027,7 +1027,7 @@ export const FLAG_ITEMS = [
       "s": 28,
       "v": 66
     },
-    "sourcePath": "public/Country Flags/madagascar.png"
+    "sourcePath": "public/game-modes/flag/source/madagascar.png"
   },
   {
     "id": "malawi",
@@ -1037,7 +1037,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 38
     },
-    "sourcePath": "public/Country Flags/malawi.png"
+    "sourcePath": "public/game-modes/flag/source/malawi.png"
   },
   {
     "id": "malaysia",
@@ -1047,7 +1047,7 @@ export const FLAG_ITEMS = [
       "s": 43,
       "v": 69
     },
-    "sourcePath": "public/Country Flags/malaysia.png"
+    "sourcePath": "public/game-modes/flag/source/malaysia.png"
   },
   {
     "id": "maldives",
@@ -1057,7 +1057,7 @@ export const FLAG_ITEMS = [
       "s": 62,
       "v": 56
     },
-    "sourcePath": "public/Country Flags/maldives.png"
+    "sourcePath": "public/game-modes/flag/source/maldives.png"
   },
   {
     "id": "mali",
@@ -1067,7 +1067,7 @@ export const FLAG_ITEMS = [
       "s": 75,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/mali.png"
+    "sourcePath": "public/game-modes/flag/source/mali.png"
   },
   {
     "id": "malta",
@@ -1077,7 +1077,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/malta.png"
+    "sourcePath": "public/game-modes/flag/source/malta.png"
   },
   {
     "id": "marshall-islands",
@@ -1087,7 +1087,7 @@ export const FLAG_ITEMS = [
       "s": 34,
       "v": 45
     },
-    "sourcePath": "public/Country Flags/marshall-islands.png"
+    "sourcePath": "public/game-modes/flag/source/marshall-islands.png"
   },
   {
     "id": "mauritania",
@@ -1097,7 +1097,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 34
     },
-    "sourcePath": "public/Country Flags/mauritania.png"
+    "sourcePath": "public/game-modes/flag/source/mauritania.png"
   },
   {
     "id": "mauritius",
@@ -1107,7 +1107,7 @@ export const FLAG_ITEMS = [
       "s": 52,
       "v": 50
     },
-    "sourcePath": "public/Country Flags/mauritius.png"
+    "sourcePath": "public/game-modes/flag/source/mauritius.png"
   },
   {
     "id": "mexico",
@@ -1117,7 +1117,7 @@ export const FLAG_ITEMS = [
       "s": 21,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/mexico.png"
+    "sourcePath": "public/game-modes/flag/source/mexico.png"
   },
   {
     "id": "micronesia",
@@ -1127,7 +1127,7 @@ export const FLAG_ITEMS = [
       "s": 45,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/micronesia.png"
+    "sourcePath": "public/game-modes/flag/source/micronesia.png"
   },
   {
     "id": "moldova",
@@ -1137,7 +1137,7 @@ export const FLAG_ITEMS = [
       "s": 58,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/moldova.png"
+    "sourcePath": "public/game-modes/flag/source/moldova.png"
   },
   {
     "id": "monaco",
@@ -1147,7 +1147,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/monaco.png"
+    "sourcePath": "public/game-modes/flag/source/monaco.png"
   },
   {
     "id": "mongolia",
@@ -1157,7 +1157,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 44
     },
-    "sourcePath": "public/Country Flags/mongolia.png"
+    "sourcePath": "public/game-modes/flag/source/mongolia.png"
   },
   {
     "id": "montenegro",
@@ -1167,7 +1167,7 @@ export const FLAG_ITEMS = [
       "s": 78,
       "v": 77
     },
-    "sourcePath": "public/Country Flags/montenegro.png"
+    "sourcePath": "public/game-modes/flag/source/montenegro.png"
   },
   {
     "id": "morocco",
@@ -1177,7 +1177,7 @@ export const FLAG_ITEMS = [
       "s": 79,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/morocco.png"
+    "sourcePath": "public/game-modes/flag/source/morocco.png"
   },
   {
     "id": "mozambique",
@@ -1187,7 +1187,7 @@ export const FLAG_ITEMS = [
       "s": 59,
       "v": 48
     },
-    "sourcePath": "public/Country Flags/mozambique.png"
+    "sourcePath": "public/game-modes/flag/source/mozambique.png"
   },
   {
     "id": "myanmar",
@@ -1197,7 +1197,7 @@ export const FLAG_ITEMS = [
       "s": 71,
       "v": 77
     },
-    "sourcePath": "public/Country Flags/myanmar.png"
+    "sourcePath": "public/game-modes/flag/source/myanmar.png"
   },
   {
     "id": "namibia",
@@ -1207,7 +1207,7 @@ export const FLAG_ITEMS = [
       "s": 20,
       "v": 40
     },
-    "sourcePath": "public/Country Flags/namibia.png"
+    "sourcePath": "public/game-modes/flag/source/namibia.png"
   },
   {
     "id": "nauru",
@@ -1217,7 +1217,7 @@ export const FLAG_ITEMS = [
       "s": 77,
       "v": 48
     },
-    "sourcePath": "public/Country Flags/nauru.png"
+    "sourcePath": "public/game-modes/flag/source/nauru.png"
   },
   {
     "id": "nepal",
@@ -1227,7 +1227,7 @@ export const FLAG_ITEMS = [
       "s": 62,
       "v": 78
     },
-    "sourcePath": "public/Country Flags/nepal.png"
+    "sourcePath": "public/game-modes/flag/source/nepal.png"
   },
   {
     "id": "netherlands",
@@ -1237,7 +1237,7 @@ export const FLAG_ITEMS = [
       "s": 24,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/netherlands.png"
+    "sourcePath": "public/game-modes/flag/source/netherlands.png"
   },
   {
     "id": "new-zealand",
@@ -1247,7 +1247,7 @@ export const FLAG_ITEMS = [
       "s": 65,
       "v": 50
     },
-    "sourcePath": "public/Country Flags/new-zealand.png"
+    "sourcePath": "public/game-modes/flag/source/new-zealand.png"
   },
   {
     "id": "nicaragua",
@@ -1257,7 +1257,7 @@ export const FLAG_ITEMS = [
       "s": 48,
       "v": 64
     },
-    "sourcePath": "public/Country Flags/nicaragua.png"
+    "sourcePath": "public/game-modes/flag/source/nicaragua.png"
   },
   {
     "id": "niger",
@@ -1267,7 +1267,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 69
     },
-    "sourcePath": "public/Country Flags/niger.png"
+    "sourcePath": "public/game-modes/flag/source/niger.png"
   },
   {
     "id": "nigeria",
@@ -1277,7 +1277,7 @@ export const FLAG_ITEMS = [
       "s": 40,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/nigeria.png"
+    "sourcePath": "public/game-modes/flag/source/nigeria.png"
   },
   {
     "id": "north-korea",
@@ -1287,7 +1287,7 @@ export const FLAG_ITEMS = [
       "s": 55,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/north-korea.png"
+    "sourcePath": "public/game-modes/flag/source/north-korea.png"
   },
   {
     "id": "north-macedonia",
@@ -1297,7 +1297,7 @@ export const FLAG_ITEMS = [
       "s": 100,
       "v": 88
     },
-    "sourcePath": "public/Country Flags/north-macedonia.png"
+    "sourcePath": "public/game-modes/flag/source/north-macedonia.png"
   },
   {
     "id": "norway",
@@ -1307,7 +1307,7 @@ export const FLAG_ITEMS = [
       "s": 57,
       "v": 75
     },
-    "sourcePath": "public/Country Flags/norway.png"
+    "sourcePath": "public/game-modes/flag/source/norway.png"
   },
   {
     "id": "oman",
@@ -1317,7 +1317,7 @@ export const FLAG_ITEMS = [
       "s": 50,
       "v": 66
     },
-    "sourcePath": "public/Country Flags/oman.png"
+    "sourcePath": "public/game-modes/flag/source/oman.png"
   },
   {
     "id": "pakistan",
@@ -1327,7 +1327,7 @@ export const FLAG_ITEMS = [
       "s": 35,
       "v": 49
     },
-    "sourcePath": "public/Country Flags/pakistan.png"
+    "sourcePath": "public/game-modes/flag/source/pakistan.png"
   },
   {
     "id": "palau",
@@ -1337,7 +1337,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 71
     },
-    "sourcePath": "public/Country Flags/palau.png"
+    "sourcePath": "public/game-modes/flag/source/palau.png"
   },
   {
     "id": "palestine",
@@ -1347,7 +1347,7 @@ export const FLAG_ITEMS = [
       "s": 21,
       "v": 43
     },
-    "sourcePath": "public/Country Flags/palestine.png"
+    "sourcePath": "public/game-modes/flag/source/palestine.png"
   },
   {
     "id": "panama",
@@ -1357,7 +1357,7 @@ export const FLAG_ITEMS = [
       "s": 17,
       "v": 69
     },
-    "sourcePath": "public/Country Flags/panama.png"
+    "sourcePath": "public/game-modes/flag/source/panama.png"
   },
   {
     "id": "papua-new-guinea",
@@ -1367,7 +1367,7 @@ export const FLAG_ITEMS = [
       "s": 79,
       "v": 44
     },
-    "sourcePath": "public/Country Flags/papua-new-guinea.png"
+    "sourcePath": "public/game-modes/flag/source/papua-new-guinea.png"
   },
   {
     "id": "paraguay",
@@ -1377,7 +1377,7 @@ export const FLAG_ITEMS = [
       "s": 25,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/paraguay.png"
+    "sourcePath": "public/game-modes/flag/source/paraguay.png"
   },
   {
     "id": "peru",
@@ -1387,7 +1387,7 @@ export const FLAG_ITEMS = [
       "s": 58,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/peru.png"
+    "sourcePath": "public/game-modes/flag/source/peru.png"
   },
   {
     "id": "philippines",
@@ -1397,7 +1397,7 @@ export const FLAG_ITEMS = [
       "s": 47,
       "v": 49
     },
-    "sourcePath": "public/Country Flags/philippines.png"
+    "sourcePath": "public/game-modes/flag/source/philippines.png"
   },
   {
     "id": "poland",
@@ -1407,7 +1407,7 @@ export const FLAG_ITEMS = [
       "s": 42,
       "v": 93
     },
-    "sourcePath": "public/Country Flags/poland.png"
+    "sourcePath": "public/game-modes/flag/source/poland.png"
   },
   {
     "id": "portugal",
@@ -1417,7 +1417,7 @@ export const FLAG_ITEMS = [
       "s": 96,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/portugal.png"
+    "sourcePath": "public/game-modes/flag/source/portugal.png"
   },
   {
     "id": "qatar",
@@ -1427,7 +1427,7 @@ export const FLAG_ITEMS = [
       "s": 50,
       "v": 67
     },
-    "sourcePath": "public/Country Flags/qatar.png"
+    "sourcePath": "public/game-modes/flag/source/qatar.png"
   },
   {
     "id": "romania",
@@ -1437,7 +1437,7 @@ export const FLAG_ITEMS = [
       "s": 59,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/romania.png"
+    "sourcePath": "public/game-modes/flag/source/romania.png"
   },
   {
     "id": "russia",
@@ -1447,7 +1447,7 @@ export const FLAG_ITEMS = [
       "s": 24,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/russia.png"
+    "sourcePath": "public/game-modes/flag/source/russia.png"
   },
   {
     "id": "rwanda",
@@ -1457,7 +1457,7 @@ export const FLAG_ITEMS = [
       "s": 53,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/rwanda.png"
+    "sourcePath": "public/game-modes/flag/source/rwanda.png"
   },
   {
     "id": "saint-kitts-and-nevis",
@@ -1467,7 +1467,7 @@ export const FLAG_ITEMS = [
       "s": 54,
       "v": 36
     },
-    "sourcePath": "public/Country Flags/saint-kitts-and-nevis.png"
+    "sourcePath": "public/game-modes/flag/source/saint-kitts-and-nevis.png"
   },
   {
     "id": "saint-lucia",
@@ -1477,7 +1477,7 @@ export const FLAG_ITEMS = [
       "s": 47,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/saint-lucia.png"
+    "sourcePath": "public/game-modes/flag/source/saint-lucia.png"
   },
   {
     "id": "saint-vincent-and-the-grenadines",
@@ -1487,7 +1487,7 @@ export const FLAG_ITEMS = [
       "s": 48,
       "v": 67
     },
-    "sourcePath": "public/Country Flags/saint-vincent-and-the-grenadines.png"
+    "sourcePath": "public/game-modes/flag/source/saint-vincent-and-the-grenadines.png"
   },
   {
     "id": "samoa",
@@ -1497,7 +1497,7 @@ export const FLAG_ITEMS = [
       "s": 83,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/samoa.png"
+    "sourcePath": "public/game-modes/flag/source/samoa.png"
   },
   {
     "id": "san-marino",
@@ -1507,7 +1507,7 @@ export const FLAG_ITEMS = [
       "s": 24,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/san-marino.png"
+    "sourcePath": "public/game-modes/flag/source/san-marino.png"
   },
   {
     "id": "sao-tome-and-principe",
@@ -1517,7 +1517,7 @@ export const FLAG_ITEMS = [
       "s": 85,
       "v": 68
     },
-    "sourcePath": "public/Country Flags/sao-tome-and-principe.png"
+    "sourcePath": "public/game-modes/flag/source/sao-tome-and-principe.png"
   },
   {
     "id": "saudi-arabia",
@@ -1527,7 +1527,7 @@ export const FLAG_ITEMS = [
       "s": 84,
       "v": 47
     },
-    "sourcePath": "public/Country Flags/saudi-arabia.png"
+    "sourcePath": "public/game-modes/flag/source/saudi-arabia.png"
   },
   {
     "id": "senegal",
@@ -1537,7 +1537,7 @@ export const FLAG_ITEMS = [
       "s": 65,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/senegal.png"
+    "sourcePath": "public/game-modes/flag/source/senegal.png"
   },
   {
     "id": "serbia",
@@ -1547,7 +1547,7 @@ export const FLAG_ITEMS = [
       "s": 22,
       "v": 67
     },
-    "sourcePath": "public/Country Flags/serbia.png"
+    "sourcePath": "public/game-modes/flag/source/serbia.png"
   },
   {
     "id": "seychelles",
@@ -1557,7 +1557,7 @@ export const FLAG_ITEMS = [
       "s": 44,
       "v": 68
     },
-    "sourcePath": "public/Country Flags/seychelles.png"
+    "sourcePath": "public/game-modes/flag/source/seychelles.png"
   },
   {
     "id": "sierra-leone",
@@ -1567,7 +1567,7 @@ export const FLAG_ITEMS = [
       "s": 48,
       "v": 72
     },
-    "sourcePath": "public/Country Flags/sierra-leone.png"
+    "sourcePath": "public/game-modes/flag/source/sierra-leone.png"
   },
   {
     "id": "singapore",
@@ -1577,7 +1577,7 @@ export const FLAG_ITEMS = [
       "s": 37,
       "v": 97
     },
-    "sourcePath": "public/Country Flags/singapore.png"
+    "sourcePath": "public/game-modes/flag/source/singapore.png"
   },
   {
     "id": "slovakia",
@@ -1587,7 +1587,7 @@ export const FLAG_ITEMS = [
       "s": 35,
       "v": 72
     },
-    "sourcePath": "public/Country Flags/slovakia.png"
+    "sourcePath": "public/game-modes/flag/source/slovakia.png"
   },
   {
     "id": "slovenia",
@@ -1597,7 +1597,7 @@ export const FLAG_ITEMS = [
       "s": 25,
       "v": 65
     },
-    "sourcePath": "public/Country Flags/slovenia.png"
+    "sourcePath": "public/game-modes/flag/source/slovenia.png"
   },
   {
     "id": "solomon-islands",
@@ -1607,7 +1607,7 @@ export const FLAG_ITEMS = [
       "s": 56,
       "v": 43
     },
-    "sourcePath": "public/Country Flags/solomon-islands.png"
+    "sourcePath": "public/game-modes/flag/source/solomon-islands.png"
   },
   {
     "id": "somalia",
@@ -1617,7 +1617,7 @@ export const FLAG_ITEMS = [
       "s": 67,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/somalia.png"
+    "sourcePath": "public/game-modes/flag/source/somalia.png"
   },
   {
     "id": "south-africa",
@@ -1627,7 +1627,7 @@ export const FLAG_ITEMS = [
       "s": 9,
       "v": 38
     },
-    "sourcePath": "public/Country Flags/south-africa.png"
+    "sourcePath": "public/game-modes/flag/source/south-africa.png"
   },
   {
     "id": "south-korea",
@@ -1637,7 +1637,7 @@ export const FLAG_ITEMS = [
       "s": 4,
       "v": 84
     },
-    "sourcePath": "public/Country Flags/south-korea.png"
+    "sourcePath": "public/game-modes/flag/source/south-korea.png"
   },
   {
     "id": "south-sudan",
@@ -1647,7 +1647,7 @@ export const FLAG_ITEMS = [
       "s": 17,
       "v": 30
     },
-    "sourcePath": "public/Country Flags/south-sudan.png"
+    "sourcePath": "public/game-modes/flag/source/south-sudan.png"
   },
   {
     "id": "spain",
@@ -1657,7 +1657,7 @@ export const FLAG_ITEMS = [
       "s": 92,
       "v": 87
     },
-    "sourcePath": "public/Country Flags/spain.png"
+    "sourcePath": "public/game-modes/flag/source/spain.png"
   },
   {
     "id": "sri-lanka",
@@ -1667,7 +1667,7 @@ export const FLAG_ITEMS = [
       "s": 90,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/sri-lanka.png"
+    "sourcePath": "public/game-modes/flag/source/sri-lanka.png"
   },
   {
     "id": "sudan",
@@ -1677,7 +1677,7 @@ export const FLAG_ITEMS = [
       "s": 39,
       "v": 53
     },
-    "sourcePath": "public/Country Flags/sudan.png"
+    "sourcePath": "public/game-modes/flag/source/sudan.png"
   },
   {
     "id": "suriname",
@@ -1687,7 +1687,7 @@ export const FLAG_ITEMS = [
       "s": 36,
       "v": 58
     },
-    "sourcePath": "public/Country Flags/suriname.png"
+    "sourcePath": "public/game-modes/flag/source/suriname.png"
   },
   {
     "id": "sweden",
@@ -1697,7 +1697,7 @@ export const FLAG_ITEMS = [
       "s": 35,
       "v": 47
     },
-    "sourcePath": "public/Country Flags/sweden.png"
+    "sourcePath": "public/game-modes/flag/source/sweden.png"
   },
   {
     "id": "switzerland",
@@ -1707,7 +1707,7 @@ export const FLAG_ITEMS = [
       "s": 70,
       "v": 100
     },
-    "sourcePath": "public/Country Flags/switzerland.png"
+    "sourcePath": "public/game-modes/flag/source/switzerland.png"
   },
   {
     "id": "syria",
@@ -1717,7 +1717,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 59
     },
-    "sourcePath": "public/Country Flags/syria.png"
+    "sourcePath": "public/game-modes/flag/source/syria.png"
   },
   {
     "id": "taiwan",
@@ -1727,7 +1727,7 @@ export const FLAG_ITEMS = [
       "s": 79,
       "v": 77
     },
-    "sourcePath": "public/Country Flags/taiwan.png"
+    "sourcePath": "public/game-modes/flag/source/taiwan.png"
   },
   {
     "id": "tajikistan",
@@ -1737,7 +1737,7 @@ export const FLAG_ITEMS = [
       "s": 38,
       "v": 66
     },
-    "sourcePath": "public/Country Flags/tajikistan.png"
+    "sourcePath": "public/game-modes/flag/source/tajikistan.png"
   },
   {
     "id": "tanzania",
@@ -1747,7 +1747,7 @@ export const FLAG_ITEMS = [
       "s": 73,
       "v": 50
     },
-    "sourcePath": "public/Country Flags/tanzania.png"
+    "sourcePath": "public/game-modes/flag/source/tanzania.png"
   },
   {
     "id": "thailand",
@@ -1757,7 +1757,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 69
     },
-    "sourcePath": "public/Country Flags/thailand.png"
+    "sourcePath": "public/game-modes/flag/source/thailand.png"
   },
   {
     "id": "togo",
@@ -1767,7 +1767,7 @@ export const FLAG_ITEMS = [
       "s": 60,
       "v": 51
     },
-    "sourcePath": "public/Country Flags/togo.png"
+    "sourcePath": "public/game-modes/flag/source/togo.png"
   },
   {
     "id": "tonga",
@@ -1777,7 +1777,7 @@ export const FLAG_ITEMS = [
       "s": 82,
       "v": 79
     },
-    "sourcePath": "public/Country Flags/tonga.png"
+    "sourcePath": "public/game-modes/flag/source/tonga.png"
   },
   {
     "id": "trinidad-and-tobago",
@@ -1787,7 +1787,7 @@ export const FLAG_ITEMS = [
       "s": 76,
       "v": 65
     },
-    "sourcePath": "public/Country Flags/trinidad-and-tobago.png"
+    "sourcePath": "public/game-modes/flag/source/trinidad-and-tobago.png"
   },
   {
     "id": "tunisia",
@@ -1797,7 +1797,7 @@ export const FLAG_ITEMS = [
       "s": 90,
       "v": 91
     },
-    "sourcePath": "public/Country Flags/tunisia.png"
+    "sourcePath": "public/game-modes/flag/source/tunisia.png"
   },
   {
     "id": "turkey",
@@ -1807,7 +1807,7 @@ export const FLAG_ITEMS = [
       "s": 89,
       "v": 90
     },
-    "sourcePath": "public/Country Flags/turkey.png"
+    "sourcePath": "public/game-modes/flag/source/turkey.png"
   },
   {
     "id": "turkmenistan",
@@ -1817,7 +1817,7 @@ export const FLAG_ITEMS = [
       "s": 58,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/turkmenistan.png"
+    "sourcePath": "public/game-modes/flag/source/turkmenistan.png"
   },
   {
     "id": "tuvalu",
@@ -1827,7 +1827,7 @@ export const FLAG_ITEMS = [
       "s": 25,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/tuvalu.png"
+    "sourcePath": "public/game-modes/flag/source/tuvalu.png"
   },
   {
     "id": "uganda",
@@ -1837,7 +1837,7 @@ export const FLAG_ITEMS = [
       "s": 93,
       "v": 63
     },
-    "sourcePath": "public/Country Flags/uganda.png"
+    "sourcePath": "public/game-modes/flag/source/uganda.png"
   },
   {
     "id": "ukraine",
@@ -1847,7 +1847,7 @@ export const FLAG_ITEMS = [
       "s": 38,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/ukraine.png"
+    "sourcePath": "public/game-modes/flag/source/ukraine.png"
   },
   {
     "id": "united-arab-emirates",
@@ -1857,7 +1857,7 @@ export const FLAG_ITEMS = [
       "s": 17,
       "v": 46
     },
-    "sourcePath": "public/Country Flags/united-arab-emirates.png"
+    "sourcePath": "public/game-modes/flag/source/united-arab-emirates.png"
   },
   {
     "id": "united-kingdom",
@@ -1867,7 +1867,7 @@ export const FLAG_ITEMS = [
       "s": 37,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/united-kingdom.png"
+    "sourcePath": "public/game-modes/flag/source/united-kingdom.png"
   },
   {
     "id": "united-states-of-america",
@@ -1877,7 +1877,7 @@ export const FLAG_ITEMS = [
       "s": 33,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/united-states-of-america.png"
+    "sourcePath": "public/game-modes/flag/source/united-states-of-america.png"
   },
   {
     "id": "uruguay",
@@ -1887,7 +1887,7 @@ export const FLAG_ITEMS = [
       "s": 24,
       "v": 84
     },
-    "sourcePath": "public/Country Flags/uruguay.png"
+    "sourcePath": "public/game-modes/flag/source/uruguay.png"
   },
   {
     "id": "uzbekistan",
@@ -1897,7 +1897,7 @@ export const FLAG_ITEMS = [
       "s": 47,
       "v": 74
     },
-    "sourcePath": "public/Country Flags/uzbekistan.png"
+    "sourcePath": "public/game-modes/flag/source/uzbekistan.png"
   },
   {
     "id": "vanuatu",
@@ -1907,7 +1907,7 @@ export const FLAG_ITEMS = [
       "s": 57,
       "v": 37
     },
-    "sourcePath": "public/Country Flags/vanuatu.png"
+    "sourcePath": "public/game-modes/flag/source/vanuatu.png"
   },
   {
     "id": "vatican-city",
@@ -1917,7 +1917,7 @@ export const FLAG_ITEMS = [
       "s": 55,
       "v": 98
     },
-    "sourcePath": "public/Country Flags/vatican-city.png"
+    "sourcePath": "public/game-modes/flag/source/vatican-city.png"
   },
   {
     "id": "venezuela",
@@ -1927,7 +1927,7 @@ export const FLAG_ITEMS = [
       "s": 63,
       "v": 61
     },
-    "sourcePath": "public/Country Flags/venezuela.png"
+    "sourcePath": "public/game-modes/flag/source/venezuela.png"
   },
   {
     "id": "vietnam",
@@ -1937,7 +1937,7 @@ export const FLAG_ITEMS = [
       "s": 87,
       "v": 86
     },
-    "sourcePath": "public/Country Flags/vietnam.png"
+    "sourcePath": "public/game-modes/flag/source/vietnam.png"
   },
   {
     "id": "yemen",
@@ -1947,7 +1947,7 @@ export const FLAG_ITEMS = [
       "s": 41,
       "v": 60
     },
-    "sourcePath": "public/Country Flags/yemen.png"
+    "sourcePath": "public/game-modes/flag/source/yemen.png"
   },
   {
     "id": "zambia",
@@ -1957,7 +1957,7 @@ export const FLAG_ITEMS = [
       "s": 99,
       "v": 46
     },
-    "sourcePath": "public/Country Flags/zambia.png"
+    "sourcePath": "public/game-modes/flag/source/zambia.png"
   },
   {
     "id": "zimbabwe",
@@ -1967,6 +1967,6 @@ export const FLAG_ITEMS = [
       "s": 87,
       "v": 62
     },
-    "sourcePath": "public/Country Flags/zimbabwe.png"
+    "sourcePath": "public/game-modes/flag/source/zimbabwe.png"
   }
 ];

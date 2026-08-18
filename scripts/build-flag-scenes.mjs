@@ -6,7 +6,7 @@ import sharp from "sharp";
 const WIDTH = 1920;
 const HEIGHT = 1280;
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const SOURCE_DIR = path.resolve(PROJECT_ROOT, "public", "Country Flags");
+const SOURCE_DIR = path.resolve(PROJECT_ROOT, "public", "game-modes", "flag", "source");
 const OUTPUT_DIR = path.resolve(PROJECT_ROOT, "public", "game-modes", "flag", "generated");
 const CATALOG_PATH = path.resolve(PROJECT_ROOT, "shared", "flagCatalog.mjs");
 
@@ -354,7 +354,7 @@ async function buildFlag(item) {
     id: item.id,
     label: item.label,
     paint: layers.paint,
-    sourcePath: `public/Country Flags/${item.id}.png`,
+    sourcePath: `public/game-modes/flag/source/${item.id}.png`,
   };
 }
 
