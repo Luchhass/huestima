@@ -39,6 +39,7 @@ export default function CartoonOverlay({
   useCanvas = true,
   highlightPulse = false,
   pulseKey = null,
+  minRenderWidth = 0,
 }) {
   const isSceneImage = Boolean(color?.scenePath);
   const pulseRef = useRef(null);
@@ -153,6 +154,7 @@ export default function CartoonOverlay({
                 ]
               }
               color={color}
+              minRenderWidth={minRenderWidth}
               onReady={() => setReadySurfacePath(imagePath)}
             />
           )}

@@ -3,7 +3,9 @@ import { decodeSharedMatchEntry } from "@/lib/matchHistoryShare";
 
 export default async function HistoryRoute({ searchParams }) {
   const resolvedSearchParams = await searchParams;
-  const sharedMatch = decodeSharedMatchEntry(resolvedSearchParams?.share || "");
+  const sharedMatch = decodeSharedMatchEntry(
+    resolvedSearchParams?.s || resolvedSearchParams?.share || "",
+  );
   const selectedMatchId = resolvedSearchParams?.match || "";
   const initialView = resolvedSearchParams?.view || "";
 

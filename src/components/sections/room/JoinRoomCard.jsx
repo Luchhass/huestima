@@ -4,7 +4,8 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import PlayerNameField, {
-  cleanPlayerName,
+  readStoredPlayerName,
+  storePlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
 import PushNotification from "@/components/ui/PushNotification";
@@ -39,6 +40,14 @@ export default function JoinRoomCard({
     nameError || passwordError || (error !== hiddenRemoteError ? error : "");
 
   useScreenReveal(scopeRef, [roomCode]);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setPlayerName(readStoredPlayerName());
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
 
   useEffect(() => {
     if (!actionError) return undefined;
@@ -79,7 +88,7 @@ export default function JoinRoomCard({
     setNameError("");
     setPasswordError("");
     setHiddenRemoteError("");
-    await onJoin(cleanPlayerName(playerName), password.trim());
+    await onJoin(storePlayerName(playerName), password.trim());
   };
 
   return (
@@ -123,6 +132,7 @@ export default function JoinRoomCard({
             value={playerName}
             onChange={(value) => {
               setPlayerName(value);
+              storePlayerName(value);
               if (nameError) setNameError("");
               if (passwordError) setPasswordError("");
               if (error) setHiddenRemoteError(error);

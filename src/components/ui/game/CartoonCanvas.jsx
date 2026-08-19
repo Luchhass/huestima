@@ -20,11 +20,13 @@ export default function CartoonCanvas({
   color,
   className = "",
   onReady,
+  minRenderWidth = 0,
 }) {
   const canvasRef = useRef(null);
   const requestRef = useRef(0);
   const frameRef = useRef(null);
   const widthRef = useRef(0);
+  const layoutWidthRef = useRef(0);
   const inputRef = useRef(null);
   const visibleRef = useRef(false);
   const cleanLayers = useMemo(
@@ -45,7 +47,9 @@ export default function CartoonCanvas({
     const input = inputRef.current;
     if (!canvas || !input.baseSrc || !input.layers.length) return;
     const rect = canvas.getBoundingClientRect();
-    const width = Math.max(1, rect.width);
+    const layoutWidth = Math.max(1, rect.width);
+    const width = Math.max(layoutWidth, Number(minRenderWidth) || 0);
+    layoutWidthRef.current = layoutWidth;
     widthRef.current = width;
     const requestId = ++requestRef.current;
 
@@ -77,7 +81,7 @@ export default function CartoonCanvas({
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frameRef.current);
-  }, [baseSrc, sourceSrc, cleanLayerKey, targetKey]);
+  }, [baseSrc, sourceSrc, cleanLayerKey, minRenderWidth, targetKey]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -86,7 +90,7 @@ export default function CartoonCanvas({
     let intersectionObserver = null;
     const observer = new ResizeObserver(([entry]) => {
       const { width } = entry.contentRect;
-      if (Math.abs(width - widthRef.current) < 2) return;
+      if (Math.abs(width - layoutWidthRef.current) < 2) return;
       if (!visibleRef.current) return;
       window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(draw, 120);
@@ -112,7 +116,7 @@ export default function CartoonCanvas({
       window.clearTimeout(resizeTimer);
       requestRef.current += 1;
     };
-  }, [baseSrc, sourceSrc, cleanLayerKey]);
+  }, [baseSrc, sourceSrc, cleanLayerKey, minRenderWidth]);
 
   return (
     <canvas

@@ -77,13 +77,12 @@ export function getMatchHistoryEntry(entryId) {
   return readMatchHistory().find((entry) => entry?.id === entryId) || null;
 }
 
-export function buildSharedMatchUrl(entry) {
+export function buildSharedMatchUrl(entry, sharedBy = "") {
   if (typeof window === "undefined") return "";
 
-  const encodedEntry = encodeSharedMatchEntry(entry);
+  const encodedEntry = encodeSharedMatchEntry(entry, sharedBy);
   const url = new URL("/history", window.location.origin);
-  url.searchParams.set("share", encodedEntry);
-  url.searchParams.set("view", "detail");
+  url.searchParams.set("s", encodedEntry);
   return url.toString();
 }
 

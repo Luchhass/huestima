@@ -5,6 +5,7 @@ import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
 
 export const MAX_PLAYER_NAME_LENGTH = 18;
 export const MIN_PLAYER_NAME_LENGTH = 2;
+const PLAYER_NAME_STORAGE_KEY = "huestima-player-name";
 
 export function cleanPlayerName(value) {
   return value.trim().replace(/\s+/g, " ").slice(0, MAX_PLAYER_NAME_LENGTH);
@@ -26,6 +27,42 @@ export function validatePlayerName(
   }
 
   return "";
+}
+
+export function readStoredPlayerName() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    // Migrate existing session-only names while keeping future names durable.
+    const storedName =
+      localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ||
+      sessionStorage.getItem(PLAYER_NAME_STORAGE_KEY) ||
+      "";
+
+    return cleanPlayerName(storedName);
+  } catch {
+    return "";
+  }
+}
+
+export function storePlayerName(value) {
+  if (typeof window === "undefined") return "";
+
+  const cleanName = cleanPlayerName(value);
+
+  try {
+    if (cleanName) {
+      localStorage.setItem(PLAYER_NAME_STORAGE_KEY, cleanName);
+      sessionStorage.setItem(PLAYER_NAME_STORAGE_KEY, cleanName);
+    } else {
+      localStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
+      sessionStorage.removeItem(PLAYER_NAME_STORAGE_KEY);
+    }
+  } catch {
+    // Storage can be disabled without preventing a player from joining.
+  }
+
+  return cleanName;
 }
 
 export default function PlayerNameField({

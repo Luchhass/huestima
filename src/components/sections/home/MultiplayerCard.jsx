@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import PlayerNameField, {
   cleanPlayerName,
+  readStoredPlayerName,
+  storePlayerName,
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
 import PushNotification from "@/components/ui/PushNotification";
@@ -57,7 +59,6 @@ const MIN_LOBBY_NAME_LENGTH = 2;
 const MIN_LOBBY_PASSWORD_LENGTH = 3;
 const EXPANDED_REVEAL_DELAY = 320;
 const NOTIFICATION_LIFETIME_MS = 3000;
-const PLAYER_NAME_SESSION_KEY = "huestima-player-name";
 
 function getRoomFamily(room, fallbackFamily = "color") {
   return room?.gameFamily || getGameFamilyByMode(room?.gameMode) || fallbackFamily;
@@ -95,33 +96,6 @@ function validateLobbyPassword(value, t) {
   }
 
   return "";
-}
-
-function readStoredPlayerName() {
-  if (typeof window === "undefined") return "";
-
-  try {
-    return sessionStorage.getItem(PLAYER_NAME_SESSION_KEY) || "";
-  } catch {
-    return "";
-  }
-}
-
-function writeStoredPlayerName(value) {
-  if (typeof window === "undefined") return;
-
-  try {
-    const cleanName = cleanPlayerName(value);
-
-    if (cleanName) {
-      sessionStorage.setItem(PLAYER_NAME_SESSION_KEY, cleanName);
-      return;
-    }
-
-    sessionStorage.removeItem(PLAYER_NAME_SESSION_KEY);
-  } catch {
-    // Ignore unavailable sessionStorage.
-  }
 }
 
 function defaultLobbyNameForPlayer(value) {
@@ -338,7 +312,7 @@ export default function MultiplayerCard({
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
   const [lobbyName, setLobbyName] = useState("");
   const [isLobbyNameDirty, setIsLobbyNameDirty] = useState(false);
-  const [playerName, setPlayerName] = useState(() => readStoredPlayerName());
+  const [playerName, setPlayerName] = useState("");
   const [password, setPassword] = useState("");
   const [rooms, setRooms] = useState([]);
   const [selectedRoomCode, setSelectedRoomCode] = useState("");
@@ -369,6 +343,14 @@ export default function MultiplayerCard({
 
     return () => onTallStepChange?.(false);
   }, [isJoinListStep, onTallStepChange]);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setPlayerName(readStoredPlayerName());
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.code === selectedRoomCode) || null,
@@ -402,7 +384,7 @@ export default function MultiplayerCard({
 
   const updatePlayerName = (value) => {
     setPlayerName(value);
-    writeStoredPlayerName(value);
+    storePlayerName(value);
 
     if (!isLobbyNameDirty) {
       setLobbyName(defaultLobbyNameForPlayer(value));
@@ -531,7 +513,7 @@ export default function MultiplayerCard({
     setIsCreating(true);
 
     const cleanName = cleanPlayerName(playerName);
-    writeStoredPlayerName(cleanName);
+    storePlayerName(cleanName);
     const playerId = createPlayerId();
 
     const response = await emitWithAck("room:create", {
@@ -571,7 +553,7 @@ export default function MultiplayerCard({
       void navigator.clipboard
       ?.writeText(`${window.location.origin}${buildRoomHref(response.room.code)}`)
       .then(() => markInviteCopied(response.room.code))
-      .catch(() => false);
+      .catch(() => showNotification(t("room.couldNotCopy"), "error"));
     showNotification(t("setup.lobbyCreated"), "success");
     window.setTimeout(() => {
       router.push(buildRoomHref(response.room.code));
@@ -608,7 +590,7 @@ export default function MultiplayerCard({
     setIsJoining(true);
 
     const cleanName = cleanPlayerName(playerName);
-    writeStoredPlayerName(cleanName);
+    storePlayerName(cleanName);
     const playerId = createPlayerId();
 
     const response = await emitWithAck("room:join", {

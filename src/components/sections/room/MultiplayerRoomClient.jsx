@@ -13,6 +13,7 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
+import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
 import LobbyCard from "./LobbyCard";
@@ -166,6 +167,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       difficulty: response.room?.difficulty,
       game_mode: response.room?.gameMode,
     });
+    pushNotification(t("setup.lobbyJoined"), "success");
     setView(response.room.status === "in_game" ? "game" : "lobby");
   };
 
@@ -218,6 +220,8 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
     if (!response.ok) {
       setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
+    } else {
+      pushNotification(t("room.playerRemoved"), "success");
     }
 
     return response;
@@ -294,6 +298,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       return;
     }
 
+    pushNotification(t("room.returnedLobby"), "success");
     setView("lobby");
   };
 
@@ -317,7 +322,15 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       player?.playerId &&
       (room?.status === "lobby" || currentRoomPlayer?.returnedToLobby)
     ) {
-      await leaveRoom(player.playerId);
+      const response = await leaveRoom(player.playerId);
+      if (response?.ok === false) {
+        pushNotification(
+          getMultiplayerErrorMessage(response, t, "room.couldNotReachServer"),
+          "error",
+        );
+      } else {
+        pushNotification(t("room.lobbyLeft"), "success");
+      }
     }
 
     if (isExpandedRoomView(renderedView)) {

@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, Share2, Trash2, X } from "lucide-react";
+import { Check, Play, Share2, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
+import {
+  readStoredPlayerName,
+  validatePlayerName,
+} from "@/components/ui/PlayerNameField";
+import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import {
   buildSharedMatchUrl,
   buildReplayMatchUrl,
@@ -106,15 +111,20 @@ function RoundTiles({ results = [], locale, t }) {
           />
 
           {isFlagColor(result.target) && (
-            <FlagOverlay color={result.target} className="z-[1]" />
+            <FlagOverlay
+              color={result.guess}
+              className="z-[1]"
+              minRenderWidth={360}
+            />
           )}
 
           {isCartoonColor(result.target) && (
             <CartoonOverlay
-              color={result.target}
+              color={result.guess}
               variant="tile"
               size="tile"
               className="z-[2]"
+              minRenderWidth={360}
             />
           )}
 
@@ -228,7 +238,7 @@ function EmptyState({ t }) {
   );
 }
 
-function DetailHeader({ entry, locale, t, onBack }) {
+function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
   const maxScore = entry.maxScore || 0;
   const totalScore = entry.totalScore || 0;
   const scoreColor = getScoreColor(totalScore, maxScore);
@@ -257,21 +267,29 @@ function DetailHeader({ entry, locale, t, onBack }) {
           </p>
         </div>
 
-        <div className="mt-5 border-t border-white/12 pt-4">
-          <div className="flex items-baseline justify-between gap-4">
-            <h1 className="min-w-0 truncate text-[1.02rem] font-semibold leading-none text-white sm:text-[1.1rem]">
+        <div className="mt-5 space-y-2.5">
+          {sharedBy ? (
+            <p className="text-sm font-semibold text-white/72">
+              {t("history.sharedByline", { name: sharedBy })}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <h1 className="text-[1.02rem] font-semibold leading-none text-white sm:text-[1.1rem]">
               {getMatchTitle(entry, t)}
             </h1>
-            <time className="shrink-0 text-xs font-medium text-white/38 sm:text-sm">
+            <span aria-hidden="true" className="text-white/22">
+              ·
+            </span>
+            <time className="text-xs font-medium text-white/42 sm:text-sm">
               {formatDateTime(entry.createdAt, locale)}
             </time>
           </div>
 
-          <p className="mt-3 text-sm font-medium leading-none text-white/54 sm:text-[0.96rem]">
+          <p className="text-sm font-medium leading-none text-white/50 sm:text-[0.96rem]">
             {getFamilyLabel(entry, t)}
-            <span className="mx-2 text-white/22">/</span>
+            <span className="mx-2 text-white/24">·</span>
             {getModeLabel(entry, t)}
-            <span className="mx-2 text-white/22">/</span>
+            <span className="mx-2 text-white/24">·</span>
             {getDifficultyLabel(entry, t)}
           </p>
         </div>
@@ -298,6 +316,7 @@ export default function HistoryPage({
   const cardHeight = useResponsiveCardHeight(isExpanded);
   const listView = !activeEntry;
   const sharedEntry = useMemo(() => sharedMatch || null, [sharedMatch]);
+  const isSharedView = Boolean(sharedEntry);
 
   useEffect(() => {
     const savedEntries = readMatchHistory();
@@ -358,6 +377,7 @@ export default function HistoryPage({
   const handleDelete = (entryId) => {
     const nextEntries = removeMatchHistoryEntry(entryId);
     setEntries(nextEntries);
+    pushNotification(t("history.deleteSuccess"), "success");
 
     if (activeEntry?.id === entryId) {
       setActiveEntry(null);
@@ -409,13 +429,24 @@ export default function HistoryPage({
   const handleShare = async () => {
     if (!activeEntry) return;
 
+    const playerName = readStoredPlayerName();
+    const validationError = validatePlayerName(playerName, t);
+    if (validationError) {
+      pushNotification(t("history.shareNameRequired"), "error");
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(buildSharedMatchUrl(activeEntry));
+      await navigator.clipboard.writeText(
+        buildSharedMatchUrl(activeEntry, playerName),
+      );
       setCopyError(false);
       setCopied(true);
+      pushNotification(t("history.copySuccess"), "success");
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopyError(true);
+      pushNotification(t("history.copyFailed"), "error");
     }
   };
 
@@ -439,13 +470,8 @@ export default function HistoryPage({
                 locale={locale}
                 t={t}
                 onBack={handleBackToList}
+                sharedBy={isSharedView ? activeEntry.sharedBy : ""}
               />
-
-              {copied || copyError ? (
-                <p data-screen-reveal className="mt-4 text-sm text-white/54">
-                  {copyError ? t("history.copyFailed") : t("history.copySuccess")}
-                </p>
-              ) : null}
 
               <div
                 data-screen-reveal
@@ -472,42 +498,56 @@ export default function HistoryPage({
                 )}
               </div>
 
-              <div data-screen-reveal className="mt-5 w-full max-w-[32rem]">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="grid min-w-0 grid-cols-[3.625rem_minmax(0,1fr)] gap-3 sm:grid-cols-[3.875rem_minmax(0,1fr)]">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(activeEntry.id)}
-                      aria-label={t("history.deleteMatch")}
-                      className="app-danger-action card-action-size grid place-items-center rounded-full bg-[#e53935] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7773]"
-                    >
-                      <Trash2 size={19} />
-                    </button>
+              {!isSharedView ? (
+                <div data-screen-reveal className="mt-5 w-full max-w-[32rem]">
+                  <div className="flex items-center gap-3">
+                    <div className="contents sm:flex sm:min-w-0 sm:flex-1 sm:gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(activeEntry.id)}
+                        aria-label={t("history.deleteMatch")}
+                        className="app-danger-action card-action-size grid place-items-center rounded-full bg-[#e53935] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7773]"
+                      >
+                        <Trash2 size={19} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleShare}
+                        aria-label={
+                          copied ? t("history.copySuccess") : t("history.shareScore")
+                        }
+                        title={copied ? t("history.copySuccess") : t("history.shareScore")}
+                        className={`app-secondary-action card-action-height card-action-size min-w-0 rounded-full border-2 p-0 text-base font-semibold focus:outline-none focus-visible:ring-2 sm:min-w-0 sm:flex-1 sm:px-4 ${
+                          copied
+                            ? "border-emerald-300 bg-emerald-400 text-zinc-950 focus-visible:ring-emerald-200"
+                            : copyError
+                              ? "border-red-300 bg-red-500 text-white focus-visible:ring-red-200"
+                              : "border-white/90 bg-black text-white focus-visible:ring-white/70"
+                        }`}
+                      >
+                        <span className="inline-flex items-center justify-center gap-2">
+                          {copied ? <Check size={19} /> : <Share2 size={18} />}
+                          <span className="hidden sm:inline">
+                            {t("history.shareScore")}
+                          </span>
+                        </span>
+                      </button>
+                    </div>
 
                     <button
                       type="button"
-                      onClick={handleShare}
-                      className="app-secondary-action card-action-height min-w-0 rounded-full border-2 border-white/90 bg-black px-4 text-base font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                      onClick={handleReplay}
+                      className="rgb-hover-button card-action-height min-w-0 flex-1 rounded-full bg-white px-3 text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-4"
                     >
                       <span className="inline-flex items-center gap-2">
-                        <Share2 size={18} />
-                        {t("history.shareScore")}
+                        <Play size={18} />
+                        {t("history.playAgain")}
                       </span>
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleReplay}
-                    className="rgb-hover-button card-action-height min-w-0 rounded-full bg-white px-4 text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Play size={18} />
-                      {t("history.playAgain")}
-                    </span>
-                  </button>
                 </div>
-              </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -540,6 +580,7 @@ export default function HistoryPage({
             </>
           )}
         </div>
+
       </section>
     </main>
   );

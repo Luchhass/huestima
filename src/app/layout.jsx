@@ -5,6 +5,7 @@ import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
 import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
+import GlobalPushNotifications from "@/components/ui/GlobalPushNotifications";
 import StructuredData from "@/components/seo/StructuredData";
 import { AdminModeProvider } from "@/hooks/useAdminMode";
 import { APP_NAME } from "@/lib/constants";
@@ -157,6 +158,7 @@ export default function RootLayout({ children }) {
           <FullscreenEscapeButton />
           {children}
           <AppFooter />
+          <GlobalPushNotifications />
         </AdminModeProvider>
       </body>
     </html>

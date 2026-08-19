@@ -2,22 +2,21 @@
 
 import { useState } from "react";
 import { LockKeyhole, X } from "lucide-react";
+import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 
 const ADMIN_PASSWORD = "1811";
 
 export default function AdminProtectorCard({ onCancel, onUnlock }) {
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
     if (password.trim() !== ADMIN_PASSWORD) {
-      setError("Wrong password.");
+      pushNotification("Wrong password.", "error");
       return;
     }
 
-    setError("");
     onUnlock();
   };
 
@@ -53,10 +52,7 @@ export default function AdminProtectorCard({ onCancel, onUnlock }) {
 
             <input
               value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                if (error) setError("");
-              }}
+              onChange={(event) => setPassword(event.target.value)}
               type="password"
               inputMode="numeric"
               autoComplete="off"
@@ -68,15 +64,10 @@ export default function AdminProtectorCard({ onCancel, onUnlock }) {
 
           <button
             type="submit"
-            className={`card-action-height inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base ${
-              error
-                ? "app-danger-action bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                : "rgb-hover-button bg-white text-zinc-950"
-            }`}
+            className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
           >
-            {error && <X className="relative z-10 size-4 shrink-0" strokeWidth={2.35} />}
             <span className="relative z-10 whitespace-nowrap">
-              {error || "Enter mode"}
+              Enter mode
             </span>
           </button>
         </div>

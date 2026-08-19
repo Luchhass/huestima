@@ -11,10 +11,9 @@ const ICONS = {
 };
 
 const STYLES = {
-  admin:
-    "bg-[linear-gradient(135deg,#f4c46a_0%,#f59e0b_48%,#ea580c_100%)] text-zinc-950 shadow-[0_18px_42px_rgba(245,158,11,0.34)]",
-  success: "bg-emerald-500 text-white shadow-[0_18px_42px_rgba(16,185,129,0.28)]",
-  error: "bg-red-500 text-white shadow-[0_18px_42px_rgba(239,68,68,0.3)]",
+  admin: "bg-amber-500 text-zinc-950",
+  success: "bg-emerald-500 text-white",
+  error: "bg-red-500 text-white",
 };
 
 export default function PushNotification({

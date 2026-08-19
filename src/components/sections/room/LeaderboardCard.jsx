@@ -16,6 +16,7 @@ import {
 import { formatScore } from "@/lib/scoring";
 import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
+import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
 const EXPANDED_REVEAL_DELAY = 320;
@@ -70,7 +71,6 @@ export default function LeaderboardCard({
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
-  const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
 
   useAppChromeHidden(true);
@@ -84,15 +84,14 @@ export default function LeaderboardCard({
   const maxTotalScore =
     leaderboard?.maxTotalScore || totalRounds * MULTIPLAYER_MAX_ROUND_SCORE;
   const activeActionError = error && error !== hiddenActionError ? error : "";
-  const homeActionError = activeActionError && lastAction === "home";
-  const lobbyActionError = activeActionError && (lastAction === "lobby" || !lastAction);
 
   useEffect(() => {
     if (!activeActionError) return undefined;
 
+    pushNotification(activeActionError, "error");
+
     const timeoutId = window.setTimeout(() => {
       setHiddenActionError(activeActionError);
-      setLastAction(null);
     }, 2200);
 
     return () => window.clearTimeout(timeoutId);
@@ -102,7 +101,6 @@ export default function LeaderboardCard({
     if (isLeavingHome) return;
 
     setHiddenActionError("");
-    setLastAction("home");
     onBackHome?.();
   };
 
@@ -110,7 +108,6 @@ export default function LeaderboardCard({
     if (isReturningLobby) return;
 
     setHiddenActionError("");
-    setLastAction("lobby");
     onBackLobby?.();
   };
 
@@ -240,17 +237,10 @@ export default function LeaderboardCard({
           <button
             type="button"
             onClick={handleBackHome}
-            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 px-3 text-center text-[0.78rem] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
-              homeActionError
-                ? "app-danger-action border-red-500 bg-red-500 text-white"
-                : "app-secondary-action border-white/95 bg-transparent text-white hover:bg-white/10"
-            }`}
+            className="app-secondary-action card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 border-white/95 bg-transparent px-3 text-center text-[0.78rem] font-semibold leading-tight text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base"
           >
-            {homeActionError && (
-              <X className="shrink-0" size={16} strokeWidth={2.35} />
-            )}
             <span className="min-w-0 truncate">
-              {homeActionError || t("common.backHome")}
+              {t("common.backHome")}
             </span>
           </button>
 
@@ -258,18 +248,10 @@ export default function LeaderboardCard({
             type="button"
             onClick={handleBackLobby}
             disabled={isReturningLobby}
-            className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[0.78rem] font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base ${
-              lobbyActionError
-                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
-                : "rgb-hover-button bg-white text-zinc-950"
-            }`}
+            className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-[0.78rem] font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base"
           >
-            {lobbyActionError && (
-              <X className="relative z-10 shrink-0" size={16} strokeWidth={2.35} />
-            )}
             <span className="relative z-10 min-w-0 truncate">
-              {lobbyActionError ||
-                (isReturningLobby ? t("room.returningLobby") : t("room.backLobby"))}
+              {isReturningLobby ? t("room.returningLobby") : t("room.backLobby")}
             </span>
           </button>
         </div>

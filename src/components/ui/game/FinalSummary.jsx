@@ -451,15 +451,20 @@ export default function FinalSummary({
               />
 
               {isFlagColor(result.target) && (
-                <FlagOverlay color={result.target} className="z-[1]" />
+                <FlagOverlay
+                  color={result.guess}
+                  className="z-[1]"
+                  minRenderWidth={360}
+                />
               )}
 
               {isCartoonColor(result.target) && (
                 <CartoonOverlay
-                  color={result.target}
+                  color={result.guess}
                   variant="tile"
                   size="tile"
                   className="z-[2]"
+                  minRenderWidth={360}
                 />
               )}
 

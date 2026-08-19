@@ -9,6 +9,7 @@ export default function FlagOverlay({
   color,
   slice = "full",
   className = "",
+  minRenderWidth = 0,
 }) {
   const [isSurfaceReady, setIsSurfaceReady] = useState(false);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
@@ -66,6 +67,7 @@ export default function FlagOverlay({
               ]
             }
             color={color}
+            minRenderWidth={minRenderWidth}
             onReady={() => setIsSurfaceReady(true)}
           />
         )}
