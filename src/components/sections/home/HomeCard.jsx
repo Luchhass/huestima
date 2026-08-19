@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import gsap from "gsap";
 import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
 import PushNotification from "@/components/ui/PushNotification";
 import ComingSoonCard from "./ComingSoonCard";
@@ -65,8 +67,16 @@ function waitForCardResize() {
   });
 }
 
-export default function HomeCard({ initialView = "home", gameFamily = "color" }) {
+export default function HomeCard({
+  initialView = "home",
+  gameFamily = "color",
+  initialDifficulty = null,
+  initialGameMode = null,
+  initialRoundCount = null,
+  initialHintsEnabled = null,
+}) {
   const { locale, t } = useTranslation();
+  const router = useRouter();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
   const defaultDifficulty =
@@ -84,9 +94,9 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     requestProtector,
   } = useAdminMode();
   const [view, setView] = useState(initialView);
-  const [difficulty, setDifficulty] = useState(defaultDifficulty);
-  const [gameMode, setGameMode] = useState(defaultGameMode);
-  const [roundCount, setRoundCount] = useState(DEFAULT_ROUND_COUNT);
+  const [difficulty, setDifficulty] = useState(initialDifficulty || defaultDifficulty);
+  const [gameMode, setGameMode] = useState(initialGameMode || defaultGameMode);
+  const [roundCount, setRoundCount] = useState(initialRoundCount || DEFAULT_ROUND_COUNT);
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
@@ -101,6 +111,8 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
   const isComingSoonFamily = cleanGameFamily === GAME_FAMILY_IDS.BRAND;
+  const showHowItWorksInCard =
+    cleanGameFamily === GAME_FAMILY_IDS.CARTOON && view === "home";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
@@ -273,6 +285,41 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
     }, ADMIN_SETTLE_DELAY_MS);
   };
 
+  const handleHowItWorksClick = async () => {
+    if (isChangingViewRef.current) return;
+
+    isChangingViewRef.current = true;
+    const introCard = document.querySelector("[data-intro-card-target]");
+
+    try {
+      sessionStorage.setItem("huestima-how-it-works-entry", "cartoon");
+      await playScreenFadeOut(contentRef, { duration: 0.24 });
+
+      if (introCard) {
+        await new Promise((resolve) => {
+          gsap.set(introCard, {
+            autoAlpha: 1,
+            transformOrigin: "center center",
+          });
+          gsap.to(introCard, {
+            scale: 0.001,
+            duration: 0.54,
+            ease: "power3.inOut",
+            overwrite: "auto",
+            onComplete: resolve,
+          });
+        });
+      }
+
+      router.push("/how-it-works");
+    } catch {
+      // Restore the menu if navigation cannot complete after the fade begins.
+      gsap.set(contentRef.current, { autoAlpha: 1 });
+      gsap.set(introCard, { clearProps: "opacity,visibility,transform" });
+      isChangingViewRef.current = false;
+    }
+  };
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -365,6 +412,21 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
                       onMultiplayer={() => changeView("multiplayer")}
                     />
                   </div>
+
+                  {showHowItWorksInCard ? (
+                    <div data-screen-reveal className="absolute right-0 bottom-0 z-40">
+                      <button
+                        type="button"
+                        data-sound="off"
+                        onClick={() => {
+                          void handleHowItWorksClick();
+                        }}
+                        className="border-0 bg-transparent p-0 text-[11px] font-medium lowercase tracking-wider text-white/45 no-underline outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-white/50"
+                      >
+                        {t("howItWorks.footerLink")}
+                      </button>
+                    </div>
+                  ) : null}
                 </>
               )}
             </>
@@ -376,7 +438,7 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
               gameModeOptions={singleplayerGameModeOptions}
               playPath={getGameFamilyHref(cleanGameFamily, "singleplayer")}
               roundCount={roundCount}
-              hintsEnabled
+              hintsEnabled={initialHintsEnabled ?? true}
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
@@ -386,6 +448,9 @@ export default function HomeCard({ initialView = "home", gameFamily = "color" })
             <MultiplayerCard
               gameFamily={cleanGameFamily}
               onTallStepChange={setIsMultiplayerTallStep}
+              initialDifficulty={initialDifficulty || defaultDifficulty}
+              initialGameMode={initialGameMode || defaultGameMode}
+              initialHintsEnabled={initialHintsEnabled ?? true}
             />
           )}
         </div>

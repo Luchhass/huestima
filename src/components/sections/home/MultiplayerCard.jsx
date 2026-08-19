@@ -22,6 +22,7 @@ import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
+  DEFAULT_ROUND_COUNT,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
 import {
@@ -317,14 +318,21 @@ function RoomListRow({ room, selected, onSelect, disabled }) {
   );
 }
 
-export default function MultiplayerCard({ gameFamily = "color", onTallStepChange }) {
+export default function MultiplayerCard({
+  gameFamily = "color",
+  onTallStepChange,
+  initialDifficulty = null,
+  initialGameMode = null,
+  initialRoundCount = DEFAULT_ROUND_COUNT,
+  initialHintsEnabled = true,
+}) {
   const router = useRouter();
   const { t } = useTranslation();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
-  const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
+  const defaultGameMode = initialGameMode || getDefaultGameModeForFamily(cleanGameFamily);
   const defaultGameModeOption = getGameModeOption(defaultGameMode, GAME_MODE_OPTIONS, cleanGameFamily);
   const defaultDifficulty =
-    defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
+    initialDifficulty || defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
   const scopeRef = useRef(null);
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
@@ -535,7 +543,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       difficulty: defaultDifficulty,
       gameMode: defaultGameMode,
       gameFamily: cleanGameFamily,
-      hintsEnabled: true,
+      roundCount: initialRoundCount,
+      hintsEnabled: initialHintsEnabled,
     });
 
     if (!response.ok) {
@@ -554,7 +563,8 @@ export default function MultiplayerCard({ gameFamily = "color", onTallStepChange
       game_type: "multiplayer",
       difficulty: defaultDifficulty,
       game_mode: defaultGameMode,
-      hints_enabled: true,
+      rounds: initialRoundCount,
+      hints_enabled: initialHintsEnabled,
       visibility,
     });
 

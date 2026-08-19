@@ -70,7 +70,7 @@ export default function AdminProtectorCard({ onCancel, onUnlock }) {
             type="submit"
             className={`card-action-height inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-full px-5 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base ${
               error
-                ? "bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
+                ? "app-danger-action bg-red-500 text-white shadow-[0_16px_30px_rgba(239,68,68,0.22)]"
                 : "rgb-hover-button bg-white text-zinc-950"
             }`}
           >

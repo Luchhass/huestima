@@ -15,6 +15,7 @@ import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
+import { upsertMatchHistoryEntry } from "@/lib/matchHistory";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
 import MemorizePhase from "@/components/ui/game/MemorizePhase";
@@ -76,6 +77,7 @@ export default function SingleplayerGame({
   const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   const isPageUnloadRef = useRef(false);
+  const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON);
@@ -261,9 +263,42 @@ export default function SingleplayerGame({
     game.summary.totalScore,
   ]);
 
+  useEffect(() => {
+    if (game.phase !== GAME_PHASES.FINAL || historySavedRef.current) return;
+
+    historySavedRef.current = true;
+    upsertMatchHistoryEntry({
+      id: game.historyMatchId,
+      gameType: "singleplayer",
+      gameFamily: cleanGameFamily,
+      gameMode: game.gameMode.id,
+      difficulty: game.difficulty.id,
+      rounds: game.results.length,
+      roundCount: game.roundCount,
+      isEndlessMode: game.isEndlessMode,
+      totalScore: game.summary.totalScore,
+      averageScore: game.summary.averageScore,
+      maxScore: game.summary.maxScore,
+      results: game.results,
+    });
+  }, [
+    cleanGameFamily,
+    game.difficulty.id,
+    game.gameMode.id,
+    game.historyMatchId,
+    game.isEndlessMode,
+    game.phase,
+    game.results,
+    game.roundCount,
+    game.summary.averageScore,
+    game.summary.maxScore,
+    game.summary.totalScore,
+  ]);
+
   const handlePlayAgain = () => {
     startTrackedRef.current = true;
     completionTrackedRef.current = false;
+    historySavedRef.current = false;
     trackMatchStart({
       gameType: "singleplayer",
       difficulty: game.difficulty.id,

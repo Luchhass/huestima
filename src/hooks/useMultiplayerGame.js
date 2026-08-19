@@ -41,6 +41,7 @@ import {
 } from "@/lib/color";
 import { emitWithAck } from "@/lib/socket";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
+import { createMatchHistoryId } from "@/lib/matchHistory";
 
 function responseData(response) {
   return response?.data || response || {};
@@ -186,6 +187,9 @@ export function useMultiplayerGame({
   );
   const [hintActive, setHintActive] = useState(false);
   const [resumeSavedAt, setResumeSavedAt] = useState(null);
+  const [historyMatchId, setHistoryMatchId] = useState(() =>
+    initialGameSession?.historyMatchId || createMatchHistoryId(),
+  );
   const restoredFromSession = Boolean(initialGameSession);
   const snapshotRef = useRef(null);
   const currentRoomPlayer = useMemo(
@@ -239,9 +243,13 @@ export function useMultiplayerGame({
             ? initialGameSession.savedAt
             : Date.now(),
         );
+        setHistoryMatchId(
+          initialGameSession.historyMatchId || createMatchHistoryId(),
+        );
       } else {
         setPhaseStartedAt(Date.now());
         setResumeSavedAt(null);
+        setHistoryMatchId(createMatchHistoryId());
       }
 
       setHasRestoredSession(true);
@@ -435,6 +443,7 @@ export function useMultiplayerGame({
     if (!hasRestoredSession) return;
 
     saveGameSession(gameSessionKey, {
+      historyMatchId,
       seed: currentSeed,
       phase,
       phaseStartedAt,
@@ -453,6 +462,7 @@ export function useMultiplayerGame({
     gameSessionKey,
     guessColor,
     hasRestoredSession,
+    historyMatchId,
     hintActive,
     hintCount,
     phase,
@@ -467,6 +477,7 @@ export function useMultiplayerGame({
 
   useEffect(() => {
     snapshotRef.current = {
+      historyMatchId,
       seed: currentSeed,
       phase,
       phaseStartedAt,
@@ -484,6 +495,7 @@ export function useMultiplayerGame({
     currentSeed,
     guessColor,
     guessDurationMs,
+    historyMatchId,
     hintActive,
     hintCount,
     phase,
@@ -609,6 +621,7 @@ export function useMultiplayerGame({
     hasRestoredSession,
     restoredFromSession,
     resumeSavedAt,
+    historyMatchId,
     guessColor,
     results,
     latestResult: results[results.length - 1] || null,

@@ -371,6 +371,41 @@ input {
     opacity: 1;
   }
 
+  .app-secondary-action,
+  .app-danger-action,
+  .app-icon-action {
+    transition:
+      transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.22s ease,
+      box-shadow 0.22s ease,
+      border-color 0.22s ease;
+  }
+
+  .app-secondary-action:not(:disabled):hover,
+  .app-secondary-action:not(:disabled):focus-visible,
+  .app-icon-action:not(:disabled):hover,
+  .app-icon-action:not(:disabled):focus-visible {
+    transform: translateY(-2px);
+  }
+
+  .app-secondary-action:not(:disabled):hover,
+  .app-secondary-action:not(:disabled):focus-visible {
+    border-color: rgb(255 255 255 / 0.48);
+    box-shadow: 0 10px 22px rgb(0 0 0 / 0.28);
+  }
+
+  .app-icon-action:not(:disabled):hover,
+  .app-icon-action:not(:disabled):focus-visible {
+    box-shadow: 0 9px 18px rgb(0 0 0 / 0.18);
+  }
+
+  .app-danger-action:not(:disabled):hover,
+  .app-danger-action:not(:disabled):focus-visible {
+    background: #ff5a55;
+    box-shadow: 0 10px 22px rgb(229 57 53 / 0.36);
+    transform: translateY(-2px) rotate(-4deg) scale(1.06);
+  }
+
   .soft-icon-button {
     transition: transform 0.22s ease;
   }
@@ -849,6 +884,9 @@ input {
   .game-action-pop,
   .game-action-pop::after,
   .soft-icon-button,
+  .app-secondary-action,
+  .app-danger-action,
+  .app-icon-action,
   .solo-close-button,
   .fullscreen-escape-button,
   .fullscreen-escape-button__reveal,

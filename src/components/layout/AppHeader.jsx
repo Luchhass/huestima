@@ -16,6 +16,9 @@ import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
 
+const HISTORY_LEAVE_EVENT = "huestima-history-leave";
+const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
+
 export default function AppHeader() {
   const { t } = useTranslation();
   const pathname = usePathname();
@@ -23,6 +26,7 @@ export default function AppHeader() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const isNavigatingRef = useRef(false);
+  const navigationResetRef = useRef(null);
   const menuButtonRef = useRef(null);
   const mobileOverlayRef = useRef(null);
   const mobileBubbleRef = useRef(null);
@@ -32,11 +36,18 @@ export default function AppHeader() {
 
   useEffect(() => {
     isNavigatingRef.current = false;
+    if (navigationResetRef.current) {
+      window.clearTimeout(navigationResetRef.current);
+      navigationResetRef.current = null;
+    }
   }, [pathname]);
 
   useEffect(() => {
     return () => {
       mobileMenuTimelineRef.current?.kill();
+      if (navigationResetRef.current) {
+        window.clearTimeout(navigationResetRef.current);
+      }
     };
   }, []);
 
@@ -175,6 +186,27 @@ export default function AppHeader() {
   }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
+    if (pathname?.startsWith("/history")) {
+      await new Promise((resolve) => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          window.removeEventListener(HISTORY_LEAVE_COMPLETE_EVENT, finish);
+          resolve();
+        };
+
+        window.addEventListener(HISTORY_LEAVE_COMPLETE_EVENT, finish, {
+          once: true,
+        });
+        window.dispatchEvent(new Event(HISTORY_LEAVE_EVENT));
+        window.setTimeout(finish, 1400);
+      });
+
+      router.push(href);
+      return;
+    }
+
     const scope =
       document.querySelector("[data-route-transition-scope]") ||
       document.querySelector("[data-intro-card-target]") ||
@@ -205,12 +237,18 @@ export default function AppHeader() {
 
     event.preventDefault();
     isNavigatingRef.current = true;
+    navigationResetRef.current = window.setTimeout(() => {
+      isNavigatingRef.current = false;
+      navigationResetRef.current = null;
+    }, 1800);
 
     if (isNavRendered) {
       closeMenuRef.current();
     }
 
-    void playRouteTransition(href);
+    void playRouteTransition(href).catch(() => {
+      isNavigatingRef.current = false;
+    });
   };
 
   const handleMenuToggle = () => {

@@ -70,3 +70,40 @@ export function getLegacySingleplayerRedirectPath(searchParams) {
 
   return `${getGameFamilyHref(gameFamily, "singleplayer")}${suffix ? `?${suffix}` : ""}`;
 }
+
+export function resolveMultiplayerSetupRoute(searchParams, gameFamily = "color") {
+  const cleanFamily = normalizeGameFamily(gameFamily);
+  const legacyMode = typeof searchParams?.mode === "string" ? searchParams.mode : "";
+  const requestedDifficulty =
+    typeof searchParams?.difficulty === "string" ? searchParams.difficulty : legacyMode;
+  const requestedGameMode =
+    typeof searchParams?.gameMode === "string" ? searchParams.gameMode : legacyMode;
+
+  const validatedDifficulty = DIFFICULTY_OPTIONS.some(
+    (option) => option.id === requestedDifficulty,
+  )
+    ? requestedDifficulty
+    : DEFAULT_DIFFICULTY_ID;
+
+  const availableGameModeOptions = getAvailableGameModeOptions(
+    GAME_MODE_OPTIONS,
+    cleanFamily,
+  );
+  const defaultGameMode = getDefaultGameModeForFamily(cleanFamily);
+  const gameMode = availableGameModeOptions.some((option) => option.id === requestedGameMode)
+    ? requestedGameMode
+    : defaultGameMode;
+  const gameModeOption =
+    availableGameModeOptions.find((option) => option.id === gameMode) ||
+    availableGameModeOptions[0];
+  const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
+  const roundCount = normalizeRoundCount(searchParams?.roundCount ?? searchParams?.levels);
+  const hintsEnabled = normalizeHintsEnabled(searchParams?.hints, true);
+
+  return {
+    difficulty,
+    gameMode,
+    roundCount,
+    hintsEnabled,
+  };
+}

@@ -49,6 +49,7 @@ import {
   getGameSession,
   saveGameSession,
 } from "@/hooks/useGameSession";
+import { createMatchHistoryId } from "@/lib/matchHistory";
 
 export const GAME_PHASES = {
   INTRO: "intro",
@@ -186,6 +187,9 @@ export function useSingleplayerGame(
   );
   const [hintActive, setHintActive] = useState(false);
   const [resumeSavedAt, setResumeSavedAt] = useState(null);
+  const [historyMatchId, setHistoryMatchId] = useState(() =>
+    initialGameSession?.historyMatchId || createMatchHistoryId(),
+  );
   const restoredFromSession = Boolean(initialGameSession);
   const snapshotRef = useRef(null);
 
@@ -224,9 +228,13 @@ export function useSingleplayerGame(
             ? initialGameSession.savedAt
             : Date.now(),
         );
+        setHistoryMatchId(
+          initialGameSession.historyMatchId || createMatchHistoryId(),
+        );
       } else {
         setPhaseStartedAt(Date.now());
         setResumeSavedAt(null);
+        setHistoryMatchId(createMatchHistoryId());
       }
 
       setHasRestoredSession(true);
@@ -246,6 +254,7 @@ export function useSingleplayerGame(
     if (!hasRestoredSession) return;
 
     saveGameSession(gameSessionKey, {
+      historyMatchId,
       phase,
       phaseStartedAt,
       roundIndex,
@@ -260,6 +269,7 @@ export function useSingleplayerGame(
     gameSessionKey,
     guessColor,
     hasRestoredSession,
+    historyMatchId,
     hintActive,
     hintCount,
     phase,
@@ -272,6 +282,7 @@ export function useSingleplayerGame(
 
   useEffect(() => {
     snapshotRef.current = {
+      historyMatchId,
       phase,
       phaseStartedAt,
       roundIndex,
@@ -284,6 +295,7 @@ export function useSingleplayerGame(
     };
   }, [
     guessColor,
+    historyMatchId,
     hintActive,
     hintCount,
     phase,
@@ -547,6 +559,7 @@ export function useSingleplayerGame(
     setPhaseStartedAt(Date.now());
     setPhase(GAME_PHASES.INTRO);
     setResumeSavedAt(null);
+    setHistoryMatchId(createMatchHistoryId());
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -595,6 +608,7 @@ export function useSingleplayerGame(
     hasRestoredSession,
     restoredFromSession,
     resumeSavedAt,
+    historyMatchId,
     guessColor,
     results,
     summary,

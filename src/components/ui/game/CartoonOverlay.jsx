@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { isCartoonColor } from "@/lib/color";
 import CartoonCanvas from "./CartoonCanvas";
@@ -43,6 +43,7 @@ export default function CartoonOverlay({
   const isSceneImage = Boolean(color?.scenePath);
   const pulseRef = useRef(null);
   const [readySurfacePath, setReadySurfacePath] = useState(null);
+  const [hasImageError, setHasImageError] = useState(false);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
   const originalScenePath = color?.originalScenePath;
   const baseScenePath = color?.baseScenePath || color?.scenePath;
@@ -111,6 +112,11 @@ export default function CartoonOverlay({
     return () => ctx.revert();
   }, [highlightPulse, imagePath, isSurfaceReady, pulseKey]);
 
+  useEffect(() => {
+    setHasImageError(false);
+    setReadySurfacePath(null);
+  }, [imagePath]);
+
   if (!isCartoonColor(color) || !imagePath) return null;
 
   if (isSceneImage) {
@@ -130,9 +136,10 @@ export default function CartoonOverlay({
             fill
             sizes="(max-width: 640px) 100vw, 500px"
             unoptimized
+            onError={() => setHasImageError(true)}
             className={`object-cover ${isSurfaceReady ? "invisible" : "visible"}`}
           />
-          {useCanvas && originalScenePath && baseScenePath && (
+          {!hasImageError && useCanvas && originalScenePath && baseScenePath && (
             <CartoonCanvas
               baseSrc={baseScenePath}
               sourceSrc={originalScenePath}
@@ -186,8 +193,9 @@ export default function CartoonOverlay({
           fill
           sizes="(max-width: 640px) 68vw, 380px"
           unoptimized
+          onError={() => setHasImageError(true)}
           className="object-contain grayscale contrast-110"
-          style={{ opacity: variantStyle.baseOpacity }}
+          style={{ opacity: hasImageError ? 0 : variantStyle.baseOpacity }}
         />
         <span
           className="absolute inset-0"
@@ -204,10 +212,11 @@ export default function CartoonOverlay({
           fill
           sizes="(max-width: 640px) 68vw, 380px"
           unoptimized
+          onError={() => setHasImageError(true)}
           className="object-contain grayscale contrast-125"
           style={{
             mixBlendMode: "multiply",
-            opacity: variantStyle.shadeOpacity,
+            opacity: hasImageError ? 0 : variantStyle.shadeOpacity,
           }}
         />
       </span>

@@ -11,7 +11,7 @@ import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
 
 const HOW_IT_WORKS_CARTOON_ID = "adventure-time-9596374";
-const CLASSIC_CUTOUT_SRC = "/bunu kullan amk.png";
+const CLASSIC_CUTOUT_SRC = "/how-it-works/lady-rainicorn-bad-cutout.png";
 const DEMO_SATURATION = 50;
 const DEMO_VALUE = 98;
 

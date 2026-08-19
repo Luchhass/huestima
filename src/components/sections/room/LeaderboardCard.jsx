@@ -242,8 +242,8 @@ export default function LeaderboardCard({
             onClick={handleBackHome}
             className={`card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 px-3 text-center text-[0.78rem] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-5 sm:text-base ${
               homeActionError
-                ? "border-red-500 bg-red-500 text-white"
-                : "border-white/95 bg-transparent text-white hover:bg-white/10"
+                ? "app-danger-action border-red-500 bg-red-500 text-white"
+                : "app-secondary-action border-white/95 bg-transparent text-white hover:bg-white/10"
             }`}
           >
             {homeActionError && (

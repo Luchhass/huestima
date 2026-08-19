@@ -251,14 +251,14 @@ export default function LobbyCard({
               <button
                 type="button"
                 onClick={() => setIsLeaveConfirmOpen(false)}
-                className="inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white transition hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 {t("common.no")}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmBackHome}
-                className="inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 transition hover:bg-white/92 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 {t("common.yes")}
               </button>
@@ -447,7 +447,7 @@ export default function LobbyCard({
                 }
                 onClick={handleToggleSettings}
                 disabled={isUpdatingSettings}
-                className={`game-action-pop card-action-size grid shrink-0 place-items-center rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`game-action-pop app-icon-action card-action-size grid shrink-0 place-items-center rounded-full border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40 ${
                   isSettingsOpen
                     ? "border-red-500 bg-red-500 text-white"
                     : "border-white/95 bg-transparent text-white hover:bg-white/10"
@@ -466,7 +466,7 @@ export default function LobbyCard({
               aria-label={t("room.copyInvite")}
               title={t("room.copyInvite")}
               onClick={handleCopyInvite}
-              className={`rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+              className={`app-icon-action rounded-full border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 isHost
                   ? "game-action-pop card-action-size grid shrink-0 place-items-center"
                   : "card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 px-4 text-center text-sm font-semibold leading-tight sm:text-base"

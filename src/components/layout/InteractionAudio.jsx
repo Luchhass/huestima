@@ -33,6 +33,10 @@ function getInteractiveElement(event) {
   return element;
 }
 
+function shouldSkipHoverSound(element) {
+  return Boolean(element.closest("[data-hover-sound='off']"));
+}
+
 function getSoundKind(element) {
   if (element.closest(".solo-close-button")) return "close";
   if (element.closest(".difficulty-switch")) return "difficulty";
@@ -82,6 +86,7 @@ export default function InteractionAudio() {
       const element = getInteractiveElement(event);
       if (!element) return;
       if (event.relatedTarget instanceof Node && element.contains(event.relatedTarget)) return;
+      if (shouldSkipHoverSound(element)) return;
 
       const soundKind = getSoundKind(element);
 

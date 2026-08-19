@@ -15,6 +15,7 @@ import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
+import { upsertMatchHistoryEntry } from "@/lib/matchHistory";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
 import MemorizePhase from "@/components/ui/game/MemorizePhase";
@@ -135,6 +136,7 @@ export default function MultiplayerGame({
   const [isLeavingLeaderboardLobby, setIsLeavingLeaderboardLobby] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   const isPageUnloadRef = useRef(false);
+  const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON);
@@ -334,6 +336,47 @@ export default function MultiplayerGame({
     game.roundCount,
     phase,
     playerId,
+  ]);
+
+  useEffect(() => {
+    if (phase !== "leaderboard" || !game.leaderboard || historySavedRef.current) {
+      return;
+    }
+
+    historySavedRef.current = true;
+    const rows = game.leaderboard.leaderboard || [];
+    const currentRow = rows.find((row) => row.playerId === playerId);
+
+    upsertMatchHistoryEntry({
+      id: game.historyMatchId,
+      gameType: "multiplayer",
+      gameFamily: cleanGameFamily,
+      gameMode: game.gameMode.id,
+      difficulty: game.difficulty.id,
+      rounds: game.leaderboard.totalRounds || game.roundCount,
+      roundCount: game.roundCount,
+      isEndlessMode: game.isEndlessMode || game.isDuelMode,
+      totalScore: currentRow?.totalScore || 0,
+      averageScore:
+        game.leaderboard.totalRounds
+          ? (currentRow?.totalScore || 0) / game.leaderboard.totalRounds
+          : 0,
+      playerCount: rows.length,
+      roomCode,
+      leaderboard: game.leaderboard,
+    });
+  }, [
+    cleanGameFamily,
+    game.difficulty.id,
+    game.gameMode.id,
+    game.historyMatchId,
+    game.isDuelMode,
+    game.isEndlessMode,
+    game.leaderboard,
+    game.roundCount,
+    phase,
+    playerId,
+    roomCode,
   ]);
 
   const handleBackHome = async () => {
