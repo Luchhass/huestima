@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360">
+    <rect width="900" height="360" rx="38" fill="#0058A3"/>
+    <ellipse cx="450" cy="180" rx="372" ry="132" fill="#FFDB00"/>
+    <text x="450" y="229" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-size="174" font-weight="900" letter-spacing="-10" fill="#0058A3">IKEA</text>
+  </svg>

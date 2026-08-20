@@ -9,6 +9,7 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   isGradientColor,
   readableOverlayTone,
@@ -21,8 +22,13 @@ import {
   startScoreCountSound,
 } from "@/lib/sound";
 import { APP_NAME } from "@/lib/constants";
+import useVisualOverlayTones, {
+  overlayTextColor,
+  overlayTextShadow,
+} from "@/hooks/useVisualOverlayTones";
 import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
+import BrandOverlay from "./BrandOverlay";
 
 function getScoreCountDuration(score) {
   const normalizedScore = Math.min(1, Math.max(0, Number(score) / 10 || 0));
@@ -42,7 +48,7 @@ function formatHsb(color) {
     return `H${Math.round(color.left.h)} -> H${Math.round(color.right.h)}`;
   }
 
-  if (isFlagColor(color)) {
+  if (isFlagColor(color) || isBrandColor(color)) {
     return `H${Math.round(color.h)} S${Math.round(color.s)} B${Math.round(color.v)}`;
   }
 
@@ -125,6 +131,8 @@ export default function ResultPhase({
   const guessSectionRef = useRef(null);
   const targetSectionRef = useRef(null);
   const splitOverlayRef = useRef(null);
+  const guessOverlayTones = useVisualOverlayTones(result?.guess);
+  const targetOverlayTones = useVisualOverlayTones(result?.target);
 
   const handleContinueClick = useCallback(() => {
     if (isContinuingRef.current) return;
@@ -201,15 +209,13 @@ export default function ResultPhase({
       return undefined;
     }
 
+    // Every game family uses the same comparison reveal: keep the guess in
+    // place, then slide the original in from below before revealing the score.
     const canAnimateSplitReveal = Boolean(
       scopeRef.current &&
         guessSectionElement &&
         targetSectionElement &&
-        splitOverlayElement &&
-        (isFlagColor(result.guess) ||
-          isFlagColor(result.target) ||
-          isCartoonColor(result.guess) ||
-          isCartoonColor(result.target))
+        splitOverlayElement
     );
     const introDelay = Math.max(0, Number(visualIntroDelayMs) || 0) / 1000;
     const splitRevealDuration = canAnimateSplitReveal ? 1.12 : 0;
@@ -747,13 +753,24 @@ export default function ResultPhase({
   const targetTone = swatchToneClasses(colorToneHex(result.target));
   const isCartoonGuessResult = isCartoonColor(result.guess);
   const isCartoonTargetResult = isCartoonColor(result.target);
-  const isVisualResult =
-    isFlagColor(result.guess) ||
-    isFlagColor(result.target) ||
-    isCartoonGuessResult ||
-    isCartoonTargetResult;
   const splitOverlayLabel = getVisualLabel(result.guess, locale);
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
+  const guessTopLeftStyle = {
+    color: overlayTextColor(guessOverlayTones.topLeft),
+    textShadow: overlayTextShadow(guessOverlayTones.topLeft),
+  };
+  const guessTopRightStyle = {
+    color: overlayTextColor(guessOverlayTones.topRight),
+    textShadow: overlayTextShadow(guessOverlayTones.topRight),
+  };
+  const guessBottomLeftStyle = {
+    color: overlayTextColor(guessOverlayTones.bottomLeft),
+    textShadow: overlayTextShadow(guessOverlayTones.bottomLeft),
+  };
+  const targetBottomLeftStyle = {
+    color: overlayTextColor(targetOverlayTones.bottomLeft),
+    textShadow: overlayTextShadow(targetOverlayTones.bottomLeft),
+  };
 
   return (
     <div
@@ -766,47 +783,57 @@ export default function ResultPhase({
         className="pointer-events-none absolute inset-0 z-60 rounded-[inherit] bg-black opacity-0"
       />
 
-      {isVisualResult && (
-        <section
-          ref={splitOverlayRef}
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-[inherit] p-6 sm:p-8 ${guessTone}`}
-          style={{ background: gradientBackground(result.guess) }}
-        >
-          {isFlagColor(result.guess) && <FlagOverlay color={result.guess} />}
+      <section
+        ref={splitOverlayRef}
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-[inherit] p-6 sm:p-8 ${guessTone}`}
+        style={{ background: gradientBackground(result.guess) }}
+      >
+        {isFlagColor(result.guess) && <FlagOverlay color={result.guess} />}
+        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} />}
 
-          {isCartoonGuessResult && (
-            <CartoonOverlay
-              color={result.guess}
-              variant="guess"
-              size="card"
-            />
-          )}
+        {isCartoonGuessResult && (
+          <CartoonOverlay
+            color={result.guess}
+            variant="guess"
+            size="card"
+          />
+        )}
 
-          <div className="relative z-20">
-            <p className="text-base font-semibold opacity-72">{roundLabel}</p>
-          </div>
+        <div className="relative z-20">
+          <p className="text-base font-semibold" style={guessTopLeftStyle}>
+            {roundLabel}
+          </p>
+        </div>
 
-          <div className="absolute top-6 right-6 z-20 text-right sm:top-8 sm:right-8">
-            <p className="text-lg font-semibold opacity-42">{APP_NAME}</p>
-          </div>
+        <div className="absolute top-6 right-6 z-20 text-right sm:top-8 sm:right-8">
+          <p className="text-lg font-semibold" style={guessTopRightStyle}>
+            {APP_NAME}
+          </p>
+        </div>
 
-          {splitOverlayLabel && (
-            <p className="absolute bottom-6 left-6 z-20 max-w-[calc(100%-3rem)] truncate text-sm font-bold sm:bottom-8 sm:left-8">
-              {splitOverlayLabel}
-            </p>
-          )}
-        </section>
-      )}
+        {splitOverlayLabel && (
+          <p
+            className="absolute bottom-6 left-6 z-20 max-w-[calc(100%-3rem)] truncate text-sm font-bold sm:bottom-8 sm:left-8"
+            style={guessBottomLeftStyle}
+          >
+            {splitOverlayLabel}
+          </p>
+        )}
+      </section>
 
       <section
         ref={guessSectionRef}
         className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${guessTone}`}
-        style={{ background: gradientBackground(result.guess) }}
+        style={{
+          background: gradientBackground(result.guess),
+          ...guessTopLeftStyle,
+        }}
       >
         {isFlagColor(result.guess) && (
           <FlagOverlay color={result.guess} />
         )}
+        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} />}
 
         {isCartoonGuessResult && (
           <CartoonOverlay
@@ -819,7 +846,8 @@ export default function ResultPhase({
         <div className="relative z-20 overflow-hidden">
           <p
             ref={roundRef}
-            className="text-base font-semibold opacity-72"
+            className="text-base font-semibold"
+            style={guessTopLeftStyle}
           >
             {roundLabel}
           </p>
@@ -829,7 +857,8 @@ export default function ResultPhase({
           <div className="overflow-hidden">
             <p
               ref={selectionLabelRef}
-              className="text-sm font-semibold opacity-34"
+              className="text-sm font-semibold opacity-90"
+              style={guessBottomLeftStyle}
             >
               {t("game.yourSelection")}
             </p>
@@ -839,6 +868,7 @@ export default function ResultPhase({
             <p
               ref={selectionValueRef}
               className="text-sm font-bold"
+              style={guessBottomLeftStyle}
             >
               {formatHsb(result.guess)}
             </p>
@@ -850,6 +880,7 @@ export default function ResultPhase({
             <p
               ref={scoreRef}
               className="whitespace-nowrap text-[clamp(4rem,18vw,4.5rem)] leading-[0.82] font-semibold tracking-normal tabular-nums sm:text-[6.3rem]"
+              style={guessTopRightStyle}
             >
               {formatScore(0)}
             </p>
@@ -858,7 +889,11 @@ export default function ResultPhase({
           <p
             ref={resultLineRef}
             className="mt-3 whitespace-normal break-normal text-xl leading-[1.08] font-semibold"
-            style={{ opacity: 0, visibility: "hidden" }}
+            style={{
+              ...guessTopRightStyle,
+              opacity: 0,
+              visibility: "hidden",
+            }}
           >
             {renderAnimatedResultLine(resultLine)}
           </p>
@@ -868,11 +903,15 @@ export default function ResultPhase({
       <section
         ref={targetSectionRef}
         className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${targetTone}`}
-        style={{ background: gradientBackground(result.target) }}
+        style={{
+          background: gradientBackground(result.target),
+          ...targetBottomLeftStyle,
+        }}
       >
         {isFlagColor(result.target) && (
           <FlagOverlay color={result.target} />
         )}
+        {isBrandColor(result.target) && <BrandOverlay color={result.target} />}
 
         {isCartoonTargetResult && (
           <CartoonOverlay
@@ -886,7 +925,8 @@ export default function ResultPhase({
           <div className="overflow-hidden">
             <p
               ref={originalLabelRef}
-              className="text-sm font-semibold opacity-34"
+              className="text-sm font-semibold opacity-90"
+              style={targetBottomLeftStyle}
             >
               {t("game.original")}
             </p>
@@ -896,6 +936,7 @@ export default function ResultPhase({
             <p
               ref={originalValueRef}
               className="text-sm font-bold"
+              style={targetBottomLeftStyle}
             >
               {formatHsb(result.target)}
             </p>

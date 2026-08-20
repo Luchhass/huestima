@@ -24,17 +24,21 @@ import {
 } from "@/lib/hints";
 import {
   isCartoonFamily,
+  isBrandFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import {
   createDefaultCartoonGuess,
+  createDefaultBrandGuess,
   createDefaultFlagGuess,
   createDefaultGradientGuess,
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   isGradientColor,
   withCartoonDifficultyHex,
+  withBrandDifficultyHex,
   withFlagDifficultyHex,
   withGradientHex,
   withHex,
@@ -60,6 +64,10 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
+  if (isBrandFamily(gameFamily)) {
+    return createDefaultBrandGuess(targetColor, difficulty);
+  }
+
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
 }
 
@@ -80,6 +88,10 @@ function constrainGuessColor(
 
   if (isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
+  }
+
+  if (isBrandFamily(gameFamily) || isBrandColor(guessColor)) {
+    return withBrandDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(guessColor, difficulty));

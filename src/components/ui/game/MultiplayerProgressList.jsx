@@ -10,7 +10,7 @@ export default function MultiplayerProgressList({ items = [], className = "" }) 
           key={item.id}
           title={`#${index + 1} ${item.name} ${item.label}`}
           className={`grid grid-cols-[1.7rem_minmax(0,1fr)_2.15rem] items-center gap-1.5 ${
-            item.isCurrent ? "text-current/62" : "text-current/34"
+            item.isCurrent ? "text-current/92" : "text-current/72"
           }`}
         >
           <span>#{index + 1}</span>

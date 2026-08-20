@@ -16,6 +16,8 @@
   --foreground: #171717;
   --surface: #000000;
   --app-page-padding: 1.5rem;
+  --app-card-shadow: 0 18px 38px rgba(0, 0, 0, 0.28),
+    0 8px 18px rgba(0, 0, 0, 0.18);
 }
 
 .dark {

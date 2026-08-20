@@ -1,6 +1,7 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
 import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
+import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -109,6 +110,10 @@ export function isFlagColor(color) {
 
 export function isCartoonColor(color) {
   return color?.type === GAME_MODES.CARTOON && Boolean(color?.cartoonId);
+}
+
+export function isBrandColor(color) {
+  return color?.type === "brand" && Boolean(color?.brandId);
 }
 
 function averageRgbHex(firstHex, secondHex) {
@@ -244,6 +249,46 @@ export function withCartoonHex(color) {
   };
 }
 
+export function withBrandHex(color) {
+  const brand = getBrandOption(color?.brandId || DEFAULT_BRAND_ID);
+  const cleanColor = withHex({ ...brand.paint, ...(color || {}) });
+
+  return {
+    type: "brand",
+    brandId: brand.id,
+    brandLabel: brand.label,
+    brandLabels: brand.labels,
+    backgroundHex: brand.backgroundHex,
+    baseScenePath: brand.baseScenePath,
+    originalScenePath: brand.originalScenePath,
+    logoPath: brand.logoPath,
+    imagePath: brand.imagePath,
+    assetPath: brand.assetPath,
+    maskPath: brand.maskPath,
+    paintBase: brand.paint,
+    layers: brand.layers,
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: brand.backgroundHex,
+  };
+}
+
+export function randomBrandTargetColors(count, random = Math.random) {
+  const result = [];
+
+  while (result.length < count) {
+    const shuffled = [...BRAND_OPTIONS].sort(() => random() - 0.5);
+    for (const brand of shuffled) {
+      if (result.length >= count) break;
+      result.push(withBrandHex({ brandId: brand.id }));
+    }
+  }
+
+  return result;
+}
+
 export function randomFlagTargetColor(random = Math.random) {
   const flag = FLAG_OPTIONS[Math.floor(random() * FLAG_OPTIONS.length)];
 
@@ -321,6 +366,10 @@ export function applyDifficultyConstraints(hsv, difficultyId) {
     return withCartoonHex(hsv);
   }
 
+  if (isBrandColor(hsv)) {
+    return withBrandHex(hsv);
+  }
+
   const difficulty = DIFFICULTY_CONFIG[difficultyId] || DIFFICULTY_CONFIG.normal;
   return {
     ...hsv,
@@ -350,7 +399,7 @@ export function createSeededRandom(seed) {
   return mulberry32(hashSeed(seed));
 }
 
-export function generateTargetColors({ seed, difficulty, roundCount, gameMode }) {
+export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
 
@@ -369,6 +418,10 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode })
 
   if (gameMode === GAME_MODES.CARTOON) {
     return randomCartoonTargetColors(roundCount, random);
+  }
+
+  if (gameFamily === "brand") {
+    return randomBrandTargetColors(roundCount, random);
   }
 
   return Array.from({ length: roundCount }, () =>

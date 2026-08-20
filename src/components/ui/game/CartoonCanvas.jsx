@@ -19,6 +19,7 @@ export default function CartoonCanvas({
   layers,
   color,
   className = "",
+  fit = "cover",
   onReady,
   minRenderWidth = 0,
 }) {
@@ -122,7 +123,9 @@ export default function CartoonCanvas({
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className={`absolute inset-0 h-full w-full object-cover object-center ${className}`}
+      className={`absolute inset-0 h-full w-full ${
+        fit === "contain" ? "object-contain" : "object-cover"
+      } object-center ${className}`}
     />
   );
 }

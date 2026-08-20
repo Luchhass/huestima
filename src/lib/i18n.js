@@ -141,8 +141,8 @@ export const DICTIONARIES = {
         brand: {
           title: "Brand",
           paragraphs: [
-            "Familiar brand logos are on the way as a new memory game mode.",
-            "You will see the logo and rebuild its colors from memory, with singleplayer and multiplayer support coming in the next update.",
+            "A familiar logo appears over its signature color. Keep the brand and its backdrop in your memory before it disappears.",
+            "Rebuild the hidden shade with the same controls. Play classic, endless, or timed rounds solo or with friends.",
           ],
         },
       },
@@ -262,7 +262,7 @@ export const DICTIONARIES = {
         flag: "Flag mode keeps the emblem fixed while you rebuild the background color across {roundCount} levels.",
         flagRecall: "Recall mode keeps the full flag visible while you rebuild the background color across {roundCount} levels.",
         cartoon: "Recall mode keeps the cartoon scene visible while you rebuild the main painted color across {roundCount} levels.",
-        brand: "Brand logo mode is coming soon. We are preparing the next memory challenge.",
+        brand: "Brand mode shows a familiar logo over a color field; rebuild the background color across {roundCount} levels.",
         duel: "Duel is multiplayer-only. Create a lobby to play it.",
       },
       multiCopy: {
@@ -275,7 +275,7 @@ export const DICTIONARIES = {
         flag: "Everyone sees the same flag, and background accuracy decides the room.",
         flagRecall: "Everyone keeps the same flag visible on screen, and background accuracy decides the room.",
         cartoon: "Everyone keeps the same cartoon scene visible on screen, and main color accuracy decides the room.",
-        brand: "Brand logo multiplayer is coming soon.",
+        brand: "Everyone sees the same brand logo, and background color accuracy decides the room.",
         duel: "Endless PvP rounds. Close scores survive; wide misses get eliminated.",
       },
       difficultyCopy: {
@@ -528,8 +528,8 @@ export const DICTIONARIES = {
         brand: {
           title: "Marka",
           paragraphs: [
-            "Tanıdık marka logoları yeni bir hafıza oyunu olarak hazırlanıyor.",
-            "Logoyu görüp renklerini hafızadan yeniden kuracaksın. Tekli ve çok oyunculu sürümler bir sonraki güncellemeyle geliyor.",
+            "Tanıdık bir logo imza renginin üzerinde görünür. Kaybolmadan önce markayı ve zemindeki tonu hafızanda tut.",
+            "Gizlenen rengi aynı kontrollerle yeniden kur. Klasik, Sonsuz veya Süreli turları tek başına ya da arkadaşlarınla oyna.",
           ],
         },
       },
@@ -649,7 +649,7 @@ export const DICTIONARIES = {
         flag: "Bayrak modunda sembol sabit kalır; arka plan rengini {roundCount} seviye boyunca yeniden kurarsın.",
         flagRecall: "Hatırla modunda tam bayrak açık kalır; arka plan rengini {roundCount} seviye boyunca yeniden kurarsın.",
         cartoon: "Hatırla modunda çizgi film sahnesi açık kalır; ana boyalı rengi {roundCount} seviye boyunca yeniden kurarsın.",
-        brand: "Marka logo modu çok yakında geliyor. Yeni hafıza mücadelesi hazırlanıyor.",
+        brand: "Marka modunda tanıdık logo renkli zeminde görünür; arka plan rengini {roundCount} seviye boyunca yeniden kurarsın.",
         duel: "Düello sadece çok oyunculu moddur. Oynamak için lobi oluştur.",
       },
       multiCopy: {
@@ -662,7 +662,7 @@ export const DICTIONARIES = {
         flag: "Herkes aynı bayrağı görür; arka plan doğruluğu sonucu belirler.",
         flagRecall: "Herkes aynı bayrağı açık görür; arka plan doğruluğu sonucu belirler.",
         cartoon: "Herkes aynı çizgi film sahnesini açık görür; ana renk doğruluğu sonucu belirler.",
-        brand: "Marka logo çok oyunculu modu çok yakında geliyor.",
+        brand: "Herkes aynı marka logosunu görür; arka plan rengi doğruluğu sonucu belirler.",
         duel: "Sonsuz karşılaşma turları; yakın skorlar kalır, açık ara sonuncular elenir.",
       },
       difficultyCopy: {

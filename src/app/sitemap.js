@@ -23,6 +23,12 @@ export default function sitemap() {
       priority: 0.92,
     },
     {
+      url: absoluteUrl("/brand"),
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: absoluteUrl("/color/singleplayer"),
       lastModified,
       changeFrequency: "weekly",
@@ -41,6 +47,12 @@ export default function sitemap() {
       priority: 0.86,
     },
     {
+      url: absoluteUrl("/brand/singleplayer"),
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.86,
+    },
+    {
       url: absoluteUrl("/color/multiplayer"),
       lastModified,
       changeFrequency: "weekly",
@@ -54,6 +66,12 @@ export default function sitemap() {
     },
     {
       url: absoluteUrl("/cartoon/multiplayer"),
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: absoluteUrl("/brand/multiplayer"),
       lastModified,
       changeFrequency: "weekly",
       priority: 0.8,

@@ -10,12 +10,14 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   readableTone,
 } from "@/lib/color";
 import { formatScore } from "@/lib/scoring";
 import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
+import BrandOverlay from "@/components/ui/game/BrandOverlay";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
@@ -42,7 +44,7 @@ function colorTitleLabel(color, locale) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
-  if (isCartoonColor(color)) {
+  if (isCartoonColor(color) || isBrandColor(color)) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
@@ -215,6 +217,10 @@ export default function LeaderboardCard({
                         size="tile"
                         className="z-[2]"
                       />
+                    )}
+
+                    {isBrandColor(result.target) && (
+                      <BrandOverlay color={result.target} className="z-[2]" />
                     )}
 
                     <span

@@ -16,7 +16,6 @@ import {
   isCartoonColor,
   isFlagColor,
   isGradientColor,
-  readableOverlayTone,
 } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
 import { playHintReveal } from "@/lib/sound";
@@ -92,30 +91,14 @@ export default function GuessPhase({
   const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
   const usesShowcaseGuessLayout =
     showcaseLayoutEnabled && usesExternalControlWidget;
-  const showcaseTone =
-    usesShowcaseGuessLayout && (targetColor || guessColor)
-      ? readableOverlayTone(colorToneHex(targetColor || guessColor))
-      : "light";
-  const showcaseTextStyle =
-    showcaseTone === "dark"
-      ? {
-          color: "rgba(23,20,19,0.82)",
-          textShadow: "0 1px 2px rgba(255,250,243,0.14)",
-        }
-      : {
-          color: "rgba(255,250,243,0.92)",
-          textShadow: "0 2px 10px rgba(0,0,0,0.4)",
-        };
-  const showcaseBrandStyle =
-    showcaseTone === "dark"
-      ? {
-          color: "rgba(23,20,19,0.72)",
-          textShadow: "0 1px 2px rgba(255,250,243,0.12)",
-        }
-      : {
-          color: "rgba(255,250,243,0.8)",
-          textShadow: "0 2px 10px rgba(0,0,0,0.34)",
-        };
+  const showcaseTextStyle = {
+    color: "var(--game-fg-top-left)",
+    textShadow: "var(--game-fg-top-left-shadow)",
+  };
+  const showcaseBrandStyle = {
+    color: "var(--game-fg-top-right)",
+    textShadow: "var(--game-fg-top-right-shadow)",
+  };
   const sidePickerWidth = 50;
   const embeddedPickerWidth = isGradientGuess
     ? sidePickerWidth
@@ -951,6 +934,10 @@ export default function GuessPhase({
                 ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
                 : "bottom-[5.25rem] sm:bottom-[5.75rem]"
             }`}
+            style={{
+              color: "var(--game-fg-bottom-left)",
+              textShadow: "var(--game-fg-bottom-left-shadow)",
+            }}
           >
             <MultiplayerProgressList items={progressItems} />
           </div>
@@ -960,6 +947,10 @@ export default function GuessPhase({
           <div
             ref={timerRef}
             className="absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"
+            style={{
+              color: "var(--game-fg-bottom-left)",
+              textShadow: "var(--game-fg-bottom-left-shadow)",
+            }}
           >
             <CountdownReel
               key={`guess-countdown-${timedGuessDurationMs}`}
@@ -1010,31 +1001,35 @@ export default function GuessPhase({
             onClick={handleUseHintClick}
             data-hint-state={hintLockedForRound ? "used" : hintButtonDisabled ? "empty" : "ready"}
             className="card-action-size absolute right-[5.75rem] bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 disabled:pointer-events-none sm:right-[6.25rem] sm:bottom-8"
+            style={{
+              color: "var(--game-fg-bottom-right)",
+              textShadow: "var(--game-fg-bottom-right-shadow)",
+            }}
           >
             <span
               ref={hintButtonRingRef}
               className={`pointer-events-none absolute inset-0 rounded-full border transition-opacity ${
                 hintLockedForRound
-                  ? "border-white/14 opacity-100"
-                  : hintButtonDisabled
-                    ? "border-white/18 opacity-55"
+                ? "border-current/30 opacity-100"
+                : hintButtonDisabled
+                    ? "border-current/35 opacity-55"
                     : "border-current/30 opacity-100"
               }`}
             />
             <span
               ref={hintButtonCoreRef}
-              className={`absolute inset-0 rounded-full border-2 text-white transition-[border-color,background-color,box-shadow,opacity] ${
+              className={`absolute inset-0 rounded-full border-2 text-current transition-[border-color,background-color,box-shadow,opacity] ${
                 hintLockedForRound
-                  ? "border-white/22 bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
+                  ? "border-current/40 bg-black/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
                   : hintButtonDisabled
-                    ? "border-white/22 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
-                    : "border-white bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+                    ? "border-current/40 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
+                    : "border-current bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
               }`}
             />
             <span
               ref={hintIconRef}
               className={`relative z-10 grid place-items-center transition-opacity ${
-                hintLockedForRound ? "text-white/62 opacity-88" : hintButtonDisabled ? "text-white/62 opacity-72" : "text-white"
+                hintLockedForRound ? "text-current opacity-88" : hintButtonDisabled ? "text-current opacity-72" : "text-current"
               }`}
             >
               <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
@@ -1042,7 +1037,7 @@ export default function GuessPhase({
             {hintLockedForRound && (
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-white/12"
+                className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-current/25"
               />
             )}
             <span
@@ -1164,6 +1159,10 @@ export default function GuessPhase({
         <p
           ref={roundRef}
           className="text-base font-semibold text-current/78"
+          style={{
+            color: "var(--game-fg-top-left)",
+            textShadow: "var(--game-fg-top-left-shadow)",
+          }}
         >
           {roundLabel}
         </p>
@@ -1179,6 +1178,10 @@ export default function GuessPhase({
         <p
           ref={brandRef}
           className="text-lg font-semibold text-current/72"
+          style={{
+            color: "var(--game-fg-top-right)",
+            textShadow: "var(--game-fg-top-right-shadow)",
+          }}
         >
           {APP_NAME}
         </p>
@@ -1195,6 +1198,8 @@ export default function GuessPhase({
           style={{
             left: `${contentLeft}px`,
             maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - ${actionReserveWidth}px)`,
+            color: "var(--game-fg-bottom-left)",
+            textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
           <MultiplayerProgressList items={progressItems} />
@@ -1208,6 +1213,8 @@ export default function GuessPhase({
           style={{
             "--round-left": `${contentLeft}px`,
             "--round-left-sm": `${contentLeftSm}px`,
+            color: "var(--game-fg-bottom-left)",
+            textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
           <CountdownReel
@@ -1264,32 +1271,34 @@ export default function GuessPhase({
           style={{
             "--hint-right": `${contentRight + 68}px`,
             "--hint-right-sm": `${contentRightSm + 74}px`,
+            color: "var(--game-fg-bottom-right)",
+            textShadow: "var(--game-fg-bottom-right-shadow)",
           }}
         >
           <span
             ref={hintButtonRingRef}
             className={`pointer-events-none absolute inset-0 rounded-full border transition-opacity ${
               hintLockedForRound
-                ? "border-white/14 opacity-100"
+                ? "border-current/30 opacity-100"
                 : hintButtonDisabled
-                  ? "border-white/18 opacity-55"
+                  ? "border-current/35 opacity-55"
                   : "border-current/30 opacity-100"
             }`}
           />
           <span
             ref={hintButtonCoreRef}
-            className={`absolute inset-0 rounded-full border-2 text-white transition-[border-color,background-color,box-shadow,opacity] ${
+            className={`absolute inset-0 rounded-full border-2 text-current transition-[border-color,background-color,box-shadow,opacity] ${
               hintLockedForRound
-                ? "border-white/22 bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
+                ? "border-current/40 bg-black/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_12px_24px_rgba(0,0,0,0.12)]"
                 : hintButtonDisabled
-                  ? "border-white/22 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
-                  : "border-white bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
+                  ? "border-current/40 bg-transparent shadow-[0_12px_24px_rgba(0,0,0,0.1)] opacity-70"
+                  : "border-current bg-transparent shadow-[0_16px_34px_rgba(0,0,0,0.14)]"
             }`}
           />
           <span
             ref={hintIconRef}
             className={`relative z-10 grid place-items-center transition-opacity ${
-              hintLockedForRound ? "text-white/62 opacity-88" : hintButtonDisabled ? "text-white/62 opacity-72" : "text-white"
+              hintLockedForRound ? "text-current opacity-88" : hintButtonDisabled ? "text-current opacity-72" : "text-current"
             }`}
           >
             <KeyRound className="size-[1.95rem]" strokeWidth={2.1} />
@@ -1297,7 +1306,7 @@ export default function GuessPhase({
           {hintLockedForRound && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-white/12"
+              className="pointer-events-none absolute inset-[0.55rem] z-10 rounded-full border border-current/25"
             />
           )}
           <span

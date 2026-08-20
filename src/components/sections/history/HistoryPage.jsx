@@ -25,11 +25,13 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   readableTone,
 } from "@/lib/color";
 import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
+import BrandOverlay from "@/components/ui/game/BrandOverlay";
 
 const CARD_RESIZE_DURATION_MS = 700;
 const CONTENT_FADE_DURATION_MS = 240;
@@ -72,7 +74,7 @@ function colorTitleLabel(color, locale) {
     return `${color.left.hex} / ${color.right.hex}`;
   }
 
-  if (isFlagColor(color) || isCartoonColor(color)) {
+  if (isFlagColor(color) || isCartoonColor(color) || isBrandColor(color)) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
@@ -126,6 +128,10 @@ function RoundTiles({ results = [], locale, t }) {
               className="z-[2]"
               minRenderWidth={360}
             />
+          )}
+
+          {isBrandColor(result.target) && (
+            <BrandOverlay color={result.guess} className="z-[2]" />
           )}
 
           <span
@@ -453,7 +459,7 @@ export default function HistoryPage({
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
-        className="relative flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
+        className="relative flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardHeight ? { height: cardHeight } : undefined}
       >
         <div
@@ -506,7 +512,7 @@ export default function HistoryPage({
                         type="button"
                         onClick={() => handleDelete(activeEntry.id)}
                         aria-label={t("history.deleteMatch")}
-                        className="app-danger-action card-action-size grid place-items-center rounded-full bg-[#e53935] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff7773]"
+                        className="app-secondary-action card-action-size inline-flex shrink-0 items-center justify-center rounded-full border-2 border-white/90 bg-black p-0 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                       >
                         <Trash2 size={19} />
                       </button>
@@ -518,7 +524,7 @@ export default function HistoryPage({
                           copied ? t("history.copySuccess") : t("history.shareScore")
                         }
                         title={copied ? t("history.copySuccess") : t("history.shareScore")}
-                        className={`app-secondary-action card-action-height card-action-size min-w-0 rounded-full border-2 p-0 text-base font-semibold focus:outline-none focus-visible:ring-2 sm:min-w-0 sm:flex-1 sm:px-4 ${
+                        className={`app-secondary-action card-action-height card-action-size inline-flex min-w-0 items-center justify-center rounded-full border-2 p-0 text-center text-base font-semibold focus:outline-none focus-visible:ring-2 sm:min-w-0 sm:flex-1 sm:px-4 ${
                           copied
                             ? "border-emerald-300 bg-emerald-400 text-zinc-950 focus-visible:ring-emerald-200"
                             : copyError
@@ -538,7 +544,7 @@ export default function HistoryPage({
                     <button
                       type="button"
                       onClick={handleReplay}
-                      className="rgb-hover-button card-action-height min-w-0 flex-1 rounded-full bg-white px-3 text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-4"
+                      className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center rounded-full bg-white px-3 text-center text-base font-semibold text-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-4"
                     >
                       <span className="inline-flex items-center gap-2">
                         <Play size={18} />

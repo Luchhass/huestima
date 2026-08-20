@@ -10,9 +10,11 @@ import {
   applyDifficultyConstraints,
   generateTargetColors,
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   isGradientColor,
   withCartoonHex,
+  withBrandHex,
   withFlagHex,
   withHex,
   withGradientHex,
@@ -71,6 +73,10 @@ function calculateMatchScore(targetColor, guessColor) {
     return calculateColorScore(targetColor.hex, guessColor.hex);
   }
 
+  if (isBrandColor(targetColor) && isBrandColor(guessColor)) {
+    return calculateColorScore(targetColor.hex, guessColor.hex);
+  }
+
   return calculateColorScore(targetColor.hex, guessColor.hex);
 }
 
@@ -87,6 +93,10 @@ function calculateMatchDistance(targetColor, guessColor) {
   }
 
   if (isCartoonColor(targetColor) && isCartoonColor(guessColor)) {
+    return ciede2000Distance(targetColor.hex, guessColor.hex);
+  }
+
+  if (isBrandColor(targetColor) && isBrandColor(guessColor)) {
     return ciede2000Distance(targetColor.hex, guessColor.hex);
   }
 
@@ -234,6 +244,15 @@ function validateGuessColorPayload(targetColor, guessColor, difficulty) {
     };
   }
 
+  if (isBrandColor(targetColor)) {
+    const color = validateHsvColor(
+      completeHsvForDifficulty(targetColor, guessColor, difficulty),
+    );
+    if (!color.ok) return color;
+
+    return { ok: true, data: { color: withBrandHex({ ...color.data.color, brandId: targetColor.brandId }) } };
+  }
+
   return validateHsvColor(guessColor);
 }
 
@@ -287,6 +306,7 @@ export function startGameForRoom(room) {
       difficulty,
       roundCount,
       gameMode: room.gameMode,
+      gameFamily: room.gameFamily,
     }),
     participantPlayerIds: new Set(
       Array.from(room.players.values())
@@ -396,6 +416,11 @@ export function submitRoundGuess(room, payload) {
       ? withFlagHex(colorResult.data.color)
       : isCartoonColor(targetColor)
         ? withCartoonHex(colorResult.data.color)
+        : isBrandColor(targetColor)
+          ? withBrandHex({
+              ...colorResult.data.color,
+              brandId: targetColor.brandId,
+            })
         : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
   const result = {

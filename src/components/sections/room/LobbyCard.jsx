@@ -237,7 +237,7 @@ export default function LobbyCard({
 
       {isLeaveConfirmOpen && (
         <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-          <div className="pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[0_18px_40px_rgba(0,0,0,0.42)] sm:px-6 sm:py-6">
+          <div className="pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6">
             <div className="max-w-[18.5rem]">
               <h3 className="text-lg font-semibold leading-tight text-white sm:text-xl">
                 {t("common.backHome")}

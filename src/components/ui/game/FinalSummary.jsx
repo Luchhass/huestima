@@ -8,18 +8,22 @@ import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
 import {
-  colorToneHex,
   getVisualLabel,
   gradientBackground,
+  isBrandColor,
   isCartoonColor,
   isFlagColor,
-  readableTone,
 } from "@/lib/color";
 import { getFinalAssessmentKey } from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import { playFinalScore, resumeAudioIfAllowed } from "@/lib/sound";
+import useVisualOverlayTones, {
+  overlayTextColor,
+  overlayTextShadow,
+} from "@/hooks/useVisualOverlayTones";
 import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
+import BrandOverlay from "./BrandOverlay";
 
 const EXPANDED_REVEAL_DELAY = 320;
 
@@ -40,6 +44,10 @@ function colorTitleLabel(color, locale) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
+  if (isBrandColor(color)) {
+    return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
+  }
+
   return color?.hex || "";
 }
 
@@ -50,8 +58,64 @@ function getScoreColor(score, maxScore) {
   return `hsl(${hue} 100% 58%)`;
 }
 
-function tileScoreTone(hex) {
-  return readableTone(hex) === "dark" ? "text-zinc-950" : "text-white";
+function SummaryTile({ result, locale, t }) {
+  const overlayTones = useVisualOverlayTones(result.target);
+  const scoreStyle = {
+    color: overlayTextColor(overlayTones.topLeft),
+    textShadow: overlayTextShadow(overlayTones.topLeft),
+  };
+
+  return (
+    <div
+      data-summary-tile
+      className={`relative min-w-0 overflow-hidden ${
+        isFlagColor(result.target) ? "aspect-[3/2]" : "aspect-square"
+      }`}
+      style={{ background: gradientBackground(result.target) }}
+      title={t("room.roundTitle", {
+        round: result.round,
+        target: colorTitleLabel(result.target, locale),
+        guess: colorTitleLabel(result.guess, locale),
+      })}
+    >
+      <span
+        data-summary-guess-layer
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: tileGradient(result),
+          clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
+        }}
+      />
+
+      {isFlagColor(result.target) && (
+        <FlagOverlay
+          color={result.guess}
+          className="z-[1]"
+          minRenderWidth={360}
+        />
+      )}
+
+      {isCartoonColor(result.target) && (
+        <CartoonOverlay
+          color={result.guess}
+          variant="tile"
+          size="tile"
+          className="z-[2]"
+          minRenderWidth={360}
+        />
+      )}
+
+      {isBrandColor(result.target) && <BrandOverlay color={result.guess} className="z-[2]" />}
+
+      <span
+        data-summary-tile-score
+        className="absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[clamp(0.86rem,3.15vw,1.05rem)] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-[1.08rem]"
+        style={scoreStyle}
+      >
+        {formatScore(result.score)}
+      </span>
+    </div>
+  );
 }
 
 export default function FinalSummary({
@@ -428,55 +492,12 @@ export default function FinalSummary({
           }`}
         >
           {results.map((result, resultIndex) => (
-            <div
+            <SummaryTile
               key={`${result.round}-${resultIndex}-${result.target?.flagId || result.target?.hex || result.target?.toneHex || "round"}`}
-              data-summary-tile
-              className={`relative min-w-0 overflow-hidden ${
-                isFlagColor(result.target) ? "aspect-[3/2]" : "aspect-square"
-              }`}
-              style={{ background: gradientBackground(result.target) }}
-              title={t("room.roundTitle", {
-                round: result.round,
-                target: colorTitleLabel(result.target, locale),
-                guess: colorTitleLabel(result.guess, locale),
-              })}
-            >
-              <span
-                data-summary-guess-layer
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background: tileGradient(result),
-                  clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
-                }}
-              />
-
-              {isFlagColor(result.target) && (
-                <FlagOverlay
-                  color={result.guess}
-                  className="z-[1]"
-                  minRenderWidth={360}
-                />
-              )}
-
-              {isCartoonColor(result.target) && (
-                <CartoonOverlay
-                  color={result.guess}
-                  variant="tile"
-                  size="tile"
-                  className="z-[2]"
-                  minRenderWidth={360}
-                />
-              )}
-
-              <span
-                data-summary-tile-score
-                className={`absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[clamp(0.86rem,3.15vw,1.05rem)] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-[1.08rem] ${tileScoreTone(
-                  colorToneHex(result.target)
-                )}`}
-              >
-                {formatScore(result.score)}
-              </span>
-            </div>
+              result={result}
+              locale={locale}
+              t={t}
+            />
           ))}
         </div>
       </div>

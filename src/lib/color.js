@@ -6,6 +6,7 @@ import {
 } from "./cartoons";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
+import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -117,6 +118,10 @@ export function isCartoonColor(color) {
   return color?.type === GAME_MODE_IDS.CARTOON && Boolean(color?.cartoonId);
 }
 
+export function isBrandColor(color) {
+  return color?.type === "brand" && Boolean(color?.brandId);
+}
+
 function difficultyControls(difficulty) {
   const option =
     typeof difficulty === "string"
@@ -165,6 +170,7 @@ function averageManyRgbHex(hexValues) {
 
 export function gradientBackground(color) {
   if (isFlagColor(color)) return color.hex;
+  if (isBrandColor(color)) return color.backgroundHex || "#ebe7df";
   if (isCartoonColor(color)) {
     return "#000000";
   }
@@ -175,7 +181,8 @@ export function gradientBackground(color) {
 
 export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
-  if (isCartoonColor(color)) return "#eef3ee";
+  if (isBrandColor(color)) return color.backgroundHex || "#ebe7df";
+  if (isCartoonColor(color)) return color.toneHex || color.hex || "#000000";
   if (!isGradientColor(color)) return color?.hex || color || "#000000";
 
   return color.toneHex || averageRgbHex(color.left.hex, color.right.hex);
@@ -365,6 +372,69 @@ export function withCartoonDifficultyHex(guessColor, targetColor, difficulty) {
       fallbackValue: 78,
     }),
   });
+}
+
+export function withBrandHex(color) {
+  const brand = getBrandOption(color?.brandId || DEFAULT_BRAND_ID);
+  const cleanColor = withHex({ ...brand.paint, ...(color || {}) });
+
+  return {
+    type: "brand",
+    brandId: brand.id,
+    brandLabel: brand.label,
+    brandLabels: brand.labels,
+    backgroundHex: brand.backgroundHex,
+    baseScenePath: brand.baseScenePath,
+    originalScenePath: brand.originalScenePath,
+    logoPath: brand.logoPath,
+    imagePath: brand.imagePath,
+    assetPath: brand.assetPath,
+    maskPath: brand.maskPath,
+    paintBase: brand.paint,
+    layers: brand.layers,
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: brand.backgroundHex,
+  };
+}
+
+export function withBrandDifficultyHex(guessColor, targetColor, difficulty) {
+  if (!targetColor || !isBrandColor(targetColor)) return withBrandHex(guessColor);
+
+  return withBrandHex({
+    brandId: targetColor.brandId,
+    h: channelValue({ difficulty, channel: "h", targetValue: targetColor.h, guessValue: guessColor?.h, fallbackValue: 210 }),
+    s: channelValue({ difficulty, channel: "s", targetValue: targetColor.s, guessValue: guessColor?.s, fallbackValue: 50 }),
+    v: channelValue({ difficulty, channel: "v", targetValue: targetColor.v, guessValue: guessColor?.v, fallbackValue: 78 }),
+  });
+}
+
+export function createDefaultBrandGuess(targetOrBrandId = DEFAULT_BRAND_ID, difficulty) {
+  const targetColor = targetOrBrandId && typeof targetOrBrandId === "object" ? targetOrBrandId : null;
+  const defaultGuess = getDifficultyOption(typeof difficulty === "string" ? difficulty : difficulty?.id)?.defaultGuess;
+
+  return withBrandDifficultyHex({
+    brandId: targetColor?.brandId || targetOrBrandId || DEFAULT_BRAND_ID,
+    h: defaultGuess?.h ?? 210,
+    s: defaultGuess?.s ?? 50,
+    v: defaultGuess?.v ?? 78,
+  }, targetColor, difficulty);
+}
+
+export function randomBrandTargetColors(count, random = Math.random) {
+  const result = [];
+
+  while (result.length < count) {
+    const shuffled = [...BRAND_OPTIONS].sort(() => random() - 0.5);
+    for (const brand of shuffled) {
+      if (result.length >= count) break;
+      result.push(withBrandHex({ brandId: brand.id }));
+    }
+  }
+
+  return result;
 }
 
 export function createDefaultCartoonGuess(
@@ -567,6 +637,10 @@ export function getVisualLabel(color, locale = "en") {
       locale,
       color.cartoonLabel || "",
     );
+  }
+
+  if (isBrandColor(color)) {
+    return pickLocalizedLabel(color.brandLabels, locale, color.brandLabel || "");
   }
 
   return "";

@@ -15,13 +15,13 @@ const REEL_CONFIG = [
   },
   {
     place: 10,
-    toneClassName: "text-current/42",
+    toneClassName: "text-current/72",
     duration: 0.072,
     ease: "power3.out",
   },
   {
     place: 1,
-    toneClassName: "text-current/42",
+    toneClassName: "text-current/72",
   },
 ];
 

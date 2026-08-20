@@ -1,7 +1,9 @@
 import {
   isCartoonColor,
+  isBrandColor,
   isFlagColor,
   withCartoonHex,
+  withBrandHex,
   withFlagHex,
   withGradientHex,
   withHex,
@@ -59,6 +61,7 @@ function compactColor(color) {
 
   if (isFlagColor(color)) return ["f", color.flagId, ...compactHsv(color)];
   if (isCartoonColor(color)) return ["t", color.cartoonId, ...compactHsv(color)];
+  if (isBrandColor(color)) return ["b", color.brandId, ...compactHsv(color)];
 
   return ["c", ...compactHsv(color)];
 }
@@ -91,6 +94,7 @@ function expandColor(value) {
 
   if (type === "f") return withFlagHex({ flagId: idOrHue, ...hsv });
   if (type === "t") return withCartoonHex({ cartoonId: idOrHue, ...hsv });
+  if (type === "b") return withBrandHex({ brandId: idOrHue, ...hsv });
 
   return withHex({
     h: Number(idOrHue) || 0,

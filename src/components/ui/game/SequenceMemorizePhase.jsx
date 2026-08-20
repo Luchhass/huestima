@@ -120,24 +120,42 @@ export default function SequenceMemorizePhase({
   return (
     <div data-fullscreen-surface-transition className="relative h-full p-6 sm:p-8">
       <div className="absolute left-6 top-6 sm:left-8 sm:top-8">
-        <p className="text-base font-semibold text-current/88">
+        <p
+          className="text-base font-semibold"
+          style={{
+            color: "var(--game-fg-top-left)",
+            textShadow: "var(--game-fg-top-left-shadow)",
+          }}
+        >
           {activeIndex + 1}/{visibleColors.length || roundCount}
         </p>
       </div>
 
-      <div className="absolute right-6 top-6 text-right sm:right-8 sm:top-8">
+      <div
+        className="absolute right-6 top-6 text-right sm:right-8 sm:top-8"
+        style={{
+          color: "var(--game-fg-top-right)",
+          textShadow: "var(--game-fg-top-right-shadow)",
+        }}
+      >
         <CountdownReel
           key={`sequence-countdown-${activeIndex}-${durationMs}`}
           durationMs={durationMs}
           currentCentiseconds={remainingCentiseconds}
         />
-        <p className="mt-2 text-sm font-semibold text-current/88">
+        <p className="mt-2 text-sm font-semibold">
           {t("game.secondsToRemember")}
         </p>
       </div>
 
       {progressItems.length > 0 && (
-        <div className="absolute bottom-[5.25rem] left-6 z-10 sm:bottom-[5.85rem] sm:left-8">
+        <div
+          className="absolute bottom-[5.25rem] left-6 z-10 sm:bottom-[5.85rem] sm:left-8"
+          style={{
+            color: "var(--game-fg-bottom-left)",
+            textShadow: "var(--game-fg-bottom-left-shadow)",
+          }}
+        >
           <MultiplayerProgressList items={progressItems} />
         </div>
       )}
@@ -148,20 +166,27 @@ export default function SequenceMemorizePhase({
             {visibleColors.map((color, index) => {
               const hasAppeared = index <= activeIndex;
               const isActive = index === activeIndex;
+              const indicatorStyle = hasAppeared
+                ? {
+                    backgroundColor: color.hex,
+                    borderColor: isActive
+                      ? "var(--game-fg-bottom-left)"
+                      : "color-mix(in srgb, var(--game-fg-bottom-left) 22%, transparent)",
+                  }
+                : {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--game-fg-bottom-left) 32%, transparent)",
+                    borderColor:
+                      "color-mix(in srgb, var(--game-fg-bottom-left) 22%, transparent)",
+                  };
 
               return (
                 <span
                   key={`${color.hex}-${index}`}
                   className={`block size-7 shrink-0 rounded-full border transition duration-300 ${
-                    isActive
-                      ? "border-2 border-white"
-                      : "border-white/22"
-                  } ${
-                    hasAppeared
-                      ? ""
-                      : "bg-white/32"
+                    isActive ? "border-2" : ""
                   }`}
-                  style={hasAppeared ? { backgroundColor: color.hex } : undefined}
+                  style={indicatorStyle}
                   aria-hidden="true"
                 />
               );
@@ -169,7 +194,13 @@ export default function SequenceMemorizePhase({
           </div>
         </div>
 
-        <p className="text-lg font-semibold text-current/88">
+        <p
+          className="text-lg font-semibold"
+          style={{
+            color: "var(--game-fg-bottom-right)",
+            textShadow: "var(--game-fg-bottom-right-shadow)",
+          }}
+        >
           {APP_NAME}
         </p>
       </div>

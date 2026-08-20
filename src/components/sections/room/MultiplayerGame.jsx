@@ -432,7 +432,13 @@ export default function MultiplayerGame({
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
 
   if (!game.hasRestoredSession || renderedPhase === null) {
-    return null;
+    return (
+      <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
+        <GameCardShell color={{ h: 0, s: 0, v: 0, hex: "#000000" }}>
+          <div className="h-full min-h-[inherit]" />
+        </GameCardShell>
+      </main>
+    );
   }
 
   return (

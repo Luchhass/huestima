@@ -119,20 +119,30 @@ export default function MemorizePhase({
       <div className="absolute top-6 left-6 overflow-hidden sm:top-8 sm:left-8">
         <p
           ref={roundRef}
-          className="text-base font-semibold text-current/88"
+          className="text-base font-semibold"
+          style={{
+            color: "var(--game-fg-top-left)",
+            textShadow: "var(--game-fg-top-left-shadow)",
+          }}
         >
           {roundLabel}
         </p>
       </div>
 
-      <div className="absolute top-6 right-6 text-right sm:top-8 sm:right-8">
+      <div
+        className="absolute top-6 right-6 text-right sm:top-8 sm:right-8"
+        style={{
+          color: "var(--game-fg-top-right)",
+          textShadow: "var(--game-fg-top-right-shadow)",
+        }}
+      >
         <CountdownReel
           durationMs={durationMs}
           currentCentiseconds={centiseconds}
           onSecondTick={playMemorizeSecondTick}
         />
 
-        <p className="mt-2 text-sm font-semibold text-current/88">
+        <p className="mt-2 text-sm font-semibold">
           {t("game.secondsToRemember")}
         </p>
       </div>
@@ -140,7 +150,11 @@ export default function MemorizePhase({
       <div className="absolute right-6 bottom-6 overflow-hidden sm:right-8 sm:bottom-8">
         <p
           ref={brandRef}
-          className="text-lg font-semibold text-current/88"
+          className="text-lg font-semibold"
+          style={{
+            color: "var(--game-fg-bottom-right)",
+            textShadow: "var(--game-fg-bottom-right-shadow)",
+          }}
         >
           {APP_NAME}
         </p>
@@ -150,6 +164,10 @@ export default function MemorizePhase({
         <div
           ref={progressRef}
           className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8"
+          style={{
+            color: "var(--game-fg-bottom-left)",
+            textShadow: "var(--game-fg-bottom-left-shadow)",
+          }}
         >
           <MultiplayerProgressList items={progressItems} />
         </div>

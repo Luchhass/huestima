@@ -70,7 +70,7 @@ function VisualShell({ hue, onHueChange, cardHeight, children }) {
 
       <section
         data-how-card
-        className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[0_18px_38px_rgba(31,25,20,0.18),0_8px_18px_rgba(31,25,20,0.1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.52),0_8px_18px_rgba(0,0,0,0.32)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
+        className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[var(--app-card-shadow)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
       >
         {children}
       </section>
@@ -229,7 +229,7 @@ function StepVisual({ type, example, colors, cardHeight, setters }) {
 
         <section
           data-how-card
-          className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[0_18px_38px_rgba(31,25,20,0.18),0_8px_18px_rgba(31,25,20,0.1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.52),0_8px_18px_rgba(0,0,0,0.32)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
+          className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[var(--app-card-shadow)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
         >
           <WholeCharacterDemo item={example} />
         </section>

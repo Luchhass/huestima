@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
 import PushNotification from "@/components/ui/PushNotification";
-import ComingSoonCard from "./ComingSoonCard";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
@@ -110,7 +109,6 @@ export default function HomeCard({
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
-  const isComingSoonFamily = cleanGameFamily === GAME_FAMILY_IDS.BRAND;
   const showHowItWorksInCard =
     cleanGameFamily === GAME_FAMILY_IDS.CARTOON && view === "home";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
@@ -324,9 +322,7 @@ export default function HomeCard({
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
-        className={`home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[0_18px_38px_rgba(0,0,0,0.28),0_8px_18px_rgba(0,0,0,0.18)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.56),0_8px_18px_rgba(0,0,0,0.36)] sm:rounded-[26px] sm:p-8 ${
-          isComingSoonFamily ? "home-card--coming-soon" : ""
-        }`}
+      className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardStyle}
       >
         <PushNotification
@@ -370,13 +366,6 @@ export default function HomeCard({
             />
           ) : view === "home" ? (
             <>
-              {isComingSoonFamily ? (
-                <ComingSoonCard
-                  title={homeTitle}
-                  paragraphs={homeParagraphs}
-                />
-              ) : (
-                <>
                   <button
                     type="button"
                     aria-hidden="true"
@@ -427,8 +416,6 @@ export default function HomeCard({
                       </button>
                     </div>
                   ) : null}
-                </>
-              )}
             </>
           ) : isSingleplayer ? (
             <SingleplayerCard

@@ -69,8 +69,18 @@ export const ROUTE_SEO = {
   brand: {
     title: "Huestima Brand",
     description:
-      "Coming soon: a brand logo memory game where you rebuild familiar logo colors from memory.",
+      "Play Huestima Brand, a logo color memory game where you rebuild familiar brand backdrops from memory.",
     path: "/brand",
+  },
+  brandSingleplayer: {
+    title: "Huestima Brand Singleplayer",
+    description: "Memorize iconic brand colors and rebuild them in Huestima Brand singleplayer.",
+    path: "/brand/singleplayer",
+  },
+  brandMultiplayer: {
+    title: "Huestima Brand Multiplayer",
+    description: "Create or join Huestima Brand multiplayer lobbies for shared logo color rounds.",
+    path: "/brand/multiplayer",
   },
   colorSingleplayer: {
     title: "Huestima Color Singleplayer",
