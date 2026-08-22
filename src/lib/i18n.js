@@ -98,6 +98,16 @@ export const DICTIONARIES = {
       backToList: "Back to list",
       detailMultiplayer: "Full lobby leaderboard, round by round.",
     },
+    cartoonLibrary: {
+      title: "Cartoons",
+      imageCount: "{count} images",
+      series: {
+        all: "All",
+        adventureTime: "Adventure Time",
+        ben10: "Ben 10",
+        regularShow: "Regular Show",
+      },
+    },
     toggles: {
       language: "Switch language",
       languageTo: "Switch to {language}",
@@ -484,6 +494,16 @@ export const DICTIONARIES = {
       viewDetails: "Scoreboard'u aç",
       backToList: "Listeye dön",
       detailMultiplayer: "Lobinin tam leaderboard görünümü, tur tur burada.",
+    },
+    cartoonLibrary: {
+      title: "Çizgi filmler",
+      imageCount: "{count} görsel",
+      series: {
+        all: "Tümü",
+        adventureTime: "Adventure Time",
+        ben10: "Ben 10",
+        regularShow: "Regular Show",
+      },
     },
     toggles: {
       language: "Dili değiştir",

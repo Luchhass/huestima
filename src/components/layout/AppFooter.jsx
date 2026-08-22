@@ -31,6 +31,7 @@ export default function AppFooter() {
   const isNavigatingRef = useRef(false);
   const navigationResetRef = useRef(null);
   const isHistoryRoute = pathname === "/history" || pathname?.startsWith("/history?");
+  const isCartoonLibraryRoute = pathname === "/cartoon-library";
 
   useEffect(() => {
     isNavigatingRef.current = false;
@@ -82,6 +83,10 @@ export default function AppFooter() {
       isNavigatingRef.current = false;
     }
   };
+
+  if (isCartoonLibraryRoute) {
+    return null;
+  }
 
   return (
     <>

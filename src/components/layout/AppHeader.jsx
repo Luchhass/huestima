@@ -23,6 +23,7 @@ export default function AppHeader() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
+  const isCartoonLibraryRoute = pathname === "/cartoon-library";
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const isNavigatingRef = useRef(false);
@@ -250,6 +251,10 @@ export default function AppHeader() {
       isNavigatingRef.current = false;
     });
   };
+
+  if (isCartoonLibraryRoute) {
+    return null;
+  }
 
   const handleMenuToggle = () => {
     if (isNavRendered) {
