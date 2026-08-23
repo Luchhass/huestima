@@ -300,6 +300,10 @@ input {
     will-change: transform;
   }
 
+  .gradient-icon-flow--interactive {
+    animation: none;
+  }
+
   .rgb-hover-button {
     position: relative;
     isolation: isolate;

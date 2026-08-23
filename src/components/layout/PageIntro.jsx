@@ -1,9 +1,17 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
+import { SCREEN_REVEAL_REPLAY_EVENT } from "@/hooks/useScreenReveal";
+import { hasPendingFooterReturn } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 
 const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon", "brand"]);
@@ -15,6 +23,7 @@ const NON_INVITE_ENTRY_PATHS = new Set([
   "robots.txt",
   "sitemap.xml",
 ]);
+const INTRO_SESSION_KEY = "huestima-page-intro-seen";
 
 function subscribeToClientReady() {
   return () => {};
@@ -48,10 +57,45 @@ function shouldPlayEntryIntro(pathname) {
   );
 }
 
-function readIntroPending() {
-  if (typeof document === "undefined") return false;
+function shouldRunIntroForCurrentLoad(pathname) {
+  if (typeof window === "undefined" || !shouldPlayEntryIntro(pathname)) {
+    return false;
+  }
 
-  return document.documentElement.dataset.pageIntroPending === "true";
+  // Footer guide-page returns use the card transition instead of the full
+  // page intro. Running both would hide the card after the route changes.
+  try {
+    if (hasPendingFooterReturn()) return false;
+  } catch {
+    // Continue with the normal intro decision when storage is unavailable.
+  }
+
+  let hasSeenIntro = window.__huestimaIntroSeen === true;
+  try {
+    hasSeenIntro ||= window.sessionStorage.getItem(INTRO_SESSION_KEY) === "true";
+  } catch {
+    // Continue with the in-memory marker when storage is unavailable.
+  }
+  const segments = pathname.split("/").filter(Boolean);
+  const isHomeEntry = segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
+  const isReload =
+    !window.__huestimaReloadIntroConsumed &&
+    window.performance?.getEntriesByType("navigation")[0]?.type === "reload";
+
+  if (!hasSeenIntro || (isReload && isHomeEntry)) {
+    window.__huestimaIntroSeen = true;
+    if (isReload && isHomeEntry) {
+      window.__huestimaReloadIntroConsumed = true;
+    }
+    try {
+      window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
+    } catch {
+      // The runtime marker is enough for client-side navigation.
+    }
+    return true;
+  }
+
+  return false;
 }
 
 function readViewportBox() {
@@ -92,16 +136,28 @@ export default function PageIntro() {
     getServerReadySnapshot,
   );
   const [dismissedPath, setDismissedPath] = useState(null);
-  const [introPending] = useState(readIntroPending);
+  const [introPending, setIntroPending] = useState(false);
+
+  useEffect(() => {
+    setIntroPending(shouldRunIntroForCurrentLoad(pathname));
+  }, [pathname]);
 
   const shouldRender =
     isMounted &&
     introPending &&
     shouldPlayEntryIntro(pathname) &&
-    dismissedPath !== pathname;
+    dismissedPath !== pathname &&
+    !(
+      typeof window !== "undefined" &&
+      hasPendingFooterReturn()
+    );
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined;
+
+    // Signal the content reveal before sibling layout effects decide whether
+    // they should wait for the page intro.
+    document.documentElement.dataset.pageIntroPending = "true";
 
     const overlay = overlayRef.current;
     const blackLayer = blackLayerRef.current;
@@ -163,6 +219,9 @@ export default function PageIntro() {
       window.__pageIntroDoneForPath = pathname;
       gsap.set(overlay, { autoAlpha: 0, pointerEvents: "none" });
       dispatchIntroEvent("complete");
+      if (window.performance?.getEntriesByType("navigation")[0]?.type === "reload") {
+        window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+      }
       setDismissedPath(pathname);
     };
 

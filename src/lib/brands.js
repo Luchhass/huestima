@@ -5,11 +5,12 @@ import {
 } from "../../shared/brandCatalog.mjs";
 
 const BRAND_ASSET_ROOT = "/game-modes/brand/generated";
-const BRAND_BACKGROUND_HEX = "#ebe7df";
+const BRAND_BACKGROUND_HEX = "#7f7f7f";
 const BRAND_BASE_SCENE_PATH = `${BRAND_ASSET_ROOT}/brand-transparent-base.png`;
 
-export const BRAND_OPTIONS = BRAND_ITEMS.map((brand) => ({
+export const BRAND_OPTIONS = BRAND_ITEMS.map((brand, index) => ({
   ...brand,
+  catalogNumber: index + 1,
   labels: { en: brand.label, tr: brand.label },
   backgroundHex: BRAND_BACKGROUND_HEX,
   baseScenePath: BRAND_BASE_SCENE_PATH,

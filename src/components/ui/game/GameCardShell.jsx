@@ -63,6 +63,7 @@ export default function GameCardShell({
 
   return (
     <section
+      suppressHydrationWarning
       className={`game-card-shell relative w-full max-w-125 overflow-visible rounded-[26px] bg-surface shadow-[var(--app-card-shadow)] transition-[height,transform] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] ${className}`}
       style={cardStyle}
       {...props}

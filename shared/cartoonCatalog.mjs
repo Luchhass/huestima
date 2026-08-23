@@ -767,6 +767,16 @@ const BEN10_ITEMS = [
     maskPath: `${BEN10_MASK_ROOT}/ben-10-9493525.png`,
   },
   {
+    id: "ben-10-9493583",
+    label: "Zombozo",
+    series: "Ben 10",
+    paintLabel: "cartoon",
+    paint: { h: 191, s: 15, v: 28 },
+    sourcePath: `${BEN10_ASSET_ROOT}/ben-10-9493583.jpg`,
+    sourceTitle: "ben-10-9493583.jpg",
+    maskPath: `${BEN10_MASK_ROOT}/ben-10-9493583.png`,
+  },
+  {
     id: "ben-10-9494281",
     label: "Kai Green",
     series: "Ben 10",

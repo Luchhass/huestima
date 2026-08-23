@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-before-interactive-script-outside-document */
 import Script from "next/script";
 import {
   FULLSCREEN_STORAGE_KEY,
@@ -38,7 +37,7 @@ const bootstrapScript = `
     const isInviteRoomPath =
       pathSegments.length === 2 &&
       isGameFamilyPath &&
-      /^\\d{6}$/.test(pathSegments[1]);
+      /^\d{6}$/.test(pathSegments[1]);
     const shouldPlayIntro =
       window.location.pathname === "/" ||
       (pathSegments.length === 1 && isGameFamilyPath) ||

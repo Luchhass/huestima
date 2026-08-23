@@ -7,8 +7,8 @@ export const metadata = createPageMetadata("color");
 export default function ColorPage() {
   return (
     <>
-      <HomeCard gameFamily="color" />
       <PageIntro />
+      <HomeCard gameFamily="color" />
     </>
   );
 }

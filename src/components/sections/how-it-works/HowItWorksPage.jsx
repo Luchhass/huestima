@@ -1,14 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRef } from "react";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
 import CartoonCanvas from "@/components/ui/game/CartoonCanvas";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
+import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
+import FooterPageShell, {
+  FooterPageAction,
+  FooterPageHeader,
+} from "@/components/sections/footer-pages/FooterPageShell";
 
 const HOW_IT_WORKS_CARTOON_ID = "adventure-time-9596374";
 const CLASSIC_CUTOUT_SRC = "/how-it-works/lady-rainicorn-bad-cutout.png";
@@ -264,6 +271,20 @@ function StepVisual({ type, example, colors, cardHeight, setters }) {
 
 export default function HowItWorksPage() {
   const { t } = useTranslation();
+  const mainRef = useRef(null);
+  const searchParams = useSearchParams();
+  const returnPath = ["color", "flag", "cartoon", "brand"].includes(
+    searchParams.get("from"),
+  )
+    ? `/${searchParams.get("from")}`
+    : "/color";
+
+  const leavePage = useFooterPageTransition(mainRef);
+
+  const handleClose = async (event) => {
+    event.preventDefault();
+    await leavePage(returnPath);
+  };
   const cardHeight = useResponsiveCardHeight(false, "compact") || "300px";
   const [activeStep, setActiveStep] = useState(0);
   const [themeHue, setThemeHue] = useState(145);
@@ -295,22 +316,40 @@ export default function HowItWorksPage() {
   if (!example) return null;
 
   return (
-    <main className="app-gradient h-dvh w-full overflow-hidden px-5 pb-6 pt-21 text-zinc-950 dark:text-zinc-50 md:px-8 md:pb-10 md:pt-24 lg:pb-24 lg:pt-28">
+    <FooterPageShell
+      mainRef={mainRef}
+      className="text-zinc-950 dark:text-zinc-50"
+      action={
+        <FooterPageAction
+          href={returnPath}
+          onClick={handleClose}
+          aria-label={t("common.closeMenu")}
+          className="size-11 p-0 text-foreground/62"
+        >
+          <X size={24} strokeWidth={1.8} aria-hidden="true" />
+        </FooterPageAction>
+      }
+    >
+      <FooterPageHeader
+        title={t("howItWorks.eyebrow")}
+        meta={`${activeStep + 1} / ${STEPS.length}`}
+        description={t("howItWorks.title")}
+      />
       <section
         data-route-transition-scope
-        className="mx-auto flex h-full w-full max-w-125 flex-col items-center justify-center gap-4 md:max-w-[42rem] md:gap-5 lg:max-w-[68rem] lg:items-stretch lg:gap-4"
+        className="flex w-full flex-col items-center gap-6 pt-8 sm:pt-10 lg:items-stretch"
       >
         <div
           key={currentStep.key}
-          className={`grid min-h-0 w-full flex-none items-start gap-4 md:gap-5 lg:flex-1 lg:items-center lg:gap-8 ${
+          className={`grid min-h-0 w-full items-start gap-5 md:gap-7 lg:items-center lg:gap-10 ${
             "lg:grid-cols-[minmax(27rem,1fr)_minmax(0,0.84fr)]"
           }`}
         >
           <article
-            className="order-2 mx-auto flex h-[13.25rem] w-full max-w-125 min-w-0 flex-col justify-start lg:order-2 lg:mx-0 lg:h-[22rem] lg:max-w-none lg:justify-center"
+            className="order-2 mx-auto flex w-full max-w-125 min-w-0 flex-col justify-start lg:mx-0 lg:max-w-none lg:justify-center"
           >
             <LineRevealText
-              as="h1"
+              as="h2"
               text={title}
               className="text-[clamp(1.55rem,2.35vw,2.45rem)] font-semibold leading-[1.04] tracking-normal"
             />
@@ -388,6 +427,6 @@ export default function HowItWorksPage() {
           </div>
         </nav>
       </section>
-    </main>
+    </FooterPageShell>
   );
 }

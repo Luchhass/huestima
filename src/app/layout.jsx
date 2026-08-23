@@ -4,7 +4,6 @@ import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
 import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
-import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
 import GlobalPushNotifications from "@/components/ui/GlobalPushNotifications";
 import StructuredData from "@/components/seo/StructuredData";
 import { AdminModeProvider } from "@/hooks/useAdminMode";
@@ -143,9 +142,7 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <ThemeBootstrap />
-      </head>
+      <head />
       <body
         suppressHydrationWarning
         className="h-full overflow-hidden bg-background text-foreground"

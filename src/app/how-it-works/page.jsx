@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import HowItWorksPage from "@/components/sections/how-it-works/HowItWorksPage";
 
 export const metadata = {
@@ -7,5 +8,9 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <HowItWorksPage />;
+  return (
+    <Suspense fallback={null}>
+      <HowItWorksPage />
+    </Suspense>
+  );
 }

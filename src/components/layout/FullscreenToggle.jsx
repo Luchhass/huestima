@@ -56,7 +56,7 @@ export default function FullscreenToggle() {
       className={`fullscreen-toggle grid size-11 shrink-0 place-items-center rounded-full text-zinc-950 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 ${
         isLocked
           ? "cursor-not-allowed opacity-30"
-          : "hover:scale-[1.06] active:scale-[0.94]"
+          : "hover:scale-[1.04] hover:opacity-70 active:scale-[0.96]"
       }`}
     >
       <span className="sr-only">{t("toggles.fullscreenToggle")}</span>

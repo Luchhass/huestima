@@ -1,8 +1,52 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+
 export default function BrandLogoMark({
   className = "size-9",
   centerClassName = "size-4",
   hollow = false,
+  interactive = false,
 }) {
+  const gradientRef = useRef(null);
+
+  useEffect(() => {
+    if (!interactive || !gradientRef.current) return undefined;
+
+    const spin = gsap.to(gradientRef.current, {
+      rotation: 360,
+      duration: 8,
+      ease: "none",
+      repeat: -1,
+      transformOrigin: "50% 50%",
+    });
+    const root = gradientRef.current.parentElement;
+    const speedUp = () =>
+      gsap.to(spin, {
+        timeScale: 24,
+        duration: 0.42,
+        ease: "power2.out",
+        overwrite: true,
+      });
+    const slowDown = () =>
+      gsap.to(spin, {
+        timeScale: 1,
+        duration: 0.62,
+        ease: "power2.out",
+        overwrite: true,
+      });
+
+    root.addEventListener("pointerenter", speedUp);
+    root.addEventListener("pointerleave", slowDown);
+
+    return () => {
+      root.removeEventListener("pointerenter", speedUp);
+      root.removeEventListener("pointerleave", slowDown);
+      spin.kill();
+    };
+  }, [interactive]);
+
   return (
     <span
       className={[
@@ -11,7 +55,8 @@ export default function BrandLogoMark({
       ].join(" ")}
     >
       <span
-        className="gradient-icon-flow absolute inset-0 rounded-full opacity-95"
+        ref={gradientRef}
+        className={`gradient-icon-flow absolute inset-0 rounded-full opacity-95 ${interactive ? "gradient-icon-flow--interactive" : ""}`}
       />
       <span
         className={[

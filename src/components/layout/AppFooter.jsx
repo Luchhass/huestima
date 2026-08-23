@@ -1,92 +1,59 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useLanguage";
-import { playScreenFadeOut } from "@/hooks/useScreenReveal";
-
-const HISTORY_LEAVE_EVENT = "huestima-history-leave";
-const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
-
-function waitForHistoryLeave() {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      window.removeEventListener(HISTORY_LEAVE_COMPLETE_EVENT, finish);
-      resolve();
-    };
-
-    window.addEventListener(HISTORY_LEAVE_COMPLETE_EVENT, finish, { once: true });
-    window.dispatchEvent(new Event(HISTORY_LEAVE_EVENT));
-    window.setTimeout(finish, 1400);
-  });
-}
+import { playHomeToFooterExit } from "@/hooks/useFooterPageTransition";
 
 export default function AppFooter() {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const isNavigatingRef = useRef(false);
-  const navigationResetRef = useRef(null);
-  const isHistoryRoute = pathname === "/history" || pathname?.startsWith("/history?");
-  const isCartoonLibraryRoute = pathname === "/cartoon-library";
+  const isTransitioningRef = useRef(false);
 
   useEffect(() => {
-    isNavigatingRef.current = false;
-    if (navigationResetRef.current) {
-      window.clearTimeout(navigationResetRef.current);
-      navigationResetRef.current = null;
-    }
+    isTransitioningRef.current = false;
   }, [pathname]);
+  const isLibraryRoute =
+    pathname === "/cartoon-library" ||
+    pathname === "/flag-library" ||
+    pathname === "/brand-library";
+  const isPrivacyRoute = pathname === "/privacy-policy";
+  const isHowItWorksRoute = pathname === "/how-it-works";
+  const isTestLabRoute = pathname === "/test-lab";
+  const familyLabels = {
+    color: { en: "how it works", tr: "nasıl çalışır" },
+    flag: { en: "flag guide", tr: "bayrak rehberi" },
+    cartoon: {
+      en: "cartoon guide",
+      tr: "çizgi film rehberi",
+    },
+    brand: { en: "brand guide", tr: "marka rehberi" },
+  };
+  const family = pathname?.split("/").filter(Boolean)[0] || "color";
+  const howItWorksLabel = familyLabels[family]?.[locale] || familyLabels.color[locale];
+  const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
 
-  useEffect(() => {
-    return () => {
-      if (navigationResetRef.current) {
-        window.clearTimeout(navigationResetRef.current);
-      }
-    };
-  }, []);
+  const handleFooterNavigation = async (event, href) => {
+    event.preventDefault();
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
 
-  const handleHistoryClick = async () => {
-    if (isHistoryRoute || isNavigatingRef.current) return;
-
-    isNavigatingRef.current = true;
-    navigationResetRef.current = window.setTimeout(() => {
-      isNavigatingRef.current = false;
-      navigationResetRef.current = null;
-    }, 1800);
-    const href = "/history";
-
-    try {
-      if (pathname?.startsWith("/history")) {
-        await waitForHistoryLeave();
-        router.push(href);
-        return;
-      }
-
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const scope =
-        document.querySelector("[data-route-transition-scope]") ||
-        document.querySelector("[data-intro-card-target]") ||
-        document.querySelector("main");
-
-      if (!scope || reduceMotion) {
-        router.push(href);
-        return;
-      }
-
-      await playScreenFadeOut(scope, { duration: 0.24 });
+    const card = document.querySelector("[data-intro-card-target]");
+    const content = document.querySelector("[data-route-transition-scope]");
+    if (!card || !content) {
       router.push(href);
-    } catch {
-      isNavigatingRef.current = false;
+      return;
     }
+
+    await playHomeToFooterExit(card, content);
+
+    router.push(href);
   };
 
-  if (isCartoonLibraryRoute) {
-    return null;
-  }
+  if (isLibraryRoute || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute) return null;
 
   return (
     <>
@@ -102,17 +69,18 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <button
-        type="button"
-        data-sound="off"
-        disabled={isHistoryRoute}
-        onClick={() => {
-          void handleHistoryClick();
-        }}
-        className="creator-tag pointer-events-auto fixed right-6 bottom-6 z-40 border-0 bg-transparent p-0 text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline outline-none transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 disabled:pointer-events-none disabled:opacity-45 dark:text-zinc-500 dark:hover:text-zinc-50 sm:right-8 sm:bottom-8"
-      >
-        {t("history.footerLink")}
-      </button>
+      <div className="route-transition-footer pointer-events-auto fixed right-6 bottom-6 z-40 flex items-center gap-5 sm:right-8 sm:bottom-8">
+        <Link href={`/test-lab?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/test-lab?from=${family}`)} className={footerLinkClass}>
+          test lab
+        </Link>
+        <Link href={`/how-it-works?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/how-it-works?from=${family}`)} className={footerLinkClass}>
+          {howItWorksLabel}
+        </Link>
+        <Link href={`/privacy-policy?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/privacy-policy?from=${family}`)} className={footerLinkClass}>
+          privacy policy
+        </Link>
+      </div>
+
     </>
   );
 }

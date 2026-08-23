@@ -129,6 +129,27 @@ export function playScreenFadeOut(scopeRef, options = {}) {
   });
 }
 
+export function playScreenCardExit(scopeRef) {
+  if (typeof window === "undefined") return Promise.resolve();
+
+  const scope = scopeRef?.current || scopeRef;
+  if (!scope || prefersReducedMotion()) return Promise.resolve();
+
+  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT);
+
+  return new Promise((resolve) => {
+    gsap.to(scope, {
+      autoAlpha: 0,
+      scale: 0.001,
+      duration: 0.52,
+      ease: "power3.inOut",
+      transformOrigin: "50% 50%",
+      overwrite: true,
+      onComplete: resolve,
+    });
+  });
+}
+
 export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
   useLayoutEffect(() => {
     const scope = scopeRef.current;
@@ -347,6 +368,16 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
     const handleReplay = () => {
       playReveal({ waitForPageIntro: false, delay: 80 });
     };
+
+    if (options.defer) {
+      gsap.set(scope, { autoAlpha: 0 });
+      window.addEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
+
+      return () => {
+        window.removeEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
+        clearActiveAnimation();
+      };
+    }
 
     playReveal({ waitForPageIntro: true, delay: initialDelay });
     window.addEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);

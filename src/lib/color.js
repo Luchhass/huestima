@@ -170,7 +170,7 @@ function averageManyRgbHex(hexValues) {
 
 export function gradientBackground(color) {
   if (isFlagColor(color)) return color.hex;
-  if (isBrandColor(color)) return color.backgroundHex || "#ebe7df";
+  if (isBrandColor(color)) return color.backgroundHex || "#7f7f7f";
   if (isCartoonColor(color)) {
     return "#000000";
   }
@@ -181,7 +181,7 @@ export function gradientBackground(color) {
 
 export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
-  if (isBrandColor(color)) return color.backgroundHex || "#ebe7df";
+  if (isBrandColor(color)) return color.backgroundHex || "#7f7f7f";
   if (isCartoonColor(color)) return color.toneHex || color.hex || "#000000";
   if (!isGradientColor(color)) return color?.hex || color || "#000000";
 

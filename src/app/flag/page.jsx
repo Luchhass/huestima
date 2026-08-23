@@ -7,8 +7,8 @@ export const metadata = createPageMetadata("flag");
 export default function FlagPage() {
   return (
     <>
-      <HomeCard gameFamily="flag" />
       <PageIntro />
+      <HomeCard gameFamily="flag" />
     </>
   );
 }

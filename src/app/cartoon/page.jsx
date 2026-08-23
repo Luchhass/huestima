@@ -7,8 +7,8 @@ export const metadata = createPageMetadata("cartoon");
 export default function CartoonPage() {
   return (
     <>
-      <HomeCard gameFamily="cartoon" />
       <PageIntro />
+      <HomeCard gameFamily="cartoon" />
     </>
   );
 }

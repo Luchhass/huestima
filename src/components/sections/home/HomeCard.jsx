@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import gsap from "gsap";
 import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
 import PushNotification from "@/components/ui/PushNotification";
 import ModeSelector from "./ModeSelector";
@@ -17,7 +15,16 @@ import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
-import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import {
+  playScreenFadeOut,
+  SCREEN_REVEAL_REPLAY_EVENT,
+  useScreenReveal,
+} from "@/hooks/useScreenReveal";
+import {
+  clearFooterReturn,
+  hasPendingFooterReturn,
+  playFooterReturnEntry,
+} from "@/hooks/useFooterPageTransition";
 import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_ROUND_COUNT,
@@ -75,7 +82,6 @@ export default function HomeCard({
   initialHintsEnabled = null,
 }) {
   const { locale, t } = useTranslation();
-  const router = useRouter();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
   const defaultDifficulty =
@@ -101,6 +107,8 @@ export default function HomeCard({
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
   const [notification, setNotification] = useState(null);
   const contentRef = useRef(null);
+  const cardRef = useRef(null);
+  const isFooterReturnRef = useRef(false);
   const difficultyBurstTimerRef = useRef(null);
   const adminTapTimesRef = useRef([]);
   const adminSettleTimerRef = useRef(null);
@@ -109,8 +117,6 @@ export default function HomeCard({
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
-  const showHowItWorksInCard =
-    cleanGameFamily === GAME_FAMILY_IDS.CARTOON && view === "home";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
@@ -121,6 +127,10 @@ export default function HomeCard({
     : t("home.paragraphs");
   const adminEnabledMessage =
     locale === "tr" ? "Admin modu acildi." : "Admin mode enabled.";
+
+  if (typeof window !== "undefined") {
+    isFooterReturnRef.current ||= hasPendingFooterReturn();
+  }
 
   useAppChromeHidden(isSingleplayer || isMultiplayer);
   useCartoonAssetPreload(
@@ -140,8 +150,30 @@ export default function HomeCard({
     [view, cleanGameFamily, isAdminProtectorVisible, locale],
     {
       delay: isAdminProtectorVisible ? 90 : 0,
+      defer: isFooterReturnRef.current,
     },
   );
+
+  useLayoutEffect(() => {
+    if (!hasPendingFooterReturn()) return undefined;
+
+    const card = cardRef.current;
+    if (!card) return undefined;
+
+    let active = true;
+
+    void playFooterReturnEntry(card).then(() => {
+      if (!active) return;
+
+      isFooterReturnRef.current = false;
+      clearFooterReturn();
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     clearAllGameSessions();
@@ -283,45 +315,11 @@ export default function HomeCard({
     }, ADMIN_SETTLE_DELAY_MS);
   };
 
-  const handleHowItWorksClick = async () => {
-    if (isChangingViewRef.current) return;
-
-    isChangingViewRef.current = true;
-    const introCard = document.querySelector("[data-intro-card-target]");
-
-    try {
-      sessionStorage.setItem("huestima-how-it-works-entry", "cartoon");
-      await playScreenFadeOut(contentRef, { duration: 0.24 });
-
-      if (introCard) {
-        await new Promise((resolve) => {
-          gsap.set(introCard, {
-            autoAlpha: 1,
-            transformOrigin: "center center",
-          });
-          gsap.to(introCard, {
-            scale: 0.001,
-            duration: 0.54,
-            ease: "power3.inOut",
-            overwrite: "auto",
-            onComplete: resolve,
-          });
-        });
-      }
-
-      router.push("/how-it-works");
-    } catch {
-      // Restore the menu if navigation cannot complete after the fade begins.
-      gsap.set(contentRef.current, { autoAlpha: 1 });
-      gsap.set(introCard, { clearProps: "opacity,visibility,transform" });
-      isChangingViewRef.current = false;
-    }
-  };
-
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
+        ref={cardRef}
       className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardStyle}
       >
@@ -402,20 +400,6 @@ export default function HomeCard({
                     />
                   </div>
 
-                  {showHowItWorksInCard ? (
-                    <div data-screen-reveal className="absolute right-0 bottom-0 z-40">
-                      <button
-                        type="button"
-                        data-sound="off"
-                        onClick={() => {
-                          void handleHowItWorksClick();
-                        }}
-                        className="border-0 bg-transparent p-0 text-[11px] font-medium lowercase tracking-wider text-white/45 no-underline outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-white/50"
-                      >
-                        {t("howItWorks.footerLink")}
-                      </button>
-                    </div>
-                  ) : null}
             </>
           ) : isSingleplayer ? (
             <SingleplayerCard

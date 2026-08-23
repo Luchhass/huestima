@@ -66,11 +66,39 @@ export const ROUTE_SEO = {
       "Play Huestima Cartoon, a cartoon scene color guessing game with adjustable character masks.",
     path: "/cartoon",
   },
+  cartoonLibrary: {
+    title: "Huestima Cartoon Library",
+    description:
+      "Browse the Huestima Cartoon Library and preview every cartoon scene used in the game.",
+    path: "/cartoon-library",
+  },
   brand: {
     title: "Huestima Brand",
     description:
       "Play Huestima Brand, a logo color memory game where you rebuild familiar brand backdrops from memory.",
     path: "/brand",
+  },
+  brandLibrary: {
+    title: "Huestima Brand Library",
+    description:
+      "Browse the Huestima Brand Library and preview every logo included in Huestima Brand.",
+    path: "/brand-library",
+  },
+  flagLibrary: {
+    title: "Huestima Flag Library",
+    description:
+      "Browse the Huestima Flag Library and preview every flag scene included in the game.",
+    path: "/flag-library",
+  },
+  privacyPolicy: {
+    title: "Huestima Privacy Policy",
+    description: "How Huestima handles browser storage, multiplayer data, match sharing, analytics, and privacy choices.",
+    path: "/privacy-policy",
+  },
+  testLab: {
+    title: "Huestima Test Lab",
+    description: "Quick access to Huestima material libraries, mode screens, and development test surfaces.",
+    path: "/test-lab",
   },
   brandSingleplayer: {
     title: "Huestima Brand Singleplayer",

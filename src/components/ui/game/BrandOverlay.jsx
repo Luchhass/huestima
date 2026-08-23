@@ -15,13 +15,13 @@ export default function BrandOverlay({ color, className = "" }) {
       aria-hidden="true"
       className={`pointer-events-none absolute inset-0 z-[1] grid place-items-center ${className}`}
     >
-      <span className="relative h-[62%] w-[70%]">
+      <span className="relative h-[76%] w-[84%]">
         <Image
           src={color.assetPath}
           alt=""
           fill
           unoptimized
-          sizes="(max-width: 640px) 62vw, 360px"
+          sizes="(max-width: 640px) 76vw, 440px"
           className={`object-contain transition-opacity duration-150 ${
             isCanvasReady ? "opacity-0" : "opacity-100"
           }`}

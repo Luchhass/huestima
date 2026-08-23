@@ -1,9 +1,13 @@
+import { Suspense } from "react";
 import CartoonLibraryPage from "@/components/sections/cartoon-library/CartoonLibraryPage";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Cartoon Library",
-};
+export const metadata = createPageMetadata("cartoonLibrary");
 
 export default function CartoonLibraryRoute() {
-  return <CartoonLibraryPage />;
+  return (
+    <Suspense fallback={null}>
+      <CartoonLibraryPage />
+    </Suspense>
+  );
 }

@@ -20,12 +20,20 @@ const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
 
 export default function AppHeader() {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
-  const isCartoonLibraryRoute = pathname === "/cartoon-library";
+  const isLibraryRoute =
+    pathname === "/cartoon-library" ||
+    pathname === "/flag-library" ||
+    pathname === "/brand-library";
+  const isPrivacyRoute = pathname === "/privacy-policy";
+  const isHowItWorksRoute = pathname === "/how-it-works";
+  const isTestLabRoute = pathname === "/test-lab";
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
+  const [hoveredFamily, setHoveredFamily] = useState(null);
+  const [familyUnderline, setFamilyUnderline] = useState(null);
   const isNavigatingRef = useRef(false);
   const navigationResetRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -33,7 +41,37 @@ export default function AppHeader() {
   const mobileBubbleRef = useRef(null);
   const mobileContentRef = useRef(null);
   const mobileMenuTimelineRef = useRef(null);
+  const familyNavRef = useRef(null);
+  const familyLinkRefs = useRef(new Map());
   const closeMenuRef = useRef(() => {});
+
+  useLayoutEffect(() => {
+    const nav = familyNavRef.current;
+    if (!nav) return undefined;
+
+    const activeOption = GAME_FAMILY_OPTIONS.find(
+      (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
+    );
+    const targetOption =
+      GAME_FAMILY_OPTIONS.find((option) => option.href === hoveredFamily) ||
+      activeOption;
+    const target = targetOption && familyLinkRefs.current.get(targetOption.href);
+
+    if (!target) return undefined;
+
+    const updateUnderline = () => {
+      const navRect = nav.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      setFamilyUnderline({
+        left: targetRect.left - navRect.left,
+        width: targetRect.width,
+      });
+    };
+
+    updateUnderline();
+    window.addEventListener("resize", updateUnderline);
+    return () => window.removeEventListener("resize", updateUnderline);
+  }, [hoveredFamily, pathname, locale]);
 
   useEffect(() => {
     isNavigatingRef.current = false;
@@ -252,7 +290,7 @@ export default function AppHeader() {
     });
   };
 
-  if (isCartoonLibraryRoute) {
+  if (isLibraryRoute || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute) {
     return null;
   }
 
@@ -346,45 +384,60 @@ export default function AppHeader() {
           href="/color"
           aria-label={t("app.homeAria")}
           data-sound="off"
-          className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-[15px] font-semibold uppercase tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-base"
+          className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-base font-semibold uppercase leading-none tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-[17px]"
         >
-          <BrandLogoMark />
+          <BrandLogoMark interactive />
           <span>{APP_NAME}</span>
         </Link>
 
         <nav
+          ref={familyNavRef}
           aria-label={t("gameFamily.label")}
-          className="hidden items-center gap-5 text-[13px] font-semibold uppercase tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
+          onMouseLeave={() => setHoveredFamily(null)}
+          className="relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
         >
           {GAME_FAMILY_OPTIONS.map((option) => {
             const active =
               pathname === option.href || pathname?.startsWith(`${option.href}/`);
+            const highlighted = hoveredFamily
+              ? hoveredFamily === option.href
+              : active;
 
             return (
               <Link
                 key={option.id}
+                ref={(node) => {
+                  if (node) familyLinkRefs.current.set(option.href, node);
+                  else familyLinkRefs.current.delete(option.href);
+                }}
                 href={option.href}
                 aria-current={active ? "page" : undefined}
                 data-sound="off"
+                onMouseEnter={() => setHoveredFamily(option.href)}
                 onClick={(event) =>
                   handleFamilyNavigation(event, option.href, active)
                 }
-                className={`relative inline-flex h-8 items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
-                  active
+                className={`relative top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
+                  highlighted
                     ? "text-zinc-950 dark:text-white"
-                    : "hover:text-zinc-950 dark:hover:text-white"
+                    : "text-zinc-950/42 dark:text-white/42"
                 }`}
               >
                 {t(`gameFamily.${option.id}`)}
-                {active && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -bottom-0.5 left-0 h-0.5 w-full rounded-full bg-zinc-950 dark:bg-white"
-                  />
-                )}
               </Link>
             );
           })}
+          {familyUnderline && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 rounded-full bg-zinc-950 dark:bg-white"
+              style={{
+                width: familyUnderline.width,
+                transform: `translateX(${familyUnderline.left}px)`,
+                transition: "transform 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
+            />
+          )}
         </nav>
       </div>
 
