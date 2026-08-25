@@ -58,13 +58,18 @@ export default function FooterPageShell({
   children,
   className = "",
   mainRef,
+  scrollable = true,
   staticLanguage = false,
 }) {
   return (
     <main
       ref={mainRef}
       data-language-static={staticLanguage ? "" : undefined}
-      className={`scrollbar-hidden app-gradient relative h-dvh overflow-y-auto px-6 pb-16 pt-8 sm:px-10 lg:px-14 ${className}`}
+      className={`app-gradient relative h-dvh px-6 pt-8 sm:px-10 lg:px-14 ${
+        scrollable
+          ? "scrollbar-hidden overflow-y-auto pb-16"
+          : "overflow-clip pb-6 sm:pb-8"
+      } ${className}`}
     >
       {action}
       <div className="mx-auto w-full max-w-[68rem] pt-16 sm:pt-14">

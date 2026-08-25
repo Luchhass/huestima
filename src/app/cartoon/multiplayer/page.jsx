@@ -16,6 +16,7 @@ export default async function CartoonMultiplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      initialCartoonIds={setup.cartoonIds}
     />
   );
 }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { FLAG_OPTIONS } from "@/lib/flags";
+import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import LibraryPageShell, {
@@ -13,25 +14,11 @@ import LibraryPageShell, {
 
 const ALL_GROUP_KEY = "all";
 
-function groupFlags(flags) {
-  const groups = new Map();
-
-  flags.forEach((flag) => {
-    const groupKey = (flag.label || "#").trim().charAt(0).toUpperCase();
-    const current = groups.get(groupKey) || [];
-    current.push(flag);
-    groups.set(groupKey, current);
-  });
-
-  return Array.from(groups.entries())
-    .map(([group, items]) => ({
-      group,
-      items: [...items].sort((left, right) => left.label.localeCompare(right.label)),
-    }))
-    .sort((left, right) => left.group.localeCompare(right.group));
-}
-
-const FLAG_GROUPS = groupFlags(FLAG_OPTIONS);
+const FLAG_GROUPS = FLAG_DIFFICULTY_OPTIONS.map((difficulty) => ({
+  group: difficulty.id,
+  label: difficulty.label,
+  items: FLAG_OPTIONS.filter((flag) => flag.difficulty === difficulty.id),
+}));
 
 export default function FlagLibraryPage() {
   const { locale } = useTranslation();
@@ -63,7 +50,7 @@ export default function FlagLibraryPage() {
       mainRef={mainRef}
       backHref={testLabPath}
       onBack={handleBack}
-      backLabel={locale === "tr" ? "Test Lab'a dön" : "Back to Test Lab"}
+      backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={locale === "tr" ? "Bayraklar" : "Flags"}
       count={selectedGroup ? `${selectedGroup.items.length} ${locale === "tr" ? "bayrak" : "flags"}` : ""}
       filters={[ALL_GROUP_KEY, ...FLAG_GROUPS.map((group) => group.group)].map((group) => (
@@ -72,7 +59,9 @@ export default function FlagLibraryPage() {
           active={group === activeGroup}
           onClick={() => setActiveGroup(group)}
         >
-          {group === ALL_GROUP_KEY ? (locale === "tr" ? "Tümü" : "All") : group}
+          {group === ALL_GROUP_KEY
+            ? locale === "tr" ? "Tümü" : "All"
+            : FLAG_GROUPS.find((item) => item.group === group)?.label || group}
         </LibraryFilterButton>
       ))}
     >

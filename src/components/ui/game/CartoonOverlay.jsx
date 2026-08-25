@@ -114,6 +114,8 @@ export default function CartoonOverlay({
   }, [highlightPulse, imagePath, isSurfaceReady, pulseKey]);
 
   useEffect(() => {
+    // Reset visual fallback state whenever the source asset changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasImageError(false);
     setReadySurfacePath(null);
   }, [imagePath]);

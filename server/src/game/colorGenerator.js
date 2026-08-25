@@ -1,6 +1,6 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
 import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
-import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
+import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags.js";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
 
 const GRADIENT_FIXED_COLOR = {
@@ -262,6 +262,7 @@ export function withBrandHex(color) {
     baseScenePath: brand.baseScenePath,
     originalScenePath: brand.originalScenePath,
     logoPath: brand.logoPath,
+    logoLayerPath: brand.logoLayerPath,
     imagePath: brand.imagePath,
     assetPath: brand.assetPath,
     maskPath: brand.maskPath,
@@ -289,19 +290,24 @@ export function randomBrandTargetColors(count, random = Math.random) {
   return result;
 }
 
-export function randomFlagTargetColor(random = Math.random) {
-  const flag = FLAG_OPTIONS[Math.floor(random() * FLAG_OPTIONS.length)];
+export function randomFlagTargetColor(random = Math.random, flagDifficulty) {
+  const pool = flagDifficulty ? getFlagsForDifficulty(FLAG_OPTIONS, flagDifficulty) : FLAG_OPTIONS;
+  const flags = pool.length ? pool : FLAG_OPTIONS;
+  const flag = flags[Math.floor(random() * flags.length)];
 
   return withFlagHex({
     flagId: flag.id,
   });
 }
 
-export function randomFlagTargetColors(count, random = Math.random) {
+export function randomFlagTargetColors(count, random = Math.random, flagDifficulty) {
   const result = [];
+  const difficulties = Array.isArray(flagDifficulty) ? flagDifficulty : flagDifficulty ? [flagDifficulty] : [];
+  const pool = difficulties.length ? FLAG_OPTIONS.filter((flag) => difficulties.includes(flag.difficulty)) : FLAG_OPTIONS;
+  const flags = pool.length ? pool : FLAG_OPTIONS;
 
   while (result.length < count) {
-    const shuffled = [...FLAG_OPTIONS];
+    const shuffled = [...flags];
 
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(random() * (index + 1));
@@ -320,7 +326,7 @@ export function randomFlagTargetColors(count, random = Math.random) {
   return result;
 }
 
-export function randomCartoonTargetColors(count, random = Math.random) {
+export function randomCartoonTargetColors(count, random = Math.random, cartoonIds = null) {
   if (!CARTOON_OPTIONS.length) {
     return Array.from({ length: count }, () =>
       withHex({
@@ -334,7 +340,10 @@ export function randomCartoonTargetColors(count, random = Math.random) {
   const result = [];
 
   while (result.length < count) {
-    const shuffled = [...CARTOON_OPTIONS];
+    const pool = Array.isArray(cartoonIds) && cartoonIds.length
+      ? CARTOON_OPTIONS.filter((item) => cartoonIds.includes(item.id))
+      : CARTOON_OPTIONS;
+    const shuffled = [...(pool.length ? pool : CARTOON_OPTIONS)];
 
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(random() * (index + 1));
@@ -399,7 +408,7 @@ export function createSeededRandom(seed) {
   return mulberry32(hashSeed(seed));
 }
 
-export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily }) {
+export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily, flagDifficulty, flagDifficulties, cartoonIds }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
 
@@ -413,11 +422,11 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
   }
 
   if (gameMode === GAME_MODES.FLAG) {
-    return randomFlagTargetColors(roundCount, random);
+    return randomFlagTargetColors(roundCount, random, flagDifficulties || flagDifficulty);
   }
 
   if (gameMode === GAME_MODES.CARTOON) {
-    return randomCartoonTargetColors(roundCount, random);
+    return randomCartoonTargetColors(roundCount, random, cartoonIds);
   }
 
   if (gameFamily === "brand") {

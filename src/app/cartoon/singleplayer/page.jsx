@@ -14,6 +14,7 @@ export default async function CartoonSingleplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      initialCartoonIds={setup.cartoonIds}
       gameFamily="cartoon"
     />
   );

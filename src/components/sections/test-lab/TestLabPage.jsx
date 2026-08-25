@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { X } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
@@ -36,6 +36,10 @@ export default function TestLabPage() {
 
   const leavePage = useFooterPageTransition(mainRef);
 
+  useEffect(() => {
+    document.title = locale === "tr" ? "Huestima Test Sayfası" : "Huestima Test Page";
+  }, [locale]);
+
   const handleClose = async (event) => {
     event.preventDefault();
     await leavePage(returnPath);
@@ -55,7 +59,7 @@ export default function TestLabPage() {
         <FooterPageAction
           href={returnPath}
           onClick={handleClose}
-          aria-label="Close test lab"
+          aria-label="Close test page"
           className="size-11 p-0 text-foreground/62"
         >
           <X size={24} strokeWidth={1.8} aria-hidden="true" />
@@ -63,7 +67,7 @@ export default function TestLabPage() {
       }
     >
       <FooterPageHeader
-        title="Test Lab"
+        title={locale === "tr" ? "Test Sayfası" : "Test Page"}
         description={
           locale === "tr"
             ? "Oyunda kullanılan görsel materyalleri incele."

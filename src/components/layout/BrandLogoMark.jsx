@@ -22,6 +22,7 @@ export default function BrandLogoMark({
       transformOrigin: "50% 50%",
     });
     const root = gradientRef.current.parentElement;
+    const hoverTarget = root.closest("a, button") || root;
     const speedUp = () =>
       gsap.to(spin, {
         timeScale: 24,
@@ -37,12 +38,12 @@ export default function BrandLogoMark({
         overwrite: true,
       });
 
-    root.addEventListener("pointerenter", speedUp);
-    root.addEventListener("pointerleave", slowDown);
+    hoverTarget.addEventListener("pointerenter", speedUp);
+    hoverTarget.addEventListener("pointerleave", slowDown);
 
     return () => {
-      root.removeEventListener("pointerenter", speedUp);
-      root.removeEventListener("pointerleave", slowDown);
+      hoverTarget.removeEventListener("pointerenter", speedUp);
+      hoverTarget.removeEventListener("pointerleave", slowDown);
       spin.kill();
     };
   }, [interactive]);

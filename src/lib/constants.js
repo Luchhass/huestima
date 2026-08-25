@@ -63,6 +63,8 @@ export const GAME_MODE_IDS = {
   GRADIENT: "gradient",
   FLAG: "flag",
   FLAG_RECALL: "flagRecall",
+  FLAG_SPRINT: "flagSprint",
+  BRAND_RECALL: "brandRecall",
   CARTOON: "cartoon",
   DUEL: "duel",
 };
@@ -97,8 +99,8 @@ export const GAME_MODE_OPTIONS = [
   },
   {
     id: GAME_MODE_IDS.TIMED,
-    label: "Timed",
-    description: "Three seconds to memorize, three seconds to choose.",
+    label: "Time Attack",
+    description: "Beat the clock: three seconds to memorize, three seconds to choose.",
     revealDurationMs: TIMED_MEMORIZE_DURATION_MS,
     guessDurationMs: TIMED_GUESS_DURATION_MS,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
@@ -112,20 +114,34 @@ export const GAME_MODE_OPTIONS = [
   },
   {
     id: GAME_MODE_IDS.FLAG,
-    label: "Flag",
+    label: "Classic",
     description: "Keep the emblem fixed and match the flag background color.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
     id: GAME_MODE_IDS.FLAG_RECALL,
-    label: "Recall",
+    label: "Blind",
     description: "Keep the flag visible while you tune the background color from memory.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
+    id: GAME_MODE_IDS.FLAG_SPRINT,
+    label: "Flag Sprint",
+    description: "Thirty seconds of rapid-fire flag rounds. No result screen between flags.",
+    revealDurationMs: 1200,
+    guessDurationMs: 30000,
+    lockedDifficultyId: DIFFICULTY_IDS.EASY,
+  },
+  {
     id: GAME_MODE_IDS.CARTOON,
-    label: "Recall",
+    label: "Blind",
     description: "Keep the cartoon scene visible while you tune its main painted color from memory.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+  },
+  {
+    id: GAME_MODE_IDS.BRAND_RECALL,
+    label: "Blind",
+    description: "Match the brand color without seeing the original logo color first.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
@@ -156,6 +172,8 @@ export const GAME_MODE_CARD_COPY = {
       "Read the flag shape, then tune the background color behind its fixed emblem.",
     [GAME_MODE_IDS.FLAG_RECALL]:
       "Keep the full flag visible while you rebuild the background color across {roundCount} levels.",
+    [GAME_MODE_IDS.BRAND_RECALL]:
+      "Rebuild the brand color without seeing the original logo color first across {roundCount} levels.",
     [GAME_MODE_IDS.CARTOON]:
       "Keep the cartoon scene visible while you rebuild the main painted character color across {roundCount} levels.",
     [GAME_MODE_IDS.DUEL]:
@@ -178,6 +196,8 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
     [GAME_MODE_IDS.FLAG_RECALL]:
       "Everyone keeps the same flag visible on screen while background accuracy decides the room.",
+    [GAME_MODE_IDS.BRAND_RECALL]:
+      "Everyone rebuilds the brand color without seeing the original logo color first.",
     [GAME_MODE_IDS.CARTOON]:
       "Everyone keeps the same cartoon scene visible on screen while main color accuracy decides the room.",
     [GAME_MODE_IDS.DUEL]:

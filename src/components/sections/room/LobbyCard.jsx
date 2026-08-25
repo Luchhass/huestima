@@ -8,6 +8,7 @@ import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
+import FlagDifficultySwitch from "@/components/ui/FlagDifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import PushNotification from "@/components/ui/PushNotification";
@@ -51,6 +52,7 @@ export default function LobbyCard({
   onGameModeChange,
   onDifficultyChange,
   onRoundCountChange,
+  onFlagDifficultyChange,
   onBackHome,
   isStarting,
   canStartGame = true,
@@ -140,6 +142,8 @@ export default function LobbyCard({
   useEffect(() => {
     if (!activeActionError) return undefined;
 
+    // Notification state is intentionally synchronized from the room action result.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotification({
       id: `error-${Date.now()}`,
       message: activeActionError,
@@ -426,6 +430,16 @@ export default function LobbyCard({
                 className="w-full"
               />
             </div>
+
+            {isFlagFamily(cleanGameFamily) && (
+              <div className="order-4 col-span-2 min-w-0">
+                <FlagDifficultySwitch
+                  value={room?.flagDifficulty || "starter"}
+                  onChange={onFlagDifficultyChange}
+                  disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+                />
+              </div>
+            )}
 
           </div>
         )}

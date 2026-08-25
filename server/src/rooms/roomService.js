@@ -168,6 +168,9 @@ export function getRoomSnapshot(room) {
     mode: room.gameMode,
     gameMode: room.gameMode,
     difficulty: room.difficulty,
+    flagDifficulty: room.flagDifficulty || "starter",
+    flagDifficulties: room.flagDifficulties || [room.flagDifficulty || "starter"],
+    cartoonIds: room.cartoonIds || null,
     roundCount: room.roundCount,
     hintsEnabled: room.hintsEnabled !== false,
     maxPlayers: room.maxPlayers,
@@ -324,6 +327,9 @@ function validateRoomCreatePayload(payload) {
       gameMode.data.gameMode,
       difficulty.data.difficulty,
     ),
+    flagDifficulty: payload.flagDifficulty || "starter",
+    flagDifficulties: Array.isArray(payload.flagDifficulties) && payload.flagDifficulties.length ? payload.flagDifficulties : [payload.flagDifficulty || "starter"],
+    cartoonIds: Array.isArray(payload.cartoonIds) ? payload.cartoonIds : null,
     roundCount: roundCount.data.roundCount,
     hintsEnabled: payload.hintsEnabled !== false,
     roomName: roomName.data.roomName,
@@ -349,6 +355,9 @@ export function createRoom(payload) {
     status: ROOM_STATUSES.LOBBY,
     gameMode: validation.data.gameMode,
     difficulty: validation.data.difficulty,
+    flagDifficulty: validation.data.flagDifficulty,
+    flagDifficulties: validation.data.flagDifficulties,
+    cartoonIds: validation.data.cartoonIds,
     roundCount: validation.data.roundCount,
     hintsEnabled: validation.data.hintsEnabled,
     maxPlayers: env.maxPlayersPerRoom,
@@ -538,6 +547,20 @@ export function updateRoomSettings(payload) {
     if (!difficulty.ok) return difficulty;
 
     room.difficulty = resolveModeDifficulty(room.gameMode, difficulty.data.difficulty);
+  }
+
+  if (payload.flagDifficulty !== undefined) {
+    room.flagDifficulty = String(payload.flagDifficulty || "starter");
+  }
+
+  if (payload.flagDifficulties !== undefined) {
+    room.flagDifficulties = Array.isArray(payload.flagDifficulties) && payload.flagDifficulties.length
+      ? payload.flagDifficulties
+      : [room.flagDifficulty || "starter"];
+  }
+
+  if (payload.cartoonIds !== undefined && Array.isArray(payload.cartoonIds)) {
+    room.cartoonIds = payload.cartoonIds;
   }
 
   if (payload.roundCount !== undefined || payload.levelCount !== undefined) {

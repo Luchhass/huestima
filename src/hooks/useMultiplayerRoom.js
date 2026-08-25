@@ -207,7 +207,7 @@ export function useMultiplayerRoom(roomCode) {
   );
 
   const updateSettings = useCallback(
-    async ({ playerId, gameMode, gameFamily, difficulty, roundCount, hintsEnabled }) => {
+    async ({ playerId, gameMode, gameFamily, difficulty, roundCount, hintsEnabled, flagDifficulty }) => {
       const response = await emitWithAck("room:updateSettings", {
         roomCode,
         playerId,
@@ -216,6 +216,7 @@ export function useMultiplayerRoom(roomCode) {
         difficulty,
         roundCount,
         hintsEnabled,
+        flagDifficulty,
       });
 
       if (response.ok) {

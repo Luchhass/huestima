@@ -58,6 +58,8 @@ const bootstrapScript = `
 
 export default function ThemeBootstrap() {
   return (
+    // This must run before hydration to prevent theme and intro flashes.
+    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
     <Script
       id="theme-bootstrap"
       strategy="beforeInteractive"

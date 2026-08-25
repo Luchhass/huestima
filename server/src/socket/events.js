@@ -63,6 +63,22 @@ function getRoomFromPayload(payload) {
   return { ok: true, data: { room } };
 }
 
+function getSocketPlayer(room, socket) {
+  return Array.from(room?.players?.values?.() || []).find(
+    (player) => player.socketId === socket.id && !player.kicked,
+  ) || null;
+}
+
+function requireSocketPlayer(room, socket, playerId) {
+  const player = getSocketPlayer(room, socket);
+
+  if (!player || player.id !== playerId) {
+    return { ok: false, error: "This socket is not authorized for that player." };
+  }
+
+  return { ok: true, data: { player } };
+}
+
 export function registerSocketEvents(io) {
   const emitters = createEmitters(io);
   configureRoomService(emitters);
@@ -124,6 +140,11 @@ export function registerSocketEvents(io) {
     socket.on(
       "room:leave",
       safeEvent((payload, ack) => {
+        const roomResult = getRoomFromPayload(payload);
+        if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
+
         const result = leaveRoom(payload);
         if (!result.ok) return ackFail(ack, result.error);
 
@@ -137,6 +158,15 @@ export function registerSocketEvents(io) {
     socket.on(
       "room:kickPlayer",
       safeEvent((payload, ack) => {
+        const roomResult = getRoomFromPayload(payload);
+        if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(
+          roomResult.data.room,
+          socket,
+          payload.hostPlayerId || payload.playerId,
+        );
+        if (!auth.ok) return ackFail(ack, auth.error);
+
         const result = kickPlayer(payload);
         if (!result.ok) return ackFail(ack, result.error);
 
@@ -149,6 +179,15 @@ export function registerSocketEvents(io) {
     socket.on(
       "room:updateSettings",
       safeEvent((payload, ack) => {
+        const roomResult = getRoomFromPayload(payload);
+        if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(
+          roomResult.data.room,
+          socket,
+          payload.hostPlayerId || payload.playerId,
+        );
+        if (!auth.ok) return ackFail(ack, auth.error);
+
         const result = updateRoomSettings(payload);
         if (!result.ok) return ackFail(ack, result.error);
 
@@ -161,6 +200,11 @@ export function registerSocketEvents(io) {
     socket.on(
       "room:returnToLobby",
       safeEvent((payload, ack) => {
+        const roomResult = getRoomFromPayload(payload);
+        if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
+
         const result = returnRoomToLobby(payload);
         if (!result.ok) return ackFail(ack, result.error);
 
@@ -171,6 +215,11 @@ export function registerSocketEvents(io) {
     );
 
     const handleStartGame = safeEvent((payload, ack) => {
+      const roomResult = getRoomFromPayload(payload);
+      if (!roomResult.ok) return ackFail(ack, roomResult.error);
+      const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+      if (!auth.ok) return ackFail(ack, auth.error);
+
       const result = startRoomGame(payload);
       if (!result.ok) return ackFail(ack, result.error);
 
@@ -191,6 +240,8 @@ export function registerSocketEvents(io) {
     const handleSubmitGuess = safeEvent((payload, ack) => {
         const roomResult = getRoomFromPayload(payload);
         if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
 
         const result = submitRoundGuess(roomResult.data.room, payload);
         if (!result.ok) return ackFail(ack, result.error);
@@ -217,6 +268,8 @@ export function registerSocketEvents(io) {
       safeEvent((payload, ack) => {
         const roomResult = getRoomFromPayload(payload);
         if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
 
         const result = submitFullResults(roomResult.data.room, payload);
         if (!result.ok) return ackFail(ack, result.error);
@@ -236,9 +289,14 @@ export function registerSocketEvents(io) {
       safeEvent((payload, ack) => {
         const roomResult = getRoomFromPayload(payload);
         if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
 
         const { room } = roomResult.data;
         const roundIndex = Number(payload.roundIndex);
+        if (!Number.isInteger(roundIndex) || roundIndex !== room.game?.currentRoundIndex) {
+          return ackFail(ack, "That round is not currently active.");
+        }
         const targetColors = room.game?.targetColors || [];
         const targetColor = targetColors[roundIndex] || null;
         if (!targetColor) return ackFail(ack, "Target color is unavailable.");
@@ -247,7 +305,6 @@ export function registerSocketEvents(io) {
           round: {
             roundIndex,
             targetColor,
-            targetColors,
             revealDurationMs: room.game.revealDurationMs,
             guessDurationMs: room.game.guessDurationMs || null,
           },

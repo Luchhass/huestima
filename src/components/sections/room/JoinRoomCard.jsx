@@ -52,6 +52,8 @@ export default function JoinRoomCard({
   useEffect(() => {
     if (!actionError) return undefined;
 
+    // Notification state is intentionally synchronized from the room action result.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotification({
       id: `error-${Date.now()}`,
       message: actionError,

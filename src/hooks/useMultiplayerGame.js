@@ -110,6 +110,40 @@ function toResultPhaseShape(serverResult) {
   };
 }
 
+function normalizeRoundResults(results) {
+  if (!Array.isArray(results)) return [];
+
+  const uniqueResults = new Map();
+
+  for (const result of results) {
+    const roundIndex = Number.isInteger(result?.roundIndex)
+      ? result.roundIndex
+      : Number.isInteger(result?.round)
+        ? result.round - 1
+        : null;
+
+    if (
+      roundIndex === null ||
+      roundIndex < 0 ||
+      !Number.isFinite(Number(result?.score)) ||
+      uniqueResults.has(roundIndex)
+    ) {
+      continue;
+    }
+
+    uniqueResults.set(roundIndex, {
+      ...result,
+      round: roundIndex + 1,
+      roundIndex,
+      score: Number(result.score),
+    });
+  }
+
+  return Array.from(uniqueResults.values()).sort(
+    (first, second) => first.roundIndex - second.roundIndex,
+  );
+}
+
 export function useMultiplayerGame({
   roomCode,
   playerId,
@@ -135,8 +169,10 @@ export function useMultiplayerGame({
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
   const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
+  const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
+  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -194,6 +230,12 @@ export function useMultiplayerGame({
   const [localLeaderboard, setLocalLeaderboard] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRoundRef = useRef(null);
+  const submittedRoundRef = useRef(null);
+  const continuedRoundRef = useRef(null);
+  const completedIntroRoundRef = useRef(null);
+  const completedMemorizeRoundRef = useRef(null);
+  const hintActionRef = useRef(false);
   const [hintCount, setHintCount] = useState(() =>
     hintsEnabled ? getInitialHintCount(roundCount) : 0,
   );
@@ -224,14 +266,23 @@ export function useMultiplayerGame({
         (!currentSeed || !initialGameSession.seed || initialGameSession.seed === currentSeed);
 
       if (canRestoreSession) {
-        setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        const restorablePhases = [...Object.values(GAME_PHASES), "waiting", "leaderboard"];
+        const restoredPhase = restorablePhases.includes(initialGameSession.phase)
+          ? initialGameSession.phase
+          : GAME_PHASES.INTRO;
+        const restoredRoundIndex = Math.min(
+          Math.max(Number(initialGameSession.roundIndex) || 0, 0),
+          Math.max(roundCount - 1, 0),
+        );
+
+        setPhase(restoredPhase);
         setPhaseStartedAt(
           Number.isFinite(initialGameSession.phaseStartedAt)
             ? initialGameSession.phaseStartedAt
             : Date.now(),
         );
         setRoundIndex(
-          Number(initialGameSession.roundIndex) ||
+          restoredRoundIndex ||
             gamePayload?.currentRoundIndex ||
             0,
         );
@@ -241,7 +292,7 @@ export function useMultiplayerGame({
           initialGameSession.guessColor ||
             createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
         );
-        setResults(initialGameSession.results || []);
+        setResults(normalizeRoundResults(initialGameSession.results));
         setHintCount(
           Number.isFinite(initialGameSession.hintCount)
             ? initialGameSession.hintCount
@@ -250,6 +301,7 @@ export function useMultiplayerGame({
               : 0,
         );
         setHintActive(Boolean(initialGameSession.hintActive));
+        hintActionRef.current = Boolean(initialGameSession.hintActive);
         setResumeSavedAt(
           Number.isFinite(initialGameSession.savedAt)
             ? initialGameSession.savedAt
@@ -303,6 +355,7 @@ export function useMultiplayerGame({
   const prepareRound = useCallback(
     (nextRoundIndex) => {
       const colors = gamePayload?.targetColors || targetColors;
+      hintActionRef.current = false;
       setHintActive(false);
 
       if (!colors.length) {
@@ -335,7 +388,8 @@ export function useMultiplayerGame({
 
       transitionToPhase(
         (isFlagFamily(cleanGameFamily) && isFlagRecallMode) ||
-          (isCartoonMode && isCartoonSceneMode)
+          (isCartoonMode && isCartoonSceneMode) ||
+          (isBrandRecallMode && cleanGameFamily === "brand")
           ? GAME_PHASES.GUESS
           : GAME_PHASES.MEMORIZE,
       );
@@ -349,6 +403,7 @@ export function useMultiplayerGame({
       isFlagRecallMode,
       isCartoonMode,
       isCartoonSceneMode,
+      isBrandRecallMode,
       isSequenceMode,
       targetColors,
       t,
@@ -357,16 +412,33 @@ export function useMultiplayerGame({
   );
 
   const finishIntro = useCallback(() => {
+    if (
+      phase !== GAME_PHASES.INTRO ||
+      completedIntroRoundRef.current === roundIndex
+    ) {
+      return;
+    }
+
+    completedIntroRoundRef.current = roundIndex;
     prepareRound(roundIndex);
-  }, [prepareRound, roundIndex]);
+  }, [phase, prepareRound, roundIndex]);
 
   const finishMemorize = useCallback(() => {
+    if (
+      phase !== GAME_PHASES.MEMORIZE ||
+      completedMemorizeRoundRef.current === roundIndex
+    ) {
+      return;
+    }
+
+    completedMemorizeRoundRef.current = roundIndex;
+
     if (isSequenceMode) {
       setTargetColor(targetColors[roundIndex] || null);
     }
 
     transitionToPhase(GAME_PHASES.GUESS);
-  }, [isSequenceMode, roundIndex, targetColors, transitionToPhase]);
+  }, [isSequenceMode, phase, roundIndex, targetColors, transitionToPhase]);
 
   const updateGuess = useCallback(
     (nextGuess) => {
@@ -384,37 +456,67 @@ export function useMultiplayerGame({
   );
 
   const useHint = useCallback(() => {
-    if (!hintsEnabled || hintCount <= 0 || hintActive) return;
+    if (
+      phase !== GAME_PHASES.GUESS ||
+      !hintsEnabled ||
+      hintCount <= 0 ||
+      hintActive ||
+      hintActionRef.current
+    ) {
+      return;
+    }
 
+    hintActionRef.current = true;
     setHintCount((currentCount) => Math.max(0, currentCount - 1));
     setHintActive(true);
-  }, [hintActive, hintCount, hintsEnabled]);
+  }, [hintActive, hintCount, hintsEnabled, phase]);
 
   const submitGuess = useCallback(async () => {
-    if (isSubmitting) return;
+    if (
+      phase !== GAME_PHASES.GUESS ||
+      isSubmitting ||
+      submittingRoundRef.current === roundIndex ||
+      submittedRoundRef.current === roundIndex
+    ) {
+      return;
+    }
+
+    submittingRoundRef.current = roundIndex;
 
     setError("");
     setIsSubmitting(true);
 
-    const response = await emitWithAck("game:submitGuess", {
-      roomCode,
-      playerId,
-      roundIndex,
-      guessColor: constrainGuessColor(
-        guessColor,
-        effectiveDifficulty,
-        gameMode,
-        cleanGameFamily,
-        targetColor,
-      ),
-    });
+    let response;
+
+    try {
+      response = await emitWithAck("game:submitGuess", {
+        roomCode,
+        playerId,
+        roundIndex,
+        guessColor: constrainGuessColor(
+          guessColor,
+          effectiveDifficulty,
+          gameMode,
+          cleanGameFamily,
+          targetColor,
+        ),
+      });
+    } catch (submitError) {
+      submittingRoundRef.current = null;
+      setIsSubmitting(false);
+      setError(getMultiplayerErrorMessage({ error: submitError }, t, "game.submitError"));
+      return;
+    }
 
     setIsSubmitting(false);
 
     if (!response.ok) {
+      submittingRoundRef.current = null;
       setError(getMultiplayerErrorMessage(response, t, "game.submitError"));
       return;
     }
+
+    submittedRoundRef.current = roundIndex;
 
     const data = responseData(response);
     const nextResult = toResultPhaseShape(data.result);
@@ -435,7 +537,18 @@ export function useMultiplayerGame({
       setLocalLeaderboard(data.leaderboard);
     }
 
-    transitionToPhase(GAME_PHASES.RESULT);
+    if (isFlagSprintMode) {
+      const nextRoundIndex = roundIndex + 1;
+      if (!isEndlessMode && nextRoundIndex >= roundCount) {
+        transitionToPhase("waiting");
+      } else {
+        setRoundIndex(nextRoundIndex);
+        setTargetColor(null);
+        transitionToPhase(GAME_PHASES.INTRO);
+      }
+    } else {
+      transitionToPhase(GAME_PHASES.RESULT);
+    }
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -443,6 +556,10 @@ export function useMultiplayerGame({
     guessColor,
     hintsEnabled,
     isSubmitting,
+    isFlagSprintMode,
+    isEndlessMode,
+    roundCount,
+    phase,
     playerId,
     roomCode,
     roundIndex,
@@ -537,6 +654,12 @@ export function useMultiplayerGame({
   }, [gameSessionKey, hasRestoredSession]);
 
   const continueFromResult = useCallback(() => {
+    if (phase !== GAME_PHASES.RESULT || continuedRoundRef.current === roundIndex) {
+      return;
+    }
+
+    continuedRoundRef.current = roundIndex;
+
     if (isDuelMode) {
       transitionToPhase("waiting");
       return;
@@ -550,6 +673,9 @@ export function useMultiplayerGame({
     const nextRoundIndex = roundIndex + 1;
 
     setRoundIndex(nextRoundIndex);
+    completedIntroRoundRef.current = null;
+    completedMemorizeRoundRef.current = null;
+    hintActionRef.current = false;
     setTargetColor(null);
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
 
@@ -567,6 +693,7 @@ export function useMultiplayerGame({
     isEndlessMode,
     isDuelMode,
     isSequenceMode,
+    phase,
     roundCount,
     roundIndex,
     targetColors,

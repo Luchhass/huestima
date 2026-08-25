@@ -78,7 +78,7 @@ export default function CartoonLibraryPage() {
       mainRef={mainRef}
       backHref={testLabPath}
       onBack={handleBack}
-      backLabel={locale === "tr" ? "Test Lab'a dön" : "Back to Test Lab"}
+      backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={t("cartoonLibrary.title")}
       count={activeGroup ? t("cartoonLibrary.imageCount", { count: activeGroup.items.length }) : ""}
       filters={[ALL_SERIES_KEY, ...CARTOON_GROUPS.map((group) => group.series)].map((series) => (

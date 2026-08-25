@@ -220,7 +220,7 @@ export default function LeaderboardCard({
                     )}
 
                     {isBrandColor(result.target) && (
-                      <BrandOverlay color={result.target} className="z-[2]" />
+                      <BrandOverlay color={result.target} className="z-[2]" size="tile" />
                     )}
 
                     <span

@@ -105,7 +105,7 @@ function SummaryTile({ result, locale, t }) {
         />
       )}
 
-      {isBrandColor(result.target) && <BrandOverlay color={result.guess} className="z-[2]" />}
+      {isBrandColor(result.target) && <BrandOverlay color={result.guess} className="z-[2]" size="tile" />}
 
       <span
         data-summary-tile-score

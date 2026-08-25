@@ -6,6 +6,7 @@ import { GAME_MODE_IDS } from "@/lib/constants";
 import {
   getGameFamilyHref,
   isCartoonFamily,
+  isBrandFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -23,6 +24,7 @@ import SequenceMemorizePhase from "@/components/ui/game/SequenceMemorizePhase";
 import GuessPhase from "@/components/ui/game/GuessPhase";
 import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
+import { LEAVE_ACTIVE_GAME_EVENT } from "@/lib/gameNavigation";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
@@ -37,6 +39,9 @@ export default function SingleplayerGame({
   initialGameMode,
   initialRoundCount,
   initialHintsEnabled = true,
+  initialFlagDifficulty = null,
+  initialFlagDifficulties = null,
+  initialCartoonIds = null,
   gameFamily = "color",
 }) {
   const router = useRouter();
@@ -47,6 +52,8 @@ export default function SingleplayerGame({
     initialRoundCount,
     initialHintsEnabled,
     cleanGameFamily,
+    initialFlagDifficulties || initialFlagDifficulty,
+    initialCartoonIds,
   );
   const { abandonSession } = game;
   const startTrackedRef = useRef(false);
@@ -64,11 +71,12 @@ export default function SingleplayerGame({
       : undefined;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isBrandMode = isBrandFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
-    if (!isFlagMode && !isCartoonMode) return [];
+    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
     if (game.targetColors.length) return game.targetColors;
     return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isCartoonMode, isFlagMode]);
+  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
   const homeHref = getGameFamilyHref(cleanGameFamily);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
@@ -80,10 +88,11 @@ export default function SingleplayerGame({
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
-    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON);
+    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
+    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL);
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -102,8 +111,8 @@ export default function SingleplayerGame({
       : 0;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isFlagMode || isCartoonMode, visualPreloadTargets);
-  useFlagFullscreenLock(isFlagMode || isCartoonMode);
+  useCartoonAssetPreload(isFlagMode || isCartoonMode || isBrandMode, visualPreloadTargets);
+  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"
@@ -165,6 +174,15 @@ export default function SingleplayerGame({
       if (!isPageUnloadRef.current) {
         abandonSession();
       }
+    };
+  }, [abandonSession]);
+
+  useEffect(() => {
+    const handleLeaveActiveGame = () => abandonSession();
+    window.addEventListener(LEAVE_ACTIVE_GAME_EVENT, handleLeaveActiveGame);
+
+    return () => {
+      window.removeEventListener(LEAVE_ACTIVE_GAME_EVENT, handleLeaveActiveGame);
     };
   }, [abandonSession]);
 
@@ -335,7 +353,7 @@ export default function SingleplayerGame({
           ? game.guessColor
           : null;
   const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode) &&
+    (isFlagMode || isCartoonMode || isBrandMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
       renderedPhase === GAME_PHASES.GUESS ||
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
@@ -360,6 +378,7 @@ export default function SingleplayerGame({
       }
     >
       <GameCardShell
+        data-intro-card-target
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -379,10 +398,18 @@ export default function SingleplayerGame({
               }
             : undefined
         }
+        brandLabelOffset={
+          isBrandMode && renderedPhase === GAME_PHASES.GUESS
+            ? {
+                base: (game.difficulty?.controls?.length || 1) * 50 + 24,
+                sm: (game.difficulty?.controls?.length || 1) * 50 + 32,
+              }
+            : null
+        }
         heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
         isExpanded={renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome}
       >
-        <div className="h-full min-h-[inherit]">
+        <div data-route-transition-scope className="h-full min-h-[inherit]">
           {renderedPhase === GAME_PHASES.INTRO && (
             <IntroPhase
               key={`intro-${game.roundIndex}`}

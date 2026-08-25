@@ -143,7 +143,12 @@ export function validateHsvColor(color) {
   const s = Number(color.s);
   const v = Number(color.v);
 
-  if (![h, s, v].every(Number.isFinite)) return fail("Invalid color.");
+  if (
+    ![h, s, v].every(Number.isFinite) ||
+    h < 0 || h > 360 || s < 0 || s > 100 || v < 0 || v > 100
+  ) {
+    return fail("Invalid color.");
+  }
 
   return ok({
     color: {

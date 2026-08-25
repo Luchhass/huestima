@@ -280,9 +280,14 @@ export const FLAG_OPTIONS = [
 
 export const DEFAULT_FLAG_ID = FLAG_OPTIONS[0].id;
 
+export function getFlagsForDifficulty(flags, difficulty) {
+  return flags.filter((flag) => getFlagDifficulty(flag.id) === difficulty);
+}
+
 export function getFlagOption(flagId) {
   return (
     FLAG_OPTIONS.find((flag) => flag.id === flagId) ||
     FLAG_OPTIONS.find((flag) => flag.id === DEFAULT_FLAG_ID)
   );
 }
+import { getFlagDifficulty } from "../../../shared/flagDifficulty.mjs";

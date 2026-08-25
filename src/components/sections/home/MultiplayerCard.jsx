@@ -6,6 +6,7 @@ import {
   Eye,
   EyeOff,
   Globe2,
+  Images,
   LoaderCircle,
   Lock,
   LogIn,
@@ -299,6 +300,12 @@ export default function MultiplayerCard({
   initialGameMode = null,
   initialRoundCount = DEFAULT_ROUND_COUNT,
   initialHintsEnabled = true,
+  initialFlagDifficulty = "starter",
+  initialFlagDifficulties = null,
+  cartoonIds = [],
+  onCartoonIdsChange,
+  onOpenCartoonPool,
+  onOpenFlagPool,
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -323,6 +330,8 @@ export default function MultiplayerCard({
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+  const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty);
+  const flagDifficulties = initialFlagDifficulties?.length ? initialFlagDifficulties : [flagDifficulty];
   const actionError = formError || submitError;
   const isPlayerNameReady = !validatePlayerName(playerName, t);
   const isJoinListStep = panel === PANELS.JOIN;
@@ -454,6 +463,8 @@ export default function MultiplayerCard({
   useEffect(() => {
     if (!actionError) return undefined;
 
+    // Notification state is intentionally synchronized from the socket error.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     showNotification(actionError, "error");
 
     const timeoutId = window.setTimeout(() => {
@@ -527,6 +538,9 @@ export default function MultiplayerCard({
       gameFamily: cleanGameFamily,
       roundCount: initialRoundCount,
       hintsEnabled: initialHintsEnabled,
+      flagDifficulty,
+      flagDifficulties,
+      cartoonIds,
     });
 
     if (!response.ok) {
@@ -740,6 +754,12 @@ export default function MultiplayerCard({
                 disabled={isCreating}
               />
 
+              {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag") && (
+                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : onOpenFlagPool} aria-label={cleanGameFamily === "cartoon" ? "Choose cartoons" : "Choose flag pools"} title={cleanGameFamily === "cartoon" ? "Choose cartoons" : "Choose flag pools"} className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                  <Images className="relative z-10 size-5" strokeWidth={2} />
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleCreate}
@@ -759,6 +779,7 @@ export default function MultiplayerCard({
               </button>
             </div>
           </div>
+
         </>
       )}
 

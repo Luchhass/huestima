@@ -13,6 +13,7 @@ import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
+  isBrandColor,
   isCartoonColor,
   isFlagColor,
   isGradientColor,
@@ -88,7 +89,8 @@ export default function GuessPhase({
   const isGradientGuess = isGradientColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
   const isCartoonGuess = isCartoonColor(guessColor);
-  const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
+  const isBrandGuess = isBrandColor(guessColor);
+  const usesExternalControlWidget = isFlagGuess || isCartoonGuess || isBrandGuess;
   const usesShowcaseGuessLayout =
     showcaseLayoutEnabled && usesExternalControlWidget;
   const showcaseTextStyle = {

@@ -96,7 +96,7 @@ export const ROUTE_SEO = {
     path: "/privacy-policy",
   },
   testLab: {
-    title: "Huestima Test Lab",
+    title: "Huestima Test Page",
     description: "Quick access to Huestima material libraries, mode screens, and development test surfaces.",
     path: "/test-lab",
   },

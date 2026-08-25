@@ -41,8 +41,6 @@ export default function CartoonCanvas({
   const targetKey = `${color?.h ?? 0}:${color?.s ?? 100}:${color?.v ?? 100}:` +
     `${color?.paintBase?.h ?? ""}:${color?.paintBase?.s ?? ""}:${color?.paintBase?.v ?? ""}`;
 
-  inputRef.current = { baseSrc, sourceSrc, layers: cleanLayers, color };
-
   const draw = () => {
     const canvas = canvasRef.current;
     const input = inputRef.current;
@@ -69,12 +67,15 @@ export default function CartoonCanvas({
         bitmap.close();
         onReady?.();
       })
-      .catch((error) => console.warn("Visual renderer failed.", error));
+      .catch(() => {
+        // Rendering failures are reflected by the surrounding fallback UI.
+      });
   };
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    inputRef.current = { baseSrc, sourceSrc, layers: cleanLayers, color };
     const rect = canvas.getBoundingClientRect();
     visibleRef.current =
       rect.bottom >= -1200 && rect.top <= window.innerHeight + 1200;
@@ -82,6 +83,8 @@ export default function CartoonCanvas({
     if (frameRef.current) cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frameRef.current);
+  // draw intentionally reads the latest render input from inputRef.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseSrc, sourceSrc, cleanLayerKey, minRenderWidth, targetKey]);
 
   useEffect(() => {
@@ -117,6 +120,8 @@ export default function CartoonCanvas({
       window.clearTimeout(resizeTimer);
       requestRef.current += 1;
     };
+  // draw intentionally reads the latest render input from inputRef.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseSrc, sourceSrc, cleanLayerKey, minRenderWidth]);
 
   return (

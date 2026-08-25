@@ -195,7 +195,7 @@ export default function ResultPhase({
           targetSectionElement,
         ].filter(Boolean),
         {
-          clearProps: "all",
+          clearProps: "transform,opacity,visibility",
         },
       );
 
@@ -833,7 +833,7 @@ export default function ResultPhase({
         {isFlagColor(result.guess) && (
           <FlagOverlay color={result.guess} />
         )}
-        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} />}
+        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} size="result" />}
 
         {isCartoonGuessResult && (
           <CartoonOverlay
@@ -911,7 +911,7 @@ export default function ResultPhase({
         {isFlagColor(result.target) && (
           <FlagOverlay color={result.target} />
         )}
-        {isBrandColor(result.target) && <BrandOverlay color={result.target} />}
+        {isBrandColor(result.target) && <BrandOverlay color={result.target} size="result" />}
 
         {isCartoonTargetResult && (
           <CartoonOverlay

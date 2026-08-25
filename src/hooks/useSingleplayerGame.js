@@ -65,7 +65,42 @@ export const GAME_PHASES = {
 };
 
 function roundScore(value) {
+  if (!Number.isFinite(value)) return 0;
   return Math.round(value * 100) / 100;
+}
+
+function normalizeRoundResults(results) {
+  if (!Array.isArray(results)) return [];
+
+  const uniqueResults = new Map();
+
+  for (const result of results) {
+    const roundIndex = Number.isInteger(result?.roundIndex)
+      ? result.roundIndex
+      : Number.isInteger(result?.round)
+        ? result.round - 1
+        : null;
+
+    if (
+      roundIndex === null ||
+      roundIndex < 0 ||
+      !Number.isFinite(Number(result?.score)) ||
+      uniqueResults.has(roundIndex)
+    ) {
+      continue;
+    }
+
+    uniqueResults.set(roundIndex, {
+      ...result,
+      round: roundIndex + 1,
+      roundIndex,
+      score: Number(result.score),
+    });
+  }
+
+  return Array.from(uniqueResults.values()).sort(
+    (first, second) => first.roundIndex - second.roundIndex,
+  );
 }
 
 function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null) {
@@ -114,13 +149,13 @@ function constrainGuessColor(
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
 }
 
-function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount) {
+function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, flagDifficulty, cartoonIds) {
   if (isFlagFamily(gameFamily)) {
-    return randomFlagTargetColors(roundCount);
+    return randomFlagTargetColors(roundCount, Math.random, flagDifficulty);
   }
 
   if (isCartoonFamily(gameFamily)) {
-    return randomCartoonTargetColors(roundCount);
+    return randomCartoonTargetColors(roundCount, Math.random, cartoonIds);
   }
 
   if (isBrandFamily(gameFamily)) {
@@ -152,6 +187,8 @@ export function useSingleplayerGame(
   roundCountValue,
   hintsEnabledValue = true,
   gameFamily = "color",
+  flagDifficulty = null,
+  cartoonIds = null,
 ) {
   const cleanGameFamily = useMemo(
     () => normalizeGameFamily(gameFamily),
@@ -175,9 +212,11 @@ export function useSingleplayerGame(
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
+  const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const isBrandMode = isBrandFamily(cleanGameFamily);
+  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -224,6 +263,11 @@ export function useSingleplayerGame(
   );
   const restoredFromSession = Boolean(initialGameSession);
   const snapshotRef = useRef(null);
+  const submittedRoundRef = useRef(null);
+  const continuedRoundRef = useRef(null);
+  const completedIntroRoundRef = useRef(null);
+  const completedMemorizeRoundRef = useRef(null);
+  const hintActionRef = useRef(false);
 
   const transitionToPhase = useCallback((nextPhase) => {
     setPhaseStartedAt(Date.now());
@@ -233,20 +277,28 @@ export function useSingleplayerGame(
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       if (initialGameSession) {
-        setPhase(initialGameSession.phase || GAME_PHASES.INTRO);
+        const restoredPhase = Object.values(GAME_PHASES).includes(initialGameSession.phase)
+          ? initialGameSession.phase
+          : GAME_PHASES.INTRO;
+        const restoredRoundIndex = Math.min(
+          Math.max(Number(initialGameSession.roundIndex) || 0, 0),
+          Math.max(roundCount - 1, 0),
+        );
+
+        setPhase(restoredPhase);
         setPhaseStartedAt(
           Number.isFinite(initialGameSession.phaseStartedAt)
             ? initialGameSession.phaseStartedAt
             : Date.now(),
         );
-        setRoundIndex(Number(initialGameSession.roundIndex) || 0);
+        setRoundIndex(restoredRoundIndex);
         const restoredTargetColors = isBrandMode
           ? normalizeBrandTargets(initialGameSession.targetColors, roundCount)
           : initialGameSession.targetColors || [];
         const restoredTargetColor = isBrandMode
           ? isBrandColor(initialGameSession.targetColor)
             ? initialGameSession.targetColor
-            : restoredTargetColors[Number(initialGameSession.roundIndex) || 0] || null
+            : restoredTargetColors[restoredRoundIndex] || null
           : initialGameSession.targetColor || null;
 
         setTargetColor(restoredTargetColor);
@@ -270,7 +322,7 @@ export function useSingleplayerGame(
             : initialGameSession.guessColor ||
               createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
         );
-        setResults(initialGameSession.results || []);
+        setResults(normalizeRoundResults(initialGameSession.results));
         setHintCount(
           Number.isFinite(initialGameSession.hintCount)
             ? initialGameSession.hintCount
@@ -279,6 +331,7 @@ export function useSingleplayerGame(
               : 0,
         );
         setHintActive(Boolean(initialGameSession.hintActive));
+        hintActionRef.current = Boolean(initialGameSession.hintActive);
         setResumeSavedAt(
           Number.isFinite(initialGameSession.savedAt)
             ? initialGameSession.savedAt
@@ -382,6 +435,7 @@ export function useSingleplayerGame(
 
   const startRound = useCallback((nextRoundIndex) => {
     setRoundIndex(nextRoundIndex);
+    hintActionRef.current = false;
     setHintActive(false);
 
     if (isSequenceMode) {
@@ -390,6 +444,8 @@ export function useSingleplayerGame(
         gameMode.id,
         cleanGameFamily,
         roundCount,
+        flagDifficulty,
+        cartoonIds,
       );
       setTargetColors(sequenceColors);
       setTargetColor(sequenceColors[0]);
@@ -401,14 +457,16 @@ export function useSingleplayerGame(
           sequenceColors[0],
         ),
       );
-      transitionToPhase(GAME_PHASES.MEMORIZE);
+      transitionToPhase(
+        isBrandRecallMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE,
+      );
       return;
     }
 
     if (isFlagMode) {
       const flagTargetColors =
         nextRoundIndex === 0 || targetColors.length < roundCount
-          ? randomFlagTargetColors(roundCount)
+          ? randomFlagTargetColors(roundCount, Math.random, flagDifficulty)
           : targetColors;
       const nextTargetColor = flagTargetColors[nextRoundIndex];
 
@@ -431,7 +489,7 @@ export function useSingleplayerGame(
     if (isCartoonMode) {
       const cartoonTargetColors =
         nextRoundIndex === 0 || targetColors.length < roundCount
-          ? randomCartoonTargetColors(roundCount)
+          ? randomCartoonTargetColors(roundCount, Math.random, cartoonIds)
           : targetColors;
       const nextTargetColor = cartoonTargetColors[nextRoundIndex];
 
@@ -468,7 +526,9 @@ export function useSingleplayerGame(
           nextTargetColor,
         ),
       );
-      transitionToPhase(GAME_PHASES.MEMORIZE);
+      transitionToPhase(
+        isBrandRecallMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE,
+      );
       return;
     }
 
@@ -493,6 +553,9 @@ export function useSingleplayerGame(
     isCartoonMode,
     isCartoonSceneMode,
     isBrandMode,
+    isBrandRecallMode,
+    flagDifficulty,
+    cartoonIds,
     isFlagMode,
     isSequenceMode,
     roundCount,
@@ -501,23 +564,46 @@ export function useSingleplayerGame(
   ]);
 
   const useHint = useCallback(() => {
-    if (!hintsEnabled || hintCount <= 0 || hintActive) return;
+    if (
+      phase !== GAME_PHASES.GUESS ||
+      !hintsEnabled ||
+      hintCount <= 0 ||
+      hintActive ||
+      hintActionRef.current
+    ) {
+      return;
+    }
 
+    hintActionRef.current = true;
     setHintCount((currentCount) => Math.max(0, currentCount - 1));
     setHintActive(true);
-  }, [hintActive, hintCount, hintsEnabled]);
+  }, [hintActive, hintCount, hintsEnabled, phase]);
 
   const finishIntro = useCallback(() => {
+    if (phase !== GAME_PHASES.INTRO || completedIntroRoundRef.current === roundIndex) {
+      return;
+    }
+
+    completedIntroRoundRef.current = roundIndex;
     startRound(roundIndex);
-  }, [roundIndex, startRound]);
+  }, [phase, roundIndex, startRound]);
 
   const finishMemorize = useCallback(() => {
+    if (
+      phase !== GAME_PHASES.MEMORIZE ||
+      completedMemorizeRoundRef.current === roundIndex
+    ) {
+      return;
+    }
+
+    completedMemorizeRoundRef.current = roundIndex;
+
     if (isSequenceMode) {
       setTargetColor(targetColors[roundIndex] || null);
     }
 
     transitionToPhase(GAME_PHASES.GUESS);
-  }, [isSequenceMode, roundIndex, targetColors, transitionToPhase]);
+  }, [isSequenceMode, phase, roundIndex, targetColors, transitionToPhase]);
 
   const updateGuess = useCallback((nextGuess) => {
     const activeTarget = isSequenceMode
@@ -544,11 +630,17 @@ export function useSingleplayerGame(
   ]);
 
   const submitGuess = useCallback(() => {
+    if (phase !== GAME_PHASES.GUESS || submittedRoundRef.current === roundIndex) {
+      return;
+    }
+
     const activeTarget = isSequenceMode
       ? targetColors[roundIndex]
       : targetColor;
 
     if (!activeTarget) return;
+
+    submittedRoundRef.current = roundIndex;
 
     const finalGuess = constrainGuessColor(
       guessColor,
@@ -571,11 +663,24 @@ export function useSingleplayerGame(
       gameMode: gameMode.id,
     };
 
-    setResults((currentResults) => [...currentResults, result]);
+    setResults((currentResults) =>
+      normalizeRoundResults([...currentResults, result]),
+    );
     if (hintsEnabled && earnsHint(score)) {
       setHintCount((currentCount) => currentCount + 1);
     }
-    transitionToPhase(GAME_PHASES.RESULT);
+    if (isFlagSprintMode) {
+      const nextRoundIndex = roundIndex + 1;
+      if (!isEndlessMode && nextRoundIndex >= roundCount) {
+        transitionToPhase(GAME_PHASES.FINAL);
+      } else {
+        setRoundIndex(nextRoundIndex);
+        setTargetColor(null);
+        transitionToPhase(GAME_PHASES.INTRO);
+      }
+    } else {
+      transitionToPhase(GAME_PHASES.RESULT);
+    }
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -583,6 +688,10 @@ export function useSingleplayerGame(
     guessColor,
     hintsEnabled,
     isSequenceMode,
+    isFlagSprintMode,
+    isEndlessMode,
+    roundCount,
+    phase,
     roundIndex,
     targetColor,
     targetColors,
@@ -590,6 +699,12 @@ export function useSingleplayerGame(
   ]);
 
   const continueFromResult = useCallback(() => {
+    if (phase !== GAME_PHASES.RESULT || continuedRoundRef.current === roundIndex) {
+      return;
+    }
+
+    continuedRoundRef.current = roundIndex;
+
     if (!isEndlessMode && roundIndex + 1 >= roundCount) {
       transitionToPhase(GAME_PHASES.FINAL);
       return;
@@ -598,6 +713,7 @@ export function useSingleplayerGame(
     const nextRoundIndex = roundIndex + 1;
 
     setRoundIndex(nextRoundIndex);
+    hintActionRef.current = false;
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
 
     if (isSequenceMode) {
@@ -614,6 +730,7 @@ export function useSingleplayerGame(
     gameMode,
     isEndlessMode,
     isSequenceMode,
+    phase,
     roundCount,
     roundIndex,
     targetColors,
@@ -629,6 +746,11 @@ export function useSingleplayerGame(
   const playAgain = useCallback(() => {
     clearGameSession(gameSessionKey);
     setResults([]);
+    submittedRoundRef.current = null;
+    continuedRoundRef.current = null;
+    completedIntroRoundRef.current = null;
+    completedMemorizeRoundRef.current = null;
+    hintActionRef.current = false;
     setRoundIndex(0);
     setTargetColor(null);
     setTargetColors([]);
@@ -653,9 +775,15 @@ export function useSingleplayerGame(
   }, [gameSessionKey]);
 
   const summary = useMemo(() => {
-    const totalScore = roundScore(results.reduce((sum, result) => sum + result.score, 0));
-    const averageScore = results.length ? roundScore(totalScore / results.length) : 0;
-    const maxScore = (isEndlessMode ? Math.max(results.length, 1) : roundCount) *
+    const normalizedResults = normalizeRoundResults(results);
+    const totalScore = roundScore(
+      normalizedResults.reduce((sum, result) => sum + result.score, 0),
+    );
+    const averageScore = normalizedResults.length
+      ? roundScore(totalScore / normalizedResults.length)
+      : 0;
+    const maxScore =
+      (isEndlessMode ? Math.max(normalizedResults.length, 1) : roundCount) *
       MAX_ROUND_SCORE;
 
     return {

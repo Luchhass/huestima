@@ -1,4 +1,10 @@
 import { FLAG_ITEMS } from "../../shared/flagCatalog.mjs";
+import {
+  FLAG_DIFFICULTY_IDS,
+  FLAG_DIFFICULTY_OPTIONS,
+  getFlagDifficulty,
+  getFlagsForDifficulty,
+} from "../../shared/flagDifficulty.mjs";
 
 const FLAG_REGION_CODES = {
   afghanistan: "AF",
@@ -237,6 +243,7 @@ function flag(item) {
     maskPath,
     assetPath: scenePath,
     paint: item.paint,
+    difficulty: getFlagDifficulty(item.id),
     layers: [
       {
         id: "main",
@@ -250,6 +257,7 @@ function flag(item) {
 }
 
 export const FLAG_OPTIONS = FLAG_ITEMS.map(flag);
+export { FLAG_DIFFICULTY_IDS, FLAG_DIFFICULTY_OPTIONS, getFlagsForDifficulty };
 
 export const DEFAULT_FLAG_ID = FLAG_OPTIONS[0]?.id || null;
 

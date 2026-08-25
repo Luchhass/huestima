@@ -5,7 +5,7 @@ import {
   getCartoonOption,
 } from "./cartoons";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
-import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
+import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
 
 const GRADIENT_FIXED_COLOR = {
@@ -170,7 +170,7 @@ function averageManyRgbHex(hexValues) {
 
 export function gradientBackground(color) {
   if (isFlagColor(color)) return color.hex;
-  if (isBrandColor(color)) return color.backgroundHex || "#7f7f7f";
+  if (isBrandColor(color)) return color.backgroundHex || "#e3e3e3";
   if (isCartoonColor(color)) {
     return "#000000";
   }
@@ -181,7 +181,7 @@ export function gradientBackground(color) {
 
 export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
-  if (isBrandColor(color)) return color.backgroundHex || "#7f7f7f";
+  if (isBrandColor(color)) return color.backgroundHex || "#e3e3e3";
   if (isCartoonColor(color)) return color.toneHex || color.hex || "#000000";
   if (!isGradientColor(color)) return color?.hex || color || "#000000";
 
@@ -386,7 +386,9 @@ export function withBrandHex(color) {
     backgroundHex: brand.backgroundHex,
     baseScenePath: brand.baseScenePath,
     originalScenePath: brand.originalScenePath,
+    scenePath: brand.scenePath,
     logoPath: brand.logoPath,
+    logoLayerPath: brand.logoLayerPath,
     imagePath: brand.imagePath,
     assetPath: brand.assetPath,
     maskPath: brand.maskPath,
@@ -499,19 +501,24 @@ export function createDefaultFlagGuess(
   }, targetColor, difficulty);
 }
 
-export function randomFlagTargetColor(random = Math.random) {
-  const flag = FLAG_OPTIONS[Math.floor(random() * FLAG_OPTIONS.length)];
+export function randomFlagTargetColor(random = Math.random, flagDifficulty) {
+  const difficulties = Array.isArray(flagDifficulty) ? flagDifficulty : flagDifficulty ? [flagDifficulty] : [];
+  const pool = difficulties.length ? FLAG_OPTIONS.filter((flag) => difficulties.includes(flag.difficulty)) : FLAG_OPTIONS;
+  const flags = pool.length ? pool : FLAG_OPTIONS;
+  const flag = flags[Math.floor(random() * flags.length)];
 
   return withFlagHex({
     flagId: flag.id,
   });
 }
 
-export function randomFlagTargetColors(count, random = Math.random) {
+export function randomFlagTargetColors(count, random = Math.random, flagDifficulty) {
   const result = [];
+  const pool = flagDifficulty ? getFlagsForDifficulty(FLAG_OPTIONS, flagDifficulty) : FLAG_OPTIONS;
+  const flags = pool.length ? pool : FLAG_OPTIONS;
 
   while (result.length < count) {
-    const shuffled = [...FLAG_OPTIONS];
+    const shuffled = [...flags];
 
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(random() * (index + 1));
@@ -530,7 +537,7 @@ export function randomFlagTargetColors(count, random = Math.random) {
   return result;
 }
 
-export function randomCartoonTargetColor(random = Math.random) {
+export function randomCartoonTargetColor(random = Math.random, cartoonIds = null) {
   if (!CARTOON_OPTIONS.length) {
     return withHex({
       h: Math.floor(random() * 360),
@@ -539,22 +546,28 @@ export function randomCartoonTargetColor(random = Math.random) {
     });
   }
 
-  const cartoon = CARTOON_OPTIONS[Math.floor(random() * CARTOON_OPTIONS.length)];
+  const pool = Array.isArray(cartoonIds) && cartoonIds.length
+    ? CARTOON_OPTIONS.filter((item) => cartoonIds.includes(item.id))
+    : CARTOON_OPTIONS;
+  const cartoon = pool[Math.floor(random() * pool.length)] || CARTOON_OPTIONS[0];
 
   return withCartoonHex({
     cartoonId: cartoon.id,
   });
 }
 
-export function randomCartoonTargetColors(count, random = Math.random) {
+export function randomCartoonTargetColors(count, random = Math.random, cartoonIds = null) {
   if (!CARTOON_OPTIONS.length) {
-    return Array.from({ length: count }, () => randomCartoonTargetColor(random));
+    return Array.from({ length: count }, () => randomCartoonTargetColor(random, cartoonIds));
   }
 
   const result = [];
 
   while (result.length < count) {
-    const shuffled = [...CARTOON_OPTIONS];
+    const pool = Array.isArray(cartoonIds) && cartoonIds.length
+      ? CARTOON_OPTIONS.filter((item) => cartoonIds.includes(item.id))
+      : CARTOON_OPTIONS;
+    const shuffled = [...(pool.length ? pool : CARTOON_OPTIONS)];
 
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(random() * (index + 1));

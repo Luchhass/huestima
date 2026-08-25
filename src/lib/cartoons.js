@@ -220,6 +220,29 @@ function cartoon(item, index) {
 
 export const CARTOON_OPTIONS = CARTOON_ITEMS.map((item, index) => cartoon(item, index));
 
+const CARTOON_PACK_LABELS = {
+  "adventure-time": "Adventure Time",
+  "ben-10": "Ben 10",
+  "regular-show": "Regular Show",
+};
+
+function formatCartoonPackLabel(pack) {
+  return CARTOON_PACK_LABELS[pack] || pack.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export const CARTOON_PACKS = Object.values(
+  CARTOON_OPTIONS.reduce((packs, item) => {
+    const pack = packs[item.pack] || {
+      id: item.pack,
+      label: formatCartoonPackLabel(item.pack),
+      itemIds: [],
+    };
+    pack.itemIds.push(item.id);
+    packs[item.pack] = pack;
+    return packs;
+  }, {}),
+);
+
 export const CARTOON_REFERENCE = CARTOON_ITEMS.map((item) => ({
   catalogNumber: CARTOON_INDEX_BY_ID[item.id],
   id: item.id,

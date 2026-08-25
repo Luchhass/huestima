@@ -1,5 +1,6 @@
 "use client";
 
+import { Images } from "lucide-react";
 import { useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,13 @@ export default function SingleplayerCard({
   onDifficultyFeedback,
   onGameModeChange,
   onRoundCountChange,
+  flagDifficulty = "starter",
+  onFlagDifficultyChange,
+  flagDifficulties = [],
+  cartoonIds = [],
+  onCartoonIdsChange,
+  onOpenCartoonPool,
+  onOpenFlagPool,
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -70,9 +78,9 @@ export default function SingleplayerCard({
     isNavigatingRef.current = true;
 
     await playScreenFadeOut(scopeRef, { duration: 0.28 });
-    router.push(
-      `${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`,
-    );
+    const cartoonQuery = cartoonIds.length ? `&cartoons=${encodeURIComponent(cartoonIds.join(","))}` : "";
+    const flagQuery = flagDifficulties.length ? `&flagDifficulties=${encodeURIComponent(flagDifficulties.join(","))}` : `&flagDifficulty=${flagDifficulty}`;
+    router.push(`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}${flagQuery}${cartoonQuery}`);
   };
 
   return (
@@ -133,14 +141,24 @@ export default function SingleplayerCard({
             />
           </div>
 
-          <Link
-            data-game-mode-shock-target
-            href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
-            onClick={handlePlay}
-            className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
-          >
-            <span className="relative z-10">{t("setup.play")}</span>
-          </Link>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            {(gameFamily === GAME_FAMILY_IDS.CARTOON || gameFamily === GAME_FAMILY_IDS.FLAG) && (
+              <div data-game-mode-shock-target className="shrink-0">
+                <button type="button" onClick={gameFamily === GAME_FAMILY_IDS.CARTOON ? onOpenCartoonPool : onOpenFlagPool} aria-label={gameFamily === GAME_FAMILY_IDS.CARTOON ? "Choose cartoons" : "Choose flag pools"} title={gameFamily === GAME_FAMILY_IDS.CARTOON ? "Choose cartoons" : "Choose flag pools"} className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white p-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                  <Images className="relative z-10 size-5" strokeWidth={2} />
+                </button>
+              </div>
+            )}
+
+            <Link
+              data-game-mode-shock-target
+              href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
+              onClick={handlePlay}
+              className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
+            >
+              <span className="relative z-10">{t("setup.play")}</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

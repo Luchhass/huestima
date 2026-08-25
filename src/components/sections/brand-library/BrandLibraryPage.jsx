@@ -63,7 +63,7 @@ export default function BrandLibraryPage() {
       mainRef={mainRef}
       backHref={testLabPath}
       onBack={handleBack}
-      backLabel={locale === "tr" ? "Test Lab'a dön" : "Back to Test Lab"}
+      backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={locale === "tr" ? "Markalar" : "Brands"}
       count={selectedGroup ? `${selectedGroup.items.length} logo` : ""}
       filters={[ALL_GROUP_KEY, ...BRAND_GROUPS.map((group) => group.group)].map((group) => (
@@ -80,7 +80,10 @@ export default function BrandLibraryPage() {
         <div className="mx-auto grid w-full max-w-[68rem] grid-cols-1 gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
           {selectedGroup.items.map((item) => (
             <article key={item.id}>
-              <div className="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[18px] border border-foreground/8 bg-[#d9dde4] p-8">
+              <div
+                className="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[18px] border border-foreground/8 p-8"
+                style={{ backgroundColor: item.backgroundHex }}
+              >
                 <div className="relative h-[62%] w-[78%]">
                   <Image
                     src={item.assetPath}

@@ -43,12 +43,24 @@ export function resolveSingleplayerRoute(searchParams, gameFamily = "color") {
   const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
   const roundCount = normalizeRoundCount(searchParams?.roundCount ?? searchParams?.levels);
   const hintsEnabled = normalizeHintsEnabled(searchParams?.hints, true);
+  const flagDifficulty = typeof searchParams?.flagDifficulty === "string"
+    ? searchParams.flagDifficulty
+    : null;
+  const flagDifficulties = typeof searchParams?.flagDifficulties === "string"
+    ? searchParams.flagDifficulties.split(",").filter(Boolean)
+    : flagDifficulty ? [flagDifficulty] : null;
+  const cartoonIds = typeof searchParams?.cartoons === "string"
+    ? searchParams.cartoons.split(",").filter(Boolean)
+    : null;
 
   return {
     difficulty,
     gameMode,
     roundCount,
     hintsEnabled,
+    flagDifficulty,
+    flagDifficulties,
+    cartoonIds,
   };
 }
 
@@ -99,11 +111,23 @@ export function resolveMultiplayerSetupRoute(searchParams, gameFamily = "color")
   const difficulty = gameModeOption?.lockedDifficultyId || validatedDifficulty;
   const roundCount = normalizeRoundCount(searchParams?.roundCount ?? searchParams?.levels);
   const hintsEnabled = normalizeHintsEnabled(searchParams?.hints, true);
+  const flagDifficulty = typeof searchParams?.flagDifficulty === "string"
+    ? searchParams.flagDifficulty
+    : null;
+  const flagDifficulties = typeof searchParams?.flagDifficulties === "string"
+    ? searchParams.flagDifficulties.split(",").filter(Boolean)
+    : flagDifficulty ? [flagDifficulty] : null;
+  const cartoonIds = typeof searchParams?.cartoons === "string"
+    ? searchParams.cartoons.split(",").filter(Boolean)
+    : null;
 
   return {
     difficulty,
     gameMode,
     roundCount,
     hintsEnabled,
+    flagDifficulty,
+    flagDifficulties,
+    cartoonIds,
   };
 }

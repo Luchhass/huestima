@@ -25,6 +25,7 @@ export default function GameCardShell({
   flagOverlayProps = {},
   cartoonOverlayProps = {},
   brandOverlayProps = {},
+  brandLabelOffset = null,
   isExpanded = false,
   heightMode = "normal",
   ...props
@@ -41,6 +42,12 @@ export default function GameCardShell({
   const overlayLabelStyle = {
     color: "var(--game-fg-bottom-left)",
     textShadow: "var(--game-fg-bottom-left-shadow)",
+    ...(isBrandCard && Number.isFinite(brandLabelOffset?.base)
+      ? {
+          "--brand-label-left": `${brandLabelOffset.base}px`,
+          "--brand-label-left-sm": `${brandLabelOffset.sm ?? brandLabelOffset.base}px`,
+        }
+      : {}),
   };
   const visualLabel = getVisualLabel(color, locale);
   const cardStyle = {
@@ -76,7 +83,11 @@ export default function GameCardShell({
         {isBrandCard && <BrandOverlay color={color} {...brandOverlayProps} />}
         {(isFlagCard || isCartoonCard || isBrandCard) && visualLabel && (
           <span
-            className="pointer-events-none absolute bottom-6 left-6 z-12 max-w-[45%] truncate text-base font-semibold sm:bottom-8 sm:left-8"
+            className={`pointer-events-none absolute z-12 max-w-[45%] truncate text-base font-semibold ${
+              isBrandCard
+                ? "top-6 left-1/2 -translate-x-1/2 text-center sm:top-8"
+                : "bottom-6 left-6 sm:bottom-8 sm:left-8"
+            }`}
             style={overlayLabelStyle}
           >
             {visualLabel}

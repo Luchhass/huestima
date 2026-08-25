@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import {
   isCartoonFamily,
+  isBrandFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -102,6 +103,7 @@ export default function MultiplayerGame({
     difficultyId,
     gameModeId,
     gameFamily: cleanGameFamily,
+    flagDifficulty: room?.flagDifficulty,
     gamePayload,
     room,
     incomingLeaderboard: leaderboard,
@@ -123,11 +125,12 @@ export default function MultiplayerGame({
     phase === "waiting";
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isBrandMode = isBrandFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
-    if (!isFlagMode && !isCartoonMode) return [];
+    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
     if (game.targetColors.length) return game.targetColors;
     return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isCartoonMode, isFlagMode]);
+  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
@@ -139,10 +142,11 @@ export default function MultiplayerGame({
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
-    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON);
+    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
+    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL);
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -160,8 +164,8 @@ export default function MultiplayerGame({
       : 0;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isFlagMode || isCartoonMode, visualPreloadTargets);
-  useFlagFullscreenLock(isFlagMode || isCartoonMode);
+  useCartoonAssetPreload(isFlagMode || isCartoonMode || isBrandMode, visualPreloadTargets);
+  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"
@@ -426,7 +430,7 @@ export default function MultiplayerGame({
           ? game.guessColor
           : null;
   const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode) &&
+    (isFlagMode || isCartoonMode || isBrandMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
       renderedPhase === GAME_PHASES.GUESS ||
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
@@ -434,8 +438,11 @@ export default function MultiplayerGame({
   if (!game.hasRestoredSession || renderedPhase === null) {
     return (
       <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
-        <GameCardShell color={{ h: 0, s: 0, v: 0, hex: "#000000" }}>
-          <div className="h-full min-h-[inherit]" />
+        <GameCardShell
+          color={{ h: 0, s: 0, v: 0, hex: "#000000" }}
+          data-intro-card-target
+        >
+          <div className="h-full min-h-[inherit]" data-route-transition-scope />
         </GameCardShell>
       </main>
     );
@@ -451,6 +458,7 @@ export default function MultiplayerGame({
       }
     >
       <GameCardShell
+        data-intro-card-target
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -470,6 +478,14 @@ export default function MultiplayerGame({
               }
             : undefined
         }
+        brandLabelOffset={
+          isBrandMode && renderedPhase === GAME_PHASES.GUESS
+            ? {
+                base: (game.difficulty?.controls?.length || 1) * 50 + 24,
+                sm: (game.difficulty?.controls?.length || 1) * 50 + 32,
+              }
+            : null
+        }
         heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
         isExpanded={
           renderedPhase === "leaderboard" &&
@@ -477,7 +493,7 @@ export default function MultiplayerGame({
           !isLeavingLeaderboardLobby
         }
       >
-        <div className="h-full min-h-[inherit]">
+        <div className="h-full min-h-[inherit]" data-route-transition-scope>
           {renderedPhase === GAME_PHASES.INTRO && (
             <IntroPhase
               key={`intro-${game.roundIndex}`}

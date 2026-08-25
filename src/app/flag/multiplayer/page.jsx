@@ -16,6 +16,8 @@ export default async function FlagMultiplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      initialFlagDifficulty={setup.flagDifficulty}
+      initialFlagDifficulties={setup.flagDifficulties}
     />
   );
 }

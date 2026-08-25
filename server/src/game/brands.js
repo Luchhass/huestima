@@ -4,26 +4,28 @@ import {
   getBrandItem,
 } from "../../../shared/brandCatalog.mjs";
 
-const BRAND_ASSET_ROOT = "/game-modes/brand/generated";
-const BRAND_BACKGROUND_HEX = "#ebe7df";
-const BRAND_BASE_SCENE_PATH = `${BRAND_ASSET_ROOT}/brand-transparent-base.png`;
+const BRAND_ASSET_ROOT = "/game-modes/brand/brand-logos";
+const BRAND_GENERATED_ROOT = "/game-modes/brand/generated";
+const BRAND_BACKGROUND_HEX = "#e3e3e3";
 
 export const BRAND_OPTIONS = BRAND_ITEMS.map((brand) => ({
   ...brand,
   labels: { en: brand.label, tr: brand.label },
   backgroundHex: BRAND_BACKGROUND_HEX,
-  baseScenePath: BRAND_BASE_SCENE_PATH,
-  originalScenePath: BRAND_BASE_SCENE_PATH,
-  logoPath: `${BRAND_ASSET_ROOT}/${brand.id}-logo.png`,
-  imagePath: `${BRAND_ASSET_ROOT}/${brand.id}-logo.png`,
-  assetPath: `${BRAND_ASSET_ROOT}/${brand.id}-logo.png`,
-  maskPath: `${BRAND_ASSET_ROOT}/${brand.id}-mask.png`,
+  logoPath: `${BRAND_ASSET_ROOT}/${brand.assetFile}`,
+  logoLayerPath: `${BRAND_GENERATED_ROOT}/${brand.id}-main-layer.png`,
+  baseScenePath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene.webp`,
+  originalScenePath: `${BRAND_GENERATED_ROOT}/${brand.id}-original.webp`,
+  scenePath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene.webp`,
+  imagePath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene.webp`,
+  assetPath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene.webp`,
+  maskPath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene-mask.png`,
   layers: [
     {
       id: "logo",
       label: "logo",
-      sourcePath: `${BRAND_ASSET_ROOT}/${brand.id}-logo.png`,
-      maskPath: `${BRAND_ASSET_ROOT}/${brand.id}-mask.png`,
+      sourcePath: `${BRAND_GENERATED_ROOT}/${brand.id}-main-layer.png`,
+      maskPath: `${BRAND_GENERATED_ROOT}/${brand.id}-scene-mask.png`,
       base: brand.paint,
     },
   ],

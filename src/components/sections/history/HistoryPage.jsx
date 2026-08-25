@@ -131,7 +131,7 @@ function RoundTiles({ results = [], locale, t }) {
           )}
 
           {isBrandColor(result.target) && (
-            <BrandOverlay color={result.guess} className="z-[2]" />
+            <BrandOverlay color={result.guess} className="z-[2]" size="tile" />
           )}
 
           <span
@@ -326,6 +326,8 @@ export default function HistoryPage({
 
   useEffect(() => {
     const savedEntries = readMatchHistory();
+    // History is hydrated from browser storage after the client becomes available.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEntries(savedEntries);
 
     if (sharedEntry) {

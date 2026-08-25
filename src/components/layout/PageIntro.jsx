@@ -139,6 +139,8 @@ export default function PageIntro() {
   const [introPending, setIntroPending] = useState(false);
 
   useEffect(() => {
+    // The pathname is an external navigation signal for this one-shot intro state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIntroPending(shouldRunIntroForCurrentLoad(pathname));
   }, [pathname]);
 

@@ -13,6 +13,7 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
+import { LEAVE_ACTIVE_GAME_EVENT } from "@/lib/gameNavigation";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "./RoomCardShell";
 import JoinRoomCard from "./JoinRoomCard";
@@ -89,6 +90,21 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
     clearSession();
   }, [clearSession, closedMessage, kickedMessage, session]);
+
+  useEffect(() => {
+    const handleLeaveActiveGame = (event) => {
+      if (!player?.playerId) return;
+
+      event.detail?.waitUntil?.(
+        leaveRoom(player.playerId).finally(() => clearSession()),
+      );
+    };
+
+    window.addEventListener(LEAVE_ACTIVE_GAME_EVENT, handleLeaveActiveGame);
+    return () => {
+      window.removeEventListener(LEAVE_ACTIVE_GAME_EVENT, handleLeaveActiveGame);
+    };
+  }, [clearSession, leaveRoom, player?.playerId]);
 
   useEffect(() => {
     if (!isLoaded || bootstrappedRef.current) return;
@@ -278,6 +294,18 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
     setIsUpdatingSettings(false);
 
+    if (!response.ok) {
+      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
+    }
+  };
+
+  const handleUpdateFlagDifficulty = async (flagDifficulty) => {
+    if (!player) return;
+
+    setIsUpdatingSettings(true);
+    setError("");
+    const response = await updateSettings({ playerId: player.playerId, flagDifficulty });
+    setIsUpdatingSettings(false);
     if (!response.ok) {
       setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
@@ -485,6 +513,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
           onGameModeChange={handleUpdateGameMode}
           onDifficultyChange={handleUpdateDifficulty}
           onRoundCountChange={handleUpdateRoundCount}
+          onFlagDifficultyChange={handleUpdateFlagDifficulty}
           onBackHome={handleBackHome}
           isStarting={isStarting}
           canStartGame={canStartGame}

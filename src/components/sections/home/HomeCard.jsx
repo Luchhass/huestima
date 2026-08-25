@@ -7,6 +7,8 @@ import PushNotification from "@/components/ui/PushNotification";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
+import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
+import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
@@ -80,6 +82,9 @@ export default function HomeCard({
   initialGameMode = null,
   initialRoundCount = null,
   initialHintsEnabled = null,
+  initialFlagDifficulty = null,
+  initialFlagDifficulties = null,
+  initialCartoonIds = null,
 }) {
   const { locale, t } = useTranslation();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
@@ -102,6 +107,10 @@ export default function HomeCard({
   const [difficulty, setDifficulty] = useState(initialDifficulty || defaultDifficulty);
   const [gameMode, setGameMode] = useState(initialGameMode || defaultGameMode);
   const [roundCount, setRoundCount] = useState(initialRoundCount || DEFAULT_ROUND_COUNT);
+  const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty || "starter");
+  const [flagDifficulties, setFlagDifficulties] = useState(initialFlagDifficulties || [initialFlagDifficulty || "starter"]);
+  const [cartoonIds, setCartoonIds] = useState(initialCartoonIds || []);
+  const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState("singleplayer");
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
   const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
@@ -117,8 +126,10 @@ export default function HomeCard({
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
+  const isCartoonPool = view === "cartoonPool";
+  const isFlagPool = view === "flagPool";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
-  const cardHeight = useResponsiveCardHeight(isExpandedCard);
+  const cardHeight = useResponsiveCardHeight(isExpandedCard || isCartoonPool || isFlagPool);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
   const homeSection = t(`home.sections.${cleanGameFamily}`);
   const homeTitle = homeSection?.title || t(`gameFamily.${cleanGameFamily}`);
@@ -132,7 +143,7 @@ export default function HomeCard({
     isFooterReturnRef.current ||= hasPendingFooterReturn();
   }
 
-  useAppChromeHidden(isSingleplayer || isMultiplayer);
+  useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool);
   useCartoonAssetPreload(
     cleanGameFamily === GAME_FAMILY_IDS.CARTOON,
     undefined,
@@ -150,6 +161,8 @@ export default function HomeCard({
     [view, cleanGameFamily, isAdminProtectorVisible, locale],
     {
       delay: isAdminProtectorVisible ? 90 : 0,
+      // Footer return state is intentionally read once to defer the entry reveal.
+      // eslint-disable-next-line react-hooks/refs
       defer: isFooterReturnRef.current,
     },
   );
@@ -228,6 +241,22 @@ export default function HomeCard({
 
     setView(nextView);
     isChangingViewRef.current = false;
+  };
+
+  const openCartoonPool = async () => {
+    if (view !== "singleplayer" && view !== "multiplayer") return;
+    setCartoonPoolReturnView(view);
+    await changeView("cartoonPool");
+  };
+
+  const openFlagPool = async () => {
+    if (view !== "singleplayer" && view !== "multiplayer") return;
+    setCartoonPoolReturnView(view);
+    await changeView("flagPool");
+  };
+
+  const closeCartoonPool = async () => {
+    await changeView(cartoonPoolReturnView);
   };
 
   const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
@@ -401,6 +430,18 @@ export default function HomeCard({
                   </div>
 
             </>
+          ) : isCartoonPool ? (
+            <CartoonPoolPicker
+              value={cartoonIds}
+              onChange={setCartoonIds}
+              onDone={closeCartoonPool}
+            />
+          ) : isFlagPool ? (
+            <FlagPoolPicker
+              value={flagDifficulties}
+              onChange={setFlagDifficulties}
+              onDone={() => changeView(cartoonPoolReturnView)}
+            />
           ) : isSingleplayer ? (
             <SingleplayerCard
               difficulty={difficulty}
@@ -410,6 +451,14 @@ export default function HomeCard({
               playPath={getGameFamilyHref(cleanGameFamily, "singleplayer")}
               roundCount={roundCount}
               hintsEnabled={initialHintsEnabled ?? true}
+              flagDifficulty={flagDifficulty}
+              onFlagDifficultyChange={setFlagDifficulty}
+              flagDifficulties={flagDifficulties}
+              onFlagDifficultiesChange={setFlagDifficulties}
+              cartoonIds={cartoonIds}
+              onCartoonIdsChange={setCartoonIds}
+              onOpenCartoonPool={openCartoonPool}
+              onOpenFlagPool={openFlagPool}
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
@@ -422,6 +471,12 @@ export default function HomeCard({
               initialDifficulty={initialDifficulty || defaultDifficulty}
               initialGameMode={initialGameMode || defaultGameMode}
               initialHintsEnabled={initialHintsEnabled ?? true}
+              initialFlagDifficulty={flagDifficulty}
+              initialFlagDifficulties={flagDifficulties}
+              cartoonIds={cartoonIds}
+              onCartoonIdsChange={setCartoonIds}
+              onOpenCartoonPool={openCartoonPool}
+              onOpenFlagPool={openFlagPool}
             />
           )}
         </div>

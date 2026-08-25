@@ -35,6 +35,7 @@ import { createSeed } from "../utils/ids.js";
 import { now } from "../utils/time.js";
 
 function roundScore(value) {
+  if (!Number.isFinite(value)) return 0;
   return Math.round(value * 100) / 100;
 }
 
@@ -307,6 +308,9 @@ export function startGameForRoom(room) {
       roundCount,
       gameMode: room.gameMode,
       gameFamily: room.gameFamily,
+      flagDifficulty: room.flagDifficulty,
+      flagDifficulties: room.flagDifficulties,
+      cartoonIds: room.cartoonIds,
     }),
     participantPlayerIds: new Set(
       Array.from(room.players.values())
@@ -465,8 +469,17 @@ export function submitRoundGuess(room, payload) {
 export function submitFullResults(room, payload) {
   if (!Array.isArray(payload.results)) return fail("Invalid score payload.");
 
-  let lastResult = null;
+  const uniqueResults = new Map();
   for (const item of payload.results) {
+    const roundResult = validateRoundIndex(item?.roundIndex, room.game?.roundCount);
+    if (!roundResult.ok) return roundResult;
+    if (!uniqueResults.has(roundResult.data.roundIndex)) {
+      uniqueResults.set(roundResult.data.roundIndex, item);
+    }
+  }
+
+  let lastResult = null;
+  for (const item of uniqueResults.values()) {
     const submission = submitRoundGuess(room, {
       playerId: payload.playerId,
       roundIndex: item.roundIndex,
@@ -571,7 +584,7 @@ function evaluateDuelRound(room) {
 
 export function buildLeaderboard(room) {
   const isDuel = isDuelRoom(room);
-  const players = isDuel ? getGameParticipantPlayers(room) : getActivePlayers(room);
+  const players = getGameParticipantPlayers(room);
   const totalRounds = isDuel
     ? Math.min((room.game.currentRoundIndex || 0) + 1, room.game.roundCount)
     : room.game.roundCount;

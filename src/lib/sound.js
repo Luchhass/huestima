@@ -215,6 +215,8 @@ function scheduleTone(
     delay = 0,
     attack = 0.006,
     pan = 0,
+    releaseFloor = 0.0001,
+    stopPadding = 0.04,
   },
 ) {
   if (!mixBus) return;
@@ -235,14 +237,14 @@ function scheduleTone(
     );
   }
 
-  envelope.gain.setValueAtTime(0.0001, startTime);
+  envelope.gain.setValueAtTime(releaseFloor, startTime);
   envelope.gain.linearRampToValueAtTime(gain, startTime + attackTime);
-  envelope.gain.exponentialRampToValueAtTime(0.0001, endTime);
+  envelope.gain.exponentialRampToValueAtTime(releaseFloor, endTime);
 
   oscillator.connect(envelope);
   connectWithPan(context, envelope, mixBus, pan);
   oscillator.start(startTime);
-  oscillator.stop(endTime + 0.04);
+  oscillator.stop(endTime + stopPadding);
 }
 
 function scheduleNoise(
@@ -471,6 +473,98 @@ export function playButtonClick() {
     duration: 0.085,
     delay: 0.038,
     attack: 0.006,
+  });
+}
+
+export function playCreditsArrival() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("credits-arrival", 1800)) return;
+
+  // Ceremonial pulse: a measured three-beat entrance and a broader final hit.
+  [
+    { delay: 0, frequency: 146.83, pan: -0.08, accent: 0.9 },
+    { delay: 0.18, frequency: 146.83, pan: 0.08, accent: 0.66 },
+    { delay: 0.36, frequency: 146.83, pan: -0.04, accent: 0.78 },
+    { delay: 0.68, frequency: 146.83, pan: 0, accent: 0.95 },
+  ].forEach(({ delay, frequency, pan, accent }) => {
+    scheduleNoise(context, {
+      delay,
+      duration: 0.03,
+      gain: 0.012 * accent,
+      filterFrequency: 900,
+      filterType: "bandpass",
+      q: 2,
+      pan,
+    });
+    scheduleTone(context, {
+      delay,
+      frequency,
+      type: "sine",
+      gain: 0.035 * accent,
+      duration: 0.2,
+      attack: 0.012,
+      pan,
+    });
+  });
+
+  // A repeated fifth-based fanfare motif keeps the contour firm and ceremonial.
+  [
+    { frequency: 293.66, delay: 0.02, duration: 0.22, pan: -0.12 },
+    { frequency: 293.66, delay: 0.15, duration: 0.24, pan: 0.1 },
+    { frequency: 440, delay: 0.29, duration: 0.26, pan: -0.06 },
+    { frequency: 440, delay: 0.43, duration: 0.28, pan: 0.08 },
+    { frequency: 587.33, delay: 0.57, duration: 0.3, pan: -0.08 },
+    { frequency: 587.33, delay: 0.74, duration: 1.05, pan: 0 },
+  ].forEach(({ frequency, delay, duration, pan }) => {
+    scheduleTone(context, {
+      frequency,
+      type: "triangle",
+      gain: 0.027,
+      duration,
+      delay,
+      attack: 0.025,
+      pan,
+    });
+  });
+
+  // The resolving D-major chord carries the proud, sustained finish.
+  [
+    { frequency: 293.66, pan: -0.2, gain: 0.023 },
+    { frequency: 369.99, pan: -0.07, gain: 0.02 },
+    { frequency: 440, pan: 0.08, gain: 0.019 },
+    { frequency: 587.33, pan: 0.2, gain: 0.017 },
+  ].forEach(({ frequency, pan, gain }) => {
+    scheduleTone(context, {
+      frequency,
+      type: "triangle",
+      gain,
+      duration: 1.4,
+      delay: 0.73,
+      attack: 0.07,
+      pan,
+      releaseFloor: 0.000001,
+      stopPadding: 0.7,
+    });
+  });
+
+  // A rising bell cascade supplies the polished shine without overpowering it.
+  [
+    { frequency: 587.33, delay: 0.32, pan: -0.22, gain: 0.008 },
+    { frequency: 880, delay: 0.49, pan: 0.16, gain: 0.008 },
+    { frequency: 1174.66, delay: 0.66, pan: -0.1, gain: 0.009 },
+    { frequency: 1174.66, delay: 0.85, pan: 0.12, gain: 0.009 },
+  ].forEach(({ frequency, delay, pan, gain }, index) => {
+    scheduleTone(context, {
+      frequency,
+      type: "sine",
+      gain,
+      duration: index === 3 ? 1.1 : 0.42,
+      delay,
+      attack: 0.018,
+      pan,
+      releaseFloor: 0.000001,
+      stopPadding: 0.7,
+    });
   });
 }
 

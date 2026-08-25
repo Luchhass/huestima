@@ -30,6 +30,7 @@ export default function AppHeader() {
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isTestLabRoute = pathname === "/test-lab";
+  const isCreditsRoute = pathname === "/credits";
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
@@ -107,6 +108,8 @@ export default function AppHeader() {
     const mediaQuery = window.matchMedia("(min-width: 768px)");
 
     if (mediaQuery.matches) {
+      // This synchronizes the mobile menu with a desktop media-query transition.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsNavOpen(false);
       setIsNavRendered(false);
       return undefined;
@@ -170,19 +173,20 @@ export default function AppHeader() {
           duration: 0.62,
           stagger: 0.07,
           ease: "power3.out",
+          clipPath: "none",
         }
       )
       .to(
         controlTargets,
         {
           y: 0,
-          clipPath: "inset(0 0 0 0)",
+          clipPath: "none",
           duration: 0.58,
-          stagger: 0.075,
+          stagger: { each: 0.07, from: "end" },
           ease: "power3.out",
-          clearProps: "transform,clipPath,willChange",
+          clearProps: "transform,willChange",
         },
-        "-=0.16",
+        "-=0.42",
       );
 
     closeMenuRef.current = () => {
@@ -290,7 +294,13 @@ export default function AppHeader() {
     });
   };
 
-  if (isLibraryRoute || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute) {
+  if (
+    isLibraryRoute ||
+    isPrivacyRoute ||
+    isHowItWorksRoute ||
+    isTestLabRoute ||
+    isCreditsRoute
+  ) {
     return null;
   }
 
@@ -332,7 +342,10 @@ export default function AppHeader() {
                   pathname === option.href || pathname?.startsWith(`${option.href}/`);
 
                 return (
-                  <div key={option.id} className="overflow-hidden">
+                  <div
+                    key={option.id}
+                    className="-mb-[0.12em] overflow-hidden pb-[0.12em]"
+                  >
                     <Link
                       href={option.href}
                       aria-current={active ? "page" : undefined}
