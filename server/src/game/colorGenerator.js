@@ -2,6 +2,7 @@ import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
 import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags.js";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
+import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams.js";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -290,6 +291,47 @@ export function randomBrandTargetColors(count, random = Math.random) {
   return result;
 }
 
+export function withTeamHex(color) {
+  const team = getTeamOption(color?.teamId || DEFAULT_TEAM_ID);
+  const cleanColor = withHex({ ...team.paint, ...(color || {}) });
+  return {
+    type: "brand",
+    teamId: team.id,
+    brandId: team.id,
+    brandLabel: team.label,
+    brandLabels: team.labels,
+    backgroundHex: team.backgroundHex,
+    baseScenePath: team.baseScenePath,
+    originalScenePath: team.originalScenePath,
+    logoPath: team.logoPath,
+    logoLayerPath: team.logoLayerPath,
+    imagePath: team.imagePath,
+    assetPath: team.assetPath,
+    maskPath: team.maskPath,
+    paintBase: team.paint,
+    layers: team.layers,
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: team.backgroundHex,
+  };
+}
+
+export function randomTeamTargetColors(count, random = Math.random, teamIds = null) {
+  const result = [];
+  const pool = Array.isArray(teamIds) && teamIds.length
+    ? TEAM_OPTIONS.filter((team) => teamIds.includes(team.id))
+    : TEAM_OPTIONS;
+  while (result.length < count) {
+    for (const team of [...(pool.length ? pool : TEAM_OPTIONS)].sort(() => random() - 0.5)) {
+      if (result.length >= count) break;
+      result.push(withTeamHex({ teamId: team.id }));
+    }
+  }
+  return result;
+}
+
 export function randomFlagTargetColor(random = Math.random, flagDifficulty) {
   const pool = flagDifficulty ? getFlagsForDifficulty(FLAG_OPTIONS, flagDifficulty) : FLAG_OPTIONS;
   const flags = pool.length ? pool : FLAG_OPTIONS;
@@ -408,7 +450,7 @@ export function createSeededRandom(seed) {
   return mulberry32(hashSeed(seed));
 }
 
-export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily, flagDifficulty, flagDifficulties, cartoonIds }) {
+export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily, flagDifficulty, flagDifficulties, cartoonIds, teamIds }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
 
@@ -427,6 +469,10 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
 
   if (gameMode === GAME_MODES.CARTOON) {
     return randomCartoonTargetColors(roundCount, random, cartoonIds);
+  }
+
+  if (gameFamily === "team") {
+    return randomTeamTargetColors(roundCount, random, teamIds);
   }
 
   if (gameFamily === "brand") {

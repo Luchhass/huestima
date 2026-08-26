@@ -15,6 +15,7 @@ import {
   isGradientColor,
   withCartoonHex,
   withBrandHex,
+  withTeamHex,
   withFlagHex,
   withHex,
   withGradientHex,
@@ -251,7 +252,14 @@ function validateGuessColorPayload(targetColor, guessColor, difficulty) {
     );
     if (!color.ok) return color;
 
-    return { ok: true, data: { color: withBrandHex({ ...color.data.color, brandId: targetColor.brandId }) } };
+    return {
+      ok: true,
+      data: {
+        color: targetColor.teamId
+          ? withTeamHex({ ...color.data.color, teamId: targetColor.teamId })
+          : withBrandHex({ ...color.data.color, brandId: targetColor.brandId }),
+      },
+    };
   }
 
   return validateHsvColor(guessColor);
@@ -311,6 +319,7 @@ export function startGameForRoom(room) {
       flagDifficulty: room.flagDifficulty,
       flagDifficulties: room.flagDifficulties,
       cartoonIds: room.cartoonIds,
+      teamIds: room.teamIds,
     }),
     participantPlayerIds: new Set(
       Array.from(room.players.values())
@@ -421,10 +430,12 @@ export function submitRoundGuess(room, payload) {
       : isCartoonColor(targetColor)
         ? withCartoonHex(colorResult.data.color)
         : isBrandColor(targetColor)
-          ? withBrandHex({
-              ...colorResult.data.color,
-              brandId: targetColor.brandId,
-            })
+          ? targetColor.teamId
+            ? withTeamHex({ ...colorResult.data.color, teamId: targetColor.teamId })
+            : withBrandHex({
+                ...colorResult.data.color,
+                brandId: targetColor.brandId,
+              })
         : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
   const result = {

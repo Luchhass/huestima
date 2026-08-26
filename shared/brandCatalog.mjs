@@ -1,4 +1,4 @@
-export const BRAND_ITEMS = [
+const ALL_BRAND_ITEMS = [
   { id: "burger-king", slug: "burgerking", label: "Burger King", assetFile: "burger-king.png", paint: { h: 24, s: 86, v: 92 } },
   { id: "kfc", slug: "kfc", label: "KFC", assetFile: "kfc.png", paint: { h: 356, s: 82, v: 86 } },
   { id: "ikea", slug: "ikea", label: "IKEA", assetFile: "ikea.png", paint: { h: 218, s: 86, v: 80 } },
@@ -88,6 +88,76 @@ export const BRAND_ITEMS = [
     paint,
   })),
 ];
+
+const TEAM_LABELS = new Set([
+  "NBA",
+  "Paris Saint-Germain",
+  "Arsenal",
+  "Chelsea",
+  "Aston Villa",
+  "Liverpool",
+  "Manchester United",
+  "Tottenham Hotspur",
+  "Real Madrid",
+  "Atlético Madrid",
+  "AS Roma",
+  "AC Milan",
+  "Borussia Dortmund",
+  "FC Bayern Munich",
+]);
+
+const NEW_BRAND_ITEMS = [
+  ["facebook", "Facebook"], ["amazon", "Amazon"], ["pepsi", "Pepsi"], ["fanta", "Fanta"], ["discord", "Discord"],
+  ["steam", "Steam"], ["riot-games", "Riot Games"], ["nvidia", "Nvidia"], ["instagram", "Instagram"], ["xbox", "Xbox"],
+  ["google", "Google"], ["google-chrome", "Google Chrome"], ["prime-video", "Prime Video"], ["carrefour", "Carrefour"], ["dominos", "Domino's"],
+  ["ebay", "eBay"], ["doritos", "Doritos"], ["lays", "Lay's"], ["cheetos", "Cheetos"], ["ruffles", "Ruffles"],
+  ["fedex", "FedEx"], ["ikea", "IKEA"], ["intel", "Intel"], ["android", "Android"], ["kfc", "KFC"],
+  ["lacoste", "Lacoste"], ["twitter", "Twitter"], ["twitch", "Twitch"], ["subway", "Subway"], ["sprite", "Sprite"],
+  ["starbucks", "Starbucks"], ["spotify", "Spotify"], ["shell", "Shell"], ["bp", "BP"], ["apple", "Apple"],
+  ["pepsi-globe", "Pepsi"], ["snickers", "Snickers"], ["samsung", "Samsung"], ["lg", "LG"], ["rockstar-games", "Rockstar Games"],
+  ["red-bull", "Red Bull"], ["popeyes", "Popeyes"], ["netflix", "Netflix"], ["snapchat", "Snapchat"], ["mastercard", "Mastercard"],
+  ["burger-king-round", "Burger King"], ["visa", "Visa"], ["microsoft", "Microsoft"], ["monster-energy", "Monster Energy"], ["lego", "LEGO"],
+  ["burger-king", "Burger King"], ["mcdonalds", "McDonald's"], ["chupa-chups", "Chupa Chups"], ["coca-cola", "Coca-Cola"], ["youtube", "YouTube"],
+].map(([slug, label], index) => ({
+  id: slug,
+  slug,
+  label,
+  assetFile: `${slug}.png`,
+  paint: { h: (index * 31) % 360, s: 78, v: 82 },
+}));
+
+export const BRAND_ITEMS = NEW_BRAND_ITEMS;
+
+const NEW_TEAM_ITEMS = [
+  ["kasimpasa", "Kasımpaşa"], ["goztepe", "Göztepe"], ["fenerbahce", "Fenerbahçe"], ["real-madrid", "Real Madrid"], ["barcelona", "Barcelona"],
+  ["atletico-madrid", "Atlético Madrid"], ["sevilla", "Sevilla"], ["ajax", "Ajax"], ["porto", "FC Porto"], ["benfica", "Benfica"],
+  ["feyenoord", "Feyenoord"], ["monaco", "AS Monaco"], ["lyon", "Olympique Lyonnais"], ["galatasaray", "Galatasaray"], ["psg", "Paris Saint-Germain"],
+  ["bayer-leverkusen", "Bayer Leverkusen"], ["borussia-dortmund", "Borussia Dortmund"], ["bayern-munich", "FC Bayern Munich"], ["lazio", "Lazio"], ["as-roma", "AS Roma"],
+  ["inter-milan", "Inter Milan"], ["ac-milan", "AC Milan"], ["trabzonspor", "Trabzonspor"], ["aston-villa", "Aston Villa"], ["chelsea", "Chelsea"],
+  ["arsenal", "Arsenal"], ["liverpool", "Liverpool"], ["manchester-city", "Manchester City"], ["manchester-united", "Manchester United"], ["besiktas", "Beşiktaş"],
+].map(([slug, label], index) => ({
+  id: `team-${slug}`,
+  slug,
+  label,
+  assetFile: `${slug}.png`,
+  paint: { h: (index * 37) % 360, s: 78, v: 82 },
+}));
+
+const TEAM_LEAGUES = {
+  kasimpasa: "Süper Lig", goztepe: "Süper Lig", fenerbahce: "Süper Lig", galatasaray: "Süper Lig", trabzonspor: "Süper Lig", besiktas: "Süper Lig",
+  "real-madrid": "La Liga", barcelona: "La Liga", "atletico-madrid": "La Liga", sevilla: "La Liga",
+  arsenal: "Premier League", "aston-villa": "Premier League", chelsea: "Premier League", liverpool: "Premier League", "manchester-city": "Premier League", "manchester-united": "Premier League",
+  ajax: "Eredivisie", feyenoord: "Eredivisie", porto: "Primeira Liga", benfica: "Primeira Liga",
+  monaco: "Ligue 1", lyon: "Ligue 1", psg: "Ligue 1",
+  "bayer-leverkusen": "Bundesliga", "borussia-dortmund": "Bundesliga", "bayern-munich": "Bundesliga",
+  lazio: "Serie A", "as-roma": "Serie A", "inter-milan": "Serie A", "ac-milan": "Serie A",
+};
+
+for (const team of NEW_TEAM_ITEMS) team.league = TEAM_LEAGUES[team.slug] || "Other";
+
+export const TEAM_ITEMS = [...NEW_TEAM_ITEMS].sort((left, right) =>
+  `${left.league}-${left.label}`.localeCompare(`${right.league}-${right.label}`),
+);
 
 export const DEFAULT_BRAND_ID = BRAND_ITEMS[0].id;
 

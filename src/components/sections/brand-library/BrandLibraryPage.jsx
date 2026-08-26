@@ -33,7 +33,7 @@ function groupBrands(brands) {
 
 const BRAND_GROUPS = groupBrands(BRAND_OPTIONS);
 
-export default function BrandLibraryPage() {
+export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false }) {
   const { locale } = useTranslation();
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
@@ -41,6 +41,19 @@ export default function BrandLibraryPage() {
   const leavePage = useFooterPageTransition(mainRef);
   const from = searchParams.get("from");
   const testLabPath = from ? `/test-lab?from=${from}` : "/test-lab";
+  const groups = useMemo(() => {
+    if (!isTeam) return groupBrands(items);
+    const leagues = new Map();
+    items.forEach((item) => {
+      const current = leagues.get(item.league || "Other") || [];
+      current.push(item);
+      leagues.set(item.league || "Other", current);
+    });
+    return Array.from(leagues.entries()).map(([group, leagueItems]) => ({
+      group,
+      items: leagueItems.sort((left, right) => left.label.localeCompare(right.label)),
+    }));
+  }, [isTeam, items]);
 
   const handleBack = async (event) => {
     event.preventDefault();
@@ -51,12 +64,12 @@ export default function BrandLibraryPage() {
     if (activeGroup === ALL_GROUP_KEY) {
       return {
         group: ALL_GROUP_KEY,
-        items: BRAND_GROUPS.flatMap((group) => group.items),
+        items: groups.flatMap((group) => group.items),
       };
     }
 
-    return BRAND_GROUPS.find((group) => group.group === activeGroup) || BRAND_GROUPS[0] || null;
-  }, [activeGroup]);
+    return groups.find((group) => group.group === activeGroup) || groups[0] || null;
+  }, [activeGroup, groups]);
 
   return (
     <LibraryPageShell
@@ -64,9 +77,9 @@ export default function BrandLibraryPage() {
       backHref={testLabPath}
       onBack={handleBack}
       backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
-      title={locale === "tr" ? "Markalar" : "Brands"}
+      title={isTeam ? (locale === "tr" ? "Takımlar" : "Teams") : (locale === "tr" ? "Markalar" : "Brands")}
       count={selectedGroup ? `${selectedGroup.items.length} logo` : ""}
-      filters={[ALL_GROUP_KEY, ...BRAND_GROUPS.map((group) => group.group)].map((group) => (
+      filters={[ALL_GROUP_KEY, ...groups.map((group) => group.group)].map((group) => (
         <LibraryFilterButton
           key={group}
           active={group === activeGroup}
@@ -86,7 +99,7 @@ export default function BrandLibraryPage() {
               >
                 <div className="relative h-[62%] w-[78%]">
                   <Image
-                    src={item.assetPath}
+                    src={item.logoPath}
                     alt={item.labels?.[locale] || item.label}
                     fill
                     unoptimized

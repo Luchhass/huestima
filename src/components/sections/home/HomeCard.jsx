@@ -9,6 +9,7 @@ import MultiplayerCard from "./MultiplayerCard";
 import SingleplayerCard from "./SingleplayerCard";
 import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
 import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
+import TeamPoolPicker from "@/components/ui/TeamPoolPicker";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
@@ -85,6 +86,7 @@ export default function HomeCard({
   initialFlagDifficulty = null,
   initialFlagDifficulties = null,
   initialCartoonIds = null,
+  initialTeamIds = null,
 }) {
   const { locale, t } = useTranslation();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
@@ -110,6 +112,7 @@ export default function HomeCard({
   const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty || "starter");
   const [flagDifficulties, setFlagDifficulties] = useState(initialFlagDifficulties || [initialFlagDifficulty || "starter"]);
   const [cartoonIds, setCartoonIds] = useState(initialCartoonIds || []);
+  const [teamIds, setTeamIds] = useState(initialTeamIds || []);
   const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState("singleplayer");
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
@@ -128,6 +131,7 @@ export default function HomeCard({
   const isMultiplayer = view === "multiplayer";
   const isCartoonPool = view === "cartoonPool";
   const isFlagPool = view === "flagPool";
+  const isTeamPool = view === "teamPool";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
   const cardHeight = useResponsiveCardHeight(isExpandedCard || isCartoonPool || isFlagPool);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
@@ -143,7 +147,7 @@ export default function HomeCard({
     isFooterReturnRef.current ||= hasPendingFooterReturn();
   }
 
-  useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool);
+  useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool || isTeamPool);
   useCartoonAssetPreload(
     cleanGameFamily === GAME_FAMILY_IDS.CARTOON,
     undefined,
@@ -254,6 +258,7 @@ export default function HomeCard({
     setCartoonPoolReturnView(view);
     await changeView("flagPool");
   };
+  const openTeamPool = async () => { if (view !== "singleplayer" && view !== "multiplayer") return; setCartoonPoolReturnView(view); await changeView("teamPool"); };
 
   const closeCartoonPool = async () => {
     await changeView(cartoonPoolReturnView);
@@ -442,6 +447,8 @@ export default function HomeCard({
               onChange={setFlagDifficulties}
               onDone={() => changeView(cartoonPoolReturnView)}
             />
+          ) : isTeamPool ? (
+            <TeamPoolPicker value={teamIds} onChange={setTeamIds} onDone={() => changeView(cartoonPoolReturnView)} />
           ) : isSingleplayer ? (
             <SingleplayerCard
               difficulty={difficulty}
@@ -459,6 +466,8 @@ export default function HomeCard({
               onCartoonIdsChange={setCartoonIds}
               onOpenCartoonPool={openCartoonPool}
               onOpenFlagPool={openFlagPool}
+              teamIds={teamIds}
+              onOpenTeamPool={openTeamPool}
               onDifficultyChange={handleDifficultyChange}
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
@@ -477,6 +486,8 @@ export default function HomeCard({
               onCartoonIdsChange={setCartoonIds}
               onOpenCartoonPool={openCartoonPool}
               onOpenFlagPool={openFlagPool}
+              teamIds={teamIds}
+              onOpenTeamPool={openTeamPool}
             />
           )}
         </div>

@@ -16,11 +16,13 @@ const LINKS = {
     ["Cartoon list", "/cartoon-library"],
     ["Flag list", "/flag-library"],
     ["Brand list", "/brand-library"],
+    ["Team list", "/team-library"],
   ],
   tr: [
     ["Çizgi film listesi", "/cartoon-library"],
     ["Bayrak listesi", "/flag-library"],
     ["Marka listesi", "/brand-library"],
+    ["Takım listesi", "/team-library"],
   ],
 };
 
@@ -30,7 +32,7 @@ export default function TestLabPage() {
   const mainRef = useRef(null);
   const links = LINKS[locale] || LINKS.en;
   const from = searchParams.get("from");
-  const returnPath = ["color", "flag", "cartoon", "brand"].includes(from)
+  const returnPath = ["color", "flag", "cartoon", "brand", "team"].includes(from)
     ? `/${from}`
     : "/color";
 

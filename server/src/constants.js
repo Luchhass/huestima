@@ -16,6 +16,7 @@ export const GAME_MODES = {
   FLAG_SPRINT: "flagSprint",
   CARTOON: "cartoon",
   BRAND_RECALL: "brandRecall",
+  TEAM_RECALL: "teamRecall",
   DUEL: "duel",
 };
 
@@ -73,6 +74,9 @@ export const GAME_MODE_CONFIG = {
     revealDurationMs: 5000,
   },
   [GAME_MODES.BRAND_RECALL]: {
+    revealDurationMs: 5000,
+  },
+  [GAME_MODES.TEAM_RECALL]: {
     revealDurationMs: 5000,
   },
   [GAME_MODES.DUEL]: {

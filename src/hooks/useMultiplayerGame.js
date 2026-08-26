@@ -25,6 +25,8 @@ import {
 import {
   isCartoonFamily,
   isBrandFamily,
+  isTeamFamily,
+  isLogoFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -39,6 +41,8 @@ import {
   isGradientColor,
   withCartoonDifficultyHex,
   withBrandDifficultyHex,
+  createDefaultTeamGuess,
+  withTeamDifficultyHex,
   withFlagDifficultyHex,
   withGradientHex,
   withHex,
@@ -64,8 +68,10 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
-  if (isBrandFamily(gameFamily)) {
-    return createDefaultBrandGuess(targetColor, difficulty);
+  if (isLogoFamily(gameFamily)) {
+    return isTeamFamily(gameFamily)
+      ? createDefaultTeamGuess(targetColor, difficulty)
+      : createDefaultBrandGuess(targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -89,6 +95,8 @@ function constrainGuessColor(
   if (isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
+
+  if (isTeamFamily(gameFamily)) return withTeamDifficultyHex(guessColor, targetColor, difficulty);
 
   if (isBrandFamily(gameFamily) || isBrandColor(guessColor)) {
     return withBrandDifficultyHex(guessColor, targetColor, difficulty);
@@ -172,7 +180,7 @@ export function useMultiplayerGame({
   const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
-  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL;
+  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL || gameMode.id === GAME_MODE_IDS.TEAM_RECALL;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),

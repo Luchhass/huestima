@@ -306,6 +306,8 @@ export default function MultiplayerCard({
   onCartoonIdsChange,
   onOpenCartoonPool,
   onOpenFlagPool,
+  teamIds = [],
+  onOpenTeamPool,
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -541,6 +543,7 @@ export default function MultiplayerCard({
       flagDifficulty,
       flagDifficulties,
       cartoonIds,
+      teamIds,
     });
 
     if (!response.ok) {
@@ -754,8 +757,8 @@ export default function MultiplayerCard({
                 disabled={isCreating}
               />
 
-              {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag") && (
-                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : onOpenFlagPool} aria-label={cleanGameFamily === "cartoon" ? "Choose cartoons" : "Choose flag pools"} title={cleanGameFamily === "cartoon" ? "Choose cartoons" : "Choose flag pools"} className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+              {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag" || cleanGameFamily === "team") && (
+                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label="Choose pools" title="Choose pools" className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                   <Images className="relative z-10 size-5" strokeWidth={2} />
                 </button>
               )}

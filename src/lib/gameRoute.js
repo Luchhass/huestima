@@ -52,6 +52,9 @@ export function resolveSingleplayerRoute(searchParams, gameFamily = "color") {
   const cartoonIds = typeof searchParams?.cartoons === "string"
     ? searchParams.cartoons.split(",").filter(Boolean)
     : null;
+  const teamIds = typeof searchParams?.teams === "string"
+    ? searchParams.teams.split(",").filter(Boolean)
+    : null;
 
   return {
     difficulty,
@@ -61,6 +64,7 @@ export function resolveSingleplayerRoute(searchParams, gameFamily = "color") {
     flagDifficulty,
     flagDifficulties,
     cartoonIds,
+    teamIds,
   };
 }
 

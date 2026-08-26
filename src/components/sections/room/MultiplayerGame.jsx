@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import {
   isCartoonFamily,
-  isBrandFamily,
+  isLogoFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -125,7 +125,7 @@ export default function MultiplayerGame({
     phase === "waiting";
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const isBrandMode = isBrandFamily(cleanGameFamily);
+  const isBrandMode = isLogoFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
     if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
     if (game.targetColors.length) return game.targetColors;
@@ -143,7 +143,9 @@ export default function MultiplayerGame({
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
-    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL);
+    (isBrandMode &&
+      (game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL ||
+        game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL));
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;

@@ -155,6 +155,13 @@ export const DICTIONARIES = {
             "Rebuild the hidden shade with the same controls. Play classic, endless, or timed rounds solo or with friends.",
           ],
         },
+        team: {
+          title: "Teams",
+          paragraphs: [
+            "A team logo appears over its signature colors. Study the crest and keep its palette in your memory before it disappears.",
+            "Rebuild the hidden team color with the same controls. Play classic, endless, or timed rounds solo or with friends.",
+          ],
+        },
       },
       paragraphs: [
         "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
@@ -200,6 +207,7 @@ export const DICTIONARIES = {
       flagRecall: "Blind",
       cartoon: "Blind",
       brandRecall: "Blind",
+      teamRecall: "Blind",
       duel: "Duel",
     },
     gameFamily: {
@@ -208,6 +216,7 @@ export const DICTIONARIES = {
       flag: "Flag",
       cartoon: "Cartoon",
       brand: "Brand",
+      team: "Teams",
     },
     gameModeDescription: {
       normal: "Classic rounds give you five seconds to memorize each color.",
@@ -220,6 +229,7 @@ export const DICTIONARIES = {
       flagRecall: "Keep the full flag visible while you rebuild its background color.",
       cartoon: "Keep the cartoon scene visible while you rebuild its main painted color.",
       brandRecall: "Rebuild the brand color without seeing the original logo color first.",
+      teamRecall: "Rebuild the team color without seeing the original logo color first.",
       brand: "Match the colors inside familiar brand logos.",
       duel: "Endless PvP survival with round-by-round eliminations.",
     },
@@ -599,6 +609,7 @@ export const DICTIONARIES = {
       flagRecall: "Kör",
       cartoon: "Kör",
       brandRecall: "Kör",
+      teamRecall: "Kör",
       duel: "Düello",
     },
     gameFamily: {
@@ -607,6 +618,7 @@ export const DICTIONARIES = {
       flag: "Bayrak",
       cartoon: "Çizgi Film",
       brand: "Marka",
+      team: "Takım",
     },
     gameModeDescription: {
       normal: "Klasik turlar her rengi ezberlemek için beş saniye verir.",
@@ -619,6 +631,7 @@ export const DICTIONARIES = {
       flagRecall: "Tam bayrak açık kalırken arka plan rengini yeniden kur.",
       cartoon: "Çizgi film sahnesi açık kalırken ana boyalı rengi yeniden kur.",
       brandRecall: "Orijinal logo rengini görmeden marka rengini yeniden kur.",
+      teamRecall: "Orijinal logo rengini görmeden takım rengini yeniden kur.",
       brand: "Tanıdık marka logolarının içindeki renkleri eşleştir.",
       duel: "Tur tur eleme yapan sonsuz karşılaşma modu.",
     },

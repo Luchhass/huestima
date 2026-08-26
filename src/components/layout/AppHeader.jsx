@@ -27,6 +27,7 @@ export default function AppHeader() {
     pathname === "/cartoon-library" ||
     pathname === "/flag-library" ||
     pathname === "/brand-library";
+  const isTeamLibraryRoute = pathname === "/team-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isTestLabRoute = pathname === "/test-lab";
@@ -313,6 +314,8 @@ export default function AppHeader() {
     setIsNavOpen(true);
     setIsNavRendered(true);
   };
+
+  if (isTeamLibraryRoute) return null;
 
   return (
     <header

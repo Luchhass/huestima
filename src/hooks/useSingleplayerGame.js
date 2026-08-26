@@ -22,6 +22,9 @@ import {
   randomTargetColor,
   withCartoonDifficultyHex,
   withBrandDifficultyHex,
+  createDefaultTeamGuess,
+  randomTeamTargetColors,
+  withTeamDifficultyHex,
   withFlagDifficultyHex,
   withGradientHex,
   withHex,
@@ -40,6 +43,8 @@ import { normalizeRoundCount } from "@/lib/roundCount";
 import {
   isCartoonFamily,
   isBrandFamily,
+  isTeamFamily,
+  isLogoFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -116,8 +121,10 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
-  if (isBrandFamily(gameFamily)) {
-    return createDefaultBrandGuess(targetColor, difficulty);
+  if (isLogoFamily(gameFamily)) {
+    return isTeamFamily(gameFamily)
+      ? createDefaultTeamGuess(targetColor, difficulty)
+      : createDefaultBrandGuess(targetColor, difficulty);
   }
 
   return withHex(applyDifficultyConstraints(difficulty.defaultGuess, difficulty));
@@ -142,6 +149,8 @@ function constrainGuessColor(
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 
+  if (isTeamFamily(gameFamily)) return withTeamDifficultyHex(guessColor, targetColor, difficulty);
+
   if (isBrandFamily(gameFamily) || isBrandColor(guessColor)) {
     return withBrandDifficultyHex(guessColor, targetColor, difficulty);
   }
@@ -149,7 +158,7 @@ function constrainGuessColor(
   return withHex(applyDifficultyConstraints(guessColor, difficulty));
 }
 
-function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, flagDifficulty, cartoonIds) {
+function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, flagDifficulty, cartoonIds, teamIds) {
   if (isFlagFamily(gameFamily)) {
     return randomFlagTargetColors(roundCount, Math.random, flagDifficulty);
   }
@@ -161,6 +170,8 @@ function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, fl
   if (isBrandFamily(gameFamily)) {
     return randomBrandTargetColors(roundCount);
   }
+
+  if (isTeamFamily(gameFamily)) return randomTeamTargetColors(roundCount, Math.random, teamIds);
 
   return Array.from({ length: roundCount }, () =>
     randomTargetColor(difficultyId, gameModeId),
@@ -189,6 +200,7 @@ export function useSingleplayerGame(
   gameFamily = "color",
   flagDifficulty = null,
   cartoonIds = null,
+  teamIds = null,
 ) {
   const cleanGameFamily = useMemo(
     () => normalizeGameFamily(gameFamily),
@@ -215,8 +227,8 @@ export function useSingleplayerGame(
   const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
-  const isBrandMode = isBrandFamily(cleanGameFamily);
-  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL;
+  const isBrandMode = isLogoFamily(cleanGameFamily);
+  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL || gameMode.id === GAME_MODE_IDS.TEAM_RECALL;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -446,6 +458,7 @@ export function useSingleplayerGame(
         roundCount,
         flagDifficulty,
         cartoonIds,
+        teamIds,
       );
       setTargetColors(sequenceColors);
       setTargetColor(sequenceColors[0]);
@@ -512,7 +525,9 @@ export function useSingleplayerGame(
     if (isBrandMode) {
       const brandTargetColors =
         nextRoundIndex === 0 || !hasValidBrandTargets(targetColors, roundCount)
-          ? randomBrandTargetColors(roundCount)
+          ? isTeamFamily(cleanGameFamily)
+          ? randomTeamTargetColors(roundCount, Math.random, teamIds)
+            : randomBrandTargetColors(roundCount)
           : targetColors;
       const nextTargetColor = brandTargetColors[nextRoundIndex];
 
@@ -556,6 +571,7 @@ export function useSingleplayerGame(
     isBrandRecallMode,
     flagDifficulty,
     cartoonIds,
+    teamIds,
     isFlagMode,
     isSequenceMode,
     roundCount,

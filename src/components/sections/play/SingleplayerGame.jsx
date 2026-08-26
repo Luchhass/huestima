@@ -6,7 +6,7 @@ import { GAME_MODE_IDS } from "@/lib/constants";
 import {
   getGameFamilyHref,
   isCartoonFamily,
-  isBrandFamily,
+  isLogoFamily,
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -42,6 +42,7 @@ export default function SingleplayerGame({
   initialFlagDifficulty = null,
   initialFlagDifficulties = null,
   initialCartoonIds = null,
+  initialTeamIds = null,
   gameFamily = "color",
 }) {
   const router = useRouter();
@@ -54,6 +55,7 @@ export default function SingleplayerGame({
     cleanGameFamily,
     initialFlagDifficulties || initialFlagDifficulty,
     initialCartoonIds,
+    initialTeamIds,
   );
   const { abandonSession } = game;
   const startTrackedRef = useRef(false);
@@ -71,7 +73,7 @@ export default function SingleplayerGame({
       : undefined;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const isBrandMode = isBrandFamily(cleanGameFamily);
+  const isBrandMode = isLogoFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
     if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
     if (game.targetColors.length) return game.targetColors;
@@ -89,7 +91,9 @@ export default function SingleplayerGame({
   const usesShowcaseGuessChrome =
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
-    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL);
+    (isBrandMode &&
+      (game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL ||
+        game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL));
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;

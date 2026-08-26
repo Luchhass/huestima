@@ -7,6 +7,7 @@ import {
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
+import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -411,6 +412,61 @@ export function withBrandDifficultyHex(guessColor, targetColor, difficulty) {
     s: channelValue({ difficulty, channel: "s", targetValue: targetColor.s, guessValue: guessColor?.s, fallbackValue: 50 }),
     v: channelValue({ difficulty, channel: "v", targetValue: targetColor.v, guessValue: guessColor?.v, fallbackValue: 78 }),
   });
+}
+
+export function createDefaultTeamGuess(targetColor, difficulty) {
+  return withTeamDifficultyHex({}, targetColor, difficulty);
+}
+
+export function withTeamHex(color) {
+  const team = getTeamOption(color?.teamId || DEFAULT_TEAM_ID);
+  const cleanColor = withHex({ ...(team?.paint || {}), ...(color || {}) });
+
+  return {
+    ...cleanColor,
+    type: "brand",
+    teamId: team.id,
+    brandId: team.id,
+    brandLabel: team.label,
+    brandLabels: team.labels,
+    backgroundHex: team.backgroundHex,
+    logoPath: team.logoPath,
+    logoLayerPath: team.logoLayerPath,
+    baseScenePath: team.baseScenePath,
+    originalScenePath: team.originalScenePath,
+    scenePath: team.scenePath,
+    imagePath: team.imagePath,
+    assetPath: team.assetPath,
+    maskPath: team.maskPath,
+    layers: team.layers,
+  };
+}
+
+export function withTeamDifficultyHex(guessColor, targetColor, difficulty) {
+  const target = targetColor?.teamId ? targetColor : null;
+  const team = getTeamOption(target?.teamId || guessColor?.teamId || DEFAULT_TEAM_ID);
+  const clean = withHex({
+    ...(team.paint || {}),
+    ...(guessColor || {}),
+    h: channelValue({ difficulty, channel: "h", targetValue: team.paint?.h, guessValue: guessColor?.h, fallbackValue: team.paint?.h || 0 }),
+    s: channelValue({ difficulty, channel: "s", targetValue: team.paint?.s, guessValue: guessColor?.s, fallbackValue: team.paint?.s || 0 }),
+    v: channelValue({ difficulty, channel: "v", targetValue: team.paint?.v, guessValue: guessColor?.v, fallbackValue: team.paint?.v || 0 }),
+  });
+  return withTeamHex({ ...clean, teamId: team.id });
+}
+
+export function randomTeamTargetColors(count, random = Math.random, teamIds = null) {
+  const selected = Array.isArray(teamIds) && teamIds.length
+    ? TEAM_OPTIONS.filter((team) => teamIds.includes(team.id))
+    : TEAM_OPTIONS;
+  const pool = [...(selected.length ? selected : TEAM_OPTIONS)];
+  const result = [];
+  while (result.length < count && pool.length) {
+    const index = Math.floor(random() * pool.length);
+    result.push(withTeamHex({ teamId: pool.splice(index, 1)[0].id }));
+  }
+  while (result.length < count) result.push(withTeamHex({ teamId: TEAM_OPTIONS[result.length % TEAM_OPTIONS.length].id }));
+  return result;
 }
 
 export function createDefaultBrandGuess(targetOrBrandId = DEFAULT_BRAND_ID, difficulty) {

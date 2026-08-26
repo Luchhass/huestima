@@ -78,11 +78,21 @@ export const ROUTE_SEO = {
       "Play Huestima Brand, a logo color memory game where you rebuild familiar brand backdrops from memory.",
     path: "/brand",
   },
+  team: {
+    title: "Huestima Teams",
+    description: "Play Huestima Teams, a team logo color memory game.",
+    path: "/team",
+  },
   brandLibrary: {
     title: "Huestima Brand Library",
     description:
       "Browse the Huestima Brand Library and preview every logo included in Huestima Brand.",
     path: "/brand-library",
+  },
+  teamLibrary: {
+    title: "Huestima Team Library",
+    description: "Browse every team logo included in Huestima Teams.",
+    path: "/team-library",
   },
   flagLibrary: {
     title: "Huestima Flag Library",
@@ -109,6 +119,16 @@ export const ROUTE_SEO = {
     title: "Huestima Brand Multiplayer",
     description: "Create or join Huestima Brand multiplayer lobbies for shared logo color rounds.",
     path: "/brand/multiplayer",
+  },
+  teamSingleplayer: {
+    title: "Huestima Teams Singleplayer",
+    description: "Memorize team colors and rebuild them in Huestima Teams singleplayer.",
+    path: "/team/singleplayer",
+  },
+  teamMultiplayer: {
+    title: "Huestima Teams Multiplayer",
+    description: "Create or join Huestima Teams multiplayer lobbies.",
+    path: "/team/multiplayer",
   },
   colorSingleplayer: {
     title: "Huestima Color Singleplayer",

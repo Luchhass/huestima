@@ -43,6 +43,8 @@ export default function SingleplayerCard({
   onCartoonIdsChange,
   onOpenCartoonPool,
   onOpenFlagPool,
+  teamIds = [],
+  onOpenTeamPool,
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -80,7 +82,8 @@ export default function SingleplayerCard({
     await playScreenFadeOut(scopeRef, { duration: 0.28 });
     const cartoonQuery = cartoonIds.length ? `&cartoons=${encodeURIComponent(cartoonIds.join(","))}` : "";
     const flagQuery = flagDifficulties.length ? `&flagDifficulties=${encodeURIComponent(flagDifficulties.join(","))}` : `&flagDifficulty=${flagDifficulty}`;
-    router.push(`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}${flagQuery}${cartoonQuery}`);
+    const teamQuery = teamIds.length ? `&teams=${encodeURIComponent(teamIds.join(","))}` : "";
+    router.push(`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}${flagQuery}${cartoonQuery}${teamQuery}`);
   };
 
   return (
@@ -142,9 +145,9 @@ export default function SingleplayerCard({
           </div>
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            {(gameFamily === GAME_FAMILY_IDS.CARTOON || gameFamily === GAME_FAMILY_IDS.FLAG) && (
+            {(gameFamily === GAME_FAMILY_IDS.CARTOON || gameFamily === GAME_FAMILY_IDS.FLAG || gameFamily === GAME_FAMILY_IDS.TEAM) && (
               <div data-game-mode-shock-target className="shrink-0">
-                <button type="button" onClick={gameFamily === GAME_FAMILY_IDS.CARTOON ? onOpenCartoonPool : onOpenFlagPool} aria-label={gameFamily === GAME_FAMILY_IDS.CARTOON ? "Choose cartoons" : "Choose flag pools"} title={gameFamily === GAME_FAMILY_IDS.CARTOON ? "Choose cartoons" : "Choose flag pools"} className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white p-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <button type="button" onClick={gameFamily === GAME_FAMILY_IDS.CARTOON ? onOpenCartoonPool : gameFamily === GAME_FAMILY_IDS.FLAG ? onOpenFlagPool : onOpenTeamPool} aria-label="Choose pools" title="Choose pools" className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white p-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                   <Images className="relative z-10 size-5" strokeWidth={2} />
                 </button>
               </div>

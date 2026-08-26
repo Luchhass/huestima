@@ -51,7 +51,7 @@ export default function AppFooter() {
     router.push(href);
   };
 
-  if (isLibraryRoute || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute) return null;
+  if (isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute) return null;
 
   return (
     <>

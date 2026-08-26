@@ -65,6 +65,7 @@ export const GAME_MODE_IDS = {
   FLAG_RECALL: "flagRecall",
   FLAG_SPRINT: "flagSprint",
   BRAND_RECALL: "brandRecall",
+  TEAM_RECALL: "teamRecall",
   CARTOON: "cartoon",
   DUEL: "duel",
 };
@@ -145,6 +146,12 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
+    id: GAME_MODE_IDS.TEAM_RECALL,
+    label: "Blind",
+    description: "Match the team color without seeing the original logo color first.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+  },
+  {
     id: GAME_MODE_IDS.DUEL,
     label: "Duel",
     description: "Endless PvP survival. Weak rounds eliminate only when the gap opens.",
@@ -174,6 +181,8 @@ export const GAME_MODE_CARD_COPY = {
       "Keep the full flag visible while you rebuild the background color across {roundCount} levels.",
     [GAME_MODE_IDS.BRAND_RECALL]:
       "Rebuild the brand color without seeing the original logo color first across {roundCount} levels.",
+    [GAME_MODE_IDS.TEAM_RECALL]:
+      "Rebuild the team color without seeing the original logo color first across {roundCount} levels.",
     [GAME_MODE_IDS.CARTOON]:
       "Keep the cartoon scene visible while you rebuild the main painted character color across {roundCount} levels.",
     [GAME_MODE_IDS.DUEL]:
@@ -198,6 +207,8 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone keeps the same flag visible on screen while background accuracy decides the room.",
     [GAME_MODE_IDS.BRAND_RECALL]:
       "Everyone rebuilds the brand color without seeing the original logo color first.",
+    [GAME_MODE_IDS.TEAM_RECALL]:
+      "Everyone rebuilds the team color without seeing the original logo color first.",
     [GAME_MODE_IDS.CARTOON]:
       "Everyone keeps the same cartoon scene visible on screen while main color accuracy decides the room.",
     [GAME_MODE_IDS.DUEL]:
