@@ -13,7 +13,7 @@ export const GAME_MODES = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
-  FLAG_SPRINT: "flagSprint",
+  SPRINT: "sprint",
   CARTOON: "cartoon",
   BRAND_RECALL: "brandRecall",
   TEAM_RECALL: "teamRecall",
@@ -65,7 +65,7 @@ export const GAME_MODE_CONFIG = {
   [GAME_MODES.FLAG]: {
     revealDurationMs: 5000,
   },
-  [GAME_MODES.FLAG_SPRINT]: {
+  [GAME_MODES.SPRINT]: {
     revealDurationMs: 1200,
     guessDurationMs: 30000,
     lockedDifficulty: DIFFICULTIES.EASY,

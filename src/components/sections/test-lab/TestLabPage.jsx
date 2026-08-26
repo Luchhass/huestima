@@ -61,7 +61,7 @@ export default function TestLabPage() {
         <FooterPageAction
           href={returnPath}
           onClick={handleClose}
-          aria-label="Close test page"
+          aria-label={t("common.closeTestPage")}
           className="size-11 p-0 text-foreground/62"
         >
           <X size={24} strokeWidth={1.8} aria-hidden="true" />
@@ -77,7 +77,7 @@ export default function TestLabPage() {
         }
       />
 
-      <nav className="border-b border-foreground/12" aria-label="Material libraries">
+      <nav className="border-b border-foreground/12" aria-label={t("common.materialLibraries")}>
           {links.map(([label, href]) => (
             <Link
               key={href}

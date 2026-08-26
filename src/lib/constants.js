@@ -14,6 +14,7 @@ export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_GUESS_DURATION_MS = 3000;
+export const SPRINT_DURATION_MS = 30000;
 export const MAX_ROUND_SCORE = 10;
 
 export const DEFAULT_GUESS_HSV = {
@@ -63,7 +64,7 @@ export const GAME_MODE_IDS = {
   GRADIENT: "gradient",
   FLAG: "flag",
   FLAG_RECALL: "flagRecall",
-  FLAG_SPRINT: "flagSprint",
+  SPRINT: "sprint",
   BRAND_RECALL: "brandRecall",
   TEAM_RECALL: "teamRecall",
   CARTOON: "cartoon",
@@ -126,11 +127,13 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
-    id: GAME_MODE_IDS.FLAG_SPRINT,
-    label: "Flag Sprint",
-    description: "Thirty seconds of rapid-fire flag rounds. No result screen between flags.",
+    id: GAME_MODE_IDS.SPRINT,
+    label: "Sprint",
+    description: "Race through rapid-fire rounds before the clock runs out.",
     revealDurationMs: 1200,
-    guessDurationMs: 30000,
+    guessDurationMs: SPRINT_DURATION_MS,
+    sprintDurationMs: SPRINT_DURATION_MS,
+    isSprint: true,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {

@@ -24,6 +24,7 @@ const GAME_MODE_ICONS = {
   flash: Zap,
   sequence: Layers,
   timed: Timer,
+  sprint: Zap,
   gradient: Blend,
   flag: Flag,
   cartoon: Palette,

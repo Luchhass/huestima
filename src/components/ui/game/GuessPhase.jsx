@@ -50,6 +50,7 @@ export default function GuessPhase({
   progressItems = [],
   isShowcaseWidgetEntering = true,
   isShowcaseWidgetExiting = false,
+  isExiting = false,
   showcaseLayoutEnabled = true,
   resumeElapsedMs = 0,
   resumeInstantly = false,
@@ -720,6 +721,34 @@ export default function GuessPhase({
   ]);
 
   useLayoutEffect(() => {
+    if (!isExiting || usesShowcaseGuessLayout) return undefined;
+
+    const ctx = gsap.context(() => {
+      const targets = [
+        roundRef.current,
+        brandRef.current,
+        progressRef.current,
+        timerRef.current,
+        adminButtonRef.current,
+        hintButtonRef.current,
+        submitButtonRef.current,
+        ...gsap.utils.toArray("[role=slider], .guess-picker-track"),
+      ].filter(Boolean);
+
+      gsap.to(targets, {
+        autoAlpha: 0,
+        y: 18,
+        duration: 0.52,
+        stagger: 0.025,
+        ease: "power2.in",
+        overwrite: "auto",
+      });
+    }, scopeRef);
+
+    return () => ctx.revert();
+  }, [isExiting, usesShowcaseGuessLayout]);
+
+  useLayoutEffect(() => {
     if (!hintActive) return undefined;
 
     const ctx = gsap.context(() => {
@@ -958,6 +987,7 @@ export default function GuessPhase({
               key={`guess-countdown-${timedGuessDurationMs}`}
               durationMs={timedGuessDurationMs}
               currentCentiseconds={centiseconds}
+              isRunning={timerRunning}
               sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
               className="translate-y-[0.18em]"
             />
@@ -968,7 +998,7 @@ export default function GuessPhase({
           <button
             ref={adminButtonRef}
             type="button"
-            aria-label="Set perfect admin guess"
+            aria-label={t("common.perfectAdminGuess")}
             onClick={handleAdminPerfectGuess}
             className={`card-action-size absolute bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:bottom-8 ${
               showHintButton ? "right-[9.5rem] sm:right-[10.25rem]" : "right-[5.75rem] sm:right-[6.25rem]"
@@ -1223,6 +1253,7 @@ export default function GuessPhase({
             key={`guess-countdown-${timedGuessDurationMs}`}
             durationMs={timedGuessDurationMs}
             currentCentiseconds={centiseconds}
+            isRunning={timerRunning}
             sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
             className="translate-y-[0.18em]"
           />
@@ -1233,7 +1264,7 @@ export default function GuessPhase({
         <button
           ref={adminButtonRef}
           type="button"
-          aria-label="Set perfect admin guess"
+          aria-label={t("common.perfectAdminGuess")}
           onClick={handleAdminPerfectGuess}
           className="card-action-size absolute right-(--admin-right) bottom-6 z-20 grid place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--admin-right-sm) sm:bottom-8"
           style={{

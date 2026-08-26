@@ -168,7 +168,7 @@ function PasswordField({
         <button
           type="button"
           disabled={disabled}
-          aria-label={isVisible ? "Hide password" : "Show password"}
+          aria-label={isVisible ? t("common.hidePassword") : t("common.showPassword")}
           onClick={() => setIsVisible((current) => !current)}
           className="grid size-9 place-items-center rounded-full text-white/46 transition hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-40"
         >
@@ -758,7 +758,7 @@ export default function MultiplayerCard({
               />
 
               {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag" || cleanGameFamily === "team") && (
-                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label="Choose pools" title="Choose pools" className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                   <Images className="relative z-10 size-5" strokeWidth={2} />
                 </button>
               )}

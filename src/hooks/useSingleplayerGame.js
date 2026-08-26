@@ -224,7 +224,7 @@ export function useSingleplayerGame(
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
-  const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
+  const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const isBrandMode = isLogoFamily(cleanGameFamily);
@@ -280,11 +280,27 @@ export function useSingleplayerGame(
   const completedIntroRoundRef = useRef(null);
   const completedMemorizeRoundRef = useRef(null);
   const hintActionRef = useRef(false);
+  const sprintDeadlineRef = useRef(null);
 
   const transitionToPhase = useCallback((nextPhase) => {
     setPhaseStartedAt(Date.now());
     setPhase(nextPhase);
   }, []);
+
+  useEffect(() => {
+    if (!gameMode.isSprint || phase === GAME_PHASES.FINAL) return undefined;
+
+    if (sprintDeadlineRef.current === null) {
+      sprintDeadlineRef.current = Date.now() + (gameMode.sprintDurationMs || 30000);
+    }
+
+    const remaining = Math.max(0, sprintDeadlineRef.current - Date.now());
+    const timeoutId = window.setTimeout(() => {
+      if (phase !== GAME_PHASES.FINAL) transitionToPhase(GAME_PHASES.FINAL);
+    }, remaining);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [gameMode.isSprint, gameMode.sprintDurationMs, phase, transitionToPhase]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -685,7 +701,7 @@ export function useSingleplayerGame(
     if (hintsEnabled && earnsHint(score)) {
       setHintCount((currentCount) => currentCount + 1);
     }
-    if (isFlagSprintMode) {
+    if (isSprintMode) {
       const nextRoundIndex = roundIndex + 1;
       if (!isEndlessMode && nextRoundIndex >= roundCount) {
         transitionToPhase(GAME_PHASES.FINAL);
@@ -704,7 +720,7 @@ export function useSingleplayerGame(
     guessColor,
     hintsEnabled,
     isSequenceMode,
-    isFlagSprintMode,
+    isSprintMode,
     isEndlessMode,
     roundCount,
     phase,

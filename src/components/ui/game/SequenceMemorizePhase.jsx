@@ -162,7 +162,7 @@ export default function SequenceMemorizePhase({
 
       <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-5 sm:bottom-8 sm:left-8 sm:right-8">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {visibleColors.map((color, index) => {
               const hasAppeared = index <= activeIndex;
               const isActive = index === activeIndex;

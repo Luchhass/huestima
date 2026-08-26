@@ -59,7 +59,7 @@ export default function AppFooter() {
         {t("app.createdBy")}{" "}
         <a
           href="https://furkancosar.com"
-          aria-label="Visit furkancosar"
+          aria-label={t("common.visitCreator")}
           data-sound="off"
           className="creator-link pointer-events-auto relative inline-block text-inherit no-underline outline-none"
         >

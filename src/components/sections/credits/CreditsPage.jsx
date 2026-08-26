@@ -123,7 +123,7 @@ export default function CreditsPage() {
       mainRef={mainRef}
       className="text-zinc-950 dark:text-zinc-50"
       action={
-        <FooterPageAction href={`/${family}`} onClick={handleClose} aria-label="Close credits" className="size-11 p-0 text-foreground/62">
+        <FooterPageAction href={`/${family}`} onClick={handleClose} aria-label={t("common.closeCredits")} className="size-11 p-0 text-foreground/62">
           <X size={24} strokeWidth={1.8} aria-hidden="true" />
         </FooterPageAction>
       }

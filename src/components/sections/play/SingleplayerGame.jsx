@@ -463,6 +463,7 @@ export default function SingleplayerGame({
               resumeInstantly={resumePhase === GAME_PHASES.GUESS}
               isShowcaseWidgetEntering={isShowcaseWidgetEntering}
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
+              isExiting={isShowcaseWidgetExiting}
               hintCount={game.hintCount}
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}

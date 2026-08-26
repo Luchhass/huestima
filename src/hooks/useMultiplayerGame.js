@@ -177,7 +177,7 @@ export function useMultiplayerGame({
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
   const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
-  const isFlagSprintMode = gameMode.id === GAME_MODE_IDS.FLAG_SPRINT;
+  const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL || gameMode.id === GAME_MODE_IDS.TEAM_RECALL;
@@ -254,6 +254,7 @@ export function useMultiplayerGame({
   );
   const restoredFromSession = Boolean(initialGameSession);
   const snapshotRef = useRef(null);
+  const sprintDeadlineRef = useRef(null);
   const currentRoomPlayer = useMemo(
     () => room?.players?.find((player) => player.id === playerId) || null,
     [playerId, room?.players],
@@ -266,6 +267,25 @@ export function useMultiplayerGame({
     setPhaseStartedAt(Date.now());
     setPhase(nextPhase);
   }, []);
+
+  useEffect(() => {
+    if (!gameMode.isSprint || phase === "leaderboard" || phase === "waiting") {
+      return undefined;
+    }
+
+    if (sprintDeadlineRef.current === null) {
+      sprintDeadlineRef.current = Date.now() + (gameMode.sprintDurationMs || 30000);
+    }
+
+    const remaining = Math.max(0, sprintDeadlineRef.current - Date.now());
+    const timeoutId = window.setTimeout(() => {
+      if (phase !== "leaderboard" && phase !== "waiting") {
+        transitionToPhase("leaderboard");
+      }
+    }, remaining);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [gameMode.isSprint, gameMode.sprintDurationMs, phase, transitionToPhase]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -545,7 +565,7 @@ export function useMultiplayerGame({
       setLocalLeaderboard(data.leaderboard);
     }
 
-    if (isFlagSprintMode) {
+    if (isSprintMode) {
       const nextRoundIndex = roundIndex + 1;
       if (!isEndlessMode && nextRoundIndex >= roundCount) {
         transitionToPhase("waiting");
@@ -564,7 +584,7 @@ export function useMultiplayerGame({
     guessColor,
     hintsEnabled,
     isSubmitting,
-    isFlagSprintMode,
+    isSprintMode,
     isEndlessMode,
     roundCount,
     phase,

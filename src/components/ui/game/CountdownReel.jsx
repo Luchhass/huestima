@@ -59,6 +59,7 @@ function buildReelFrames(totalCentiseconds, place) {
 export default function CountdownReel({
   durationMs,
   currentCentiseconds,
+  isRunning = true,
   onSecondTick,
   sizeClassName = "text-7xl sm:text-[7rem]",
   className = "",
@@ -79,6 +80,8 @@ export default function CountdownReel({
   );
 
   useLayoutEffect(() => {
+    if (!isRunning) return undefined;
+
     const ctx = gsap.context(() => {
       const counterTimeline = gsap.timeline();
       const durationSeconds = Math.max(0.001, durationMs / 1000);
@@ -137,7 +140,7 @@ export default function CountdownReel({
     });
 
     return () => ctx.revert();
-  }, [durationMs, onSecondTick, reels]);
+  }, [durationMs, isRunning, onSecondTick, reels]);
 
   return (
     <div
