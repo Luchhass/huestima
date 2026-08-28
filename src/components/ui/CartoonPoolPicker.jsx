@@ -7,7 +7,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 export default function CartoonPoolPicker({ value = [], onChange, onDone }) {
   const { t } = useTranslation();
   const allIds = CARTOON_PACKS.flatMap((pack) => pack.itemIds);
-  const selectedIds = new Set(value.length ? value : allIds);
+  const selectedIds = new Set(value);
   const selectedPacks = new Set(
     CARTOON_PACKS.filter((pack) => pack.itemIds.every((id) => selectedIds.has(id))).map((pack) => pack.id),
   );

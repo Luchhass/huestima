@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
-import AdminProtectorCard from "@/components/admin/AdminProtectorCard";
 import PushNotification from "@/components/ui/PushNotification";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
@@ -10,7 +9,6 @@ import SingleplayerCard from "./SingleplayerCard";
 import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
 import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
 import TeamPoolPicker from "@/components/ui/TeamPoolPicker";
-import { useAdminMode } from "@/hooks/useAdminMode";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
@@ -18,14 +16,18 @@ import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
+import { useSiteOperations } from "@/hooks/useSiteOperations";
 import {
   playScreenFadeOut,
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
 import {
+  clearAdminHomeReturn,
   clearFooterReturn,
+  hasPendingAdminHomeReturn,
   hasPendingFooterReturn,
+  playAdminHomeReturnEntry,
   playFooterReturnEntry,
 } from "@/hooks/useFooterPageTransition";
 import {
@@ -42,6 +44,9 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
+import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
+import { CARTOON_PACKS } from "@/lib/cartoons";
+import { TEAM_OPTIONS } from "@/lib/teams";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -59,9 +64,6 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const CARD_RESIZE_DURATION_MS = 700;
 const DIFFICULTY_BURST_LIFETIME_MS = 3900;
-const ADMIN_TAP_WINDOW_MS = 5000;
-const ADMIN_TAP_COUNT = 5;
-const ADMIN_SETTLE_DELAY_MS = 3000;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -89,6 +91,9 @@ export default function HomeCard({
   initialTeamIds = null,
 }) {
   const { locale, t } = useTranslation();
+  const { operations, ready: operationsReady } = useSiteOperations();
+  const multiplayerEnabled =
+    operationsReady && operations.multiplayerEnabled;
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const defaultGameMode = getDefaultGameModeForFamily(cleanGameFamily);
   const defaultDifficulty =
@@ -97,35 +102,32 @@ export default function HomeCard({
     GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
     cleanGameFamily,
   );
-  const {
-    cancelUnlockRequest,
-    disableAdmin,
-    enableAdmin,
-    enabled: isAdminModeEnabled,
-    protectorRequestId,
-    requestProtector,
-  } = useAdminMode();
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(initialDifficulty || defaultDifficulty);
   const [gameMode, setGameMode] = useState(initialGameMode || defaultGameMode);
   const [roundCount, setRoundCount] = useState(initialRoundCount || DEFAULT_ROUND_COUNT);
   const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty || "starter");
-  const [flagDifficulties, setFlagDifficulties] = useState(initialFlagDifficulties || [initialFlagDifficulty || "starter"]);
-  const [cartoonIds, setCartoonIds] = useState(initialCartoonIds || []);
-  const [teamIds, setTeamIds] = useState(initialTeamIds || []);
+  const [flagDifficulties, setFlagDifficulties] = useState(
+    initialFlagDifficulties ?? (initialFlagDifficulty
+      ? [initialFlagDifficulty]
+      : FLAG_DIFFICULTY_OPTIONS.map(({ id }) => id)),
+  );
+  const [cartoonIds, setCartoonIds] = useState(
+    initialCartoonIds ?? CARTOON_PACKS.flatMap(({ itemIds }) => itemIds),
+  );
+  const [teamIds, setTeamIds] = useState(
+    initialTeamIds ?? TEAM_OPTIONS.map(({ id }) => id),
+  );
   const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState("singleplayer");
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBurst, setDifficultyBurst] = useState(null);
-  const [isAdminProtectorVisible, setIsAdminProtectorVisible] = useState(false);
   const [notification, setNotification] = useState(null);
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const isFooterReturnRef = useRef(false);
+  const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
   const difficultyBurstTimerRef = useRef(null);
-  const adminTapTimesRef = useRef([]);
-  const adminSettleTimerRef = useRef(null);
   const isChangingViewRef = useRef(false);
-  const lastProtectorRequestRef = useRef(0);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
@@ -140,8 +142,6 @@ export default function HomeCard({
   const homeParagraphs = Array.isArray(homeSection?.paragraphs)
     ? homeSection.paragraphs
     : t("home.paragraphs");
-  const adminEnabledMessage =
-    locale === "tr" ? "Admin modu acildi." : "Admin mode enabled.";
 
   if (typeof window !== "undefined") {
     isFooterReturnRef.current ||= hasPendingFooterReturn();
@@ -162,14 +162,33 @@ export default function HomeCard({
   useMusicScene(MUSIC_SCENES.MENU);
   useScreenReveal(
     contentRef,
-    [view, cleanGameFamily, isAdminProtectorVisible, locale],
+    [view, cleanGameFamily, locale],
     {
-      delay: isAdminProtectorVisible ? 90 : 0,
       // Footer return state is intentionally read once to defer the entry reveal.
       // eslint-disable-next-line react-hooks/refs
-      defer: isFooterReturnRef.current,
+      defer: isFooterReturnRef.current || isAdminReturnPending,
     },
   );
+
+  useLayoutEffect(() => {
+    if (!hasPendingAdminHomeReturn()) return undefined;
+
+    const card = cardRef.current;
+    if (!card) return undefined;
+
+    let active = true;
+
+    void playAdminHomeReturnEntry(card).then(() => {
+      if (!active) return;
+
+      clearAdminHomeReturn();
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!hasPendingFooterReturn()) return undefined;
@@ -202,37 +221,10 @@ export default function HomeCard({
         window.clearTimeout(difficultyBurstTimerRef.current);
       }
 
-      if (adminSettleTimerRef.current) {
-        window.clearTimeout(adminSettleTimerRef.current);
-      }
     };
   }, []);
 
-  useEffect(() => {
-    if (!protectorRequestId) return;
-    if (lastProtectorRequestRef.current === protectorRequestId) return;
-
-    lastProtectorRequestRef.current = protectorRequestId;
-
-    if (isAdminProtectorVisible) return;
-
-    let isCancelled = false;
-
-    const showProtector = async () => {
-      await playScreenFadeOut(contentRef, { duration: 0.28 });
-      if (isCancelled) return;
-      setIsAdminProtectorVisible(true);
-    };
-
-    void showProtector();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isAdminProtectorVisible, protectorRequestId]);
-
-  const changeView = async (nextView) => {
-    if (isAdminProtectorVisible) return;
+  const changeView = useCallback(async (nextView) => {
     if (nextView === view || isChangingViewRef.current) return;
 
     isChangingViewRef.current = true;
@@ -245,7 +237,30 @@ export default function HomeCard({
 
     setView(nextView);
     isChangingViewRef.current = false;
-  };
+  }, [isExpandedCard, view]);
+
+  useEffect(() => {
+    const isMultiplayerOnlyView =
+      isMultiplayer ||
+      ((isCartoonPool || isFlagPool || isTeamPool) &&
+        cartoonPoolReturnView === "multiplayer");
+
+    if (!operationsReady || multiplayerEnabled || !isMultiplayerOnlyView) return;
+    const redirectId = window.setTimeout(() => {
+      void changeView("home");
+    }, 0);
+
+    return () => window.clearTimeout(redirectId);
+  }, [
+    changeView,
+    isCartoonPool,
+    isFlagPool,
+    isMultiplayer,
+    isTeamPool,
+    multiplayerEnabled,
+    operationsReady,
+    cartoonPoolReturnView,
+  ]);
 
   const openCartoonPool = async () => {
     if (view !== "singleplayer" && view !== "multiplayer") return;
@@ -303,52 +318,6 @@ export default function HomeCard({
     setDifficulty(nextDifficulty);
   };
 
-  const handleAdminUnlock = async () => {
-    enableAdmin();
-    setNotification({
-      id: `admin-${Date.now()}`,
-      message: adminEnabledMessage,
-      variant: "admin",
-    });
-    await playScreenFadeOut(contentRef, { duration: 0.24 });
-    setIsAdminProtectorVisible(false);
-  };
-
-  const handleAdminCancel = async () => {
-    cancelUnlockRequest();
-    await playScreenFadeOut(contentRef, { duration: 0.22 });
-    setIsAdminProtectorVisible(false);
-  };
-
-  const handleAdminTriggerTap = () => {
-    if (view !== "home" || isAdminProtectorVisible) return;
-
-    if (adminSettleTimerRef.current) {
-      window.clearTimeout(adminSettleTimerRef.current);
-      adminSettleTimerRef.current = null;
-    }
-
-    const now = Date.now();
-    adminTapTimesRef.current = [...adminTapTimesRef.current, now].filter(
-      (time) => now - time <= ADMIN_TAP_WINDOW_MS,
-    );
-
-    if (adminTapTimesRef.current.length < ADMIN_TAP_COUNT) return;
-
-    adminTapTimesRef.current = [];
-
-    adminSettleTimerRef.current = window.setTimeout(() => {
-      adminSettleTimerRef.current = null;
-
-      if (isAdminModeEnabled) {
-        disableAdmin();
-        return;
-      }
-
-      requestProtector();
-    }, ADMIN_SETTLE_DELAY_MS);
-  };
-
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -374,7 +343,7 @@ export default function HomeCard({
           />
         )}
 
-        {(isSingleplayer || isMultiplayer) && !isAdminProtectorVisible && (
+        {(isSingleplayer || isMultiplayer) && (
           <button
             data-game-mode-shock-target
             type="button"
@@ -391,22 +360,8 @@ export default function HomeCard({
           data-route-transition-scope
           className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
         >
-          {isAdminProtectorVisible ? (
-            <AdminProtectorCard
-              onCancel={handleAdminCancel}
-              onUnlock={handleAdminUnlock}
-            />
-          ) : view === "home" ? (
+          {view === "home" ? (
             <>
-                  <button
-                    type="button"
-                    aria-hidden="true"
-                    tabIndex={-1}
-                    onPointerDown={handleAdminTriggerTap}
-                    data-sound="off"
-                    className="absolute right-0 bottom-0 z-30 size-16 cursor-default opacity-0 focus:outline-none sm:size-20"
-                  />
-
                   <div data-screen-reveal className="home-copy max-w-[23.5rem]">
                     <h1 className="text-5xl font-semibold leading-[0.9] tracking-normal text-white sm:text-[4.65rem]">
                       {homeTitle}
@@ -430,7 +385,10 @@ export default function HomeCard({
                   >
                     <ModeSelector
                       onSingleplayer={() => changeView("singleplayer")}
-                      onMultiplayer={() => changeView("multiplayer")}
+                      onMultiplayer={() =>
+                        multiplayerEnabled && changeView("multiplayer")
+                      }
+                      multiplayerEnabled={multiplayerEnabled}
                     />
                   </div>
 

@@ -18,12 +18,14 @@
   --app-page-padding: 1.5rem;
   --app-card-shadow: 0 18px 38px rgba(0, 0, 0, 0.28),
     0 8px 18px rgba(0, 0, 0, 0.18);
+  --guess-pulse-color: 0 0 0;
 }
 
 .dark {
   --background: #2f2f2f;
   --foreground: #ffffff;
   --surface: #000000;
+  --guess-pulse-color: 255 255 255;
 }
 
 @theme inline {
@@ -44,6 +46,15 @@ body {
   overflow: hidden;
   background: var(--background);
   transition: background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes guess-phase-countdown-pulse {
+  0%, 100% { box-shadow: 0 18px 38px rgb(0 0 0 / 0.22); }
+  50% { box-shadow: 0 18px 38px rgb(0 0 0 / 0.58); }
+}
+
+.guess-card-countdown-pulse {
+  animation: guess-phase-countdown-pulse var(--guess-pulse-duration, 0.72s) linear infinite;
 }
 
 body {
@@ -410,6 +421,127 @@ input {
     background: #ff5a55;
     box-shadow: 0 10px 22px rgb(229 57 53 / 0.36);
     transform: translateY(-2px) rotate(-4deg) scale(1.06);
+  }
+
+  .admin-operations-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
+    gap: 1rem;
+    width: min(100%, 68rem);
+    height: min(78dvh, 40rem);
+  }
+
+  .admin-configuration-card {
+    width: min(100%, 31.25rem);
+    min-height: 20rem;
+    height: min(32.5rem, calc(100dvh - 5.5rem));
+    border-radius: 26px;
+    box-shadow: var(--app-card-shadow);
+    overflow: hidden;
+  }
+
+  .admin-operations-card {
+    width: 100%;
+    border-radius: 26px;
+    box-shadow: var(--app-card-shadow);
+    will-change: transform, opacity, clip-path;
+  }
+
+  .admin-operations-card--primary {
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .admin-primary-card--waiting {
+    visibility: hidden !important;
+  }
+
+  .admin-operations-side {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 1rem;
+    min-width: 0;
+    min-height: 0;
+    transform-origin: right center;
+    overflow: visible;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  .admin-operations-side--waiting {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .admin-operations-side--settled {
+    transform: translateZ(0) scale(1);
+  }
+
+  .admin-side-card-frame {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 26px;
+    background: #000000;
+    box-shadow: var(--app-card-shadow);
+    will-change: width;
+  }
+
+  .admin-side-card-frame > .admin-operations-card {
+    flex: 1 0 auto;
+    min-width: 0;
+    box-shadow: none;
+  }
+
+  .admin-confirm-modal {
+    transform-origin: center center;
+    animation: admin-confirm-modal-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: transform, opacity;
+  }
+
+  .admin-confirm-modal--closing {
+    animation: admin-confirm-modal-exit 0.28s cubic-bezier(0.7, 0, 0.84, 0) both;
+    pointer-events: none;
+  }
+
+  @keyframes admin-confirm-modal-enter {
+    from {
+      opacity: 0;
+      transform: scale(0);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes admin-confirm-modal-exit {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .admin-operations-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(21rem, 1fr) auto;
+      width: min(100%, 31.25rem);
+      height: min(92dvh, 50rem);
+      overflow-y: auto;
+      padding-block: 0.25rem;
+    }
+
+    .admin-operations-side {
+      grid-template-rows: auto minmax(18rem, 1fr);
+    }
   }
 
   .soft-icon-button {

@@ -6,7 +6,9 @@ import AppHeader from "@/components/layout/AppHeader";
 import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import GlobalPushNotifications from "@/components/ui/GlobalPushNotifications";
 import StructuredData from "@/components/seo/StructuredData";
+import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
 import { AdminModeProvider } from "@/hooks/useAdminMode";
+import { SiteOperationsProvider } from "@/hooks/useSiteOperations";
 import { APP_NAME } from "@/lib/constants";
 import {
   ROUTE_SEO,
@@ -142,7 +144,9 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head />
+      <head>
+        <ThemeBootstrap />
+      </head>
       <body
         suppressHydrationWarning
         className="h-full overflow-hidden bg-background text-foreground"
@@ -151,11 +155,13 @@ export default function RootLayout({ children }) {
         <StructuredData />
         <InteractionAudio />
         <AdminModeProvider>
-          <AppHeader />
-          <FullscreenEscapeButton />
-          {children}
-          <AppFooter />
-          <GlobalPushNotifications />
+          <SiteOperationsProvider>
+            <AppHeader />
+            <FullscreenEscapeButton />
+            {children}
+            <AppFooter />
+            <GlobalPushNotifications />
+          </SiteOperationsProvider>
         </AdminModeProvider>
       </body>
     </html>

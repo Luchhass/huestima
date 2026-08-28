@@ -89,6 +89,11 @@ export default function LobbyCard({
     [cleanGameFamily],
   );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
+  const isUnlimitedRoundMode =
+    room?.gameMode === GAME_MODE_IDS.ENDLESS || room?.gameMode === GAME_MODE_IDS.SPRINT;
+  const roundCountLabel = isUnlimitedRoundMode
+    ? t("levelCount.infinity")
+    : room?.roundCount || DEFAULT_ROUND_COUNT;
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
 
   const activeActionError = error && error !== hiddenActionError ? error : "";
@@ -320,7 +325,7 @@ export default function LobbyCard({
             count: players.length,
             gameMode: gameModeLabel,
             difficulty: difficultyLabel,
-            roundCount: room?.roundCount || DEFAULT_ROUND_COUNT,
+            roundCount: roundCountLabel,
           })}
         </p>
       </div>
@@ -410,8 +415,8 @@ export default function LobbyCard({
               <LevelCountPicker
                 value={room?.roundCount}
                 onChange={handleRoundCountChange}
-                isEndless={room?.gameMode === GAME_MODE_IDS.ENDLESS}
-                disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
+                isEndless={isUnlimitedRoundMode}
+                disabled={room?.gameMode === GAME_MODE_IDS.SPRINT || !isHost || isUpdatingSettings || room?.status !== "lobby"}
                 className="w-full"
               />
             </div>

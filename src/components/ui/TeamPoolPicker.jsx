@@ -9,7 +9,7 @@ const LEAGUES = [...new Set(TEAM_OPTIONS.map((team) => team.league))];
 export default function TeamPoolPicker({ value = [], onChange, onDone }) {
   const { t } = useTranslation();
   const allIds = TEAM_OPTIONS.map((team) => team.id);
-  const selected = new Set(value.length ? value : allIds);
+  const selected = new Set(value);
   const toggle = (league) => {
     const leagueIds = TEAM_OPTIONS.filter((team) => team.league === league).map((team) => team.id);
     const next = new Set(selected);

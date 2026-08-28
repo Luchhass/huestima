@@ -49,12 +49,18 @@ curl http://localhost:4000/health
 ```bash
 NODE_ENV=production
 PORT=4000
+TRUST_PROXY_HOPS=1
+COOKIE_SECURE=true
 CLIENT_ORIGINS=https://huestima.com,https://www.huestima.com
 ROOM_TTL_MS=3600000
 EMPTY_ROOM_TTL_MS=120000
 DISCONNECT_GRACE_MS=45000
 HOST_DISCONNECT_GRACE_MS=60000
 MAX_PLAYERS_PER_ROOM=5
+ADMIN_USERNAME=owner
+ADMIN_PASSWORD_HASH=
+ADMIN_TOTP_SECRET=
+ADMIN_SESSION_DB_PATH=/var/lib/huestima/admin.sqlite
 ```
 
 `CLIENT_ORIGINS` is a comma-separated whitelist used by both Express CORS and Socket.IO.
@@ -173,3 +179,16 @@ NEXT_PUBLIC_SOCKET_URL=https://api.huestima.com
 ```
 
 Socket.IO uses websocket and polling transports, so it works behind normal Caddy or Nginx reverse proxy setups.
+# Admin authentication
+
+Admin authentication is isolated under `/api/admin` and uses an Argon2id password hash, TOTP, and server-side SQLite sessions. It is not used by public game or Socket.IO endpoints.
+
+Admin API requests require an allowlisted `Origin` and the frontend request marker header. Sessions use an HttpOnly, SameSite cookie with a 30-minute idle timeout and an 8-hour absolute timeout. TOTP codes are accepted once per 30-second time step to prevent replay.
+
+Generate provisioning values without writing secrets to source control:
+
+```bash
+node scripts/generate-admin-hash.mjs "a-long-unique-password"
+```
+
+Set the printed values as `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and `ADMIN_TOTP_SECRET` in the deployment environment. Set `ADMIN_SESSION_DB_PATH` to persistent storage in production. Production refuses to start when the admin variables are missing.

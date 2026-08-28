@@ -14,10 +14,14 @@ import {
   updateRoomSettings,
 } from "../rooms/roomService.js";
 import { getRoom } from "../rooms/roomStore.js";
-import { submitFullResults, submitRoundGuess } from "../game/gameService.js";
+import { finishSprintForPlayer, submitFullResults, submitRoundGuess } from "../game/gameService.js";
 import { validateRoomCode } from "../rooms/roomValidation.js";
 import { createEmitters } from "./emitters.js";
 import { logger } from "../utils/logger.js";
+import {
+  getSiteOperations,
+  isMultiplayerAvailable,
+} from "../operations/service.js";
 
 function ackOk(ack, data = {}) {
   ack?.({
@@ -37,6 +41,19 @@ function ackFail(ack, error = "Unexpected multiplayer error.") {
 function safeEvent(handler) {
   return async (payload = {}, ack) => {
     try {
+      if (!isMultiplayerAvailable()) {
+        const operations = getSiteOperations();
+        ack?.({
+          ok: false,
+          errorCode: operations.maintenanceEnabled
+            ? "maintenance"
+            : "multiplayer_disabled",
+          error: operations.maintenanceEnabled
+            ? "Huestima is currently under maintenance."
+            : "Multiplayer is currently unavailable.",
+        });
+        return;
+      }
       await handler(payload || {}, ack);
     } catch (error) {
       logger.error("socket event failed", { message: error.message });
@@ -84,6 +101,22 @@ export function registerSocketEvents(io) {
   configureRoomService(emitters);
 
   io.on("connection", (socket) => {
+    socket.emit("operations:state", getSiteOperations());
+    const eventBudget = { startedAt: Date.now(), count: 0 };
+    socket.onAny(() => {
+      const currentTime = Date.now();
+      if (currentTime - eventBudget.startedAt >= 1000) {
+        eventBudget.startedAt = currentTime;
+        eventBudget.count = 0;
+      }
+
+      eventBudget.count += 1;
+      if (eventBudget.count > 120) {
+        logger.warn("socket event rate exceeded", { socketId: socket.id });
+        socket.disconnect(true);
+      }
+    });
+
     socket.on(
       "room:create",
       safeEvent((payload, ack) => {
@@ -262,6 +295,26 @@ export function registerSocketEvents(io) {
 
     socket.on("game:submitGuess", handleSubmitGuess);
     socket.on("round:submitGuess", handleSubmitGuess);
+
+    socket.on(
+      "game:finishSprint",
+      safeEvent((payload, ack) => {
+        const roomResult = getRoomFromPayload(payload);
+        if (!roomResult.ok) return ackFail(ack, roomResult.error);
+        const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
+        if (!auth.ok) return ackFail(ack, auth.error);
+
+        const result = finishSprintForPlayer(roomResult.data.room, payload);
+        if (!result.ok) return ackFail(ack, result.error);
+
+        ackOk(ack, result.data);
+        emitters.emitRoomState(roomResult.data.room);
+        if (result.data.leaderboard) {
+          emitters.emitScoreboard(roomResult.data.room, result.data.leaderboard);
+          scheduleCompletedCleanup(roomResult.data.room);
+        }
+      }),
+    );
 
     socket.on(
       "game:submitResults",

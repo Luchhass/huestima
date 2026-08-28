@@ -4,7 +4,11 @@ import { useState } from "react";
 import { User, UsersRound } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 
-export default function ModeSelector({ onSingleplayer, onMultiplayer }) {
+export default function ModeSelector({
+  onSingleplayer,
+  onMultiplayer,
+  multiplayerEnabled = true,
+}) {
   const { t } = useTranslation();
   const [labelKey, setLabelKey] = useState("home.modeDefault");
   const defaultLabelKey = "home.modeDefault";
@@ -34,7 +38,11 @@ export default function ModeSelector({ onSingleplayer, onMultiplayer }) {
         </div>
 
         <div
-          onPointerEnter={() => setLabelKey("home.modeMulti")}
+          onPointerEnter={() =>
+            setLabelKey(
+              multiplayerEnabled ? "home.modeMulti" : "home.multiplayerDisabled",
+            )
+          }
           onPointerLeave={() => setLabelKey(defaultLabelKey)}
           onFocus={() => setLabelKey("home.modeMulti")}
           onBlur={() => setLabelKey(defaultLabelKey)}
@@ -42,9 +50,10 @@ export default function ModeSelector({ onSingleplayer, onMultiplayer }) {
           <button
             type="button"
             onClick={onMultiplayer}
+            disabled={!multiplayerEnabled}
             aria-label={t("home.multiAria")}
-            title={t("home.multiTitle")}
-            className="rgb-hover-button card-action-size grid place-items-center rounded-full bg-white text-zinc-950 shadow-[0_16px_30px_rgba(0,0,0,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            title={t(multiplayerEnabled ? "home.multiTitle" : "home.multiplayerDisabled")}
+            className="rgb-hover-button card-action-size grid place-items-center rounded-full bg-white text-zinc-950 shadow-[0_16px_30px_rgba(0,0,0,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <UsersRound className="relative z-10" size={28} strokeWidth={2.1} />
           </button>

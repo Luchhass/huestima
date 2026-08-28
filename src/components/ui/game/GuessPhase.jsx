@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { Check, Crown, KeyRound } from "lucide-react";
-import AdminProtectorOverlay from "@/components/admin/AdminProtectorOverlay";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
 import SaturationSlider from "@/components/ui/color-picker/SaturationSlider";
@@ -19,9 +18,29 @@ import {
   isGradientColor,
 } from "@/lib/color";
 import { APP_NAME } from "@/lib/constants";
-import { playHintReveal } from "@/lib/sound";
+import {
+  playHintReveal,
+  playMemorizeSecondTick,
+  startMemorizeMechanism,
+} from "@/lib/sound";
 import CountdownReel from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
+
+function SprintClock({ remainingMs, className = "" }) {
+  const totalCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
+  const seconds = Math.floor(totalCentiseconds / 100);
+  const centiseconds = totalCentiseconds % 100;
+  const label = `${String(seconds).padStart(2, "0")}:${String(centiseconds).padStart(2, "0")}`;
+
+  return (
+    <span
+      className={`inline-block font-mono text-[2.8rem] font-semibold leading-none tracking-[-0.08em] tabular-nums sm:text-[3.65rem] ${className}`}
+      aria-label={label}
+    >
+      {label}
+    </span>
+  );
+}
 
 function getTargetHintColor(targetColor, guessColor) {
   if (!targetColor) return null;
@@ -47,6 +66,8 @@ export default function GuessPhase({
   onGuessChange,
   onSubmit,
   guessDurationMs = null,
+  sprintDurationMs = null,
+  sprintRemainingMs = null,
   progressItems = [],
   isShowcaseWidgetEntering = true,
   isShowcaseWidgetExiting = false,
@@ -60,18 +81,19 @@ export default function GuessPhase({
   onUseHint,
 }) {
   const { t } = useTranslation();
-  const {
-    cancelUnlockRequest,
-    enabled: isAdminModeEnabled,
-    enableAdmin,
-    pendingUnlock,
-  } = useAdminMode();
+  const { enabled: isAdminModeEnabled } = useAdminMode();
   const scopeRef = useRef(null);
   const roundRef = useRef(null);
   const timerRef = useRef(null);
   const brandRef = useRef(null);
   const progressRef = useRef(null);
   const timedSubmitRef = useRef(false);
+  const sprintSoundDurationRef = useRef(sprintRemainingMs);
+  const previousSprintSecondRef = useRef(
+    Number.isFinite(sprintRemainingMs)
+      ? Math.ceil(Math.max(0, sprintRemainingMs) / 1000)
+      : null,
+  );
 
   const adminButtonRef = useRef(null);
   const adminButtonCoreRef = useRef(null);
@@ -122,6 +144,11 @@ export default function GuessPhase({
   const timedGuessDurationMs =
     Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
   const isTimedGuess = timedGuessDurationMs > 0;
+  const isSprintGuess =
+    Number.isFinite(sprintDurationMs) &&
+    sprintDurationMs > 0 &&
+    Number.isFinite(sprintRemainingMs);
+  const showGuessTimer = isTimedGuess || isSprintGuess;
   const hintLockedForRound = showHintButton && hintActive;
   const hintButtonDisabled = !canUseHint;
   const hintButtonLabel = canUseHint
@@ -165,6 +192,63 @@ export default function GuessPhase({
     onComplete: handleTimedSubmit,
     initialElapsedMs: resumeElapsedMs,
   });
+  const displayedCentiseconds = isSprintGuess
+    ? Math.max(0, Math.ceil(sprintRemainingMs / 10))
+    : centiseconds;
+  const displayedDurationMs = isSprintGuess ? sprintDurationMs : timedGuessDurationMs;
+  const displayedTimerRunning = isSprintGuess || timerRunning;
+
+  useEffect(() => {
+    const timedCountdownRunning = isTimedGuess && timerRunning;
+    if (!timedCountdownRunning && !isSprintGuess) return undefined;
+
+    const remainingMs = isSprintGuess
+      ? Math.max(1, sprintSoundDurationRef.current)
+      : Math.max(1, timedGuessDurationMs - resumeElapsedMs);
+
+    return startMemorizeMechanism(remainingMs);
+  }, [isSprintGuess, isTimedGuess, timerRunning, timedGuessDurationMs, resumeElapsedMs]);
+
+  const sprintSecond = isSprintGuess
+    ? Math.ceil(Math.max(0, sprintRemainingMs) / 1000)
+    : null;
+
+  useEffect(() => {
+    if (!isSprintGuess || sprintSecond === null) return;
+
+    const previousSecond = previousSprintSecondRef.current;
+    previousSprintSecondRef.current = sprintSecond;
+
+    if (previousSecond === null || sprintSecond >= previousSecond) return;
+
+    const progress = sprintDurationMs
+      ? 1 - sprintRemainingMs / sprintDurationMs
+      : 0;
+    playMemorizeSecondTick(progress);
+  }, [isSprintGuess, sprintDurationMs, sprintRemainingMs, sprintSecond]);
+  const pulseProgress = displayedDurationMs
+    ? displayedCentiseconds / (displayedDurationMs / 10)
+    : 1;
+  const pulseDuration = `${Math.max(0.22, Math.min(0.95, 0.22 + pulseProgress * 0.73))}s`;
+
+  useLayoutEffect(() => {
+    const card = scopeRef.current?.closest(".game-card-shell");
+    if (!card) return undefined;
+    card.classList.toggle("guess-card-countdown-pulse", showGuessTimer && displayedTimerRunning);
+    return () => {
+      card.classList.remove("guess-card-countdown-pulse");
+      card.style.removeProperty("--guess-pulse-duration");
+    };
+  }, [displayedTimerRunning, showGuessTimer]);
+
+  useLayoutEffect(() => {
+    const card = scopeRef.current?.closest(".game-card-shell");
+    if (card && showGuessTimer && displayedTimerRunning) {
+      card.style.setProperty("--guess-pulse-duration", pulseDuration);
+    } else if (card) {
+      card.style.removeProperty("--guess-pulse-duration");
+    }
+  }, [displayedTimerRunning, pulseDuration, showGuessTimer]);
   const edgeTrackClassName =
     "guess-picker-track h-full w-[50px] rounded-none border-0 shadow-none sm:h-full sm:w-[50px]";
   const edgeHandleClassName =
@@ -221,7 +305,9 @@ export default function GuessPhase({
       ].filter(Boolean);
 
       gsap.set(targets, {
-        clearProps: "all",
+        // Keep layout properties (position, inset, width) intact on reload;
+        // only remove animation state so action buttons stay bottom-right.
+        clearProps: "transform,opacity,visibility",
       });
 
       return () => window.clearTimeout(timerStartId);
@@ -737,7 +823,6 @@ export default function GuessPhase({
 
       gsap.to(targets, {
         autoAlpha: 0,
-        y: 18,
         duration: 0.52,
         stagger: 0.025,
         ease: "power2.in",
@@ -927,14 +1012,7 @@ export default function GuessPhase({
 
   if (usesShowcaseGuessLayout) {
     return (
-      <div ref={scopeRef} className="relative h-full overflow-visible p-6 sm:p-8">
-        {pendingUnlock && !isAdminModeEnabled && (
-          <AdminProtectorOverlay
-            onCancel={cancelUnlockRequest}
-            onUnlock={enableAdmin}
-          />
-        )}
-
+      <div ref={scopeRef} style={{ "--guess-pulse-duration": pulseDuration }} className={`guess-phase-surface relative h-full overflow-visible p-6 sm:p-8 ${showGuessTimer && displayedTimerRunning ? "guess-phase-surface--counting" : ""}`}>
         {renderExternalControlWidgets()}
 
         <div className="absolute top-6 left-6 z-10 overflow-hidden sm:top-8 sm:left-8">
@@ -953,7 +1031,7 @@ export default function GuessPhase({
             className="text-lg font-semibold"
             style={showcaseBrandStyle}
           >
-            {APP_NAME}
+            {isSprintGuess ? null : APP_NAME}
           </p>
         </div>
 
@@ -961,7 +1039,7 @@ export default function GuessPhase({
           <div
             ref={progressRef}
             className={`absolute left-6 z-20 sm:left-8 ${
-              isTimedGuess
+              showGuessTimer
                 ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
                 : "bottom-[5.25rem] sm:bottom-[5.75rem]"
             }`}
@@ -974,23 +1052,28 @@ export default function GuessPhase({
           </div>
         )}
 
-        {isTimedGuess && (
+        {showGuessTimer && (
           <div
             ref={timerRef}
-            className="absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"
+            className={isSprintGuess ? "absolute right-6 top-6 z-20 text-right sm:right-8 sm:top-8" : "absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"}
             style={{
-              color: "var(--game-fg-bottom-left)",
-              textShadow: "var(--game-fg-bottom-left-shadow)",
+              color: isSprintGuess ? "var(--game-fg-top-right)" : "var(--game-fg-bottom-left)",
+              textShadow: isSprintGuess ? "var(--game-fg-top-right-shadow)" : "var(--game-fg-bottom-left-shadow)",
             }}
           >
-            <CountdownReel
-              key={`guess-countdown-${timedGuessDurationMs}`}
-              durationMs={timedGuessDurationMs}
-              currentCentiseconds={centiseconds}
-              isRunning={timerRunning}
-              sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
-              className="translate-y-[0.18em]"
-            />
+            {isSprintGuess ? (
+              <SprintClock remainingMs={sprintRemainingMs} />
+            ) : (
+              <CountdownReel
+                key={`guess-countdown-${timedGuessDurationMs}`}
+                durationMs={displayedDurationMs}
+                currentCentiseconds={displayedCentiseconds}
+                isRunning={displayedTimerRunning}
+                onSecondTick={playMemorizeSecondTick}
+                sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
+                className="translate-y-[0.18em]"
+              />
+            )}
           </div>
         )}
 
@@ -1117,15 +1200,9 @@ export default function GuessPhase({
   return (
     <div
       ref={scopeRef}
-      className={`relative h-full ${usesExternalControlWidget ? "overflow-visible" : "overflow-hidden"}`}
+      style={{ "--guess-pulse-duration": pulseDuration }}
+      className={`guess-phase-surface relative h-full ${usesExternalControlWidget ? "overflow-visible" : "overflow-hidden"} ${isTimedGuess && timerRunning ? "guess-phase-surface--counting" : ""}`}
     >
-      {pendingUnlock && !isAdminModeEnabled && (
-        <AdminProtectorOverlay
-          onCancel={cancelUnlockRequest}
-          onUnlock={enableAdmin}
-        />
-      )}
-
       {usesExternalControlWidget ? (
         renderExternalControlWidgets()
       ) : (
@@ -1215,7 +1292,7 @@ export default function GuessPhase({
             textShadow: "var(--game-fg-top-right-shadow)",
           }}
         >
-          {APP_NAME}
+          {isSprintGuess ? null : APP_NAME}
         </p>
       </div>
 
@@ -1223,40 +1300,47 @@ export default function GuessPhase({
         <div
           ref={progressRef}
           className={`absolute z-20 ${
-            isTimedGuess
+            showGuessTimer
               ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
               : "bottom-[5.25rem] sm:bottom-[5.75rem]"
           }`}
           style={{
             left: `${contentLeft}px`,
             maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - ${actionReserveWidth}px)`,
-            color: "var(--game-fg-bottom-left)",
-            textShadow: "var(--game-fg-bottom-left-shadow)",
+            color: isSprintGuess ? "var(--game-fg-top-right)" : "var(--game-fg-bottom-left)",
+            textShadow: isSprintGuess ? "var(--game-fg-top-right-shadow)" : "var(--game-fg-bottom-left-shadow)",
           }}
         >
           <MultiplayerProgressList items={progressItems} />
         </div>
       )}
 
-      {isTimedGuess && (
+      {showGuessTimer && (
         <div
           ref={timerRef}
-          className="absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"
+          className={isSprintGuess ? "absolute right-(--round-right) top-6 z-20 text-right sm:right-(--round-right-sm) sm:top-8" : "absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"}
           style={{
             "--round-left": `${contentLeft}px`,
             "--round-left-sm": `${contentLeftSm}px`,
+            "--round-right": `${contentRight}px`,
+            "--round-right-sm": `${contentRightSm}px`,
             color: "var(--game-fg-bottom-left)",
             textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
-          <CountdownReel
-            key={`guess-countdown-${timedGuessDurationMs}`}
-            durationMs={timedGuessDurationMs}
-            currentCentiseconds={centiseconds}
-            isRunning={timerRunning}
-            sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
-            className="translate-y-[0.18em]"
-          />
+          {isSprintGuess ? (
+            <SprintClock remainingMs={sprintRemainingMs} />
+          ) : (
+            <CountdownReel
+              key={`guess-countdown-${timedGuessDurationMs}`}
+              durationMs={displayedDurationMs}
+              currentCentiseconds={displayedCentiseconds}
+              isRunning={displayedTimerRunning}
+              onSecondTick={playMemorizeSecondTick}
+              sizeClassName="text-[2.8rem] sm:text-[3.65rem]"
+              className="translate-y-[0.18em]"
+            />
+          )}
         </div>
       )}
 

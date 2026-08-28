@@ -463,11 +463,11 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
     );
   }
 
-  if (gameMode === GAME_MODES.FLAG) {
+  if (gameFamily === "flag" || gameMode === GAME_MODES.FLAG) {
     return randomFlagTargetColors(roundCount, random, flagDifficulties || flagDifficulty);
   }
 
-  if (gameMode === GAME_MODES.CARTOON) {
+  if (gameFamily === "cartoon" || gameMode === GAME_MODES.CARTOON) {
     return randomCartoonTargetColors(roundCount, random, cartoonIds);
   }
 

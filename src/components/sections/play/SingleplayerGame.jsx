@@ -6,8 +6,9 @@ import { GAME_MODE_IDS } from "@/lib/constants";
 import {
   getGameFamilyHref,
   isCartoonFamily,
-  isLogoFamily,
+  isBrandFamily,
   isFlagFamily,
+  isTeamFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
@@ -62,23 +63,24 @@ export default function SingleplayerGame({
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
   const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
-  const currentRoundLabel = game.isEndlessMode
+  const currentRoundLabel = game.isEndlessMode || game.isSprintMode
     ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
     : `${game.roundIndex + 1}/${game.roundCount}`;
   const latestResultRoundLabel =
     latestResult
-      ? game.isEndlessMode
+      ? game.isEndlessMode || game.isSprintMode
         ? `${latestResult.round}/${latestResult.round}`
         : `${latestResult.round}/${game.roundCount}`
       : undefined;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const isBrandMode = isLogoFamily(cleanGameFamily);
+  const isBrandMode = isBrandFamily(cleanGameFamily);
+  const isTeamMode = isTeamFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
-    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
+    if (!isFlagMode && !isCartoonMode && !isBrandMode && !isTeamMode) return [];
     if (game.targetColors.length) return game.targetColors;
     return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
+  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode, isTeamMode]);
   const homeHref = getGameFamilyHref(cleanGameFamily);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
@@ -89,14 +91,14 @@ export default function SingleplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
+    (game.isSprintMode && (isFlagMode || isCartoonMode || isBrandMode || isTeamMode)) ||
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
-    (isBrandMode &&
-      (game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL ||
-        game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL));
+    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL) ||
+    (isTeamMode && game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL);
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode || isBrandMode || isTeamMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -194,7 +196,13 @@ export default function SingleplayerGame({
     if (renderedPhase === null) return undefined;
     if (game.phase === renderedPhase) return undefined;
 
-    if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseTransition) {
+    const sprintExpired = game.isSprintMode && game.sprintRemainingMs <= 0;
+
+    if (
+      renderedPhase === GAME_PHASES.GUESS &&
+      usesShowcaseTransition &&
+      !sprintExpired
+    ) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
         setIsShowcaseResultExpanded(false);
@@ -218,7 +226,13 @@ export default function SingleplayerGame({
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [game.phase, renderedPhase, usesShowcaseTransition]);
+  }, [
+    game.isSprintMode,
+    game.phase,
+    game.sprintRemainingMs,
+    renderedPhase,
+    usesShowcaseTransition,
+  ]);
 
   useEffect(() => {
     let resetId = null;
@@ -458,6 +472,8 @@ export default function SingleplayerGame({
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
+              sprintDurationMs={game.sprintDurationMs}
+              sprintRemainingMs={game.sprintRemainingMs}
               showcaseLayoutEnabled={usesShowcaseGuessChrome}
               resumeElapsedMs={resumeElapsedMs}
               resumeInstantly={resumePhase === GAME_PHASES.GUESS}

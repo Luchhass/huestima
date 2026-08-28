@@ -2,12 +2,15 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Crown, Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
+import {
+  playCardToCardExit,
+} from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 import FullscreenToggle from "./FullscreenToggle";
 import LanguageToggle from "./LanguageToggle";
@@ -15,12 +18,14 @@ import MusicToggle from "./MusicToggle";
 import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
+import { adminRequest } from "@/lib/adminApi";
 
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
 
 export default function AppHeader() {
   const { locale, t } = useTranslation();
+  const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const isLibraryRoute =
@@ -42,6 +47,21 @@ export default function AppHeader() {
   const mobileOverlayRef = useRef(null);
   const mobileBubbleRef = useRef(null);
   const mobileContentRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    const checkAdminSession = () => adminRequest("/me").then((response) => {
+      if (active) setAdminSessionOpen(response.ok);
+    }).catch(() => {
+      if (active) setAdminSessionOpen(false);
+    });
+    checkAdminSession();
+    const intervalId = window.setInterval(checkAdminSession, 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [pathname]);
   const mobileMenuTimelineRef = useRef(null);
   const familyNavRef = useRef(null);
   const familyLinkRefs = useRef(new Map());
@@ -256,6 +276,21 @@ export default function AppHeader() {
       document.querySelector("[data-intro-card-target]") ||
       document.querySelector("main");
 
+    if (href === "/admin") {
+      const card = document.querySelector("[data-intro-card-target]");
+      const content = document.querySelector("[data-route-transition-scope]");
+
+      if (card && content) {
+        await playCardToCardExit(card, content, {
+          targetExpanded: true,
+          hideChrome: true,
+          chromeFirst: true,
+        });
+        router.push(href);
+        return;
+      }
+    }
+
     if (!scope || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       router.push(href);
       return;
@@ -296,6 +331,8 @@ export default function AppHeader() {
   };
 
   if (
+    pathname === "/admin/login" ||
+    pathname === "/maintenance" ||
     isLibraryRoute ||
     isPrivacyRoute ||
     isHowItWorksRoute ||
@@ -315,7 +352,7 @@ export default function AppHeader() {
     setIsNavRendered(true);
   };
 
-  if (isTeamLibraryRoute) return null;
+  if (isTeamLibraryRoute || pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance") return null;
 
   return (
     <header
@@ -458,6 +495,19 @@ export default function AppHeader() {
       </div>
 
       <div className="header-controls pointer-events-auto relative z-10 inline-flex h-11 items-center justify-end gap-1">
+        {adminSessionOpen && (
+          <Link
+            href="/admin"
+            onClick={(event) =>
+              handleFamilyNavigation(event, "/admin", pathname === "/admin")
+            }
+            className="group mr-2 inline-flex h-10 items-center gap-2.5 rounded-full border border-white/[0.14] bg-[#111113] px-4 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_8px_22px_rgba(0,0,0,0.16)] transition-[background-color,box-shadow,border-color] duration-300 hover:border-white/25 hover:bg-[#171719] hover:shadow-[0_10px_26px_rgba(0,0,0,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 dark:focus-visible:ring-white/40"
+            aria-label={locale === "tr" ? "Admin modu açık" : "Admin mode enabled"}
+          >
+            <Crown className="size-3.5 text-white/90" strokeWidth={2.15} />
+            {locale === "tr" ? "Admin oturumu açık" : "Admin session open"}
+          </Link>
+        )}
         <div className="hidden items-center gap-1 md:inline-flex">
           <LanguageToggle />
           <SoundToggle />

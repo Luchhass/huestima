@@ -7,7 +7,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 
 export default function FlagPoolPicker({ value = [], onChange, onDone }) {
   const { t } = useTranslation();
-  const selected = new Set(value.length ? value : FLAG_DIFFICULTY_OPTIONS.map((item) => item.id));
+  const selected = new Set(value);
   const toggle = (id) => {
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);

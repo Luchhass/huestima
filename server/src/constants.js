@@ -30,6 +30,8 @@ export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;
+export const SPRINT_MAX_ROUNDS = 64;
+export const SPRINT_DURATION_MS = 60000;
 export const PLAYER_NAME_MIN_LENGTH = 2;
 export const PLAYER_NAME_MAX_LENGTH = 18;
 export const ROOM_NAME_MIN_LENGTH = 2;
@@ -66,8 +68,9 @@ export const GAME_MODE_CONFIG = {
     revealDurationMs: 5000,
   },
   [GAME_MODES.SPRINT]: {
-    revealDurationMs: 1200,
-    guessDurationMs: 30000,
+    revealDurationMs: 5000,
+    sprintDurationMs: SPRINT_DURATION_MS,
+    roundCount: SPRINT_MAX_ROUNDS,
     lockedDifficulty: DIFFICULTIES.EASY,
   },
   [GAME_MODES.CARTOON]: {

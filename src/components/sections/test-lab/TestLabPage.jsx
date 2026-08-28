@@ -27,7 +27,7 @@ const LINKS = {
 };
 
 export default function TestLabPage() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const searchParams = useSearchParams();
   const mainRef = useRef(null);
   const links = LINKS[locale] || LINKS.en;

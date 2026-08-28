@@ -293,8 +293,9 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
           });
 
           groups.forEach((group, groupIndex) => {
-            const startAt =
-              groupIndex < 5
+            const startAt = options.synchronous
+              ? 0
+              : groupIndex < 5
                 ? groupIndex * GROUP_GAP
                 : 4 * GROUP_GAP + (groupIndex - 4) * LATE_GROUP_GAP;
 
@@ -302,9 +303,12 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
               group.children,
               {
                 left: FINAL_LEFT,
-                duration: REVEAL_DURATION,
-                ease: "power4.out",
-                stagger: group.shouldStaggerChildren ? ITEM_STAGGER : 0,
+                duration: options.duration ?? REVEAL_DURATION,
+                ease: options.ease ?? "power4.out",
+                stagger:
+                  !options.synchronous && group.shouldStaggerChildren
+                    ? ITEM_STAGGER
+                    : 0,
                 clearProps: "opacity,visibility",
               },
               startAt,

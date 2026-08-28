@@ -112,7 +112,9 @@ export default function MultiplayerGame({
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
   const currentRoundLabel = game.isDuelMode
     ? `R${game.roundIndex + 1}/${game.roundCount}`
-    : `${game.roundIndex + 1}/${game.roundCount}`;
+    : game.isEndlessMode || game.isSprintMode
+      ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
+      : `${game.roundIndex + 1}/${game.roundCount}`;
   const progressItems = useMemo(
     () => buildProgressItems(room, playerId),
     [playerId, room],
@@ -141,6 +143,7 @@ export default function MultiplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
+    (game.isSprintMode && (isFlagMode || isCartoonMode || isBrandMode)) ||
     (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
     (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
     (isBrandMode &&
@@ -236,7 +239,13 @@ export default function MultiplayerGame({
     if (renderedPhase === null) return undefined;
     if (game.phase === renderedPhase) return undefined;
 
-    if (renderedPhase === GAME_PHASES.GUESS && usesShowcaseTransition) {
+    const sprintExpired = game.isSprintMode && game.sprintRemainingMs <= 0;
+
+    if (
+      renderedPhase === GAME_PHASES.GUESS &&
+      usesShowcaseTransition &&
+      !sprintExpired
+    ) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
         setIsShowcaseResultExpanded(false);
@@ -260,7 +269,13 @@ export default function MultiplayerGame({
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [game.phase, renderedPhase, usesShowcaseTransition]);
+  }, [
+    game.isSprintMode,
+    game.phase,
+    game.sprintRemainingMs,
+    renderedPhase,
+    usesShowcaseTransition,
+  ]);
 
   useEffect(() => {
     let resetId = null;
@@ -542,6 +557,8 @@ export default function MultiplayerGame({
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
+              sprintDurationMs={game.sprintDurationMs}
+              sprintRemainingMs={game.sprintRemainingMs}
               progressItems={progressItems}
               showcaseLayoutEnabled={usesShowcaseGuessChrome}
               resumeElapsedMs={resumeElapsedMs}

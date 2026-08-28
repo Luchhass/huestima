@@ -33,15 +33,28 @@ const bootstrapScript = `
       fullscreen === "on" || fullscreen === "true" ? "on" : "off";
 
     const pathSegments = window.location.pathname.split("/").filter(Boolean);
-    const isGameFamilyPath = ["color", "flag", "cartoon", "brand"].includes(pathSegments[0]);
+    const isGameFamilyPath = ["color", "flag", "cartoon", "brand", "team"].includes(pathSegments[0]);
     const isInviteRoomPath =
       pathSegments.length === 2 &&
       isGameFamilyPath &&
       /^\d{6}$/.test(pathSegments[1]);
-    const shouldPlayIntro =
+    const isEntryPath =
       window.location.pathname === "/" ||
       (pathSegments.length === 1 && isGameFamilyPath) ||
       isInviteRoomPath;
+    const hasSeenIntro =
+      window.sessionStorage.getItem("huestima-page-intro-seen") === "true";
+    const hasPendingFooterReturn =
+      window.sessionStorage.getItem("huestima-card-enter") === "true";
+    const navigationType = window.performance?.getEntriesByType("navigation")[0]?.type;
+    const isReloadHomeEntry =
+      navigationType === "reload" &&
+      pathSegments.length === 1 &&
+      isGameFamilyPath;
+    const shouldPlayIntro =
+      isEntryPath &&
+      !hasPendingFooterReturn &&
+      (!hasSeenIntro || isReloadHomeEntry);
 
     if (shouldPlayIntro) {
       document.documentElement.dataset.pageIntroPending = "true";

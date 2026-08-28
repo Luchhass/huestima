@@ -14,7 +14,7 @@ export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_GUESS_DURATION_MS = 3000;
-export const SPRINT_DURATION_MS = 30000;
+export const SPRINT_DURATION_MS = 60000;
 export const MAX_ROUND_SCORE = 10;
 
 export const DEFAULT_GUESS_HSV = {
@@ -122,7 +122,7 @@ export const GAME_MODE_OPTIONS = [
   },
   {
     id: GAME_MODE_IDS.FLAG_RECALL,
-    label: "Blind",
+    label: "Memory",
     description: "Keep the flag visible while you tune the background color from memory.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
@@ -130,27 +130,26 @@ export const GAME_MODE_OPTIONS = [
     id: GAME_MODE_IDS.SPRINT,
     label: "Sprint",
     description: "Race through rapid-fire rounds before the clock runs out.",
-    revealDurationMs: 1200,
-    guessDurationMs: SPRINT_DURATION_MS,
+    revealDurationMs: MEMORIZE_DURATION_MS,
     sprintDurationMs: SPRINT_DURATION_MS,
     isSprint: true,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {
     id: GAME_MODE_IDS.CARTOON,
-    label: "Blind",
+    label: "Memory",
     description: "Keep the cartoon scene visible while you tune its main painted color from memory.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
     id: GAME_MODE_IDS.BRAND_RECALL,
-    label: "Blind",
+    label: "Memory",
     description: "Match the brand color without seeing the original logo color first.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
     id: GAME_MODE_IDS.TEAM_RECALL,
-    label: "Blind",
+    label: "Memory",
     description: "Match the team color without seeing the original logo color first.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
@@ -188,6 +187,8 @@ export const GAME_MODE_CARD_COPY = {
       "Rebuild the team color without seeing the original logo color first across {roundCount} levels.",
     [GAME_MODE_IDS.CARTOON]:
       "Keep the cartoon scene visible while you rebuild the main painted character color across {roundCount} levels.",
+    [GAME_MODE_IDS.SPRINT]:
+      "Complete as many levels as possible during sixty seconds of active play.",
     [GAME_MODE_IDS.DUEL]:
       "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
   },
@@ -214,6 +215,8 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone rebuilds the team color without seeing the original logo color first.",
     [GAME_MODE_IDS.CARTOON]:
       "Everyone keeps the same cartoon scene visible on screen while main color accuracy decides the room.",
+    [GAME_MODE_IDS.SPRINT]:
+      "Everyone completes as many levels as possible during sixty seconds of active play.",
     [GAME_MODE_IDS.DUEL]:
       "Endless PvP rounds. The last player is eliminated only when the score gap is wide enough.",
   },

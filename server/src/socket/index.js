@@ -16,6 +16,7 @@ export function createSocketServer(httpServer) {
       credentials: true,
     },
     transports: ["websocket", "polling"],
+    maxHttpBufferSize: 64 * 1024,
     pingInterval: 25000,
     pingTimeout: 20000,
   });

@@ -5,12 +5,25 @@ import { useRouter } from "next/navigation";
 import gsap from "gsap";
 
 export const FOOTER_RETURN_KEY = "huestima-card-enter";
+export const ADMIN_HOME_RETURN_KEY = "huestima-admin-home-return";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
 export const SCREEN_FADE_DURATION = 0.24;
 export const CARD_SCALE_DURATION = 0.52;
 const SCREEN_FADE_EASE = "power2.out";
+const SCREEN_FADE_REVERSE_EASE = "power2.in";
 const CARD_SCALE_EASE = "power3.inOut";
+
+function readResponsiveCardHeight(expanded) {
+  const viewportHeight =
+    window.visualViewport?.height ||
+    document.documentElement.clientHeight ||
+    window.innerHeight;
+  const maxHeight = expanded ? 520 : 390;
+  const offset = expanded ? 88 : 132;
+
+  return Math.max(320, Math.min(viewportHeight - offset, maxHeight));
+}
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -32,6 +45,112 @@ export function markFooterReturn() {
 
 export function clearFooterReturn() {
   window.sessionStorage.removeItem(FOOTER_RETURN_KEY);
+}
+
+export function hasPendingAdminHomeReturn() {
+  if (typeof window === "undefined") return false;
+  return window.sessionStorage.getItem(ADMIN_HOME_RETURN_KEY) === "true";
+}
+
+export function markAdminHomeReturn() {
+  window.sessionStorage.setItem(ADMIN_HOME_RETURN_KEY, "true");
+}
+
+export function clearAdminHomeReturn() {
+  window.sessionStorage.removeItem(ADMIN_HOME_RETURN_KEY);
+}
+
+export function playCardToCardExit(
+  cardRef,
+  contentRef,
+  { targetExpanded, hideChrome = true, chromeFirst = false } = {},
+) {
+  const card = asElement(cardRef);
+  const content = asElement(contentRef);
+  const chrome = hideChrome
+    ? Array.from(document.querySelectorAll(APP_CHROME_SELECTOR))
+    : [];
+
+  if (!card || !content) return Promise.resolve();
+
+  if (prefersReducedMotion()) {
+    gsap.set(content, { autoAlpha: 0 });
+    gsap.set(card, { height: readResponsiveCardHeight(targetExpanded) });
+    if (chrome.length) gsap.set(chrome, { autoAlpha: 0 });
+    return Promise.resolve();
+  }
+
+  gsap.killTweensOf([card, content, ...chrome]);
+  gsap.set(content, { autoAlpha: 1 });
+  gsap.set(card, { autoAlpha: 1, transition: "none" });
+  if (chrome.length) gsap.set(chrome, { autoAlpha: 1, transition: "none" });
+
+  return new Promise((resolve) => {
+    const timeline = gsap.timeline({
+      defaults: { overwrite: "auto" },
+      onComplete: resolve,
+      onInterrupt: resolve,
+    });
+
+    timeline.to(content, {
+      autoAlpha: 0,
+      duration: SCREEN_FADE_DURATION,
+      ease: SCREEN_FADE_EASE,
+    });
+
+    if (chrome.length && chromeFirst) {
+      timeline.to(chrome, {
+        autoAlpha: 0,
+        duration: SCREEN_FADE_DURATION,
+        ease: SCREEN_FADE_EASE,
+      });
+    }
+
+    timeline.to(card, {
+      height: readResponsiveCardHeight(targetExpanded),
+      duration: CARD_SCALE_DURATION,
+      ease: CARD_SCALE_EASE,
+    });
+
+    if (chrome.length && !chromeFirst) {
+      timeline.to(chrome, {
+        autoAlpha: 0,
+        duration: SCREEN_FADE_DURATION,
+        ease: SCREEN_FADE_EASE,
+      });
+    }
+  });
+}
+
+export function playAdminHomeReturnEntry(cardRef) {
+  const card = asElement(cardRef);
+  const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+
+  if (!card) return Promise.resolve();
+
+  if (prefersReducedMotion()) {
+    gsap.set(chrome, { clearProps: "opacity,visibility,transition" });
+    gsap.set(card, { clearProps: "opacity,visibility,transform,transition" });
+    return Promise.resolve();
+  }
+
+  gsap.killTweensOf([card, ...chrome]);
+  gsap.set(card, { autoAlpha: 1, scale: 1, transition: "none" });
+  gsap.set(chrome, { autoAlpha: 0, transition: "none" });
+
+  return new Promise((resolve) => {
+    gsap.to(chrome, {
+      autoAlpha: 1,
+      duration: SCREEN_FADE_DURATION,
+      ease: SCREEN_FADE_REVERSE_EASE,
+      clearProps: "opacity,visibility,transition",
+      onComplete: () => {
+        gsap.set(card, { clearProps: "opacity,visibility,transform,transition" });
+        resolve();
+      },
+      onInterrupt: resolve,
+    });
+  });
 }
 
 export function playPageFade(scopeRef, visible) {
@@ -159,7 +278,7 @@ export function playFooterReturnEntry(cardRef) {
       .to(chrome, {
         autoAlpha: 1,
         duration: SCREEN_FADE_DURATION,
-        ease: SCREEN_FADE_EASE,
+        ease: SCREEN_FADE_REVERSE_EASE,
         clearProps: "opacity,visibility,transition",
       })
       .to(card, {

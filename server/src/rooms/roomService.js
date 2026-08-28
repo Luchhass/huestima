@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { env } from "../config/env.js";
 import {
   GAME_MODE_CONFIG,
@@ -55,21 +55,37 @@ function normalizeSearchQuery(query) {
 function createPasswordRecord(password) {
   if (!password) return null;
 
-  const salt = randomBytes(16).toString("hex");
-  const hash = createHash("sha256").update(`${salt}:${password}`).digest("hex");
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 32, {
+    N: 16_384,
+    r: 8,
+    p: 1,
+    maxmem: 32 * 1024 * 1024,
+  });
 
-  return { salt, hash };
+  return {
+    salt: salt.toString("base64url"),
+    hash: hash.toString("base64url"),
+  };
 }
 
 function verifyPassword(password, record) {
   if (!record) return true;
   if (!password) return false;
 
-  const hash = createHash("sha256")
-    .update(`${record.salt}:${password}`)
-    .digest("hex");
+  try {
+    const expected = Buffer.from(record.hash, "base64url");
+    const actual = scryptSync(password, Buffer.from(record.salt, "base64url"), 32, {
+      N: 16_384,
+      r: 8,
+      p: 1,
+      maxmem: 32 * 1024 * 1024,
+    });
 
-  return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(record.hash, "hex"));
+    return expected.length === actual.length && timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
 }
 
 function getRoomHost(room) {
@@ -278,6 +294,16 @@ export function closeRoom(room, reason = "closed", notify = true) {
   if (notify) callbacks.emitRoomClosed(room, reason);
   callbacks.emitRoomList();
   logger.info("room closed", { roomCode: room.code, reason });
+}
+
+export function closeAllRooms(reason = "service-disabled") {
+  const activeRooms = listRooms();
+
+  for (const room of activeRooms) {
+    closeRoom(room, reason, true);
+  }
+
+  return activeRooms.length;
 }
 
 function maybeScheduleEmptyRoom(room) {

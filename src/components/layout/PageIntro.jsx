@@ -5,7 +5,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
@@ -24,18 +23,6 @@ const NON_INVITE_ENTRY_PATHS = new Set([
   "sitemap.xml",
 ]);
 const INTRO_SESSION_KEY = "huestima-page-intro-seen";
-
-function subscribeToClientReady() {
-  return () => {};
-}
-
-function getClientReadySnapshot() {
-  return true;
-}
-
-function getServerReadySnapshot() {
-  return false;
-}
 
 function isInviteRoomPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
@@ -62,6 +49,13 @@ function shouldRunIntroForCurrentLoad(pathname) {
     return false;
   }
 
+  // ThemeBootstrap marks an entry before hydration so the page cannot flash.
+  // Treat that marker as the source of truth during hydration; relying only on
+  // the Navigation Timing entry is brittle in browsers that report a reload as
+  // a client navigation.
+  const bootstrapPending =
+    document.documentElement.dataset.pageIntroPending === "true";
+
   // Footer guide-page returns use the card transition instead of the full
   // page intro. Running both would hide the card after the route changes.
   try {
@@ -82,7 +76,7 @@ function shouldRunIntroForCurrentLoad(pathname) {
     !window.__huestimaReloadIntroConsumed &&
     window.performance?.getEntriesByType("navigation")[0]?.type === "reload";
 
-  if (!hasSeenIntro || (isReload && isHomeEntry)) {
+  if (!hasSeenIntro || (isReload && isHomeEntry) || bootstrapPending) {
     window.__huestimaIntroSeen = true;
     if (isReload && isHomeEntry) {
       window.__huestimaReloadIntroConsumed = true;
@@ -130,18 +124,29 @@ export default function PageIntro() {
   const brandTextMaskRef = useRef(null);
   const brandTextRef = useRef(null);
   const timelineRef = useRef(null);
-  const isMounted = useSyncExternalStore(
-    subscribeToClientReady,
-    getClientReadySnapshot,
-    getServerReadySnapshot,
-  );
+  const [isMounted, setIsMounted] = useState(false);
   const [dismissedPath, setDismissedPath] = useState(null);
   const [introPending, setIntroPending] = useState(false);
 
   useEffect(() => {
-    // The pathname is an external navigation signal for this one-shot intro state.
+    // Keep the intro client-only, but use a real state update so hydration
+    // reliably mounts the overlay on hard reloads as well as client nav.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIntroPending(shouldRunIntroForCurrentLoad(pathname));
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // The pathname is an external navigation signal for this one-shot intro state.
+    const shouldPlay = shouldRunIntroForCurrentLoad(pathname);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIntroPending(shouldPlay);
+
+    // If the intro is intentionally skipped (for example, a footer card
+    // return), remove the early bootstrap veil instead of leaving a black
+    // screen behind with no React overlay to dismiss it.
+    if (!shouldPlay) {
+      delete document.documentElement.dataset.pageIntroPending;
+    }
   }, [pathname]);
 
   const shouldRender =

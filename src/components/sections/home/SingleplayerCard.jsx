@@ -52,7 +52,7 @@ export default function SingleplayerCard({
   const isNavigatingRef = useRef(false);
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
-  const roundCountLocked = Boolean(gameModeOption?.isEndless);
+  const roundCountLocked = Boolean(gameModeOption?.isEndless || gameModeOption?.isSprint);
   const roundCountLabel = roundCountLocked
     ? t("levelCount.infinity")
     : String(roundCount);

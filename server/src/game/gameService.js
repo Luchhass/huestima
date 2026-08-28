@@ -6,6 +6,7 @@ import {
   ROOM_STATUSES,
   DEFAULT_ROUND_COUNT,
 } from "../constants.js";
+import { recordGameActivity } from "../operations/metrics.js";
 import {
   applyDifficultyConstraints,
   generateTargetColors,
@@ -284,6 +285,7 @@ export function buildGamePayload(room) {
     lastElimination: room.game.lastElimination || null,
     revealDurationMs: room.game.revealDurationMs,
     guessDurationMs: room.game.guessDurationMs || null,
+    sprintDurationMs: room.game.sprintDurationMs || null,
     targetColors: room.game.targetColors,
     startedAt: room.game.startedAt,
   };
@@ -293,7 +295,7 @@ export function startGameForRoom(room) {
   const seed = createSeed();
   const modeConfig = GAME_MODE_CONFIG[room.gameMode] || GAME_MODE_CONFIG.normal;
   const difficulty = modeConfig.lockedDifficulty || room.difficulty;
-  const roundCount = room.roundCount || modeConfig.roundCount || DEFAULT_ROUND_COUNT;
+  const roundCount = modeConfig.roundCount || room.roundCount || DEFAULT_ROUND_COUNT;
   const isElimination = Boolean(modeConfig.elimination);
 
   room.status = ROOM_STATUSES.IN_GAME;
@@ -310,6 +312,7 @@ export function startGameForRoom(room) {
     lastElimination: null,
     revealDurationMs: modeConfig.revealDurationMs,
     guessDurationMs: modeConfig.guessDurationMs || null,
+    sprintDurationMs: modeConfig.sprintDurationMs || null,
     targetColors: generateTargetColors({
       seed,
       difficulty,
@@ -344,6 +347,8 @@ export function startGameForRoom(room) {
     player.results = [];
     player.totalScore = 0;
   }
+
+  recordGameActivity(room, "started");
 
   return buildGamePayload(room);
 }
@@ -504,6 +509,28 @@ export function submitFullResults(room, payload) {
   return ok(lastResult || {});
 }
 
+export function finishSprintForPlayer(room, payload) {
+  if (!room) return fail("Lobby not found or expired.");
+  if (room.status !== ROOM_STATUSES.IN_GAME || !room.game) {
+    return fail("Game has not started.");
+  }
+  if (room.game.mode !== GAME_MODES.SPRINT) return fail("This game is not a sprint.");
+
+  const playerIdResult = validatePlayerId(payload.playerId);
+  if (!playerIdResult.ok) return playerIdResult;
+
+  const player = room.players.get(playerIdResult.data.playerId);
+  if (!player || player.kicked || player.inactive) {
+    return fail("Player is not active in this game.");
+  }
+
+  player.submitted = true;
+  player.lastSeenAt = now();
+  room.updatedAt = now();
+
+  return ok({ leaderboard: maybeFinishRoom(room) });
+}
+
 function getGameParticipantPlayers(room) {
   if (!room.game) return [];
 
@@ -596,9 +623,12 @@ function evaluateDuelRound(room) {
 export function buildLeaderboard(room) {
   const isDuel = isDuelRoom(room);
   const players = getGameParticipantPlayers(room);
+  const isSprint = room.game.mode === GAME_MODES.SPRINT;
   const totalRounds = isDuel
     ? Math.min((room.game.currentRoundIndex || 0) + 1, room.game.roundCount)
-    : room.game.roundCount;
+    : isSprint
+      ? Math.max(1, ...players.map((player) => player.results.filter(Boolean).length))
+      : room.game.roundCount;
   const maxTotalScore = totalRounds * MAX_ROUND_SCORE;
 
   const ranked = players
@@ -685,6 +715,7 @@ export function maybeFinishRoom(room) {
     room.status = ROOM_STATUSES.COMPLETED;
     room.leaderboard = buildLeaderboard(room);
     room.updatedAt = now();
+    recordGameActivity(room, "completed");
     return room.leaderboard;
   }
 
@@ -698,5 +729,6 @@ export function maybeFinishRoom(room) {
   room.status = ROOM_STATUSES.COMPLETED;
   room.leaderboard = buildLeaderboard(room);
   room.updatedAt = now();
+  recordGameActivity(room, "completed");
   return room.leaderboard;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef } from "react";
+import confetti from "canvas-confetti";
 import gsap from "gsap";
 import { ArrowRight, X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -29,6 +30,29 @@ import useVisualOverlayTones, {
 import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 import BrandOverlay from "./BrandOverlay";
+
+function launchPerfectScoreConfetti() {
+  if (typeof window === "undefined") return;
+  const colors = ["#ff3b30", "#ffcc00", "#34c759", "#0a84ff", "#bf5af2"];
+  const viewportWidth = window.innerWidth || 0;
+  const burstCount = viewportWidth < 640 ? 3 : viewportWidth < 1024 ? 6 : 9;
+  for (let index = 0; index < burstCount; index += 1) {
+    window.setTimeout(() => {
+      confetti({
+        particleCount: 46 + Math.round(Math.random() * 18),
+        angle: 270,
+        spread: 76 + Math.round(Math.random() * 28),
+        startVelocity: 26 + Math.round(Math.random() * 8),
+        gravity: 1.05,
+        origin: { x: 0.08 + Math.random() * 0.84, y: -0.02 },
+        ticks: 320,
+        scalar: 1.15 + Math.random() * 0.18,
+        colors,
+        shapes: ["square", "circle"],
+      });
+    }, index * 70);
+  }
+}
 
 function getScoreCountDuration(score) {
   const normalizedScore = Math.min(1, Math.max(0, Number(score) / 10 || 0));
@@ -309,6 +333,7 @@ export default function ResultPhase({
           onComplete: () => {
             scoreElement.textContent = formatScore(result.score);
             scoreSound?.finish();
+            if (Number(result.score) >= 10) launchPerfectScoreConfetti();
 
             gsap.set(resultLineElement, {
               autoAlpha: 1,
@@ -712,6 +737,7 @@ export default function ResultPhase({
               onComplete: () => {
                 scoreElement.textContent = formatScore(result.score);
                 scoreSound?.finish();
+                if (Number(result.score) >= 10) launchPerfectScoreConfetti();
 
                 gsap.set(resultLineElement, {
                   autoAlpha: 1,

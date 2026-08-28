@@ -18,6 +18,11 @@ function parseInteger(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function parseNonNegativeInteger(name, fallback) {
+  const value = Number.parseInt(process.env[name], 10);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 function parseOrigins() {
   const raw = process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN;
 
@@ -35,6 +40,8 @@ function parseOrigins() {
 
 export const env = {
   nodeEnv,
+  trustProxyHops: parseNonNegativeInteger("TRUST_PROXY_HOPS", 0),
+  secureCookies: process.env.COOKIE_SECURE === "true" || nodeEnv === "production",
   port: parseInteger("PORT", 4000),
   clientOrigins: parseOrigins(),
   roomTtlMs: parseInteger("ROOM_TTL_MS", 60 * 60 * 1000),
@@ -42,7 +49,14 @@ export const env = {
   disconnectGraceMs: parseInteger("DISCONNECT_GRACE_MS", 45 * 1000),
   hostDisconnectGraceMs: parseInteger("HOST_DISCONNECT_GRACE_MS", 60 * 1000),
   maxPlayersPerRoom: parseInteger("MAX_PLAYERS_PER_ROOM", 5),
+  adminUsername: process.env.ADMIN_USERNAME || "",
+  adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || "",
+  adminTotpSecret: process.env.ADMIN_TOTP_SECRET || "",
 };
+
+if (nodeEnv === "production" && (!env.adminUsername || !env.adminPasswordHash || !env.adminTotpSecret)) {
+  throw new Error("Admin authentication is not configured.");
+}
 
 export function isAllowedOrigin(origin) {
   if (!origin) return true;
