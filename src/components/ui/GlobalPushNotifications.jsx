@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PushNotification from "@/components/ui/PushNotification";
+import AnnouncementModal from "@/components/ui/AnnouncementModal";
 
 const PUSH_EVENT = "huestima-push-notification";
 
@@ -34,10 +35,10 @@ export default function GlobalPushNotifications() {
   }, []);
 
   return (
-    <PushNotification
-      notification={notification}
-      onClose={() => setNotification(null)}
-      durationMs={notification?.durationMs}
-    />
+    notification?.variant === "announcement" ? (
+      <AnnouncementModal message={notification.message} onClose={() => setNotification(null)} />
+    ) : (
+      <PushNotification notification={notification} onClose={() => setNotification(null)} durationMs={notification?.durationMs} />
+    )
   );
 }

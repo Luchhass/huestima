@@ -92,7 +92,8 @@ export default function SingleplayerGame({
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     game.isSprintMode && (isFlagMode || isCartoonMode);
-  const usesShowcaseTransition = cleanGameFamily !== "color";
+  const usesShowcaseTransition =
+    cleanGameFamily !== "color" && !game.isSprintMode;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =

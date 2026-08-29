@@ -26,6 +26,8 @@ const EXPANDED_REVEAL_DELAY = 320;
 const ADMIN_CARD_SHIFT_DURATION_MS = 720;
 const ADMIN_TRANSITION_REVEAL_GUARD_DELAY = 2000;
 const ADMIN_CARD_SHIFT_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
+const ADMIN_CARD_RADIUS = 26;
+const SIDE_REVEAL_FRAME_COUNT = 60;
 const ADMIN_PANELS = {
   HOME: "home",
   OPERATIONS: "operations",
@@ -41,6 +43,30 @@ function waitForPaint() {
 
 function waitForDuration(duration) {
   return new Promise((resolve) => window.setTimeout(resolve, duration));
+}
+
+function createSideRevealKeyframes(opening, width) {
+  const frames = Array.from(
+    { length: SIDE_REVEAL_FRAME_COUNT + 1 },
+    (_, index) => {
+      const progress = index / SIDE_REVEAL_FRAME_COUNT;
+      const scale = 0.001 + progress * 0.999;
+      const visibleWidth = width * scale;
+      const visibleRadius = Math.min(ADMIN_CARD_RADIUS, visibleWidth / 2);
+
+      return {
+        scale,
+        horizontalRadius: visibleRadius / scale,
+      };
+    },
+  );
+  const orderedFrames = opening ? frames : frames.reverse();
+
+  return orderedFrames.map(({ scale, horizontalRadius }, index) => ({
+    transform: `scaleX(${scale})`,
+    borderRadius: `${horizontalRadius}px / ${ADMIN_CARD_RADIUS}px`,
+    offset: index / SIDE_REVEAL_FRAME_COUNT,
+  }));
 }
 
 function createCardTransitionClone(card) {
@@ -60,8 +86,7 @@ function createCardTransitionClone(card) {
     background: styles.backgroundColor || "#000000",
     boxShadow: styles.boxShadow,
     pointerEvents: "none",
-    transformOrigin: "top left",
-    willChange: "transform",
+    willChange: "left, top, width, height",
   });
   document.body.appendChild(clone);
   return { clone, sourceRect: rect };
@@ -88,8 +113,7 @@ function createSideTransitionClone(side) {
     visibility: "visible",
     opacity: "1",
     pointerEvents: "none",
-    transform: "translate3d(0, 0, 0)",
-    willChange: "transform",
+    willChange: "left, top, height",
   });
   document.body.appendChild(clone);
   return { clone, sourceRect: rect };
@@ -127,11 +151,13 @@ async function animateSideCloneToPoint(
   transitionSide,
   targetLeftX,
   targetTopY,
+  targetHeight,
 ) {
   if (
     !transitionSide?.clone ||
     !Number.isFinite(targetLeftX) ||
-    !Number.isFinite(targetTopY)
+    !Number.isFinite(targetTopY) ||
+    !Number.isFinite(targetHeight)
   ) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -139,19 +165,12 @@ async function animateSideCloneToPoint(
   const frameAnimations = Array.from(
     clone.querySelectorAll(":scope > .admin-side-card-frame"),
   ).map((frame) => {
+    const revealTarget = frame.firstElementChild || frame;
     const width = frame.getBoundingClientRect().width;
-    const boxShadow = window.getComputedStyle(frame).boxShadow;
-    const card = frame.firstElementChild;
-    frame.style.justifySelf = "start";
-    if (card) {
-      card.style.width = `${width}px`;
-      card.style.flex = "0 0 auto";
-    }
-    return frame.animate(
-      [
-        { width: `${width}px`, boxShadow },
-        { width: "0px", boxShadow: "0 0 0 rgb(0 0 0 / 0)" },
-      ],
+    revealTarget.style.transformOrigin = "left center";
+    revealTarget.style.willChange = "transform, border-radius";
+    return revealTarget.animate(
+      createSideRevealKeyframes(false, width),
       {
         duration: ADMIN_CARD_SHIFT_DURATION_MS,
         easing: ADMIN_CARD_SHIFT_EASE,
@@ -161,9 +180,15 @@ async function animateSideCloneToPoint(
   });
   const positionAnimation = clone.animate(
     [
-      { transform: "translate3d(0, 0, 0)" },
       {
-        transform: `translate3d(${targetLeftX - sourceRect.left}px, ${targetTopY - sourceRect.top}px, 0)`,
+        left: `${sourceRect.left}px`,
+        top: `${sourceRect.top}px`,
+        height: `${sourceRect.height}px`,
+      },
+      {
+        left: `${targetLeftX}px`,
+        top: `${targetTopY}px`,
+        height: `${targetHeight}px`,
       },
     ],
     {
@@ -191,9 +216,17 @@ async function animateCardClone(transitionCard, targetCard) {
   const targetRect = targetCard.getBoundingClientRect();
   const animation = clone.animate(
     [
-      { transform: "translate3d(0, 0, 0) scale(1, 1)" },
       {
-        transform: `translate3d(${targetRect.left - sourceRect.left}px, ${targetRect.top - sourceRect.top}px, 0) scale(${targetRect.width / Math.max(sourceRect.width, 1)}, ${targetRect.height / Math.max(sourceRect.height, 1)})`,
+        left: `${sourceRect.left}px`,
+        top: `${sourceRect.top}px`,
+        width: `${sourceRect.width}px`,
+        height: `${sourceRect.height}px`,
+      },
+      {
+        left: `${targetRect.left}px`,
+        top: `${targetRect.top}px`,
+        width: `${targetRect.width}px`,
+        height: `${targetRect.height}px`,
       },
     ],
     {
@@ -216,6 +249,7 @@ async function animateWorkspaceSide(
     onComplete,
     startTranslateX = 0,
     startTranslateY = 0,
+    startScaleY = 1,
     duration,
   } = {},
 ) {
@@ -229,48 +263,55 @@ async function animateWorkspaceSide(
   ).matches;
   const sideFrames = Array.from(
     side.querySelectorAll(":scope > .admin-side-card-frame"),
-  ).map((frame) => ({
-    frame,
-    card: frame.firstElementChild,
-    width: frame.getBoundingClientRect().width,
-    boxShadow: window.getComputedStyle(frame).boxShadow,
-  }));
-  sideFrames.forEach(({ frame, card, width }) => {
-    frame.style.width = "0px";
-    frame.style.justifySelf = "start";
-    if (card) {
-      card.style.width = `${width}px`;
-      card.style.flex = "0 0 auto";
-    }
+  );
+  const finalHeight = side.getBoundingClientRect().height;
+  const startHeight = finalHeight * startScaleY;
+  sideFrames.forEach((frame) => {
+    const revealTarget = frame.firstElementChild || frame;
+    const width = frame.getBoundingClientRect().width;
+    const startHorizontalRadius = Math.min(
+      width / 2,
+      ADMIN_CARD_RADIUS / 0.001,
+    );
+    revealTarget.style.transform = "scaleX(0.001)";
+    revealTarget.style.transformOrigin = "left center";
+    revealTarget.style.borderRadius = `${startHorizontalRadius}px / ${ADMIN_CARD_RADIUS}px`;
+    revealTarget.style.willChange = "transform, border-radius";
   });
+  side.style.height = `${startHeight}px`;
   side.style.visibility = "visible";
   side.style.opacity = "1";
+  side.style.transformOrigin = "left top";
 
   if (reducedMotion) {
     onComplete?.();
     side.style.removeProperty("visibility");
     side.style.removeProperty("opacity");
-    sideFrames.forEach(({ frame, card }) => {
-      frame.style.removeProperty("width");
-      frame.style.removeProperty("justify-self");
-      card?.style.removeProperty("width");
-      card?.style.removeProperty("flex");
+    side.style.removeProperty("transform-origin");
+    side.style.removeProperty("height");
+    sideFrames.forEach((frame) => {
+      const revealTarget = frame.firstElementChild || frame;
+      revealTarget.style.removeProperty("transform");
+      revealTarget.style.removeProperty("transform-origin");
+      revealTarget.style.removeProperty("border-radius");
+      revealTarget.style.removeProperty("will-change");
     });
     return;
   }
 
   const collapsedFrame = {
     transform: `translate3d(${startTranslateX}px, ${startTranslateY}px, 0)`,
+    height: `${startHeight}px`,
   };
   const expandedFrame = {
     transform: "translate3d(0, 0, 0)",
+    height: `${finalHeight}px`,
   };
-  const frameAnimations = sideFrames.map(({ frame, width, boxShadow }) => {
-    return frame.animate(
-      [
-        { width: "0px", boxShadow: "0 0 0 rgb(0 0 0 / 0)" },
-        { width: `${width}px`, boxShadow },
-      ],
+  const frameAnimations = sideFrames.map((frame) => {
+    const revealTarget = frame.firstElementChild || frame;
+    const width = frame.getBoundingClientRect().width;
+    return revealTarget.animate(
+      createSideRevealKeyframes(true, width),
       {
         duration: duration ?? ADMIN_CARD_SHIFT_DURATION_MS,
         easing: ADMIN_CARD_SHIFT_EASE,
@@ -300,14 +341,17 @@ async function animateWorkspaceSide(
   await waitForPaint();
   positionAnimation.cancel();
   frameAnimations.forEach((animation) => animation.cancel());
-  sideFrames.forEach(({ frame, card }) => {
-    frame.style.removeProperty("width");
-    frame.style.removeProperty("justify-self");
-    card?.style.removeProperty("width");
-    card?.style.removeProperty("flex");
+  side.style.removeProperty("height");
+  sideFrames.forEach((frame) => {
+    const revealTarget = frame.firstElementChild || frame;
+    revealTarget.style.removeProperty("transform");
+    revealTarget.style.removeProperty("transform-origin");
+    revealTarget.style.removeProperty("border-radius");
+    revealTarget.style.removeProperty("will-change");
   });
   side.style.removeProperty("visibility");
   side.style.removeProperty("opacity");
+  side.style.removeProperty("transform-origin");
 }
 
 function createDefaultGameConfiguration() {
@@ -349,6 +393,10 @@ export default function AdminPage() {
   const [summaryAvailable, setSummaryAvailable] = useState(true);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isLogoutConfirmClosing, setIsLogoutConfirmClosing] = useState(false);
+  const [isMaintenanceConfirmOpen, setIsMaintenanceConfirmOpen] = useState(false);
+  const [isMaintenanceConfirmClosing, setIsMaintenanceConfirmClosing] = useState(false);
+  const [isMultiplayerConfirmOpen, setIsMultiplayerConfirmOpen] = useState(false);
+  const [isMultiplayerConfirmClosing, setIsMultiplayerConfirmClosing] = useState(false);
   const [gameConfiguration, setGameConfiguration] = useState(
     createDefaultGameConfiguration,
   );
@@ -357,7 +405,7 @@ export default function AdminPage() {
   useScreenReveal(scopeRef, [ready, panel, locale], {
     delay: screenRevealDelay,
     defer: !ready,
-    synchronous: panel !== ADMIN_PANELS.HOME,
+    synchronous: false,
     duration: panel !== ADMIN_PANELS.HOME ? 0.72 : undefined,
     ease: panel !== ADMIN_PANELS.HOME ? "power3.out" : undefined,
   });
@@ -513,6 +561,9 @@ export default function AdminPage() {
       const sideStartTranslateY = transitionCard?.sourceRect && sideRect
         ? transitionCard.sourceRect.top - sideRect.top
         : 0;
+      const sideStartScaleY = transitionCard?.sourceRect && sideRect
+        ? transitionCard.sourceRect.height / Math.max(sideRect.height, 1)
+        : 1;
       const closingSideTargetLeft = transitionSide && primaryRect
         ? primaryRect.right + currentGap
         : null;
@@ -526,6 +577,7 @@ export default function AdminPage() {
         sideMotion = animateWorkspaceSide(nextSide, {
           startTranslateX: sideStartTranslateX,
           startTranslateY: sideStartTranslateY,
+          startScaleY: sideStartScaleY,
           duration: ADMIN_CARD_SHIFT_DURATION_MS,
           onComplete: () => setWorkspaceSidePhase("settled"),
         });
@@ -538,6 +590,7 @@ export default function AdminPage() {
           transitionSide,
           closingSideTargetLeft,
           closingSideTargetTop,
+          primaryRect.height,
         );
       }
 
@@ -667,15 +720,11 @@ export default function AdminPage() {
   async function toggleMultiplayer() {
     if (!operationsReady) return;
     const enabled = !operations.multiplayerEnabled;
-    if (
-      !enabled &&
-      !window.confirm(
-        t("admin.confirm.disableMultiplayer"),
-      )
-    ) {
-      return;
-    }
+    setIsMultiplayerConfirmOpen(true);
+    return;
+  }
 
+  async function applyMultiplayerToggle(enabled) {
     await updateOperation(
       "/operations/multiplayer",
       { enabled },
@@ -684,24 +733,50 @@ export default function AdminPage() {
     );
   }
 
+  function closeMultiplayerConfirm() {
+    setIsMultiplayerConfirmClosing(true);
+    window.setTimeout(() => {
+      setIsMultiplayerConfirmOpen(false);
+      setIsMultiplayerConfirmClosing(false);
+    }, 280);
+  }
+
+  async function confirmMultiplayer() {
+    setIsMultiplayerConfirmOpen(false);
+    await applyMultiplayerToggle(!operations.multiplayerEnabled);
+  }
+
   async function toggleMaintenance() {
     if (!operationsReady) return;
     const enabled = !operations.maintenanceEnabled;
-    if (
-      enabled &&
-      !window.confirm(
-        t("admin.confirm.enableMaintenance"),
-      )
-    ) {
+    if (enabled) {
+      setIsMaintenanceConfirmOpen(true);
       return;
     }
 
+    await applyMaintenanceToggle(false);
+  }
+
+  async function applyMaintenanceToggle(enabled) {
     await updateOperation(
       "/operations/maintenance",
       { enabled },
       "maintenance",
       t(enabled ? "admin.messages.maintenanceEnabled" : "admin.messages.maintenanceDisabled"),
     );
+  }
+
+  function closeMaintenanceConfirm() {
+    setIsMaintenanceConfirmClosing(true);
+    window.setTimeout(() => {
+      setIsMaintenanceConfirmOpen(false);
+      setIsMaintenanceConfirmClosing(false);
+    }, 280);
+  }
+
+  async function confirmMaintenance() {
+    setIsMaintenanceConfirmOpen(false);
+    await applyMaintenanceToggle(true);
   }
 
   const isHomePanel = panel === ADMIN_PANELS.HOME;
@@ -728,6 +803,14 @@ export default function AdminPage() {
         clearAnnouncement={clearAnnouncement}
         toggleMultiplayer={toggleMultiplayer}
         toggleMaintenance={toggleMaintenance}
+        isMaintenanceConfirmOpen={isMaintenanceConfirmOpen}
+        isMaintenanceConfirmClosing={isMaintenanceConfirmClosing}
+        closeMaintenanceConfirm={closeMaintenanceConfirm}
+        confirmMaintenance={confirmMaintenance}
+        isMultiplayerConfirmOpen={isMultiplayerConfirmOpen}
+        isMultiplayerConfirmClosing={isMultiplayerConfirmClosing}
+        closeMultiplayerConfirm={closeMultiplayerConfirm}
+        confirmMultiplayer={confirmMultiplayer}
         onClose={() => void changePanel(ADMIN_PANELS.HOME)}
       />
     );
@@ -764,6 +847,28 @@ export default function AdminPage() {
 
   return (
     <>
+      {isMaintenanceConfirmOpen && (
+        <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
+          <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMaintenanceConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
+            <div className="max-w-[18.5rem]">
+              <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
+                {t("admin.operations.maintenanceTitle")}
+              </h2>
+              <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">
+                {t("admin.confirm.enableMaintenance")}
+              </p>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button type="button" onClick={closeMaintenanceConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                {t("common.no")}
+              </button>
+              <button type="button" onClick={() => void confirmMaintenance()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                {t("common.yes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isLogoutConfirmOpen && (
         <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
           <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isLogoutConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
@@ -822,22 +927,12 @@ export default function AdminPage() {
             {isHomePanel && (
               <>
                 <div data-screen-reveal className="max-w-100 pr-12">
-                  <h1 className="whitespace-nowrap text-[clamp(2rem,7vw,3.25rem)] font-semibold leading-[0.95] tracking-[-0.05em]">
+                  <h1 className="admin-workspace-title admin-workspace-title--primary whitespace-nowrap">
                     {t("admin.home.title")}
                   </h1>
-                  <p className="mt-3 text-sm font-medium leading-[1.35] text-white/65 sm:text-base">
+                  <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:text-[0.98rem]">
                     {t("admin.home.description")}
                   </p>
-                </div>
-
-                <div className="mt-6">
-                  <div
-                    data-screen-reveal
-                    className="h-px overflow-hidden"
-                    aria-hidden="true"
-                  >
-                    <span className="block h-full w-full bg-white/15" />
-                  </div>
                 </div>
 
                 <nav
@@ -1047,12 +1142,12 @@ function AdminGameConfigurationWorkspace({
             <h1 className="whitespace-nowrap text-[clamp(1.8rem,6.5vw,2.5rem)] font-semibold leading-[0.95] tracking-[-0.05em]">{t("admin.configuration.title")}</h1>
             <p className="mt-4 text-sm font-medium leading-[1.35] text-white/65 sm:text-base">{t("admin.configuration.description")}</p>
           </div>
-          <div data-screen-reveal className="scrollbar-hidden mt-6 min-h-0 flex-1 overflow-y-auto border-t border-white/15 pr-1">
+          <div data-screen-reveal className="scrollbar-hidden mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
             {GAME_FAMILY_OPTIONS.map(({ id }) => {
               const family = configuration[id] || { enabled: true, modes: {} };
               const modes = GAME_FAMILY_MODE_IDS[id] || [];
               return (
-                <div key={id} className="border-b border-white/15 py-4 last:border-b-0">
+                <div data-screen-reveal key={id} className="py-4">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-lg font-semibold">{t(`gameFamily.${id}`)}</p>
                     <AdminSwitch checked={family.enabled} disabled={Boolean(operationBusy)} onClick={() => onToggle(id)} ariaLabel={`${t(`gameFamily.${id}`)} ${t("admin.configuration.gameAria")}`} />
@@ -1061,7 +1156,7 @@ function AdminGameConfigurationWorkspace({
                     {modes.map((modeId) => {
                       const mode = GAME_MODE_OPTIONS.find((option) => option.id === modeId);
                       return (
-                        <div key={modeId} className="flex items-center justify-between gap-4 text-sm text-white/65">
+                        <div data-screen-reveal key={modeId} className="flex items-center justify-between gap-4 text-sm text-white/65">
                           <span>{t(`gameMode.${modeId}`) || mode?.id || modeId}</span>
                           <AdminSwitch checked={family.modes?.[modeId] !== false} disabled={!family.enabled || Boolean(operationBusy)} onClick={() => onToggle(id, modeId)} ariaLabel={`${t(`gameMode.${modeId}`)} ${t("admin.configuration.modeAria")}`} />
                         </div>
@@ -1096,25 +1191,55 @@ function AdminOperationsWorkspace({
   clearAnnouncement,
   toggleMultiplayer,
   toggleMaintenance,
+  isMaintenanceConfirmOpen,
+  isMaintenanceConfirmClosing,
+  closeMaintenanceConfirm,
+  confirmMaintenance,
+  isMultiplayerConfirmOpen,
+  isMultiplayerConfirmClosing,
+  closeMultiplayerConfirm,
+  confirmMultiplayer,
   onClose,
 }) {
   return (
+    <>
+    {isMultiplayerConfirmOpen && (
+      <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
+        <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMultiplayerConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
+          <div className="max-w-[18.5rem]">
+            <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">{t("admin.operations.multiplayerTitle")}</h2>
+            <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">{t(operations.multiplayerEnabled ? "admin.confirm.disableMultiplayer" : "admin.confirm.enableMultiplayer")}</p>
+          </div>
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button type="button" onClick={closeMultiplayerConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.no")}</button>
+            <button type="button" onClick={() => void confirmMultiplayer()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.yes")}</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {isMaintenanceConfirmOpen && (
+      <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
+        <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMaintenanceConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
+          <div className="max-w-[18.5rem]">
+            <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">{t("admin.operations.maintenanceTitle")}</h2>
+            <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">{t("admin.confirm.enableMaintenance")}</p>
+          </div>
+          <div className="mt-5 flex items-center justify-end gap-3">
+            <button type="button" onClick={closeMaintenanceConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.no")}</button>
+            <button type="button" onClick={() => void confirmMaintenance()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.yes")}</button>
+          </div>
+        </div>
+      </div>
+    )}
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-4 sm:p-8">
       <div ref={scopeRef} data-route-transition-scope className="admin-operations-layout">
         <section data-admin-primary-card className={`admin-operations-card admin-operations-card--primary relative min-h-0 overflow-hidden bg-black p-6 text-white sm:p-8 ${primaryHidden ? "admin-primary-card--waiting" : ""}`}>
           <div data-admin-primary-content className="relative flex h-full min-h-0 flex-col">
-          <button
-            type="button"
-            aria-label={t("admin.common.back")}
-            onClick={onClose}
-            className="absolute right-0 top-0 z-20 grid size-11 place-items-center rounded-full text-white/70 transition-opacity hover:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          >
-            <X size={25} strokeWidth={1.8} />
-          </button>
+          <div data-screen-reveal className="admin-command-header">
+            <AdminPanelHeader title={t("admin.operations.title")} description={t("admin.operations.description")} />
+          </div>
 
-          <AdminPanelHeader title={t("admin.operations.title")} description={t("admin.operations.description")} />
-
-          <div data-screen-reveal className="mt-8">
+          <div data-screen-reveal className="admin-toggle-list mt-8">
             <AdminToggleRow
               title={t("admin.operations.multiplayerTitle")}
               description={t("admin.operations.multiplayerDescription")}
@@ -1150,31 +1275,39 @@ function AdminOperationsWorkspace({
 
         <div data-admin-workspace-side className={`admin-operations-side admin-operations-side--${sidePhase}`}>
           <div className="admin-side-card-frame">
-            <section className="admin-operations-card admin-operations-card--announcement flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
-            <div data-screen-reveal className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">{t("admin.operations.announcementTitle")}</h2>
-                <p className="mt-2 max-w-90 text-sm font-medium leading-snug text-white/55">{t("admin.operations.announcementDescription")}</p>
+            <section className="admin-operations-card admin-operations-card--announcement admin-panel-card admin-action-card relative flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+            <button
+              type="button"
+              aria-label={t("admin.common.back")}
+              onClick={onClose}
+              className="admin-panel-close absolute right-5 top-5 z-20 grid size-10 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              <X size={22} strokeWidth={1.8} />
+            </button>
+            <div data-screen-reveal className="admin-card-header flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.operations.announcementTitle")}</h2>
+                <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/65 sm:mt-4 sm:text-[0.98rem]">{t("admin.operations.announcementDescription")}</p>
               </div>
-              <span className="pt-1 text-xs font-semibold tabular-nums text-white/35">{announcement.length}/280</span>
             </div>
 
-            <div data-screen-reveal className="mt-8">
-              <div className="flex gap-2">
+            <div data-screen-reveal className="admin-card-body mt-8">
+              <div className="admin-announcement-form flex gap-2">
               <input
                 maxLength={280}
                 type="text"
                 value={announcement}
                 onChange={(event) => setAnnouncement(event.target.value)}
                 placeholder={t("admin.operations.announcementPlaceholder")}
+                id="admin-announcement-input"
                 aria-label={t("admin.operations.announcementPlaceholder")}
-                className="card-control-frame card-action-height min-w-0 flex-1 px-4 text-sm font-medium text-white outline-none placeholder:text-white/30 focus:border-white/70"
+                className="card-control-frame card-action-height min-w-0 flex-1 px-5 text-[0.95rem] font-semibold text-white outline-none placeholder:text-white/34 focus:ring-2 focus:ring-white/18 sm:text-base"
               />
               <button
                 type="button"
                 disabled={!operationsReady || !announcement.trim() || Boolean(operationBusy)}
                 onClick={publishAnnouncement}
-                className="rgb-hover-button card-action-height inline-flex min-w-28 items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40 sm:px-6 sm:text-base"
               >
                 <span className="relative z-10">{t("admin.operations.send")}</span>
               </button>
@@ -1184,17 +1317,16 @@ function AdminOperationsWorkspace({
           </div>
 
           <div className="admin-side-card-frame">
-            <section className="admin-operations-card admin-operations-card--cheat flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
-              <div data-screen-reveal className="flex items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold tracking-[-0.03em]">{t("admin.operations.currentAnnouncementTitle")}</h2>
-                <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/35">
-                  {operations.announcement ? "1" : "0"}
-                </span>
+            <section className="admin-operations-card admin-operations-card--cheat admin-panel-card admin-status-card flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+              <div data-screen-reveal className="admin-card-header flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="admin-workspace-title admin-workspace-title--compact">{t("admin.operations.currentAnnouncementTitle")}</h2>
+                </div>
               </div>
-              <div data-screen-reveal className="mt-5 min-h-0 flex-1 overflow-y-auto">
+              <div data-screen-reveal className="admin-card-body mt-5 flex min-h-0 flex-1 flex-col">
                 {operations.announcement ? (
-                  <div className="flex items-start justify-between gap-4 border-t border-white/15 py-4">
-                    <p className="min-w-0 text-sm leading-snug text-white/70">
+                  <div className="flex items-start justify-between gap-4 py-4">
+                    <p className="min-w-0 text-[0.92rem] font-medium leading-[1.28] text-white/70 sm:text-[0.98rem]">
                       {operations.announcement.message}
                     </p>
                     <button
@@ -1207,12 +1339,12 @@ function AdminOperationsWorkspace({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex min-h-32 items-center justify-center border-t border-white/15 text-center">
-                    <div>
-                      <p className="text-sm font-semibold text-white/65">
+                  <div className="admin-empty-state flex min-h-32 flex-1 items-center justify-center text-center">
+                    <div className="admin-empty-state-inner max-w-xs">
+                        <p className="text-[0.95rem] font-semibold text-white/65 sm:text-base">
                         {t("admin.operations.emptyAnnouncementTitle")}
                       </p>
-                      <p className="mt-1 text-xs text-white/35">
+                        <p className="mt-1 text-[0.78rem] font-medium text-white/35 sm:text-sm">
                         {t("admin.operations.emptyAnnouncementDescription")}
                       </p>
                     </div>
@@ -1224,6 +1356,7 @@ function AdminOperationsWorkspace({
         </div>
       </div>
     </main>
+    </>
   );
 }
 
@@ -1256,13 +1389,19 @@ function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale,
 
           <AdminPanelHeader title={t("admin.insights.title")} description={t("admin.insights.description")} />
 
-          <div data-screen-reveal className="mt-6 grid grid-cols-2 gap-x-6">
-            <InsightBarRow label={t("admin.insights.online")} value={live.onlineVisitors} maxValue={maxValue} color="#34d399" />
-            <InsightBarRow label={t("admin.insights.players")} value={live.activePlayers} maxValue={maxValue} color="#60a5fa" />
-            <InsightBarRow label={t("admin.insights.lobbies")} value={live.openLobbies} maxValue={maxValue} color="#fbbf24" />
-            <InsightBarRow label={t("admin.insights.liveGames")} value={live.gamesInProgress} maxValue={maxValue} color="#f472b6" />
-            <InsightBarRow label={t("admin.insights.games24h")} value={games.started24h} maxValue={maxValue} color="#a78bfa" />
-            <InsightBarRow label={t("admin.insights.gamesTotal")} value={games.startedTotal} maxValue={maxValue} color="#fb7185" />
+          <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3">
+            <div data-screen-reveal className="insight-grid">
+              <InsightBarRow label={t("admin.insights.online")} value={live.onlineVisitors} maxValue={maxValue} color="#34d399" />
+              <InsightBarRow label={t("admin.insights.players")} value={live.activePlayers} maxValue={maxValue} color="#60a5fa" />
+            </div>
+            <div data-screen-reveal className="insight-grid">
+              <InsightBarRow label={t("admin.insights.lobbies")} value={live.openLobbies} maxValue={maxValue} color="#fbbf24" />
+              <InsightBarRow label={t("admin.insights.liveGames")} value={live.gamesInProgress} maxValue={maxValue} color="#f472b6" />
+            </div>
+            <div data-screen-reveal className="insight-grid">
+              <InsightBarRow label={t("admin.insights.games24h")} value={games.started24h} maxValue={maxValue} color="#a78bfa" />
+              <InsightBarRow label={t("admin.insights.gamesTotal")} value={games.startedTotal} maxValue={maxValue} color="#fb7185" />
+            </div>
           </div>
           </div>
         </section>
@@ -1295,7 +1434,7 @@ function InsightBarRow({ label, value, maxValue, color }) {
   const width = Math.min(100, Math.max(0, (numericValue / maxValue) * 100));
 
   return (
-    <div className="border-b border-white/10 px-1 py-3 last:border-b-0">
+    <div className="px-1 py-3.5">
       <div className="flex items-end justify-between gap-4">
         <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/45">{label}</span>
         <strong className="text-2xl font-semibold leading-none tabular-nums text-white">{Number.isFinite(value) ? value : "–"}</strong>
@@ -1326,27 +1465,31 @@ function FamilyPieCard({ className, t, live }) {
   const background = stops.length ? `conic-gradient(${stops.join(", ")})` : "rgba(255,255,255,0.1)";
 
   return (
-    <section className={`admin-operations-card ${className} flex min-h-0 items-center gap-6 overflow-hidden bg-black p-6 text-white sm:p-8`}>
-      <div data-screen-reveal className="shrink-0">
-        <div className="relative size-36 rounded-full" style={{ background }}>
-          <div className="absolute inset-[18%] grid place-content-center rounded-full bg-black text-center">
-            <strong className="text-3xl font-semibold leading-none tabular-nums">{metricTotal}</strong>
-            <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/40">{t("admin.insights.liveActivity")}</span>
+    <section className={`admin-operations-card admin-panel-card ${className} flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
+      <div data-screen-reveal>
+        <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.insights.liveActivity")}</h2>
+      </div>
+      <div className="mt-5 flex min-h-0 items-center gap-5 sm:gap-6">
+        <div data-screen-reveal className="shrink-0">
+          <div className="relative size-28 rounded-full sm:size-32" style={{ background }}>
+            <div className="absolute inset-[18%] grid place-content-center rounded-full bg-black text-center">
+              <strong className="text-2xl font-semibold leading-none tabular-nums sm:text-3xl">{metricTotal}</strong>
+              <span className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-white/40">{t("admin.insights.liveActivity")}</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div data-screen-reveal className="min-w-0 flex-1">
-        <h2 className="text-xl font-semibold">{t("admin.insights.liveActivity")}</h2>
-        <div className="mt-4 space-y-2.5">
-          {metrics.map((item, index) => (
-            <div key={item.key} className="flex items-center justify-between gap-3 text-xs font-semibold">
-              <span className="flex min-w-0 items-center gap-2 text-white/55">
-                <span className="size-2 shrink-0 rounded-full" style={{ background: palette[index % palette.length] }} />
-                <span className="truncate">{t(`admin.insights.${item.key}`)}</span>
-              </span>
-              <strong className="tabular-nums text-white">{item.value}</strong>
-            </div>
-          ))}
+        <div data-screen-reveal className="min-w-0 flex-1">
+          <div className="space-y-2">
+            {metrics.map((item, index) => (
+              <div key={item.key} className="flex items-center justify-between gap-3 text-xs font-semibold">
+                <span className="flex min-w-0 items-center gap-2 text-white/55">
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: palette[index % palette.length] }} />
+                  <span className="truncate">{t(`admin.insights.${item.key}`)}</span>
+                </span>
+                <strong className="tabular-nums text-white">{item.value}</strong>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1362,12 +1505,12 @@ function RecentGamesCard({ className, t, locale, games }) {
   });
 
   return (
-    <section className={`admin-operations-card ${className} flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-7`}>
+    <section className={`admin-operations-card admin-panel-card ${className} flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
       <div data-screen-reveal>
-        <h2 className="text-xl font-semibold">{t("admin.insights.recentGames")}</h2>
-        <p className="mt-1 text-xs font-medium text-white/40">{t("admin.insights.recentGamesDescription")}</p>
+        <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.insights.recentGames")}</h2>
+        <p className="mt-3 text-[0.92rem] font-medium leading-[1.28] text-white/65 sm:text-[0.98rem]">{t("admin.insights.recentGamesDescription")}</p>
       </div>
-      <div data-screen-reveal className="scrollbar-hidden mt-3 min-h-0 flex-1 overflow-y-auto border-t border-white/15">
+      <div data-screen-reveal className="scrollbar-hidden mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto">
         {games.length ? games.map((game, index) => (
           <div key={`${game.roomCode}-${game.createdAt}-${index}`} className="flex items-center justify-between gap-4 border-b border-white/10 py-2.5 last:border-b-0">
             <div className="min-w-0">
@@ -1378,7 +1521,14 @@ function RecentGamesCard({ className, t, locale, games }) {
               {formatter.format(new Date(game.createdAt))}
             </time>
           </div>
-        )) : <p className="py-5 text-sm font-medium text-white/35">{t("admin.insights.noActivity")}</p>}
+        )) : (
+          <div className="admin-empty-state flex min-h-32 flex-1 items-center justify-center text-center">
+            <div className="admin-empty-state-inner max-w-xs">
+              <p className="text-[0.95rem] font-semibold text-white/65 sm:text-base">{t("admin.insights.noActivity")}</p>
+              <p className="mt-1 text-[0.78rem] font-medium text-white/35 sm:text-sm">{t("admin.insights.recentGamesDescription")}</p>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1399,10 +1549,10 @@ function formatUptime(seconds, t) {
 function AdminPanelHeader({ title, description }) {
   return (
     <div data-screen-reveal className="max-w-none pr-12">
-      <h1 className="whitespace-nowrap text-[clamp(2rem,7vw,3rem)] font-semibold leading-[0.9] tracking-[-0.05em]">
+      <h1 className="admin-workspace-title admin-workspace-title--primary whitespace-nowrap">
         {title}
       </h1>
-      <p className="mt-4 text-sm font-medium leading-[1.35] text-white/65 sm:text-base">
+      <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:text-[0.98rem]">
         {description}
       </p>
     </div>
@@ -1414,11 +1564,11 @@ function AdminNavigationRow({ title, description, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center justify-between gap-4 border-b border-white/15 py-3 text-left text-white transition-colors last:border-b-0 hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-3.5"
+      className="group flex w-full items-center justify-between gap-4 py-5 text-left text-white transition-colors hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-6"
     >
       <span className="min-w-0">
-        <span className="block text-base font-medium sm:text-lg">{title}</span>
-        <span className="mt-1 block truncate text-xs font-medium text-white/45">
+        <span className="block text-[0.95rem] font-semibold sm:text-base">{title}</span>
+        <span className="mt-1.5 block truncate text-[0.92rem] font-medium leading-[1.28] text-white/55 sm:text-[0.98rem]">
           {description}
         </span>
       </span>
@@ -1505,10 +1655,10 @@ function AdminToggleRow({
   return (
     <div className="flex items-center justify-between gap-5 border-t border-white/15 py-5 first:border-t-0 first:pt-0 last:pb-0">
       <div>
-        <p className={`text-base font-semibold ${danger && checked ? "text-red-300" : ""}`}>
+        <p className={`text-[0.95rem] font-semibold sm:text-base ${danger && checked ? "text-red-300" : ""}`}>
           {title}
         </p>
-        <p className="mt-1 text-sm text-white/55">{description}</p>
+        <p className="mt-1 text-[0.92rem] font-medium leading-[1.28] text-white/55 sm:text-[0.98rem]">{description}</p>
       </div>
       <AdminSwitch checked={checked} disabled={disabled} onClick={onClick} ariaLabel={ariaLabel} danger={danger} />
     </div>

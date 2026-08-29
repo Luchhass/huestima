@@ -95,7 +95,7 @@ export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false
             <article key={item.id}>
               <div
                 className="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[18px] border border-foreground/8 p-8"
-                style={{ backgroundColor: item.backgroundHex }}
+                style={{ backgroundColor: "#000000" }}
               >
                 <div className="relative h-[62%] w-[78%]">
                   <Image

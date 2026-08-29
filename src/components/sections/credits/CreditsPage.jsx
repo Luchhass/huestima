@@ -99,10 +99,10 @@ function CreditsConfetti() {
 }
 
 export default function CreditsPage() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
-  const family = ["color", "flag", "cartoon", "brand"].includes(searchParams.get("from"))
+  const family = ["color", "flag", "cartoon", "brand", "team"].includes(searchParams.get("from"))
     ? searchParams.get("from")
     : "color";
   const leavePage = useFooterPageTransition(mainRef);

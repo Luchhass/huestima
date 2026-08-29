@@ -1,17 +1,23 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
-import { playHomeToFooterExit } from "@/hooks/useFooterPageTransition";
+import {
+  playPageFade,
+  playHomeToFooterExit,
+} from "@/hooks/useFooterPageTransition";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { requestActiveGameExit } from "@/lib/gameNavigation";
 
 export default function AppFooter() {
   const { locale, t } = useTranslation();
   const pathname = usePathname();
+  const [familyFromQuery] = useState(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("from");
+  });
   const router = useRouter();
   const isTransitioningRef = useRef(false);
 
@@ -27,8 +33,9 @@ export default function AppFooter() {
   const isTestLabRoute = pathname === "/test-lab";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
-  const isHistoryRoute = pathname === "/history";
-  const family = pathname?.split("/").filter(Boolean)[0] || "color";
+  const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
+    ? familyFromQuery
+    : pathname?.split("/").filter(Boolean)[0] || "color";
   const testPageLabel = locale === "tr" ? "test sayfası" : "test page";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
@@ -48,16 +55,20 @@ export default function AppFooter() {
       return;
     }
 
-    await playHomeToFooterExit(card, content);
+    if (href.startsWith("/history")) {
+      await playPageFade(content, false);
+    } else {
+      await playHomeToFooterExit(card, content);
+    }
 
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute || isDownloadRoute || isHistoryRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute || isDownloadRoute) return null;
 
   return (
     <>
-      <footer className="creator-tag pointer-events-none fixed bottom-4 left-4 z-40 max-w-[42%] truncate text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-500 sm:bottom-8 sm:left-8 sm:max-w-none sm:text-[11px]">
+      <footer data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="creator-tag pointer-events-none fixed bottom-4 left-4 z-40 max-w-[42%] truncate text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-500 sm:bottom-8 sm:left-8 sm:max-w-none sm:text-[11px]">
         {t("app.createdBy")}{" "}
         <a
           href="https://furkancosar.com"
@@ -69,7 +80,7 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <div className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 flex max-w-[54%] flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right sm:right-8 sm:bottom-8 sm:max-w-none sm:flex-nowrap sm:gap-5">
+      <div data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 flex max-w-[54%] flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right sm:right-8 sm:bottom-8 sm:max-w-none sm:flex-nowrap sm:gap-5">
         <Link href={`/download?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/download?from=${family}`)} className={footerLinkClass}>
           {locale === "tr" ? "uygulamayı indir" : "download app"}
         </Link>

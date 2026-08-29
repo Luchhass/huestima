@@ -208,6 +208,7 @@ export const DICTIONARIES = {
     },
     admin: {
       common: {
+        ok: "OK",
         back: "Back to admin console",
         logout: "Log out",
         home: "Back to home",
@@ -289,6 +290,7 @@ export const DICTIONARIES = {
       confirm: {
         logoutTitle: "Sign out of admin?",
         logoutDescription: "Are you sure you want to end your admin session?",
+        enableMultiplayer: "Enable multiplayer? Visitors will be able to create and join lobbies again.",
         disableMultiplayer: "Disable multiplayer? Every active lobby and match will be closed first.",
         enableMaintenance: "Enable maintenance mode? Active games will close and all visitors will be redirected.",
       },
@@ -737,6 +739,7 @@ export const DICTIONARIES = {
     },
     admin: {
       common: {
+        ok: "Tamam",
         back: "Admin konsoluna dön",
         logout: "Çıkış yap",
         home: "Ana sayfaya dön",
@@ -818,6 +821,7 @@ export const DICTIONARIES = {
       confirm: {
         logoutTitle: "Admin oturumundan çıkılsın mı?",
         logoutDescription: "Admin oturumunu sonlandırmak istediğine emin misin?",
+        enableMultiplayer: "Multiplayer açılsın mı? Ziyaretçiler yeniden lobi oluşturup katılabilecek.",
         disableMultiplayer: "Multiplayer kapatılsın mı? Önce tüm aktif lobiler ve maçlar kapatılacak.",
         enableMaintenance: "Bakım modu açılsın mı? Aktif oyunlar kapatılacak ve tüm ziyaretçiler yönlendirilecek.",
       },

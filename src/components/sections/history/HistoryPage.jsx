@@ -461,6 +461,7 @@ export default function HistoryPage({
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
+        data-history-card
         className="relative flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardHeight ? { height: cardHeight } : undefined}
       >

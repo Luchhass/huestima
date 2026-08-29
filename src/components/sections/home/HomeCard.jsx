@@ -135,7 +135,9 @@ export default function HomeCard({
   const isFlagPool = view === "flagPool";
   const isTeamPool = view === "teamPool";
   const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
-  const cardHeight = useResponsiveCardHeight(isExpandedCard || isCartoonPool || isFlagPool);
+  const cardHeight = useResponsiveCardHeight(
+    isExpandedCard || isCartoonPool || isFlagPool,
+  );
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
   const homeSection = t(`home.sections.${cleanGameFamily}`);
   const homeTitle = homeSection?.title || t(`gameFamily.${cleanGameFamily}`);

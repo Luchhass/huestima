@@ -62,10 +62,11 @@ export function SiteOperationsProvider({ children }) {
 
     const showAnnouncement = (announcement) => {
       if (!announcement?.id || !announcement.message) return;
+      if (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/")) return;
       if (shownAnnouncementsRef.current.has(announcement.id)) return;
 
       shownAnnouncementsRef.current.add(announcement.id);
-      pushNotification(announcement.message, "admin", 8000);
+      pushNotification(announcement.message, "announcement");
     };
 
     const applyOperations = (nextOperations) => {
@@ -125,7 +126,13 @@ export function SiteOperationsProvider({ children }) {
       document.querySelector("[data-intro-card-target]") ||
       document.querySelector("main");
 
-    void playScreenFadeOut(scope, { duration: 0.24 }).finally(() => {
+    const chrome = Array.from(document.querySelectorAll(
+      ".app-header, .creator-tag, .route-transition-footer",
+    ));
+    void Promise.all([
+      playScreenFadeOut(scope, { duration: 0.24 }),
+      ...chrome.map((element) => playScreenFadeOut(element, { duration: 0.24 })),
+    ]).finally(() => {
       router.replace(destination);
     });
   }, [operations.maintenanceEnabled, operations.multiplayerEnabled, pathname, ready, router]);

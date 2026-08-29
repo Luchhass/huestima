@@ -13,14 +13,14 @@ import FooterPageShell, {
 
 const LINKS = {
   en: [
-    ["Cartoon list", "/cartoon-library"],
     ["Flag list", "/flag-library"],
+    ["Cartoon list", "/cartoon-library"],
     ["Brand list", "/brand-library"],
     ["Team list", "/team-library"],
   ],
   tr: [
-    ["Çizgi film listesi", "/cartoon-library"],
     ["Bayrak listesi", "/flag-library"],
+    ["Çizgi film listesi", "/cartoon-library"],
     ["Marka listesi", "/brand-library"],
     ["Takım listesi", "/team-library"],
   ],

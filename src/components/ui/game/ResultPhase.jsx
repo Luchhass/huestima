@@ -779,23 +779,51 @@ export default function ResultPhase({
   const targetTone = swatchToneClasses(colorToneHex(result.target));
   const isCartoonGuessResult = isCartoonColor(result.guess);
   const isCartoonTargetResult = isCartoonColor(result.target);
+  const isBrandGuessResult = isBrandColor(result.guess);
+  const isBrandTargetResult = isBrandColor(result.target);
+  const brandResultTextStyle = {
+    color: "#ffffff",
+    textShadow: "0 2px 12px rgb(0 0 0 / 0.35)",
+  };
+  const guessBackground = isBrandGuessResult
+    ? "#000000"
+    : gradientBackground(result.guess);
+  const targetBackground = isBrandTargetResult
+    ? "#000000"
+    : gradientBackground(result.target);
   const splitOverlayLabel = getVisualLabel(result.guess, locale);
   const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
   const guessTopLeftStyle = {
-    color: overlayTextColor(guessOverlayTones.topLeft),
-    textShadow: overlayTextShadow(guessOverlayTones.topLeft),
+    ...(isBrandGuessResult
+      ? brandResultTextStyle
+      : {
+          color: overlayTextColor(guessOverlayTones.topLeft),
+          textShadow: overlayTextShadow(guessOverlayTones.topLeft),
+        }),
   };
   const guessTopRightStyle = {
-    color: overlayTextColor(guessOverlayTones.topRight),
-    textShadow: overlayTextShadow(guessOverlayTones.topRight),
+    ...(isBrandGuessResult
+      ? brandResultTextStyle
+      : {
+          color: overlayTextColor(guessOverlayTones.topRight),
+          textShadow: overlayTextShadow(guessOverlayTones.topRight),
+        }),
   };
   const guessBottomLeftStyle = {
-    color: overlayTextColor(guessOverlayTones.bottomLeft),
-    textShadow: overlayTextShadow(guessOverlayTones.bottomLeft),
+    ...(isBrandGuessResult
+      ? brandResultTextStyle
+      : {
+          color: overlayTextColor(guessOverlayTones.bottomLeft),
+          textShadow: overlayTextShadow(guessOverlayTones.bottomLeft),
+        }),
   };
   const targetBottomLeftStyle = {
-    color: overlayTextColor(targetOverlayTones.bottomLeft),
-    textShadow: overlayTextShadow(targetOverlayTones.bottomLeft),
+    ...(isBrandTargetResult
+      ? brandResultTextStyle
+      : {
+          color: overlayTextColor(targetOverlayTones.bottomLeft),
+          textShadow: overlayTextShadow(targetOverlayTones.bottomLeft),
+        }),
   };
 
   return (
@@ -813,7 +841,7 @@ export default function ResultPhase({
         ref={splitOverlayRef}
         aria-hidden="true"
         className={`pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-[inherit] p-6 sm:p-8 ${guessTone}`}
-        style={{ background: gradientBackground(result.guess) }}
+        style={{ background: guessBackground }}
       >
         {isFlagColor(result.guess) && <FlagOverlay color={result.guess} />}
         {isBrandColor(result.guess) && <BrandOverlay color={result.guess} />}
@@ -852,14 +880,14 @@ export default function ResultPhase({
         ref={guessSectionRef}
         className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${guessTone}`}
         style={{
-          background: gradientBackground(result.guess),
+          background: guessBackground,
           ...guessTopLeftStyle,
         }}
       >
         {isFlagColor(result.guess) && (
           <FlagOverlay color={result.guess} />
         )}
-        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} size="result" />}
+        {isBrandGuessResult && <BrandOverlay color={result.guess} />}
 
         {isCartoonGuessResult && (
           <CartoonOverlay
@@ -930,14 +958,14 @@ export default function ResultPhase({
         ref={targetSectionRef}
         className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${targetTone}`}
         style={{
-          background: gradientBackground(result.target),
+          background: targetBackground,
           ...targetBottomLeftStyle,
         }}
       >
         {isFlagColor(result.target) && (
           <FlagOverlay color={result.target} />
         )}
-        {isBrandColor(result.target) && <BrandOverlay color={result.target} size="result" />}
+        {isBrandTargetResult && <BrandOverlay color={result.target} />}
 
         {isCartoonTargetResult && (
           <CartoonOverlay
@@ -975,7 +1003,9 @@ export default function ResultPhase({
             type="button"
             aria-label={t("game.finishRun")}
             onClick={onFinishRun}
-            className="soft-icon-button result-action-button card-action-size group absolute right-[5.75rem] bottom-6 z-30 grid place-items-center rounded-full bg-zinc-950 text-white shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8"
+            className={`soft-icon-button result-action-button card-action-size group absolute right-[5.75rem] bottom-6 z-30 grid place-items-center rounded-full shadow-[0_16px_34px_rgba(0,0,0,0.22)] transition hover:scale-[1.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-[6.25rem] sm:bottom-8 ${
+              isBrandTargetResult ? "bg-white text-zinc-950" : "bg-zinc-950 text-white"
+            }`}
           >
             <span
               ref={finishRunButtonRingRef}

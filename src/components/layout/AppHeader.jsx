@@ -27,10 +27,19 @@ export default function AppHeader() {
   const { locale, t } = useTranslation();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname();
+  const [historyFamily] = useState(() => {
+    if (typeof window === "undefined") return "color";
+    const family = new URLSearchParams(window.location.search).get("from");
+    return ["color", "flag", "cartoon", "brand", "team"].includes(family)
+      ? family
+      : "color";
+  });
   const familyHomeHref =
-    GAME_FAMILY_OPTIONS.find(
-      (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
-    )?.href || "/color";
+    pathname?.startsWith("/history")
+      ? `/${historyFamily}`
+      : GAME_FAMILY_OPTIONS.find(
+          (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
+        )?.href || "/color";
   const router = useRouter();
   const isLibraryRoute =
     pathname === "/cartoon-library" ||
@@ -255,6 +264,18 @@ export default function AppHeader() {
 
   const playRouteTransition = async (href) => {
     if (pathname?.startsWith("/history")) {
+      const card = document.querySelector("[data-history-card]");
+      const content = document.querySelector("[data-route-transition-scope]");
+
+      if (card && content) {
+        await playCardToCardExit(card, content, {
+          targetExpanded: false,
+          hideChrome: false,
+        });
+        router.push(href);
+        return;
+      }
+
       await new Promise((resolve) => {
         let settled = false;
         const finish = () => {
@@ -334,9 +355,18 @@ export default function AppHeader() {
     });
   };
 
+  if (pathname === "/maintenance") {
+    return (
+      <header key="maintenance-header" className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-end p-6 sm:p-8">
+        <div className="pointer-events-auto">
+          <LanguageToggle />
+        </div>
+      </header>
+    );
+  }
+
   if (
     pathname === "/admin/login" ||
-    pathname === "/maintenance" ||
     isLibraryRoute ||
     isPrivacyRoute ||
     isHowItWorksRoute ||
@@ -356,10 +386,11 @@ export default function AppHeader() {
     setIsNavRendered(true);
   };
 
-  if (isTeamLibraryRoute || pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance") return null;
+  if (isTeamLibraryRoute || pathname === "/admin" || pathname === "/admin/login") return null;
 
   return (
     <header
+      key="application-header"
       className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8"
       data-nav-open={isNavOpen ? "true" : undefined}
     >
