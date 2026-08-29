@@ -55,7 +55,9 @@ export default function AppFooter() {
       return;
     }
 
-    if (href.startsWith("/history")) {
+    if (href.startsWith("/download")) {
+      await playHomeToFooterExit(card, content, { scaleCard: false });
+    } else if (href.startsWith("/history")) {
       await playPageFade(content, false);
     } else {
       await playHomeToFooterExit(card, content);
@@ -68,7 +70,7 @@ export default function AppFooter() {
 
   return (
     <>
-      <footer data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="creator-tag pointer-events-none fixed bottom-4 left-4 z-40 max-w-[42%] truncate text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-500 sm:bottom-8 sm:left-8 sm:max-w-none sm:text-[11px]">
+      <footer data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="hidden">
         {t("app.createdBy")}{" "}
         <a
           href="https://furkancosar.com"
@@ -80,26 +82,31 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <div data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 flex max-w-[54%] flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right sm:right-8 sm:bottom-8 sm:max-w-none sm:flex-nowrap sm:gap-5">
-        <Link href={`/download?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/download?from=${family}`)} className={footerLinkClass}>
-          {locale === "tr" ? "uygulamayı indir" : "download app"}
-        </Link>
-        <Link href={`/history?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/history?from=${family}`)} className={footerLinkClass}>
-          {t("history.footerLink")}
-        </Link>
-        <Link href={`/test-lab?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/test-lab?from=${family}`)} className={footerLinkClass}>
-          {testPageLabel}
-        </Link>
-        <Link href={`/how-it-works?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/how-it-works?from=${family}`)} className={footerLinkClass}>
-          {howItWorksLabel}
-        </Link>
-        <Link href={`/privacy-policy?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/privacy-policy?from=${family}`)} className={footerLinkClass}>
-          {locale === "tr" ? "gizlilik politikası" : "privacy policy"}
-        </Link>
-        <Link href={`/credits?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/credits?from=${family}`)} className={footerLinkClass}>
-          {locale === "tr" ? "emeği geçenler" : "credits"}
-        </Link>
-      </div>
+      <nav data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
+        {[
+          [
+            [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
+            [`/history?from=${family}`, t("history.footerLink")],
+            [`/test-lab?from=${family}`, testPageLabel],
+          ],
+          [
+            [`/how-it-works?from=${family}`, howItWorksLabel],
+            [`/privacy-policy?from=${family}`, locale === "tr" ? "gizlilik politikası" : "privacy policy"],
+            [`/credits?from=${family}`, locale === "tr" ? "emeği geçenler" : "credits"],
+          ],
+        ].map((row, rowIndex) => (
+          <div key={rowIndex} className="route-transition-footer-row">
+            {row.map(([href, label], index) => (
+              <span key={href} className="route-transition-footer-item">
+                {index > 0 && <span className="route-transition-footer-separator" aria-hidden="true">·</span>}
+                <Link href={href} data-sound="off" onClick={(event) => void handleFooterNavigation(event, href)} className={footerLinkClass}>
+                  {label}
+                </Link>
+              </span>
+            ))}
+          </div>
+        ))}
+      </nav>
 
     </>
   );

@@ -24,8 +24,10 @@ import {
 } from "@/hooks/useScreenReveal";
 import {
   clearAdminHomeReturn,
+  clearDownloadReturn,
   clearFooterReturn,
   hasPendingAdminHomeReturn,
+  hasPendingDownloadReturn,
   hasPendingFooterReturn,
   playAdminHomeReturnEntry,
   playFooterReturnEntry,
@@ -184,6 +186,26 @@ export default function HomeCard({
       if (!active) return;
 
       clearAdminHomeReturn();
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!hasPendingDownloadReturn()) return undefined;
+
+    const card = cardRef.current;
+    if (!card) return undefined;
+
+    let active = true;
+
+    void playFooterReturnEntry(card, { scaleCard: false }).then(() => {
+      if (!active) return;
+
+      clearDownloadReturn();
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     });
 

@@ -64,8 +64,8 @@ export const DICTIONARIES = {
     },
     download: {
       kicker: "Huestima mobile",
-      title: "Your next color challenge is here.",
-      intro: "Train your color memory anywhere. Choose your platform and start playing Huestima on mobile.",
+      title: "Your next color\nchallenge.",
+      intro: "Take Huestima with you and keep your color memory sharp wherever you play.",
       back: "Back to Huestima",
       appStore: "Download on the App Store",
       playStore: "Get it on Google Play",
@@ -602,8 +602,8 @@ export const DICTIONARIES = {
     },
     download: {
       kicker: "Huestima mobil",
-      title: "Sıradaki renk meydan okuman burada.",
-      intro: "Renk hafızanı her yerde geliştir. Platformunu seç ve Huestima'yı mobilde oynamaya başla.",
+      title: "Sıradaki renk\nmeydan okuman.",
+      intro: "Huestima'yı yanında taşı; nerede oynarsan oyna renk hafızanı canlı tut.",
       back: "Huestima'ya dön",
       appStore: "App Store'dan indir",
       playStore: "Google Play'den edin",

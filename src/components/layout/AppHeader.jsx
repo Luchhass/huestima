@@ -18,7 +18,6 @@ import MusicToggle from "./MusicToggle";
 import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
-import { adminRequest } from "@/lib/adminApi";
 
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
@@ -50,6 +49,8 @@ export default function AppHeader() {
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isTestLabRoute = pathname === "/test-lab";
   const isCreditsRoute = pathname === "/credits";
+  const isDownloadRoute = pathname === "/download";
+  const isHomeRoute = GAME_FAMILY_OPTIONS.some((option) => pathname === option.href);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
@@ -61,20 +62,6 @@ export default function AppHeader() {
   const mobileBubbleRef = useRef(null);
   const mobileContentRef = useRef(null);
 
-  useEffect(() => {
-    let active = true;
-    const checkAdminSession = () => adminRequest("/me").then((response) => {
-      if (active) setAdminSessionOpen(response.ok);
-    }).catch(() => {
-      if (active) setAdminSessionOpen(false);
-    });
-    checkAdminSession();
-    const intervalId = window.setInterval(checkAdminSession, 60 * 1000);
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-    };
-  }, [pathname]);
   const mobileMenuTimelineRef = useRef(null);
   const familyNavRef = useRef(null);
   const familyLinkRefs = useRef(new Map());
@@ -371,7 +358,8 @@ export default function AppHeader() {
     isPrivacyRoute ||
     isHowItWorksRoute ||
     isTestLabRoute ||
-    isCreditsRoute
+    isCreditsRoute ||
+    isDownloadRoute
   ) {
     return null;
   }
@@ -548,11 +536,11 @@ export default function AppHeader() {
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
-          <FullscreenToggle />
+          {isHomeRoute && <FullscreenToggle />}
         </div>
 
         <div className="md:hidden">
-          <FullscreenToggle />
+          {isHomeRoute && <FullscreenToggle />}
         </div>
 
         <button

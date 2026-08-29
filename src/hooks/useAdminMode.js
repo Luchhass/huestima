@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { adminRequest } from "@/lib/adminApi";
 
 const AdminModeContext = createContext(null);
@@ -24,6 +25,7 @@ function readPersistedAdminMode() {
 }
 
 export function AdminModeProvider({ children }) {
+  const pathname = usePathname();
   const [enabled, setEnabled] = useState(false);
   const [sessionValid, setSessionValid] = useState(false);
   const validationRequestRef = useRef(0);
@@ -64,15 +66,15 @@ export function AdminModeProvider({ children }) {
   }, [clearPersistedMode]);
 
   useEffect(() => {
-    // The initial check intentionally synchronizes the provider with the
-    // server session as soon as the app mounts.
+    if (!pathname?.startsWith("/admin")) return undefined;
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshSession();
     const intervalId = window.setInterval(() => {
       void refreshSession();
     }, 60 * 1000);
     return () => window.clearInterval(intervalId);
-  }, [refreshSession]);
+  }, [pathname, refreshSession]);
 
   const enableAdmin = useCallback(() => {
     if (!sessionValid) return;

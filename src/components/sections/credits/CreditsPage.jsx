@@ -14,9 +14,29 @@ import { X } from "lucide-react";
 
 const CONTRIBUTORS = [
   {
+    name: "Furkan Coşar",
+    role: "Creator",
+    roleTr: "Geliştirici",
+    href: "https://furkancosar.com",
+    contribution: "Designed and built Huestima from the ground up.",
+    contributionTr: "Huestima'yı baştan sona tasarladı ve geliştirdi.",
+  },
+  {
+    name: "Emre Baştürk",
+    role: "Game Design Collaborator",
+    roleTr: "Oyun Tasarım Ortağı",
+    contribution:
+      "Helped shape the game by proposing many of its modes and game formats.",
+    contributionTr:
+      "Birçok oyun modu ve oyun türü önererek oyunun şekillenmesine katkı sağladı.",
+  },
+  {
     name: "Beyza Birdal",
     role: "Cartoon Visual Archive",
+    roleTr: "Çizgi Film Görsel Arşivi",
     href: "https://www.instagram.com/beyzosndl/",
+    contribution: "Contributed the cartoon visual archive that enriched the game.",
+    contributionTr: "Oyunu zenginleştiren çizgi film görsel arşivine katkı sağladı.",
   },
 ];
 
@@ -156,9 +176,16 @@ export default function CreditsPage() {
                     contributor.name
                   )}
                 </h2>
-                <p className="text-right text-sm font-medium text-foreground/55">
-                  {locale === "tr" ? "Çizgi Film Görsel Arşivi" : contributor.role}
-                </p>
+                <div className="max-w-[65%] text-right">
+                  <p className="text-sm font-medium text-foreground/55">
+                    {locale === "tr" ? contributor.roleTr || "Çizgi Film Görsel Arşivi" : contributor.role}
+                  </p>
+                  {contributor.contribution || contributor.contributionTr ? (
+                    <p className="mt-1 text-xs leading-relaxed text-foreground/42">
+                      {locale === "tr" ? contributor.contributionTr : contributor.contribution}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
