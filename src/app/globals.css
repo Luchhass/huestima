@@ -486,6 +486,16 @@ input {
     font-size: clamp(2.3rem, 9.2vw, 3.2rem);
   }
 
+  .admin-home-title {
+    margin: 0;
+    color: #fff;
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+    font-size: clamp(2rem, 7vw, 3.25rem);
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
   .admin-workspace-title--secondary {
     font-size: clamp(1.8rem, 5vw, 2.5rem);
     line-height: 0.94;

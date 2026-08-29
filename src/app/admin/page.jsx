@@ -927,7 +927,7 @@ export default function AdminPage() {
             {isHomePanel && (
               <>
                 <div data-screen-reveal className="max-w-100 pr-12">
-                  <h1 className="admin-workspace-title admin-workspace-title--primary whitespace-nowrap">
+                  <h1 className="admin-home-title whitespace-nowrap">
                     {t("admin.home.title")}
                   </h1>
                   <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:text-[0.98rem]">
@@ -937,7 +937,7 @@ export default function AdminPage() {
 
                 <nav
                   data-screen-reveal
-                  className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto"
+                  className="min-h-0 flex-1"
                 >
                   <AdminNavigationRow
                     title={t("admin.operations.title")}
@@ -1564,7 +1564,7 @@ function AdminNavigationRow({ title, description, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center justify-between gap-4 py-5 text-left text-white transition-colors hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-6"
+      className="group flex w-full items-center justify-between gap-4 py-3.5 text-left text-white transition-colors hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-4"
     >
       <span className="min-w-0">
         <span className="block text-[0.95rem] font-semibold sm:text-base">{title}</span>
