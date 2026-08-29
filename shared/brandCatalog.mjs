@@ -1,3 +1,5 @@
+import { BRAND_PAINT, TEAM_PAINT } from "./visualPaintCatalog.mjs";
+
 const ALL_BRAND_ITEMS = [
   { id: "burger-king", slug: "burgerking", label: "Burger King", assetFile: "burger-king.png", paint: { h: 24, s: 86, v: 92 } },
   { id: "kfc", slug: "kfc", label: "KFC", assetFile: "kfc.png", paint: { h: 356, s: 82, v: 86 } },
@@ -118,12 +120,12 @@ const NEW_BRAND_ITEMS = [
   ["red-bull", "Red Bull"], ["popeyes", "Popeyes"], ["netflix", "Netflix"], ["snapchat", "Snapchat"], ["mastercard", "Mastercard"],
   ["burger-king-round", "Burger King"], ["visa", "Visa"], ["microsoft", "Microsoft"], ["monster-energy", "Monster Energy"], ["lego", "LEGO"],
   ["burger-king", "Burger King"], ["mcdonalds", "McDonald's"], ["chupa-chups", "Chupa Chups"], ["coca-cola", "Coca-Cola"], ["youtube", "YouTube"],
-].map(([slug, label], index) => ({
+].map(([slug, label]) => ({
   id: slug,
   slug,
   label,
   assetFile: `${slug}.png`,
-  paint: { h: (index * 31) % 360, s: 78, v: 82 },
+  paint: BRAND_PAINT[slug],
 }));
 
 export const BRAND_ITEMS = NEW_BRAND_ITEMS;
@@ -135,12 +137,12 @@ const NEW_TEAM_ITEMS = [
   ["bayer-leverkusen", "Bayer Leverkusen"], ["borussia-dortmund", "Borussia Dortmund"], ["bayern-munich", "FC Bayern Munich"], ["lazio", "Lazio"], ["as-roma", "AS Roma"],
   ["inter-milan", "Inter Milan"], ["ac-milan", "AC Milan"], ["trabzonspor", "Trabzonspor"], ["aston-villa", "Aston Villa"], ["chelsea", "Chelsea"],
   ["arsenal", "Arsenal"], ["liverpool", "Liverpool"], ["manchester-city", "Manchester City"], ["manchester-united", "Manchester United"], ["besiktas", "Beşiktaş"],
-].map(([slug, label], index) => ({
+].map(([slug, label]) => ({
   id: `team-${slug}`,
   slug,
   label,
   assetFile: `${slug}.png`,
-  paint: { h: (index * 37) % 360, s: 78, v: 82 },
+  paint: TEAM_PAINT[`team-${slug}`],
 }));
 
 const TEAM_LEAGUES = {

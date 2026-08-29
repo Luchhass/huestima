@@ -1,9 +1,7 @@
 import {
   DEFAULT_GAME_MODE_ID,
-  GAME_MODE_IDS,
   GAME_MODE_OPTIONS,
 } from "@/lib/constants";
-import { HAS_CARTOON_OPTIONS } from "@/lib/cartoons";
 import {
   getDefaultGameModeForFamily,
   isGameModeInFamily,
@@ -11,7 +9,7 @@ import {
 } from "@/lib/gameFamily";
 
 export function isGameModeAvailable(option) {
-  return option.id !== GAME_MODE_IDS.CARTOON || HAS_CARTOON_OPTIONS;
+  return Boolean(option);
 }
 
 export function getAvailableGameModeOptions(options = GAME_MODE_OPTIONS, gameFamily = null) {

@@ -5,9 +5,10 @@ import {
   getCartoonOption,
 } from "./cartoons";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
-import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags";
+import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
 import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams";
+import { resolveChannelValue } from "../../shared/colorMechanics.mjs";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -123,27 +124,26 @@ export function isBrandColor(color) {
   return color?.type === "brand" && Boolean(color?.brandId);
 }
 
-function difficultyControls(difficulty) {
+function difficultyDefaultGuess(difficulty) {
+  return (
+    getDifficultyOption(typeof difficulty === "string" ? difficulty : difficulty?.id)
+      ?.defaultGuess || { h: 210, s: 50, v: 78 }
+  );
+}
+
+function channelValue({ difficulty, channel, targetValue, guessValue, fallbackValue }) {
   const option =
     typeof difficulty === "string"
       ? getDifficultyOption(difficulty)
       : difficulty || getDifficultyOption();
 
-  return Array.isArray(option?.controls) ? option.controls : [];
-}
-
-function hasChannelControl(difficulty, channel) {
-  return difficultyControls(difficulty).includes(channel);
-}
-
-function channelValue({ difficulty, channel, targetValue, guessValue, fallbackValue }) {
-  if (!hasChannelControl(difficulty, channel)) {
-    return Number.isFinite(targetValue) ? targetValue : fallbackValue;
-  }
-
-  if (Number.isFinite(guessValue)) return guessValue;
-  if (Number.isFinite(targetValue)) return targetValue;
-  return fallbackValue;
+  return resolveChannelValue({
+    difficulty: option,
+    channel,
+    targetValue,
+    guessValue,
+    fallbackValue,
+  });
 }
 
 function averageRgbHex(firstHex, secondHex) {
@@ -154,18 +154,6 @@ function averageRgbHex(firstHex, secondHex) {
     r: (first.r + second.r) / 2,
     g: (first.g + second.g) / 2,
     b: (first.b + second.b) / 2,
-  });
-}
-
-function averageManyRgbHex(hexValues) {
-  const colors = hexValues.filter(Boolean).map(hexToRgb);
-
-  if (!colors.length) return "#000000";
-
-  return rgbToHex({
-    r: colors.reduce((sum, color) => sum + color.r, 0) / colors.length,
-    g: colors.reduce((sum, color) => sum + color.g, 0) / colors.length,
-    b: colors.reduce((sum, color) => sum + color.b, 0) / colors.length,
   });
 }
 
@@ -415,7 +403,7 @@ export function withBrandDifficultyHex(guessColor, targetColor, difficulty) {
 }
 
 export function createDefaultTeamGuess(targetColor, difficulty) {
-  return withTeamDifficultyHex({}, targetColor, difficulty);
+  return withTeamDifficultyHex(difficultyDefaultGuess(difficulty), targetColor, difficulty);
 }
 
 export function withTeamHex(color) {
@@ -448,9 +436,9 @@ export function withTeamDifficultyHex(guessColor, targetColor, difficulty) {
   const clean = withHex({
     ...(team.paint || {}),
     ...(guessColor || {}),
-    h: channelValue({ difficulty, channel: "h", targetValue: team.paint?.h, guessValue: guessColor?.h, fallbackValue: team.paint?.h || 0 }),
-    s: channelValue({ difficulty, channel: "s", targetValue: team.paint?.s, guessValue: guessColor?.s, fallbackValue: team.paint?.s || 0 }),
-    v: channelValue({ difficulty, channel: "v", targetValue: team.paint?.v, guessValue: guessColor?.v, fallbackValue: team.paint?.v || 0 }),
+    h: channelValue({ difficulty, channel: "h", targetValue: target?.h ?? team.paint?.h, guessValue: guessColor?.h, fallbackValue: team.paint?.h || 0 }),
+    s: channelValue({ difficulty, channel: "s", targetValue: target?.s ?? team.paint?.s, guessValue: guessColor?.s, fallbackValue: team.paint?.s || 0 }),
+    v: channelValue({ difficulty, channel: "v", targetValue: target?.v ?? team.paint?.v, guessValue: guessColor?.v, fallbackValue: team.paint?.v || 0 }),
   });
   return withTeamHex({ ...clean, teamId: team.id });
 }
@@ -471,13 +459,13 @@ export function randomTeamTargetColors(count, random = Math.random, teamIds = nu
 
 export function createDefaultBrandGuess(targetOrBrandId = DEFAULT_BRAND_ID, difficulty) {
   const targetColor = targetOrBrandId && typeof targetOrBrandId === "object" ? targetOrBrandId : null;
-  const defaultGuess = getDifficultyOption(typeof difficulty === "string" ? difficulty : difficulty?.id)?.defaultGuess;
+  const defaultGuess = difficultyDefaultGuess(difficulty);
 
   return withBrandDifficultyHex({
     brandId: targetColor?.brandId || targetOrBrandId || DEFAULT_BRAND_ID,
-    h: defaultGuess?.h ?? 210,
-    s: defaultGuess?.s ?? 50,
-    v: defaultGuess?.v ?? 78,
+    h: defaultGuess.h,
+    s: defaultGuess.s,
+    v: defaultGuess.v,
   }, targetColor, difficulty);
 }
 
@@ -504,24 +492,22 @@ export function createDefaultCartoonGuess(
       ? targetOrCartoonId
       : null;
   const cartoonId = targetColor?.cartoonId || targetOrCartoonId || DEFAULT_CARTOON_ID;
-  const defaultGuess = getDifficultyOption(
-    typeof difficulty === "string" ? difficulty : difficulty?.id,
-  )?.defaultGuess;
+  const defaultGuess = difficultyDefaultGuess(difficulty);
   const guessColor = {
     cartoonId,
-    h: defaultGuess?.h ?? 210,
+    h: defaultGuess.h,
     s: channelValue({
       difficulty,
       channel: "s",
       targetValue: targetColor?.s,
-      guessValue: defaultGuess?.s,
+      guessValue: defaultGuess.s,
       fallbackValue: 50,
     }),
     v: channelValue({
       difficulty,
       channel: "v",
       targetValue: targetColor?.v,
-      guessValue: defaultGuess?.v,
+      guessValue: defaultGuess.v,
       fallbackValue: 78,
     }),
   };
@@ -539,21 +525,17 @@ export function createDefaultCartoonGuess(
 
 export function createDefaultFlagGuess(
   targetOrFlagId = DEFAULT_FLAG_ID,
-  difficultyOrRandom,
-  random = Math.random,
+  difficulty,
 ) {
   const targetColor =
     targetOrFlagId && typeof targetOrFlagId === "object" ? targetOrFlagId : null;
-  const difficulty =
-    typeof difficultyOrRandom === "function" ? undefined : difficultyOrRandom;
-  const randomFn =
-    typeof difficultyOrRandom === "function" ? difficultyOrRandom : random;
+  const defaultGuess = difficultyDefaultGuess(difficulty);
 
   return withFlagDifficultyHex({
     flagId: targetColor?.flagId || targetOrFlagId || DEFAULT_FLAG_ID,
-    h: Math.floor(randomFn() * 360),
-    s: Math.floor(48 + randomFn() * 42),
-    v: Math.floor(50 + randomFn() * 40),
+    h: defaultGuess.h,
+    s: defaultGuess.s,
+    v: defaultGuess.v,
   }, targetColor, difficulty);
 }
 
@@ -570,7 +552,14 @@ export function randomFlagTargetColor(random = Math.random, flagDifficulty) {
 
 export function randomFlagTargetColors(count, random = Math.random, flagDifficulty) {
   const result = [];
-  const pool = flagDifficulty ? getFlagsForDifficulty(FLAG_OPTIONS, flagDifficulty) : FLAG_OPTIONS;
+  const difficulties = Array.isArray(flagDifficulty)
+    ? flagDifficulty
+    : flagDifficulty
+      ? [flagDifficulty]
+      : [];
+  const pool = difficulties.length
+    ? FLAG_OPTIONS.filter((flag) => difficulties.includes(flag.difficulty))
+    : FLAG_OPTIONS;
   const flags = pool.length ? pool : FLAG_OPTIONS;
 
   while (result.length < count) {
@@ -649,10 +638,6 @@ export function randomTargetColor(difficultyId, gameModeId = GAME_MODE_IDS.NORMA
 
   if (gameModeId === GAME_MODE_IDS.FLAG) {
     return randomFlagTargetColor();
-  }
-
-  if (gameModeId === GAME_MODE_IDS.CARTOON) {
-    return randomCartoonTargetColor();
   }
 
   const difficulty = getDifficultyOption(difficultyId);

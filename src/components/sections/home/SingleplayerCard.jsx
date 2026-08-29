@@ -57,9 +57,9 @@ export default function SingleplayerCard({
     ? t("levelCount.infinity")
     : String(roundCount);
   const setupCopyKey =
-    gameFamily === GAME_FAMILY_IDS.CARTOON &&
-    (gameMode === "normal" || gameMode === "endless" || gameMode === "timed")
-      ? `cartoon${gameMode[0].toUpperCase()}${gameMode.slice(1)}`
+    gameFamily !== GAME_FAMILY_IDS.COLOR &&
+    (gameMode === "normal" || gameMode === "endless" || gameMode === "timed" || gameMode === "sprint")
+      ? `visual${gameMode[0].toUpperCase()}${gameMode.slice(1)}`
       : gameMode || DEFAULT_GAME_MODE_ID;
   const description = [
     t(`setup.singleCopy.${setupCopyKey}`, {

@@ -27,6 +27,10 @@ export default function AppHeader() {
   const { locale, t } = useTranslation();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname();
+  const familyHomeHref =
+    GAME_FAMILY_OPTIONS.find(
+      (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
+    )?.href || "/color";
   const router = useRouter();
   const isLibraryRoute =
     pathname === "/cartoon-library" ||
@@ -434,7 +438,7 @@ export default function AppHeader() {
 
       <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-6">
         <Link
-          href="/color"
+          href={familyHomeHref}
           aria-label={t("app.homeAria")}
           data-sound="off"
           className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-base font-semibold uppercase leading-none tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-[17px]"

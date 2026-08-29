@@ -25,6 +25,7 @@ import {
   fail,
   ok,
   validateDifficulty,
+  validateGameFamily,
   validateGameMode,
   validatePlayerId,
   validatePlayerName,
@@ -183,6 +184,7 @@ export function getRoomSnapshot(room) {
     status: room.status,
     mode: room.gameMode,
     gameMode: room.gameMode,
+    gameFamily: room.gameFamily,
     difficulty: room.difficulty,
     flagDifficulty: room.flagDifficulty || "starter",
     flagDifficulties: room.flagDifficulties || [room.flagDifficulty || "starter"],
@@ -218,6 +220,7 @@ function getRoomListSnapshot(room) {
     isPrivate: room.visibility === ROOM_VISIBILITIES.PRIVATE,
     hasPassword: Boolean(room.password),
     gameMode: room.gameMode,
+    gameFamily: room.gameFamily,
     difficulty: room.difficulty,
     roundCount: room.roundCount,
     hintsEnabled: room.hintsEnabled !== false,
@@ -329,6 +332,9 @@ function validateRoomCreatePayload(payload) {
   const gameMode = validateGameMode(payload.gameMode || payload.mode);
   if (!gameMode.ok) return gameMode;
 
+  const gameFamily = validateGameFamily(payload.gameFamily);
+  if (!gameFamily.ok) return gameFamily;
+
   const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
   if (!roundCount.ok) return roundCount;
 
@@ -350,6 +356,7 @@ function validateRoomCreatePayload(payload) {
     playerId: playerId.data.playerId,
     playerName: playerName.data.playerName,
     gameMode: gameMode.data.gameMode,
+    gameFamily: gameFamily.data.gameFamily,
     difficulty: resolveModeDifficulty(
       gameMode.data.gameMode,
       difficulty.data.difficulty,
@@ -382,6 +389,7 @@ export function createRoom(payload) {
     hostPlayerId: validation.data.playerId,
     status: ROOM_STATUSES.LOBBY,
     gameMode: validation.data.gameMode,
+    gameFamily: validation.data.gameFamily,
     difficulty: validation.data.difficulty,
     flagDifficulty: validation.data.flagDifficulty,
     flagDifficulties: validation.data.flagDifficulties,

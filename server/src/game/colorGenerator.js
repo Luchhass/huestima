@@ -1,6 +1,6 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
 import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
-import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption, getFlagsForDifficulty } from "./flags.js";
+import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
 import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams.js";
 
@@ -128,18 +128,6 @@ function averageRgbHex(firstHex, secondHex) {
   });
 }
 
-function averageManyRgbHex(hexValues) {
-  const colors = hexValues.filter(Boolean).map(hexToRgb);
-
-  if (!colors.length) return "#000000";
-
-  return rgbToHex({
-    r: colors.reduce((sum, color) => sum + color.r, 0) / colors.length,
-    g: colors.reduce((sum, color) => sum + color.g, 0) / colors.length,
-    b: colors.reduce((sum, color) => sum + color.b, 0) / colors.length,
-  });
-}
-
 export function withGradientHex(color) {
   const left = withHex({
     ...GRADIENT_FIXED_COLOR,
@@ -162,46 +150,28 @@ export function withGradientHex(color) {
 
 export function withFlagHex(color) {
   const flag = getFlagOption(color?.flagId || DEFAULT_FLAG_ID);
-  const slotDefinitions = flag.slots?.length
-    ? flag.slots
-    : [{ id: "base", ...flag.background }];
-  const incomingSlots = Array.isArray(color?.slots) ? color.slots : [];
-  const requestedSlotId =
-    color?.activeSlotId ||
-    incomingSlots.find((slotColor) => slotDefinitions.some((slot) => slot.id === slotColor.id))?.id ||
-    slotDefinitions[0].id;
-
-  const cleanSlots = slotDefinitions.map((slotDefinition, index) => {
-    const incomingSlot = incomingSlots.find((slotColor) => slotColor.id === slotDefinition.id);
-    const shouldApplyDirectColor =
-      slotDefinition.id === requestedSlotId &&
-      [color?.h, color?.s, color?.v].some(Number.isFinite);
-
-    return withHex({
-      ...slotDefinition,
-      ...(incomingSlot || {}),
-      ...(shouldApplyDirectColor || (!incomingSlots.length && index === 0) ? color || {} : {}),
-      id: slotDefinition.id,
-    });
-  });
-
-  const activeSlot =
-    cleanSlots.find((slotColor) => slotColor.id === requestedSlotId) || cleanSlots[0];
-  const toneHex = averageManyRgbHex(cleanSlots.map((slotColor) => slotColor.hex));
+  const cleanColor = withHex({ ...(flag?.paint || {}), ...(color || {}) });
 
   return {
     type: GAME_MODES.FLAG,
     flagId: flag.id,
     flagLabel: flag.label,
-    motif: flag.motif,
-    motifColor: flag.motifColor || "#ffffff",
-    activeSlotId: activeSlot.id,
-    slots: cleanSlots,
-    h: activeSlot.h,
-    s: activeSlot.s,
-    v: activeSlot.v,
-    hex: activeSlot.hex,
-    toneHex,
+    paintLabel: flag.paintLabel,
+    originalScenePath: flag.originalScenePath,
+    baseScenePath: flag.baseScenePath,
+    scenePath: flag.scenePath,
+    imagePath: flag.imagePath,
+    maskPath: flag.maskPath,
+    assetPath: flag.assetPath || flag.imagePath,
+    paintBase: flag.paint,
+    layers: flag.layers,
+    activeSlotId: "main",
+    slots: [{ id: "main", ...cleanColor }],
+    h: cleanColor.h,
+    s: cleanColor.s,
+    v: cleanColor.v,
+    hex: cleanColor.hex,
+    toneHex: cleanColor.hex,
   };
 }
 
@@ -333,7 +303,14 @@ export function randomTeamTargetColors(count, random = Math.random, teamIds = nu
 }
 
 export function randomFlagTargetColor(random = Math.random, flagDifficulty) {
-  const pool = flagDifficulty ? getFlagsForDifficulty(FLAG_OPTIONS, flagDifficulty) : FLAG_OPTIONS;
+  const difficulties = Array.isArray(flagDifficulty)
+    ? flagDifficulty
+    : flagDifficulty
+      ? [flagDifficulty]
+      : [];
+  const pool = difficulties.length
+    ? FLAG_OPTIONS.filter((flag) => difficulties.includes(flag.difficulty))
+    : FLAG_OPTIONS;
   const flags = pool.length ? pool : FLAG_OPTIONS;
   const flag = flags[Math.floor(random() * flags.length)];
 
@@ -467,7 +444,7 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
     return randomFlagTargetColors(roundCount, random, flagDifficulties || flagDifficulty);
   }
 
-  if (gameFamily === "cartoon" || gameMode === GAME_MODES.CARTOON) {
+  if (gameFamily === "cartoon") {
     return randomCartoonTargetColors(roundCount, random, cartoonIds);
   }
 

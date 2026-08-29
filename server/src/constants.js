@@ -15,9 +15,15 @@ export const GAME_MODES = {
   FLAG: "flag",
   SPRINT: "sprint",
   CARTOON: "cartoon",
-  BRAND_RECALL: "brandRecall",
-  TEAM_RECALL: "teamRecall",
   DUEL: "duel",
+};
+
+export const GAME_FAMILIES = {
+  COLOR: "color",
+  FLAG: "flag",
+  CARTOON: "cartoon",
+  BRAND: "brand",
+  TEAM: "team",
 };
 
 export const DIFFICULTIES = {
@@ -31,7 +37,7 @@ export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;
 export const SPRINT_MAX_ROUNDS = 64;
-export const SPRINT_DURATION_MS = 60000;
+export const SPRINT_DURATION_MS = 30000;
 export const PLAYER_NAME_MIN_LENGTH = 2;
 export const PLAYER_NAME_MAX_LENGTH = 18;
 export const ROOM_NAME_MIN_LENGTH = 2;
@@ -72,15 +78,6 @@ export const GAME_MODE_CONFIG = {
     sprintDurationMs: SPRINT_DURATION_MS,
     roundCount: SPRINT_MAX_ROUNDS,
     lockedDifficulty: DIFFICULTIES.EASY,
-  },
-  [GAME_MODES.CARTOON]: {
-    revealDurationMs: 5000,
-  },
-  [GAME_MODES.BRAND_RECALL]: {
-    revealDurationMs: 5000,
-  },
-  [GAME_MODES.TEAM_RECALL]: {
-    revealDurationMs: 5000,
   },
   [GAME_MODES.DUEL]: {
     revealDurationMs: 5000,

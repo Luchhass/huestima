@@ -8,6 +8,7 @@
     "build:flags": "node scripts/build-flag-scenes.mjs",
     "build:brands": "node scripts/build-brand-scenes.mjs",
     "build:teams": "node scripts/build-team-scenes.mjs",
+    "check:colors": "node scripts/check-color-mechanics.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

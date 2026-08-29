@@ -25,8 +25,6 @@ const MODE_CODES = {
   timed: "t",
   gradient: "g",
   flag: "F",
-  flagRecall: "r",
-  cartoon: "c",
   duel: "d",
 };
 const MODE_BY_CODE = Object.fromEntries(

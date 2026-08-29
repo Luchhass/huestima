@@ -1,6 +1,7 @@
 import {
   DIFFICULTIES,
   DEFAULT_ROUND_COUNT,
+  GAME_FAMILIES,
   GAME_MODES,
   PLAYER_NAME_MAX_LENGTH,
   PLAYER_NAME_MIN_LENGTH,
@@ -66,11 +67,24 @@ export function validateGameMode(gameMode) {
     return fail("Invalid game mode.");
   }
 
-  if (cleanMode === GAME_MODES.CARTOON && !HAS_CARTOON_OPTIONS) {
-    return fail("Cartoon mode needs a cartoon dataset.");
+  if (cleanMode === GAME_MODES.CARTOON) {
+    return fail("Memory mode is no longer available.");
   }
 
   return ok({ gameMode: cleanMode });
+}
+
+export function validateGameFamily(gameFamily) {
+  const cleanFamily = cleanString(gameFamily) || GAME_FAMILIES.COLOR;
+  if (!Object.values(GAME_FAMILIES).includes(cleanFamily)) {
+    return fail("Invalid game family.");
+  }
+
+  if (cleanFamily === GAME_FAMILIES.CARTOON && !HAS_CARTOON_OPTIONS) {
+    return fail("Cartoon game needs a cartoon dataset.");
+  }
+
+  return ok({ gameFamily: cleanFamily });
 }
 
 export function validateRoundCount(roundCount) {

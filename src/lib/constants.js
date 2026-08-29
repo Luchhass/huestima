@@ -14,7 +14,7 @@ export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_GUESS_DURATION_MS = 3000;
-export const SPRINT_DURATION_MS = 60000;
+export const SPRINT_DURATION_MS = 30000;
 export const MAX_ROUND_SCORE = 10;
 
 export const DEFAULT_GUESS_HSV = {
@@ -63,10 +63,7 @@ export const GAME_MODE_IDS = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
-  FLAG_RECALL: "flagRecall",
   SPRINT: "sprint",
-  BRAND_RECALL: "brandRecall",
-  TEAM_RECALL: "teamRecall",
   CARTOON: "cartoon",
   DUEL: "duel",
 };
@@ -121,12 +118,6 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
-    id: GAME_MODE_IDS.FLAG_RECALL,
-    label: "Memory",
-    description: "Keep the flag visible while you tune the background color from memory.",
-    revealDurationMs: MEMORIZE_DURATION_MS,
-  },
-  {
     id: GAME_MODE_IDS.SPRINT,
     label: "Sprint",
     description: "Race through rapid-fire rounds before the clock runs out.",
@@ -134,24 +125,6 @@ export const GAME_MODE_OPTIONS = [
     sprintDurationMs: SPRINT_DURATION_MS,
     isSprint: true,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
-  },
-  {
-    id: GAME_MODE_IDS.CARTOON,
-    label: "Memory",
-    description: "Keep the cartoon scene visible while you tune its main painted color from memory.",
-    revealDurationMs: MEMORIZE_DURATION_MS,
-  },
-  {
-    id: GAME_MODE_IDS.BRAND_RECALL,
-    label: "Memory",
-    description: "Match the brand color without seeing the original logo color first.",
-    revealDurationMs: MEMORIZE_DURATION_MS,
-  },
-  {
-    id: GAME_MODE_IDS.TEAM_RECALL,
-    label: "Memory",
-    description: "Match the team color without seeing the original logo color first.",
-    revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
     id: GAME_MODE_IDS.DUEL,
@@ -179,16 +152,8 @@ export const GAME_MODE_CARD_COPY = {
       "Match both sides of a two-color gradient using the left and right hue bars.",
     [GAME_MODE_IDS.FLAG]:
       "Read the flag shape, then tune the background color behind its fixed emblem.",
-    [GAME_MODE_IDS.FLAG_RECALL]:
-      "Keep the full flag visible while you rebuild the background color across {roundCount} levels.",
-    [GAME_MODE_IDS.BRAND_RECALL]:
-      "Rebuild the brand color without seeing the original logo color first across {roundCount} levels.",
-    [GAME_MODE_IDS.TEAM_RECALL]:
-      "Rebuild the team color without seeing the original logo color first across {roundCount} levels.",
-    [GAME_MODE_IDS.CARTOON]:
-      "Keep the cartoon scene visible while you rebuild the main painted character color across {roundCount} levels.",
     [GAME_MODE_IDS.SPRINT]:
-      "Complete as many levels as possible during sixty seconds of active play.",
+      "Complete as many levels as possible during thirty seconds of active play.",
     [GAME_MODE_IDS.DUEL]:
       "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
   },
@@ -207,16 +172,8 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
     [GAME_MODE_IDS.FLAG]:
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
-    [GAME_MODE_IDS.FLAG_RECALL]:
-      "Everyone keeps the same flag visible on screen while background accuracy decides the room.",
-    [GAME_MODE_IDS.BRAND_RECALL]:
-      "Everyone rebuilds the brand color without seeing the original logo color first.",
-    [GAME_MODE_IDS.TEAM_RECALL]:
-      "Everyone rebuilds the team color without seeing the original logo color first.",
-    [GAME_MODE_IDS.CARTOON]:
-      "Everyone keeps the same cartoon scene visible on screen while main color accuracy decides the room.",
     [GAME_MODE_IDS.SPRINT]:
-      "Everyone completes as many levels as possible during sixty seconds of active play.",
+      "Everyone completes as many levels as possible during thirty seconds of active play.",
     [GAME_MODE_IDS.DUEL]:
       "Endless PvP rounds. The last player is eliminated only when the score gap is wide enough.",
   },

@@ -21,6 +21,7 @@ import {
   withHex,
   withGradientHex,
 } from "./colorGenerator.js";
+import { resolveGuessChannels } from "../../../shared/colorMechanics.mjs";
 import {
   calculateColorScore,
   ciede2000Distance,
@@ -124,32 +125,9 @@ function calculateFlagSlotAverage(targetColor, guessColor, scoreFn) {
   return scores.reduce((sum, score) => sum + score, 0) / scores.length;
 }
 
-function difficultyControls(difficulty) {
-  const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.easy;
-
-  return Array.isArray(config?.controls) ? config.controls : [];
-}
-
-function finiteColorChannel(value) {
-  const number = Number(value);
-
-  return Number.isFinite(number) ? number : null;
-}
-
 function completeHsvForDifficulty(targetColor, guessColor, difficulty) {
-  const controls = difficultyControls(difficulty);
-
-  return {
-    h: controls.includes("h")
-      ? finiteColorChannel(guessColor?.h) ?? targetColor.h
-      : targetColor.h,
-    s: controls.includes("s")
-      ? finiteColorChannel(guessColor?.s) ?? targetColor.s
-      : targetColor.s,
-    v: controls.includes("v")
-      ? finiteColorChannel(guessColor?.v) ?? targetColor.v
-      : targetColor.v,
-  };
+  const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.easy;
+  return resolveGuessChannels({ guess: guessColor, target: targetColor, difficulty: config });
 }
 
 function validateGuessColorPayload(targetColor, guessColor, difficulty) {
@@ -172,58 +150,16 @@ function validateGuessColorPayload(targetColor, guessColor, difficulty) {
   }
 
   if (isFlagColor(targetColor)) {
-    const targetSlots = Array.isArray(targetColor.slots) ? targetColor.slots : [];
-
-    if (!targetSlots.length) {
-      const color = validateHsvColor(
-        completeHsvForDifficulty(targetColor, guessColor, difficulty),
-      );
-      if (!color.ok) return color;
-
-      return {
-        ok: true,
-        data: {
-          color: withFlagHex({
-            ...color.data.color,
-            flagId: targetColor.flagId,
-          }),
-        },
-      };
-    }
-
-    const cleanSlots = [];
-
-    for (const targetSlot of targetSlots) {
-      const slotPayload = guessColor?.slots?.find(
-        (slotColor) => slotColor?.id === targetSlot.id,
-      );
-      const mergedGuess =
-        targetSlot.id === guessColor?.activeSlotId
-          ? {
-              ...(slotPayload || {}),
-              h: finiteColorChannel(guessColor?.h) ?? slotPayload?.h,
-              s: finiteColorChannel(guessColor?.s) ?? slotPayload?.s,
-              v: finiteColorChannel(guessColor?.v) ?? slotPayload?.v,
-            }
-          : slotPayload || {};
-      const slotResult = validateHsvColor(
-        completeHsvForDifficulty(targetSlot, mergedGuess, difficulty),
-      );
-
-      if (!slotResult.ok) return slotResult;
-
-      cleanSlots.push({
-        id: targetSlot.id,
-        ...slotResult.data.color,
-      });
-    }
+    const color = validateHsvColor(
+      completeHsvForDifficulty(targetColor, guessColor, difficulty),
+    );
+    if (!color.ok) return color;
 
     return {
       ok: true,
       data: {
         color: withFlagHex({
-          activeSlotId: guessColor?.activeSlotId,
-          slots: cleanSlots,
+          ...color.data.color,
           flagId: targetColor.flagId,
         }),
       },

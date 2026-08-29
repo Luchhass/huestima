@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { representativePaint } from "./lib/visual-scene-pipeline.mjs";
 
 const WIDTH = 1920;
 const HEIGHT = 1280;
@@ -210,34 +211,6 @@ const FLAG_ITEMS = [
   ["zimbabwe", "Zimbabwe"],
 ];
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function rgbToHsv(r, g, b) {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const delta = max - min;
-  let h = 0;
-
-  if (delta !== 0) {
-    if (max === rn) h = 60 * (((gn - bn) / delta) % 6);
-    else if (max === gn) h = 60 * ((bn - rn) / delta + 2);
-    else h = 60 * ((rn - gn) / delta + 4);
-  }
-
-  if (h < 0) h += 360;
-
-  return {
-    h,
-    s: max === 0 ? 0 : (delta / max) * 100,
-    v: max * 100,
-  };
-}
-
 async function normalizeFlag(buffer) {
   return sharp(buffer, { animated: false })
     .rotate()
@@ -260,10 +233,6 @@ function buildLayers(raw) {
   const neutral = Buffer.from(raw.data);
   const maskData = Buffer.alloc(WIDTH * HEIGHT * 4);
   const layerData = Buffer.alloc(WIDTH * HEIGHT * 4);
-  let sumR = 0;
-  let sumG = 0;
-  let sumB = 0;
-  let sumAlpha = 0;
 
   for (let pixel = 0; pixel < WIDTH * HEIGHT; pixel += 1) {
     const offset = pixel * 4;
@@ -292,32 +261,14 @@ function buildLayers(raw) {
     layerData[offset + 2] = raw.data[offset + 2];
     layerData[offset + 3] = alpha;
 
-    const weight = alpha / 255;
-    sumR += raw.data[offset] * weight;
-    sumG += raw.data[offset + 1] * weight;
-    sumB += raw.data[offset + 2] * weight;
-    sumAlpha += weight;
   }
-
-  const average = sumAlpha
-    ? {
-        r: sumR / sumAlpha,
-        g: sumG / sumAlpha,
-        b: sumB / sumAlpha,
-      }
-    : { r: 210, g: 210, b: 210 };
-  const paint = rgbToHsv(average.r, average.g, average.b);
 
   return {
     original,
     neutral,
     maskData,
     layerData,
-    paint: {
-      h: Math.round(paint.h),
-      s: Math.round(clamp(paint.s, 0, 100)),
-      v: Math.round(clamp(paint.v, 0, 100)),
-    },
+    paint: representativePaint(raw.data, 4),
   };
 }
 

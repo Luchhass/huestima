@@ -92,7 +92,7 @@ export default function SingleplayerGame({
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     game.isSprintMode && (isFlagMode || isCartoonMode);
-  const usesShowcaseTransition = true;
+  const usesShowcaseTransition = cleanGameFamily !== "color";
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
@@ -496,7 +496,7 @@ export default function SingleplayerGame({
               onFinishRun={game.finishRun}
               onContinue={game.continueFromResult}
               visualIntroDelayMs={
-                isRenderedShowcaseResultPhase
+                cleanGameFamily !== "color" && isRenderedShowcaseResultPhase
                   ? SHOWCASE_RESULT_REVEAL_DELAY_MS
                   : 0
               }
