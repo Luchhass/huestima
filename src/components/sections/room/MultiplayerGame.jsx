@@ -143,15 +143,10 @@ export default function MultiplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
-    (game.isSprintMode && (isFlagMode || isCartoonMode || isBrandMode)) ||
-    (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
-    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
-    (isBrandMode &&
-      (game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL ||
-        game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL));
+    game.isSprintMode && (isFlagMode || isCartoonMode);
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode || isBrandMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -447,7 +442,7 @@ export default function MultiplayerGame({
           ? game.guessColor
           : null;
   const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode || isBrandMode) &&
+    (isFlagMode || isCartoonMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
       renderedPhase === GAME_PHASES.GUESS ||
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
@@ -476,6 +471,8 @@ export default function MultiplayerGame({
     >
       <GameCardShell
         data-intro-card-target
+        backgroundOverride={isLogoFamily(cleanGameFamily) ? "#000000" : null}
+        hideVisualLabel={game.isSprintMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -496,7 +493,7 @@ export default function MultiplayerGame({
             : undefined
         }
         brandLabelOffset={
-          isBrandMode && renderedPhase === GAME_PHASES.GUESS
+          isLogoFamily(cleanGameFamily)
             ? {
                 base: (game.difficulty?.controls?.length || 1) * 50 + 24,
                 sm: (game.difficulty?.controls?.length || 1) * 50 + 32,
@@ -566,6 +563,7 @@ export default function MultiplayerGame({
               isShowcaseWidgetEntering={isShowcaseWidgetEntering}
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
               hintCount={game.hintCount}
+              unlimitedHints={game.unlimitedHints}
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}

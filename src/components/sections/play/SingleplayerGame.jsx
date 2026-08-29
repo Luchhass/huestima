@@ -91,14 +91,10 @@ export default function SingleplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
-    (game.isSprintMode && (isFlagMode || isCartoonMode || isBrandMode || isTeamMode)) ||
-    (isFlagMode && game.gameMode.id === GAME_MODE_IDS.FLAG_RECALL) ||
-    (isCartoonMode && game.gameMode.id === GAME_MODE_IDS.CARTOON) ||
-    (isBrandMode && game.gameMode.id === GAME_MODE_IDS.BRAND_RECALL) ||
-    (isTeamMode && game.gameMode.id === GAME_MODE_IDS.TEAM_RECALL);
+    game.isSprintMode && (isFlagMode || isCartoonMode);
   const usesShowcaseTransition = true;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode || isBrandMode || isTeamMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -371,7 +367,7 @@ export default function SingleplayerGame({
           ? game.guessColor
           : null;
   const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode || isBrandMode) &&
+    (isFlagMode || isCartoonMode) &&
     (renderedPhase === GAME_PHASES.MEMORIZE ||
       renderedPhase === GAME_PHASES.GUESS ||
       (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
@@ -397,6 +393,8 @@ export default function SingleplayerGame({
     >
       <GameCardShell
         data-intro-card-target
+        backgroundOverride={(isBrandMode || isTeamMode) ? "#000000" : null}
+        hideVisualLabel={game.isSprintMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -417,7 +415,7 @@ export default function SingleplayerGame({
             : undefined
         }
         brandLabelOffset={
-          isBrandMode && renderedPhase === GAME_PHASES.GUESS
+          (isBrandMode || isTeamMode)
             ? {
                 base: (game.difficulty?.controls?.length || 1) * 50 + 24,
                 sm: (game.difficulty?.controls?.length || 1) * 50 + 32,
@@ -481,6 +479,7 @@ export default function SingleplayerGame({
               isShowcaseWidgetExiting={isShowcaseWidgetExiting}
               isExiting={isShowcaseWidgetExiting}
               hintCount={game.hintCount}
+              unlimitedHints={game.unlimitedHints}
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}

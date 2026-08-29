@@ -69,7 +69,7 @@ function SummaryTile({ result, locale, t }) {
     <div
       data-summary-tile
       className={`relative min-w-0 overflow-hidden ${
-        isFlagColor(result.target) ? "aspect-[3/2]" : "aspect-square"
+        "aspect-square"
       }`}
       style={{ background: gradientBackground(result.target) }}
       title={t("room.roundTitle", {

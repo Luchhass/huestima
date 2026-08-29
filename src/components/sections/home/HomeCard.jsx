@@ -110,7 +110,7 @@ export default function HomeCard({
   const [flagDifficulties, setFlagDifficulties] = useState(
     initialFlagDifficulties ?? (initialFlagDifficulty
       ? [initialFlagDifficulty]
-      : FLAG_DIFFICULTY_OPTIONS.map(({ id }) => id)),
+      : ["starter"]),
   );
   const [cartoonIds, setCartoonIds] = useState(
     initialCartoonIds ?? CARTOON_PACKS.flatMap(({ itemIds }) => itemIds),

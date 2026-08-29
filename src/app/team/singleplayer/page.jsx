@@ -6,5 +6,14 @@ export const metadata = createPageMetadata("teamSingleplayer");
 
 export default async function TeamSingleplayerPage({ searchParams }) {
   const setup = resolveSingleplayerRoute(await searchParams, "team");
-  return <SingleplayerGame {...setup} gameFamily="team" />;
+  return (
+    <SingleplayerGame
+      initialDifficulty={setup.difficulty}
+      initialGameMode={setup.gameMode}
+      initialRoundCount={setup.roundCount}
+      initialHintsEnabled={setup.hintsEnabled}
+      initialTeamIds={setup.teamIds}
+      gameFamily="team"
+    />
+  );
 }

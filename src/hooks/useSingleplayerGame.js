@@ -6,6 +6,7 @@ import {
   DEFAULT_GAME_MODE_ID,
   GAME_MODE_IDS,
   MAX_ROUND_SCORE,
+  SPRINT_DURATION_MS,
 } from "@/lib/constants";
 import {
   createDefaultCartoonGuess,
@@ -222,17 +223,11 @@ export function useSingleplayerGame(
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
+  const unlimitedHints = isEndlessMode;
   const isFlagMode = isFlagFamily(cleanGameFamily);
-  const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
   const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
   const isBrandMode = isLogoFamily(cleanGameFamily);
-  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL || gameMode.id === GAME_MODE_IDS.TEAM_RECALL;
-  const isFamilyClassicMode =
-    (isFlagMode && gameMode.id === GAME_MODE_IDS.NORMAL) ||
-    (isCartoonMode && gameMode.id === GAME_MODE_IDS.NORMAL) ||
-    (isBrandMode && gameMode.id === GAME_MODE_IDS.NORMAL);
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -274,7 +269,7 @@ export function useSingleplayerGame(
   );
   const [hintActive, setHintActive] = useState(false);
   const [sprintRemainingMs, setSprintRemainingMs] = useState(
-    () => gameMode.sprintDurationMs || 60000,
+    () => gameMode.sprintDurationMs || SPRINT_DURATION_MS,
   );
   const [resumeSavedAt, setResumeSavedAt] = useState(null);
   const [historyMatchId, setHistoryMatchId] = useState(() =>
@@ -298,9 +293,13 @@ export function useSingleplayerGame(
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       if (initialGameSession) {
-        const restoredPhase = Object.values(GAME_PHASES).includes(initialGameSession.phase)
+        const storedPhase = Object.values(GAME_PHASES).includes(initialGameSession.phase)
           ? initialGameSession.phase
           : GAME_PHASES.INTRO;
+        const restoredPhase =
+          cleanGameFamily !== "color" && storedPhase === GAME_PHASES.MEMORIZE
+            ? GAME_PHASES.GUESS
+            : storedPhase;
         const restoredRoundIndex = isSprintMode
           ? Math.max(Number(initialGameSession.roundIndex) || 0, 0)
           : Math.min(
@@ -358,7 +357,7 @@ export function useSingleplayerGame(
         setSprintRemainingMs(
           Number.isFinite(initialGameSession.sprintRemainingMs)
             ? Math.max(0, initialGameSession.sprintRemainingMs)
-            : gameMode.sprintDurationMs || 60000,
+            : gameMode.sprintDurationMs || SPRINT_DURATION_MS,
         );
         setResumeSavedAt(
           Number.isFinite(initialGameSession.savedAt)
@@ -491,9 +490,7 @@ export function useSingleplayerGame(
           sequenceColors[0],
         ),
       );
-      transitionToPhase(
-        isFamilyClassicMode ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
-      );
+      transitionToPhase(GAME_PHASES.MEMORIZE);
       return;
     }
 
@@ -523,7 +520,7 @@ export function useSingleplayerGame(
         ),
       );
       transitionToPhase(
-        isFamilyClassicMode ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
+        GAME_PHASES.GUESS,
       );
       return;
     }
@@ -554,7 +551,7 @@ export function useSingleplayerGame(
         ),
       );
       transitionToPhase(
-        isFamilyClassicMode ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
+        GAME_PHASES.GUESS,
       );
       return;
     }
@@ -589,7 +586,7 @@ export function useSingleplayerGame(
         ),
       );
       transitionToPhase(
-        isFamilyClassicMode ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
+        GAME_PHASES.GUESS,
       );
       return;
     }
@@ -614,7 +611,6 @@ export function useSingleplayerGame(
     isCartoonMode,
     isBrandMode,
     isSprintMode,
-    isFamilyClassicMode,
     flagDifficulty,
     cartoonIds,
     teamIds,
@@ -628,8 +624,8 @@ export function useSingleplayerGame(
   const useHint = useCallback(() => {
     if (
       phase !== GAME_PHASES.GUESS ||
-      !hintsEnabled ||
-      hintCount <= 0 ||
+      (!hintsEnabled && !unlimitedHints) ||
+      (!unlimitedHints && hintCount <= 0) ||
       hintActive ||
       hintActionRef.current
     ) {
@@ -637,9 +633,11 @@ export function useSingleplayerGame(
     }
 
     hintActionRef.current = true;
-    setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    if (!unlimitedHints) {
+      setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    }
     setHintActive(true);
-  }, [hintActive, hintCount, hintsEnabled, phase]);
+  }, [hintActive, hintCount, hintsEnabled, phase, unlimitedHints]);
 
   const finishIntro = useCallback(() => {
     if (phase !== GAME_PHASES.INTRO || completedIntroRoundRef.current === roundIndex) {
@@ -846,7 +844,7 @@ export function useSingleplayerGame(
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
     setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
     setHintActive(false);
-    setSprintRemainingMs(gameMode.sprintDurationMs || 60000);
+    setSprintRemainingMs(gameMode.sprintDurationMs || SPRINT_DURATION_MS);
     sprintExpiredRef.current = false;
     setPhaseStartedAt(Date.now());
     setPhase(GAME_PHASES.INTRO);
@@ -895,6 +893,7 @@ export function useSingleplayerGame(
     gameFamily: cleanGameFamily,
     roundCount,
     hintsEnabled,
+    unlimitedHints,
     hintCount,
     hintActive,
     phase,

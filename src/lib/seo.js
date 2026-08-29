@@ -105,6 +105,11 @@ export const ROUTE_SEO = {
     description: "How Huestima handles browser storage, multiplayer data, match sharing, analytics, and privacy choices.",
     path: "/privacy-policy",
   },
+  download: {
+    title: "Huestima Mobile Download",
+    description: "Download the upcoming Huestima mobile game from the App Store or Google Play.",
+    path: "/download",
+  },
   testLab: {
     title: "Huestima Test Page",
     description: "Quick access to Huestima material libraries, mode screens, and development test surfaces.",

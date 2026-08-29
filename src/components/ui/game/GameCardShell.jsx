@@ -26,6 +26,8 @@ export default function GameCardShell({
   cartoonOverlayProps = {},
   brandOverlayProps = {},
   brandLabelOffset = null,
+  hideVisualLabel = false,
+  backgroundOverride = null,
   isExpanded = false,
   heightMode = "normal",
   ...props
@@ -50,18 +52,31 @@ export default function GameCardShell({
       : {}),
   };
   const visualLabel = getVisualLabel(color, locale);
-  const cardStyle = {
-    background: background || undefined,
-    color: color ? foreground : "#ffffff",
-    "--game-fg-top-left": overlayTextColor(overlayTones.topLeft),
-    "--game-fg-top-left-shadow": overlayTextShadow(overlayTones.topLeft),
-    "--game-fg-top-right": overlayTextColor(overlayTones.topRight),
-    "--game-fg-top-right-shadow": overlayTextShadow(overlayTones.topRight),
-    "--game-fg-bottom-left": overlayTextColor(overlayTones.bottomLeft),
-    "--game-fg-bottom-left-shadow": overlayTextShadow(overlayTones.bottomLeft),
-    "--game-fg-bottom-right": overlayTextColor(overlayTones.bottomRight),
-    "--game-fg-bottom-right-shadow": overlayTextShadow(overlayTones.bottomRight),
-  };
+  const cardStyle = backgroundOverride
+    ? {
+        background: backgroundOverride,
+        color: "#ffffff",
+        "--game-fg-top-left": "#ffffff",
+        "--game-fg-top-left-shadow": "0 2px 12px rgb(0 0 0 / 0.35)",
+        "--game-fg-top-right": "#ffffff",
+        "--game-fg-top-right-shadow": "0 2px 12px rgb(0 0 0 / 0.35)",
+        "--game-fg-bottom-left": "#ffffff",
+        "--game-fg-bottom-left-shadow": "0 2px 12px rgb(0 0 0 / 0.35)",
+        "--game-fg-bottom-right": "#ffffff",
+        "--game-fg-bottom-right-shadow": "0 2px 12px rgb(0 0 0 / 0.35)",
+      }
+    : {
+        background: background || undefined,
+        color: color ? foreground : "#ffffff",
+        "--game-fg-top-left": overlayTextColor(overlayTones.topLeft),
+        "--game-fg-top-left-shadow": overlayTextShadow(overlayTones.topLeft),
+        "--game-fg-top-right": overlayTextColor(overlayTones.topRight),
+        "--game-fg-top-right-shadow": overlayTextShadow(overlayTones.topRight),
+        "--game-fg-bottom-left": overlayTextColor(overlayTones.bottomLeft),
+        "--game-fg-bottom-left-shadow": overlayTextShadow(overlayTones.bottomLeft),
+        "--game-fg-bottom-right": overlayTextColor(overlayTones.bottomRight),
+        "--game-fg-bottom-right-shadow": overlayTextShadow(overlayTones.bottomRight),
+      };
   const allowsExternalControls = className.includes("flag-game-card-shell");
 
   if (cardHeight) {
@@ -81,11 +96,11 @@ export default function GameCardShell({
           <CartoonOverlay color={color} {...cartoonOverlayProps} />
         )}
         {isBrandCard && <BrandOverlay color={color} {...brandOverlayProps} />}
-        {(isFlagCard || isCartoonCard || isBrandCard) && visualLabel && (
+        {(isFlagCard || isCartoonCard || isBrandCard) && visualLabel && !hideVisualLabel && (
           <span
             className={`pointer-events-none absolute z-12 max-w-[45%] truncate text-base font-semibold ${
-              isBrandCard
-                ? "top-6 left-1/2 -translate-x-1/2 text-center sm:top-8"
+              isBrandCard && Number.isFinite(brandLabelOffset?.base)
+                ? "bottom-6 left-(--brand-label-left) sm:bottom-8 sm:left-(--brand-label-left-sm)"
                 : "bottom-6 left-6 sm:bottom-8 sm:left-8"
             }`}
             style={overlayLabelStyle}

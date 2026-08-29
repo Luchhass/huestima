@@ -14,6 +14,7 @@ import {
   DEFAULT_GAME_MODE_ID,
   GAME_MODE_IDS,
   ROUND_COUNT,
+  SPRINT_DURATION_MS,
 } from "@/lib/constants";
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
@@ -176,18 +177,11 @@ export function useMultiplayerGame({
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
-  const isFlagRecallMode = gameMode.id === GAME_MODE_IDS.FLAG_RECALL;
   const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const isCartoonSceneMode = gameMode.id === GAME_MODE_IDS.CARTOON;
-  const isBrandRecallMode = gameMode.id === GAME_MODE_IDS.BRAND_RECALL || gameMode.id === GAME_MODE_IDS.TEAM_RECALL;
-  const isFamilyClassicMode =
-    (isFlagFamily(cleanGameFamily) && gameMode.id === GAME_MODE_IDS.NORMAL) ||
-    (isCartoonMode && gameMode.id === GAME_MODE_IDS.NORMAL) ||
-    (isLogoFamily(cleanGameFamily) && gameMode.id === GAME_MODE_IDS.NORMAL);
   const shouldMemorizeRound =
-    isFamilyClassicMode ||
-    (cleanGameFamily === "color" && gameMode.id === GAME_MODE_IDS.SPRINT);
+    isSequenceMode ||
+    isSprintMode;
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -221,6 +215,7 @@ export function useMultiplayerGame({
       ),
     [gamePayload?.hintsEnabled, room?.game?.hintsEnabled, room?.hintsEnabled],
   );
+  const unlimitedHints = isEndlessMode;
   const serverTargetColors = useMemo(
     () => gamePayload?.targetColors || [],
     [gamePayload?.targetColors],
@@ -257,7 +252,7 @@ export function useMultiplayerGame({
   );
   const [hintActive, setHintActive] = useState(false);
   const [sprintRemainingMs, setSprintRemainingMs] = useState(
-    () => gamePayload?.sprintDurationMs || gameMode.sprintDurationMs || 60000,
+    () => gamePayload?.sprintDurationMs || gameMode.sprintDurationMs || SPRINT_DURATION_MS,
   );
   const [resumeSavedAt, setResumeSavedAt] = useState(null);
   const [historyMatchId, setHistoryMatchId] = useState(() =>
@@ -288,9 +283,13 @@ export function useMultiplayerGame({
 
       if (canRestoreSession) {
         const restorablePhases = [...Object.values(GAME_PHASES), "waiting", "leaderboard"];
-        const restoredPhase = restorablePhases.includes(initialGameSession.phase)
+        const storedPhase = restorablePhases.includes(initialGameSession.phase)
           ? initialGameSession.phase
           : GAME_PHASES.INTRO;
+        const restoredPhase =
+          cleanGameFamily !== "color" && storedPhase === GAME_PHASES.MEMORIZE
+            ? GAME_PHASES.GUESS
+            : storedPhase;
         const restoredRoundIndex = Math.min(
           Math.max(Number(initialGameSession.roundIndex) || 0, 0),
           Math.max(roundCount - 1, 0),
@@ -326,7 +325,7 @@ export function useMultiplayerGame({
         setSprintRemainingMs(
           Number.isFinite(initialGameSession.sprintRemainingMs)
             ? Math.max(0, initialGameSession.sprintRemainingMs)
-            : gamePayload?.sprintDurationMs || gameMode.sprintDurationMs || 60000,
+            : gamePayload?.sprintDurationMs || gameMode.sprintDurationMs || SPRINT_DURATION_MS,
         );
         setResumeSavedAt(
           Number.isFinite(initialGameSession.savedAt)
@@ -478,8 +477,8 @@ export function useMultiplayerGame({
   const useHint = useCallback(() => {
     if (
       phase !== GAME_PHASES.GUESS ||
-      !hintsEnabled ||
-      hintCount <= 0 ||
+      (!hintsEnabled && !unlimitedHints) ||
+      (!unlimitedHints && hintCount <= 0) ||
       hintActive ||
       hintActionRef.current
     ) {
@@ -487,9 +486,11 @@ export function useMultiplayerGame({
     }
 
     hintActionRef.current = true;
-    setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    if (!unlimitedHints) {
+      setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    }
     setHintActive(true);
-  }, [hintActive, hintCount, hintsEnabled, phase]);
+  }, [hintActive, hintCount, hintsEnabled, phase, unlimitedHints]);
 
   const submitGuess = useCallback(async (options = {}) => {
     if (
@@ -816,6 +817,7 @@ export function useMultiplayerGame({
     isCurrentPlayerEliminated,
     roundCount,
     hintsEnabled,
+    unlimitedHints,
     hintCount,
     hintActive,
     phase,

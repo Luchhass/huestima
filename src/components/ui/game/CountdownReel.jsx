@@ -25,6 +25,22 @@ const REEL_CONFIG = [
   },
 ];
 
+export function SprintClock({ remainingMs, className = "" }) {
+  const totalCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
+  const seconds = Math.floor(totalCentiseconds / 100);
+  const centiseconds = totalCentiseconds % 100;
+  const label = `${String(seconds).padStart(2, "0")}:${String(centiseconds).padStart(2, "0")}`;
+
+  return (
+    <span
+      className={`inline-block font-mono text-[2.8rem] font-semibold leading-none tracking-[-0.08em] tabular-nums sm:text-[3.65rem] ${className}`}
+      aria-label={label}
+    >
+      {label}
+    </span>
+  );
+}
+
 function getDigit(value, place) {
   return Math.floor(value / place) % 10;
 }

@@ -95,7 +95,7 @@ function RoundTiles({ results = [], locale, t }) {
         <div
           key={`${result.round}-${resultIndex}-${result.target?.flagId || result.target?.hex || result.target?.toneHex || "round"}`}
           className={`relative min-w-0 overflow-hidden ${
-            isFlagColor(result.target) ? "aspect-[3/2]" : "aspect-square"
+            "aspect-square"
           }`}
           style={{ background: gradientBackground(result.target) }}
           title={t("room.roundTitle", {

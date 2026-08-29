@@ -26,6 +26,8 @@ export default function AppFooter() {
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isTestLabRoute = pathname === "/test-lab";
   const isCreditsRoute = pathname === "/credits";
+  const isDownloadRoute = pathname === "/download";
+  const isHistoryRoute = pathname === "/history";
   const family = pathname?.split("/").filter(Boolean)[0] || "color";
   const testPageLabel = locale === "tr" ? "test sayfası" : "test page";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
@@ -51,7 +53,7 @@ export default function AppFooter() {
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute || isDownloadRoute || isHistoryRoute) return null;
 
   return (
     <>
@@ -68,6 +70,12 @@ export default function AppFooter() {
       </footer>
 
       <div className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 flex max-w-[54%] flex-wrap items-center justify-end gap-x-3 gap-y-1 text-right sm:right-8 sm:bottom-8 sm:max-w-none sm:flex-nowrap sm:gap-5">
+        <Link href={`/download?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/download?from=${family}`)} className={footerLinkClass}>
+          {locale === "tr" ? "uygulamayı indir" : "download app"}
+        </Link>
+        <Link href={`/history?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/history?from=${family}`)} className={footerLinkClass}>
+          {t("history.footerLink")}
+        </Link>
         <Link href={`/test-lab?from=${family}`} data-sound="off" onClick={(event) => void handleFooterNavigation(event, `/test-lab?from=${family}`)} className={footerLinkClass}>
           {testPageLabel}
         </Link>

@@ -189,7 +189,7 @@ export default function LeaderboardCard({
                   <div
                     key={`${row.playerId}-${result.round}-${resultIndex}-${result.target?.flagId || result.target?.hex || result.target?.toneHex || "round"}`}
                     className={`relative overflow-hidden ${
-                      isFlagColor(result.target) ? "aspect-[3/2]" : ""
+                      "aspect-square"
                     }`}
                     style={{ background: gradientBackground(result.target) }}
                     title={t("room.roundTitle", {

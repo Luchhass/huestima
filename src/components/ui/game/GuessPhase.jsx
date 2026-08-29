@@ -12,7 +12,6 @@ import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
-  isBrandColor,
   isCartoonColor,
   isFlagColor,
   isGradientColor,
@@ -23,24 +22,8 @@ import {
   playMemorizeSecondTick,
   startMemorizeMechanism,
 } from "@/lib/sound";
-import CountdownReel from "./CountdownReel";
+import CountdownReel, { SprintClock } from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
-
-function SprintClock({ remainingMs, className = "" }) {
-  const totalCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
-  const seconds = Math.floor(totalCentiseconds / 100);
-  const centiseconds = totalCentiseconds % 100;
-  const label = `${String(seconds).padStart(2, "0")}:${String(centiseconds).padStart(2, "0")}`;
-
-  return (
-    <span
-      className={`inline-block font-mono text-[2.8rem] font-semibold leading-none tracking-[-0.08em] tabular-nums sm:text-[3.65rem] ${className}`}
-      aria-label={label}
-    >
-      {label}
-    </span>
-  );
-}
 
 function getTargetHintColor(targetColor, guessColor) {
   if (!targetColor) return null;
@@ -76,6 +59,7 @@ export default function GuessPhase({
   resumeElapsedMs = 0,
   resumeInstantly = false,
   hintCount = 0,
+  unlimitedHints = false,
   hintActive = false,
   hintsEnabled = true,
   onUseHint,
@@ -112,8 +96,7 @@ export default function GuessPhase({
   const isGradientGuess = isGradientColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
   const isCartoonGuess = isCartoonColor(guessColor);
-  const isBrandGuess = isBrandColor(guessColor);
-  const usesExternalControlWidget = isFlagGuess || isCartoonGuess || isBrandGuess;
+  const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
   const usesShowcaseGuessLayout =
     showcaseLayoutEnabled && usesExternalControlWidget;
   const showcaseTextStyle = {
@@ -136,7 +119,8 @@ export default function GuessPhase({
   const contentRight = rightPickerWidth + 24;
   const contentRightSm = rightPickerWidth + 32;
   const showHintButton = typeof onUseHint === "function";
-  const canUseHint = showHintButton && hintsEnabled && hintCount > 0;
+  const canUseHint =
+    showHintButton && (unlimitedHints || (hintsEnabled && hintCount > 0));
   const actionReserveWidth =
     88 + (showHintButton ? 68 : 0) + (isAdminModeEnabled ? 68 : 0);
   const controlsKey = difficulty.controls.join("-");
@@ -1031,7 +1015,7 @@ export default function GuessPhase({
             className="text-lg font-semibold"
             style={showcaseBrandStyle}
           >
-            {isSprintGuess ? null : APP_NAME}
+            {APP_NAME}
           </p>
         </div>
 
@@ -1055,15 +1039,13 @@ export default function GuessPhase({
         {showGuessTimer && (
           <div
             ref={timerRef}
-            className={isSprintGuess ? "absolute right-6 top-6 z-20 text-right sm:right-8 sm:top-8" : "absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"}
+            className="absolute bottom-6 left-6 z-20 text-left sm:bottom-8 sm:left-8"
             style={{
-              color: isSprintGuess ? "var(--game-fg-top-right)" : "var(--game-fg-bottom-left)",
-              textShadow: isSprintGuess ? "var(--game-fg-top-right-shadow)" : "var(--game-fg-bottom-left-shadow)",
+              color: "var(--game-fg-bottom-left)",
+              textShadow: "var(--game-fg-bottom-left-shadow)",
             }}
           >
-            {isSprintGuess ? (
-              <SprintClock remainingMs={sprintRemainingMs} />
-            ) : (
+            {isSprintGuess ? <SprintClock remainingMs={sprintRemainingMs} /> : (
               <CountdownReel
                 key={`guess-countdown-${timedGuessDurationMs}`}
                 durationMs={displayedDurationMs}
@@ -1164,7 +1146,7 @@ export default function GuessPhase({
                     : "bg-white text-zinc-950"
               }`}
             >
-              {hintCount}
+              {unlimitedHints ? "∞" : hintCount}
             </span>
           </button>
         )}
@@ -1292,7 +1274,7 @@ export default function GuessPhase({
             textShadow: "var(--game-fg-top-right-shadow)",
           }}
         >
-          {isSprintGuess ? null : APP_NAME}
+          {APP_NAME}
         </p>
       </div>
 
@@ -1318,7 +1300,7 @@ export default function GuessPhase({
       {showGuessTimer && (
         <div
           ref={timerRef}
-          className={isSprintGuess ? "absolute right-(--round-right) top-6 z-20 text-right sm:right-(--round-right-sm) sm:top-8" : "absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"}
+          className="absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"
           style={{
             "--round-left": `${contentLeft}px`,
             "--round-left-sm": `${contentLeftSm}px`,
@@ -1328,9 +1310,7 @@ export default function GuessPhase({
             textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
-          {isSprintGuess ? (
-            <SprintClock remainingMs={sprintRemainingMs} />
-          ) : (
+          {isSprintGuess ? <SprintClock remainingMs={sprintRemainingMs} /> : (
             <CountdownReel
               key={`guess-countdown-${timedGuessDurationMs}`}
               durationMs={displayedDurationMs}
@@ -1435,7 +1415,7 @@ export default function GuessPhase({
                   : "bg-white text-zinc-950"
             }`}
           >
-            {hintCount}
+            {unlimitedHints ? "∞" : hintCount}
           </span>
         </button>
       )}
