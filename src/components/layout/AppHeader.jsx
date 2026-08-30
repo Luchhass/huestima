@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Crown, Menu, X } from "lucide-react";
+import { Bell, Crown, Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
@@ -18,12 +18,14 @@ import MusicToggle from "./MusicToggle";
 import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useSiteOperations } from "@/hooks/useSiteOperations";
 
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
 
 export default function AppHeader() {
   const { locale, t } = useTranslation();
+  const { unreadAnnouncementCount } = useSiteOperations();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname();
   const [historyFamily] = useState(() => {
@@ -38,7 +40,18 @@ export default function AppHeader() {
       ? `/${historyFamily}`
       : GAME_FAMILY_OPTIONS.find(
           (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
-        )?.href || "/color";
+          )?.href || "/color";
+  const notificationReturnHref = pathname?.startsWith("/color/") || pathname === "/color"
+    ? pathname
+    : pathname?.startsWith("/flag/") || pathname === "/flag"
+      ? pathname
+      : pathname?.startsWith("/cartoon/") || pathname === "/cartoon"
+        ? pathname
+        : pathname?.startsWith("/brand/") || pathname === "/brand"
+          ? pathname
+          : pathname?.startsWith("/team/") || pathname === "/team"
+            ? pathname
+            : familyHomeHref;
   const router = useRouter();
   const isLibraryRoute =
     pathname === "/cartoon-library" ||
@@ -50,11 +63,21 @@ export default function AppHeader() {
   const isTestLabRoute = pathname === "/test-lab";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
+  const isNotificationsRoute = pathname === "/notifications";
+  const isHistoryRoute = pathname === "/history" || pathname?.startsWith("/history/");
   const isHomeRoute = GAME_FAMILY_OPTIONS.some((option) => pathname === option.href);
+  const showFullscreenToggle = isHomeRoute || isNotificationsRoute || isHistoryRoute;
+  const disableFullscreenToggle = isNotificationsRoute || isHistoryRoute;
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [familyUnderline, setFamilyUnderline] = useState(null);
+  const hasFamilyHighlight = Boolean(
+    hoveredFamily ||
+    GAME_FAMILY_OPTIONS.some(
+      (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
+    ),
+  );
   const isNavigatingRef = useRef(false);
   const navigationResetRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -250,6 +273,20 @@ export default function AppHeader() {
   }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
+    if (pathname?.startsWith("/notifications")) {
+      const card = document.querySelector("[data-notification-card]");
+      const content = document.querySelector("[data-route-transition-scope]");
+
+      if (card && content) {
+        await playCardToCardExit(card, content, {
+          targetExpanded: false,
+          hideChrome: false,
+        });
+        router.push(href);
+        return;
+      }
+    }
+
     if (pathname?.startsWith("/history")) {
       const card = document.querySelector("[data-history-card]");
       const content = document.querySelector("[data-route-transition-scope]");
@@ -503,10 +540,10 @@ export default function AppHeader() {
               </Link>
             );
           })}
-          {familyUnderline && (
+          {familyUnderline && hasFamilyHighlight && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 rounded-full bg-zinc-950 dark:bg-white"
+              className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-zinc-950 dark:bg-white"
               style={{
                 width: familyUnderline.width,
                 transform: `translateX(${familyUnderline.left}px)`,
@@ -532,15 +569,45 @@ export default function AppHeader() {
           </Link>
         )}
         <div className="hidden items-center gap-1 md:inline-flex">
+          <Link
+            href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
+            aria-label={t("notifications.open")}
+            onClick={(event) =>
+              handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
+            }
+            className="relative grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+          >
+            <Bell className="size-6.5" strokeWidth={1.9} />
+            {unreadAnnouncementCount > 0 && (
+              <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[0.6rem] font-semibold leading-4 text-white dark:bg-white dark:text-zinc-950">
+                {unreadAnnouncementCount > 9 ? "9+" : unreadAnnouncementCount}
+              </span>
+            )}
+          </Link>
           <LanguageToggle />
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
-          {isHomeRoute && <FullscreenToggle />}
+          {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
         </div>
 
         <div className="md:hidden">
-          {isHomeRoute && <FullscreenToggle />}
+          <Link
+            href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
+            aria-label={t("notifications.open")}
+            onClick={(event) =>
+              handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
+            }
+            className="relative inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+          >
+            <Bell className="size-6.5" strokeWidth={1.9} />
+            {unreadAnnouncementCount > 0 && (
+              <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[0.6rem] font-semibold leading-4 text-white dark:bg-white dark:text-zinc-950">
+                {unreadAnnouncementCount > 9 ? "9+" : unreadAnnouncementCount}
+              </span>
+            )}
+          </Link>
+          {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
         </div>
 
         <button

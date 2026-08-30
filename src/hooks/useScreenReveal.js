@@ -243,7 +243,9 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
         return;
       }
 
-      gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+      // Keep the whole scope hidden while masks and off-screen start positions
+      // are prepared. Showing it earlier leaks the clipped starting frame.
+      gsap.set(scope, { autoAlpha: 0 });
       gsap.set(items, {
         autoAlpha: 1,
         clearProps: "clipPath,opacity,visibility,willChange",
@@ -283,6 +285,7 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
 
       const startTimeline = () => {
         const revealDelayId = window.setTimeout(() => {
+          gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
           dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
 
           timeline = gsap.timeline({

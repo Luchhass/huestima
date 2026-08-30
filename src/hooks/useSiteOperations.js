@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -12,6 +13,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import { getSocket } from "@/lib/socket";
+import {
+  NOTIFICATION_INBOX_CHANGE_EVENT,
+  markAllNotificationsRead,
+  markNotificationSeen,
+  readNotificationInbox,
+} from "@/lib/notificationInbox";
 
 const API_ROOT = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
 const FAMILY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team"]);
@@ -24,6 +31,9 @@ const DEFAULT_OPERATIONS = {
 
 const SiteOperationsContext = createContext({
   operations: DEFAULT_OPERATIONS,
+  announcements: [],
+  unreadAnnouncementCount: 0,
+  markAllAnnouncementsRead: () => {},
   ready: false,
 });
 
@@ -44,16 +54,24 @@ function multiplayerFallbackPath(pathname) {
   return null;
 }
 
+function isAnnouncementHomePath(pathname) {
+  return FAMILY_PATHS.has(pathname?.replace(/^\//, ""));
+}
+
 export function SiteOperationsProvider({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [operations, setOperations] = useState(DEFAULT_OPERATIONS);
+  const [announcements, setAnnouncements] = useState([]);
+  const [inbox, setInbox] = useState(readNotificationInbox);
   const [ready, setReady] = useState(false);
   const shownAnnouncementsRef = useRef(new Set());
   const redirectingRef = useRef(false);
+  const pathnameRef = useRef(pathname);
 
   useEffect(() => {
     redirectingRef.current = false;
+    pathnameRef.current = pathname;
   }, [pathname]);
 
   useEffect(() => {
@@ -63,10 +81,18 @@ export function SiteOperationsProvider({ children }) {
     const showAnnouncement = (announcement) => {
       if (!announcement?.id || !announcement.message) return;
       if (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/")) return;
+      if (!isAnnouncementHomePath(pathnameRef.current)) return;
+
+      const inbox = readNotificationInbox();
       if (shownAnnouncementsRef.current.has(announcement.id)) return;
+      if (inbox.seenIds.includes(announcement.id) || inbox.readIds.includes(announcement.id)) return;
 
       shownAnnouncementsRef.current.add(announcement.id);
-      pushNotification(announcement.message, "announcement");
+      markNotificationSeen(announcement.id);
+      pushNotification(announcement.message, "announcement", undefined, {
+        announcementId: announcement.id,
+        waitForIntro: true,
+      });
     };
 
     const applyOperations = (nextOperations) => {
@@ -78,6 +104,10 @@ export function SiteOperationsProvider({ children }) {
 
     const handleAnnouncement = (announcement) => {
       if (!active) return;
+      setAnnouncements((current) => [
+        announcement,
+        ...current.filter((item) => item.id !== announcement?.id),
+      ].slice(0, 50));
       showAnnouncement(announcement);
     };
 
@@ -91,6 +121,7 @@ export function SiteOperationsProvider({ children }) {
       .then(async (response) => {
         if (!response.ok) throw new Error("Operations state is unavailable.");
         const data = await response.json();
+        setAnnouncements(Array.isArray(data.announcements) ? data.announcements : []);
         applyOperations(data.operations);
       })
       .catch(() => {
@@ -101,6 +132,16 @@ export function SiteOperationsProvider({ children }) {
       active = false;
       socket?.off("operations:state", applyOperations);
       socket?.off("operations:announcement", handleAnnouncement);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncInbox = () => setInbox(readNotificationInbox());
+    window.addEventListener(NOTIFICATION_INBOX_CHANGE_EVENT, syncInbox);
+    window.addEventListener("storage", syncInbox);
+    return () => {
+      window.removeEventListener(NOTIFICATION_INBOX_CHANGE_EVENT, syncInbox);
+      window.removeEventListener("storage", syncInbox);
     };
   }, []);
 
@@ -137,9 +178,23 @@ export function SiteOperationsProvider({ children }) {
     });
   }, [operations.maintenanceEnabled, operations.multiplayerEnabled, pathname, ready, router]);
 
+  const unreadAnnouncementCount = announcements.filter(
+    (announcement) => !inbox.readIds.includes(announcement.id),
+  ).length;
+
+  const markAllAnnouncementsRead = useCallback(() => {
+    markAllNotificationsRead(announcements.map((announcement) => announcement.id));
+  }, [announcements]);
+
   const value = useMemo(
-    () => ({ operations, ready }),
-    [operations, ready],
+    () => ({
+      operations,
+      announcements,
+      unreadAnnouncementCount,
+      markAllAnnouncementsRead,
+      ready,
+    }),
+    [announcements, markAllAnnouncementsRead, operations, ready, unreadAnnouncementCount],
   );
 
   return (

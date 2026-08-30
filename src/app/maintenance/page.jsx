@@ -9,7 +9,7 @@ export default function MaintenancePage() {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
 
-  useScreenReveal(scopeRef, [locale]);
+  useScreenReveal(scopeRef, [locale], { delay: 240 });
 
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">

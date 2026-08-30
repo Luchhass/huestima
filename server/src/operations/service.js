@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   readSiteOperations,
+  insertAnnouncement,
+  readAnnouncementHistory,
   writeSiteOperations,
 } from "../admin/store.js";
 
@@ -27,6 +29,7 @@ function normalizeRow(row) {
 }
 
 let cachedState = normalizeRow(readSiteOperations());
+if (cachedState.announcement) insertAnnouncement(cachedState.announcement);
 
 export function getSiteOperations() {
   return cachedState;
@@ -61,17 +64,25 @@ export function setAnnouncement(message) {
   const cleanMessage = typeof message === "string" ? message.trim() : "";
   const now = Date.now();
 
+  const announcement = cleanMessage
+    ? {
+        id: randomUUID(),
+        message: cleanMessage,
+        createdAt: now,
+      }
+    : null;
+
+  if (announcement) insertAnnouncement(announcement);
+
   return persistOperations({
     ...current,
-    announcement: cleanMessage
-      ? {
-          id: randomUUID(),
-          message: cleanMessage,
-          createdAt: now,
-        }
-      : null,
+    announcement,
     updatedAt: now,
   });
+}
+
+export function getAnnouncementHistory(limit) {
+  return readAnnouncementHistory(limit);
 }
 
 export function setMultiplayerEnabled(enabled) {

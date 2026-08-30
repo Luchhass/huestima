@@ -79,9 +79,13 @@ export default function GameCardShell({
       };
   const allowsExternalControls = className.includes("flag-game-card-shell");
 
-  if (cardHeight) {
-    cardStyle.height = cardHeight;
-  }
+  cardStyle.height = cardHeight || (
+    heightMode === "compact"
+      ? "300px"
+      : isExpanded
+        ? "520px"
+        : "390px"
+  );
 
   return (
     <section

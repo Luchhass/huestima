@@ -7,6 +7,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import {
   playPageFade,
   playHomeToFooterExit,
+  playCardToCardExit,
 } from "@/hooks/useFooterPageTransition";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { requestActiveGameExit } from "@/lib/gameNavigation";
@@ -33,9 +34,12 @@ export default function AppFooter() {
   const isTestLabRoute = pathname === "/test-lab";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
+  const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
   const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
     ? familyFromQuery
-    : pathname?.split("/").filter(Boolean)[0] || "color";
+    : ["color", "flag", "cartoon", "brand", "team"].includes(pathnameFamily)
+      ? pathnameFamily
+      : "color";
   const testPageLabel = locale === "tr" ? "test sayfası" : "test page";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
@@ -55,7 +59,15 @@ export default function AppFooter() {
       return;
     }
 
-    if (href.startsWith("/download")) {
+    if (pathname === "/notifications") {
+      const notificationCard = document.querySelector("[data-notification-card]");
+      if (notificationCard) {
+        await playCardToCardExit(notificationCard, content, {
+          targetExpanded: false,
+          hideChrome: false,
+        });
+      }
+    } else if (href.startsWith("/download")) {
       await playHomeToFooterExit(card, content, { scaleCard: false });
     } else if (href.startsWith("/history")) {
       await playPageFade(content, false);

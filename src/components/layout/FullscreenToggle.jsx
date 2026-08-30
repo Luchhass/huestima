@@ -12,12 +12,15 @@ function readFullscreenLock() {
   return document.documentElement.dataset.fullscreenLocked === "true";
 }
 
-export default function FullscreenToggle() {
+export default function FullscreenToggle({ disabled = false }) {
   const { t } = useTranslation();
   const { isFullscreen, toggleFullscreen } = useFullscreenMode();
   const [isLocked, setIsLocked] = useState(false);
   const Icon = isFullscreen ? Minimize2 : Maximize2;
-  const label = isLocked
+  const isDisabled = disabled || isLocked;
+  const label = disabled
+    ? t("toggles.fullscreenUnavailable")
+    : isLocked
     ? t("toggles.fullscreenLocked")
     : isFullscreen
     ? t("toggles.fullscreenExit")
@@ -47,14 +50,15 @@ export default function FullscreenToggle() {
       suppressHydrationWarning
       aria-label={label}
       aria-pressed={isFullscreen}
-      aria-disabled={isLocked}
+      aria-disabled={isDisabled}
+      disabled={isDisabled}
       title={label}
       onClick={() => {
-        if (isLocked) return;
+        if (isDisabled) return;
         toggleFullscreen();
       }}
       className={`fullscreen-toggle grid size-11 shrink-0 place-items-center rounded-full text-zinc-950 transition-transform duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 ${
-        isLocked
+        isDisabled
           ? "cursor-not-allowed opacity-30"
           : "hover:scale-[1.04] hover:opacity-70 active:scale-[0.96]"
       }`}

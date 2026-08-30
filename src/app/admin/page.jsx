@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import { adminRequest } from "@/lib/adminApi";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "@/components/sections/room/RoomCardShell";
@@ -1564,7 +1564,7 @@ function AdminNavigationRow({ title, description, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center justify-between gap-4 py-3.5 text-left text-white transition-colors hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-4"
+      className="flex w-full items-center justify-between gap-4 py-3.5 text-left text-white transition-colors hover:text-white/55 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:py-4"
     >
       <span className="min-w-0">
         <span className="block text-[0.95rem] font-semibold sm:text-base">{title}</span>
@@ -1572,10 +1572,6 @@ function AdminNavigationRow({ title, description, onClick }) {
           {description}
         </span>
       </span>
-      <ArrowRight
-        className="size-5 shrink-0 text-white/35 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-white/70"
-        strokeWidth={1.8}
-      />
     </button>
   );
 }

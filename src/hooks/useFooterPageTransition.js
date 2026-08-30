@@ -10,8 +10,8 @@ export const DOWNLOAD_RETURN_KEY = "huestima-download-return";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
 export const SCREEN_FADE_DURATION = 0.24;
+export const SCREEN_FADE_EASE = "power2.out";
 export const CARD_SCALE_DURATION = 0.52;
-const SCREEN_FADE_EASE = "power2.out";
 const SCREEN_FADE_REVERSE_EASE = "power2.in";
 const CARD_SCALE_EASE = "power3.inOut";
 

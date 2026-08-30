@@ -6,7 +6,7 @@ import { countRooms } from "../rooms/roomStore.js";
 import { isoNow } from "../utils/time.js";
 import createAdminRouter from "../admin/router.js";
 import { logger } from "../utils/logger.js";
-import { getSiteOperations } from "../operations/service.js";
+import { getAnnouncementHistory, getSiteOperations } from "../operations/service.js";
 
 export function createHttpApp({ getActiveSockets, getIo }) {
   const app = express();
@@ -34,7 +34,11 @@ export function createHttpApp({ getActiveSockets, getIo }) {
 
   app.get("/api/operations", (_request, response) => {
     response.setHeader("Cache-Control", "no-store");
-    response.json({ ok: true, operations: getSiteOperations() });
+    response.json({
+      ok: true,
+      operations: getSiteOperations(),
+      announcements: getAnnouncementHistory(50),
+    });
   });
 
   app.get("/", (request, response) => {

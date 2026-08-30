@@ -53,7 +53,13 @@ function readCardHeight(isExpanded, heightMode = "normal") {
 }
 
 export function useResponsiveCardHeight(isExpanded, heightMode = "normal") {
-  const [height, setHeight] = useState(undefined);
+  const [height, setHeight] = useState(
+    isExpanded
+      ? `${EXPANDED_MAX_HEIGHT}px`
+      : heightMode === "compact"
+        ? `${COMPACT_MAX_HEIGHT}px`
+        : `${NORMAL_MAX_HEIGHT}px`,
+  );
 
   useEffect(() => {
     const updateHeight = () => setHeight(readCardHeight(isExpanded, heightMode));

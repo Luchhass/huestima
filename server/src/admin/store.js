@@ -43,6 +43,13 @@ database.exec(`
     ON game_activity (created_at);
   CREATE INDEX IF NOT EXISTS game_activity_type_created_at_idx
     ON game_activity (event_type, created_at);
+  CREATE TABLE IF NOT EXISTS announcement_history (
+    id TEXT PRIMARY KEY,
+    message TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS announcement_history_created_at_idx
+    ON announcement_history (created_at DESC);
   INSERT OR IGNORE INTO site_operations (
     id,
     maintenance_enabled,
@@ -137,6 +144,24 @@ export function writeSiteOperations({
     gameConfiguration,
     updatedAt,
   );
+}
+
+export function insertAnnouncement({ id, message, createdAt }) {
+  database.prepare(`
+    INSERT OR REPLACE INTO announcement_history (id, message, created_at)
+    VALUES (?, ?, ?)
+  `).run(id, message, createdAt);
+}
+
+export function readAnnouncementHistory(limit = 50) {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
+  database.prepare("DELETE FROM announcement_history WHERE created_at < ?").run(Date.now() - 48 * 60 * 60 * 1000);
+  return database.prepare(`
+    SELECT id, message, created_at AS createdAt
+    FROM announcement_history
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).all(safeLimit);
 }
 
 export function insertGameActivity({
