@@ -14,13 +14,12 @@ const outputDir = path.join(root, "public", "game-modes", "team", "generated");
 const catalogPath = path.join(root, "shared", "visualPaintCatalog.mjs");
 
 await fs.mkdir(outputDir, { recursive: true });
-const entries = await Promise.all(
-  TEAM_ITEMS.map(async (team) => {
-    const layers = await buildTransparentArtworkLayers(path.join(sourceDir, team.assetFile));
-    await writeTransparentArtworkScene({ layers, outputDir, id: team.id });
-    return [team.id, layers.paint];
-  }),
-);
+const entries = [];
+for (const team of TEAM_ITEMS) {
+  const layers = await buildTransparentArtworkLayers(path.join(sourceDir, team.assetFile));
+  await writeTransparentArtworkScene({ layers, outputDir, id: team.id });
+  entries.push([team.id, layers.paint]);
+}
 
 const teamPaint = Object.fromEntries(entries);
 await fs.writeFile(
