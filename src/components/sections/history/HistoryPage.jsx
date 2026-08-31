@@ -32,6 +32,7 @@ import {
 import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
 import BrandOverlay from "@/components/ui/game/BrandOverlay";
+import EmptyState from "@/components/ui/EmptyState";
 
 const CARD_RESIZE_DURATION_MS = 700;
 const CONTENT_FADE_DURATION_MS = 240;
@@ -232,16 +233,8 @@ function HistoryListItem({ entry, locale, t, onOpen }) {
   );
 }
 
-function EmptyState({ t }) {
-  return (
-    <div className="flex h-full min-h-0 items-center justify-center">
-      <div className="text-center">
-        <p className="text-[1.32rem] font-semibold text-white">
-          {t("history.emptyTitle")}
-        </p>
-      </div>
-    </div>
-  );
+function HistoryEmptyState({ t }) {
+  return <EmptyState title={t("history.emptyTitle")} />;
 }
 
 function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
@@ -583,7 +576,7 @@ export default function HistoryPage({
                     ))}
                   </div>
                 ) : (
-                  <EmptyState t={t} />
+                  <HistoryEmptyState t={t} />
                 )}
               </div>
             </>

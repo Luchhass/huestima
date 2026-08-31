@@ -278,30 +278,10 @@ export const BRAND_PAINT = {
   }
 };
 export const TEAM_PAINT = {
-  "team-bayer-leverkusen": {
-    "h": 22,
-    "s": 48,
-    "v": 74
-  },
-  "team-borussia-dortmund": {
-    "h": 53,
-    "s": 69,
-    "v": 69
-  },
-  "team-bayern-munich": {
-    "h": 320,
-    "s": 58,
-    "v": 88
-  },
-  "team-ajax": {
-    "h": 353,
-    "s": 5,
-    "v": 81
-  },
-  "team-feyenoord": {
-    "h": 12,
-    "s": 31,
-    "v": 55
+  "team-athletic-club": {
+    "h": 5,
+    "s": 16,
+    "v": 75
   },
   "team-atletico-madrid": {
     "h": 317,
@@ -313,30 +293,90 @@ export const TEAM_PAINT = {
     "s": 83,
     "v": 66
   },
+  "team-celta-vigo": {
+    "h": 340,
+    "s": 60,
+    "v": 91
+  },
+  "team-deportivo-alaves": {
+    "h": 205,
+    "s": 89,
+    "v": 65
+  },
+  "team-elche": {
+    "h": 29,
+    "s": 53,
+    "v": 81
+  },
+  "team-espanyol": {
+    "h": 28,
+    "s": 70,
+    "v": 86
+  },
+  "team-getafe": {
+    "h": 184,
+    "s": 58,
+    "v": 74
+  },
+  "team-girona": {
+    "h": 9,
+    "s": 49,
+    "v": 74
+  },
+  "team-levante": {
+    "h": 10,
+    "s": 47,
+    "v": 44
+  },
+  "team-mallorca": {
+    "h": 25,
+    "s": 87,
+    "v": 65
+  },
+  "team-osasuna": {
+    "h": 20,
+    "s": 56,
+    "v": 71
+  },
+  "team-rayo-vallecano": {
+    "h": 33,
+    "s": 31,
+    "v": 86
+  },
+  "team-real-betis": {
+    "h": 66,
+    "s": 66,
+    "v": 82
+  },
   "team-real-madrid": {
     "h": 43,
     "s": 68,
     "v": 85
+  },
+  "team-real-oviedo": {
+    "h": 35,
+    "s": 52,
+    "v": 84
+  },
+  "team-real-sociedad": {
+    "h": 15,
+    "s": 63,
+    "v": 62
   },
   "team-sevilla": {
     "h": 16,
     "s": 42,
     "v": 83
   },
-  "team-monaco": {
-    "h": 23,
-    "s": 55,
-    "v": 85
+  "team-valencia": {
+    "h": 33,
+    "s": 51,
+    "v": 71
   },
-  "team-lyon": {
-    "h": 28,
-    "s": 58,
-    "v": 84
-  },
-  "team-psg": {
-    "h": 212,
-    "s": 78,
-    "v": 66
+  "team-villarreal": {
+    "h": 29,
+    "s": 64,
+    "v": 67
   },
   "team-arsenal": {
     "h": 3,
@@ -348,10 +388,65 @@ export const TEAM_PAINT = {
     "s": 52,
     "v": 83
   },
+  "team-bournemouth": {
+    "h": 357,
+    "s": 27,
+    "v": 55
+  },
+  "team-brentford": {
+    "h": 1,
+    "s": 35,
+    "v": 63
+  },
+  "team-brighton": {
+    "h": 207,
+    "s": 50,
+    "v": 83
+  },
+  "team-burnley": {
+    "h": 102,
+    "s": 61,
+    "v": 83
+  },
   "team-chelsea": {
     "h": 210,
     "s": 59,
     "v": 77
+  },
+  "team-coventry-city": {
+    "h": 32,
+    "s": 15,
+    "v": 78
+  },
+  "team-crystal-palace": {
+    "h": 227,
+    "s": 44,
+    "v": 75
+  },
+  "team-everton": {
+    "h": 222,
+    "s": 55,
+    "v": 63
+  },
+  "team-fulham": {
+    "h": 0,
+    "s": 12,
+    "v": 57
+  },
+  "team-hull-city": {
+    "h": 35,
+    "s": 50,
+    "v": 57
+  },
+  "team-ipswich-town": {
+    "h": 322,
+    "s": 48,
+    "v": 76
+  },
+  "team-leeds-united": {
+    "h": 77,
+    "s": 82,
+    "v": 87
   },
   "team-liverpool": {
     "h": 26,
@@ -368,64 +463,119 @@ export const TEAM_PAINT = {
     "s": 92,
     "v": 80
   },
-  "team-benfica": {
-    "h": 36,
-    "s": 48,
-    "v": 70
+  "team-newcastle-united": {
+    "h": 177,
+    "s": 36,
+    "v": 56
   },
-  "team-porto": {
-    "h": 196,
-    "s": 78,
-    "v": 68
+  "team-sunderland": {
+    "h": 5,
+    "s": 41,
+    "v": 55
+  },
+  "team-tottenham-hotspur": {
+    "h": 221,
+    "s": 9,
+    "v": 83
   },
   "team-ac-milan": {
     "h": 0,
     "s": 30,
     "v": 57
   },
-  "team-as-roma": {
-    "h": 14,
-    "s": 65,
-    "v": 66
+  "team-atalanta": {
+    "h": 213,
+    "s": 21,
+    "v": 64
   },
-  "team-inter-milan": {
+  "team-bologna": {
+    "h": 352,
+    "s": 68,
+    "v": 78
+  },
+  "team-cagliari": {
+    "h": 332,
+    "s": 54,
+    "v": 76
+  },
+  "team-como": {
+    "h": 2,
+    "s": 26,
+    "v": 91
+  },
+  "team-fiorentina": {
+    "h": 340,
+    "s": 46,
+    "v": 80
+  },
+  "team-frosinone": {
+    "h": 172,
+    "s": 78,
+    "v": 74
+  },
+  "team-genoa": {
+    "h": 26,
+    "s": 78,
+    "v": 69
+  },
+  "team-inter": {
     "h": 226,
     "s": 42,
     "v": 57
+  },
+  "team-juventus": {
+    "h": 0,
+    "s": 0,
+    "v": 0
   },
   "team-lazio": {
     "h": 67,
     "s": 37,
     "v": 90
   },
-  "team-besiktas": {
-    "h": 3,
-    "s": 12,
-    "v": 45
+  "team-lecce": {
+    "h": 201,
+    "s": 55,
+    "v": 59
   },
-  "team-fenerbahce": {
-    "h": 39,
-    "s": 37,
-    "v": 74
+  "team-monza": {
+    "h": 4,
+    "s": 47,
+    "v": 88
   },
-  "team-galatasaray": {
+  "team-napoli": {
+    "h": 202,
+    "s": 74,
+    "v": 84
+  },
+  "team-parma": {
     "h": 26,
-    "s": 31,
-    "v": 94
+    "s": 46,
+    "v": 69
   },
-  "team-goztepe": {
-    "h": 27,
-    "s": 99,
-    "v": 90
+  "team-roma": {
+    "h": 14,
+    "s": 65,
+    "v": 66
   },
-  "team-kasimpasa": {
-    "h": 224,
+  "team-sassuolo": {
+    "h": 137,
+    "s": 24,
+    "v": 29
+  },
+  "team-torino": {
+    "h": 15,
     "s": 60,
-    "v": 77
+    "v": 72
   },
-  "team-trabzonspor": {
-    "h": 247,
-    "s": 83,
-    "v": 78
+  "team-udinese": {
+    "h": 51,
+    "s": 15,
+    "v": 31
+  },
+  "team-venezia": {
+    "h": 41,
+    "s": 53,
+    "v": 59
   }
 };

@@ -9,6 +9,7 @@ import { useSiteOperations } from "@/hooks/useSiteOperations";
 import { useTranslation } from "@/hooks/useLanguage";
 import { readNotificationInbox } from "@/lib/notificationInbox";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
+import EmptyState from "@/components/ui/EmptyState";
 
 function formatNotificationDate(value, locale) {
   if (!Number.isFinite(Number(value))) return "";
@@ -110,13 +111,12 @@ export default function NotificationsPage() {
                   })}
                 </div>
               ) : (
-                <div className="grid h-full place-items-center rounded-[22px] border border-dashed border-white/15 px-6 text-center">
-                  <div>
-                    <CheckCheck className="mx-auto size-7 text-white/54" />
-                    <p className="mt-4 text-lg font-semibold">{t("notifications.emptyTitle")}</p>
-                    <p className="mt-2 text-sm font-medium leading-[1.4] text-white/55">{t("notifications.emptyDescription")}</p>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={CheckCheck}
+                  title={t("notifications.emptyTitle")}
+                  description={t("notifications.emptyDescription")}
+                  className="rounded-[22px] border border-dashed border-white/15"
+                />
               )}
             </div>
           </div>

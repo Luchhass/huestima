@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import NotificationsPage from "@/components/sections/notifications/NotificationsPage";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function NotificationsRoute() {
-  return <NotificationsPage />;
+  return (
+    <Suspense fallback={null}>
+      <NotificationsPage />
+    </Suspense>
+  );
 }

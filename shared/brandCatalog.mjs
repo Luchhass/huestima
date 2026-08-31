@@ -131,12 +131,18 @@ const NEW_BRAND_ITEMS = [
 export const BRAND_ITEMS = NEW_BRAND_ITEMS;
 
 const NEW_TEAM_ITEMS = [
-  ["kasimpasa", "Kasımpaşa"], ["goztepe", "Göztepe"], ["fenerbahce", "Fenerbahçe"], ["real-madrid", "Real Madrid"], ["barcelona", "Barcelona"],
-  ["atletico-madrid", "Atlético Madrid"], ["sevilla", "Sevilla"], ["ajax", "Ajax"], ["porto", "FC Porto"], ["benfica", "Benfica"],
-  ["feyenoord", "Feyenoord"], ["monaco", "AS Monaco"], ["lyon", "Olympique Lyonnais"], ["galatasaray", "Galatasaray"], ["psg", "Paris Saint-Germain"],
-  ["bayer-leverkusen", "Bayer Leverkusen"], ["borussia-dortmund", "Borussia Dortmund"], ["bayern-munich", "FC Bayern Munich"], ["lazio", "Lazio"], ["as-roma", "AS Roma"],
-  ["inter-milan", "Inter Milan"], ["ac-milan", "AC Milan"], ["trabzonspor", "Trabzonspor"], ["aston-villa", "Aston Villa"], ["chelsea", "Chelsea"],
-  ["arsenal", "Arsenal"], ["liverpool", "Liverpool"], ["manchester-city", "Manchester City"], ["manchester-united", "Manchester United"], ["besiktas", "Beşiktaş"],
+  ["arsenal", "Arsenal"], ["aston-villa", "Aston Villa"], ["bournemouth", "Bournemouth"], ["brentford", "Brentford"], ["brighton", "Brighton & Hove Albion"],
+  ["burnley", "Burnley"], ["chelsea", "Chelsea"], ["coventry-city", "Coventry City"], ["crystal-palace", "Crystal Palace"], ["everton", "Everton"],
+  ["fulham", "Fulham"], ["hull-city", "Hull City"], ["ipswich-town", "Ipswich Town"], ["leeds-united", "Leeds United"], ["liverpool", "Liverpool"],
+  ["manchester-city", "Manchester City"], ["manchester-united", "Manchester United"], ["newcastle-united", "Newcastle United"], ["sunderland", "Sunderland"], ["tottenham-hotspur", "Tottenham Hotspur"],
+  ["athletic-club", "Athletic Club"], ["atletico-madrid", "Atlético Madrid"], ["barcelona", "Barcelona"], ["celta-vigo", "Celta Vigo"], ["deportivo-alaves", "Deportivo Alavés"],
+  ["elche", "Elche"], ["espanyol", "Espanyol"], ["getafe", "Getafe"], ["girona", "Girona"], ["levante", "Levante"],
+  ["mallorca", "Mallorca"], ["osasuna", "Osasuna"], ["rayo-vallecano", "Rayo Vallecano"], ["real-betis", "Real Betis"], ["real-madrid", "Real Madrid"],
+  ["real-oviedo", "Real Oviedo"], ["real-sociedad", "Real Sociedad"], ["sevilla", "Sevilla"], ["valencia", "Valencia"], ["villarreal", "Villarreal"],
+  ["ac-milan", "AC Milan"], ["atalanta", "Atalanta"], ["bologna", "Bologna"], ["cagliari", "Cagliari"], ["como", "Como"],
+  ["fiorentina", "Fiorentina"], ["frosinone", "Frosinone"], ["genoa", "Genoa"], ["inter", "Inter"], ["juventus", "Juventus"],
+  ["lazio", "Lazio"], ["lecce", "Lecce"], ["monza", "Monza"], ["napoli", "Napoli"], ["parma", "Parma"],
+  ["roma", "Roma"], ["sassuolo", "Sassuolo"], ["torino", "Torino"], ["udinese", "Udinese"], ["venezia", "Venezia"],
 ].map(([slug, label]) => ({
   id: `team-${slug}`,
   slug,
@@ -146,13 +152,13 @@ const NEW_TEAM_ITEMS = [
 }));
 
 const TEAM_LEAGUES = {
-  kasimpasa: "Süper Lig", goztepe: "Süper Lig", fenerbahce: "Süper Lig", galatasaray: "Süper Lig", trabzonspor: "Süper Lig", besiktas: "Süper Lig",
-  "real-madrid": "La Liga", barcelona: "La Liga", "atletico-madrid": "La Liga", sevilla: "La Liga",
-  arsenal: "Premier League", "aston-villa": "Premier League", chelsea: "Premier League", liverpool: "Premier League", "manchester-city": "Premier League", "manchester-united": "Premier League",
-  ajax: "Eredivisie", feyenoord: "Eredivisie", porto: "Primeira Liga", benfica: "Primeira Liga",
-  monaco: "Ligue 1", lyon: "Ligue 1", psg: "Ligue 1",
-  "bayer-leverkusen": "Bundesliga", "borussia-dortmund": "Bundesliga", "bayern-munich": "Bundesliga",
-  lazio: "Serie A", "as-roma": "Serie A", "inter-milan": "Serie A", "ac-milan": "Serie A",
+  arsenal: "Premier League", "aston-villa": "Premier League", bournemouth: "Premier League", brentford: "Premier League", brighton: "Premier League", burnley: "Premier League",
+  chelsea: "Premier League", "coventry-city": "Premier League", "crystal-palace": "Premier League", everton: "Premier League", fulham: "Premier League", "hull-city": "Premier League",
+  "ipswich-town": "Premier League", "leeds-united": "Premier League", liverpool: "Premier League", "manchester-city": "Premier League", "manchester-united": "Premier League", "newcastle-united": "Premier League", sunderland: "Premier League", "tottenham-hotspur": "Premier League",
+  "athletic-club": "La Liga", "atletico-madrid": "La Liga", barcelona: "La Liga", "celta-vigo": "La Liga", "deportivo-alaves": "La Liga", elche: "La Liga", espanyol: "La Liga", getafe: "La Liga", girona: "La Liga", levante: "La Liga",
+  mallorca: "La Liga", osasuna: "La Liga", "rayo-vallecano": "La Liga", "real-betis": "La Liga", "real-madrid": "La Liga", "real-oviedo": "La Liga", "real-sociedad": "La Liga", sevilla: "La Liga", valencia: "La Liga", villarreal: "La Liga",
+  "ac-milan": "Serie A", atalanta: "Serie A", bologna: "Serie A", cagliari: "Serie A", como: "Serie A", fiorentina: "Serie A", frosinone: "Serie A", genoa: "Serie A", inter: "Serie A", juventus: "Serie A",
+  lazio: "Serie A", lecce: "Serie A", monza: "Serie A", napoli: "Serie A", parma: "Serie A", roma: "Serie A", sassuolo: "Serie A", torino: "Serie A", udinese: "Serie A", venezia: "Serie A",
 };
 
 for (const team of NEW_TEAM_ITEMS) team.league = TEAM_LEAGUES[team.slug] || "Other";

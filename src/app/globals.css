@@ -738,6 +738,21 @@ input {
     will-change: transform, opacity;
   }
 
+  .brand-team-spotlight {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 42% 15% at 50% 82%,
+      rgb(255 255 255 / 0.52) 0%,
+      rgb(255 255 255 / 0.28) 30%,
+      rgb(255 255 255 / 0.08) 56%,
+      transparent 78%
+    );
+    filter: blur(5px);
+  }
+
   .announcement-modal {
     transform-origin: center center;
     animation: announcement-modal-enter 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;

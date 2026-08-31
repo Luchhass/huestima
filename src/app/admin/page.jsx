@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
 import { adminRequest } from "@/lib/adminApi";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "@/components/sections/room/RoomCardShell";
@@ -1339,16 +1340,11 @@ function AdminOperationsWorkspace({
                     </button>
                   </div>
                 ) : (
-                  <div className="admin-empty-state flex min-h-32 flex-1 items-center justify-center text-center">
-                    <div className="admin-empty-state-inner max-w-xs">
-                        <p className="text-[0.95rem] font-semibold text-white/65 sm:text-base">
-                        {t("admin.operations.emptyAnnouncementTitle")}
-                      </p>
-                        <p className="mt-1 text-[0.78rem] font-medium text-white/35 sm:text-sm">
-                        {t("admin.operations.emptyAnnouncementDescription")}
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    className="admin-empty-state"
+                    title={t("admin.operations.emptyAnnouncementTitle")}
+                    description={t("admin.operations.emptyAnnouncementDescription")}
+                  />
                 )}
               </div>
             </section>
@@ -1522,12 +1518,11 @@ function RecentGamesCard({ className, t, locale, games }) {
             </time>
           </div>
         )) : (
-          <div className="admin-empty-state flex min-h-32 flex-1 items-center justify-center text-center">
-            <div className="admin-empty-state-inner max-w-xs">
-              <p className="text-[0.95rem] font-semibold text-white/65 sm:text-base">{t("admin.insights.noActivity")}</p>
-              <p className="mt-1 text-[0.78rem] font-medium text-white/35 sm:text-sm">{t("admin.insights.recentGamesDescription")}</p>
-            </div>
-          </div>
+          <EmptyState
+            className="admin-empty-state"
+            title={t("admin.insights.noActivity")}
+            description={t("admin.insights.recentGamesDescription")}
+          />
         )}
       </div>
     </section>

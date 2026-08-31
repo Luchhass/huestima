@@ -17,6 +17,7 @@ export default function BrandOverlay({ color, className = "", size = "card" }) {
       aria-hidden="true"
       className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-[inherit] ${className}`}
     >
+      {size !== "tile" && <span className="brand-team-spotlight" aria-hidden="true" />}
       <CartoonCanvas
         baseSrc={color.baseScenePath}
         sourceSrc={color.originalScenePath}
@@ -24,7 +25,7 @@ export default function BrandOverlay({ color, className = "", size = "card" }) {
         color={color}
         fit="contain"
         minRenderWidth={768}
-        className={SIZE_CLASSES[size] || SIZE_CLASSES.card}
+        className={`relative z-[1] ${SIZE_CLASSES[size] || SIZE_CLASSES.card}`}
       />
     </span>
   );

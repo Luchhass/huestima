@@ -21,6 +21,7 @@ import PlayerNameField, {
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
 import PushNotification from "@/components/ui/PushNotification";
+import EmptyState from "@/components/ui/EmptyState";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
@@ -809,21 +810,12 @@ export default function MultiplayerCard({
                 ))}
               </div>
             ) : (
-              <div className="flex h-full min-h-[10.5rem] flex-col items-center justify-center px-6 text-center">
-                <Search
-                  className="mb-3 size-8 text-white/18"
-                  strokeWidth={1.85}
-                  aria-hidden="true"
-                />
-                <p className="text-sm font-semibold text-white/44">
-                  {isLoadingRooms ? t("common.loading") : t("setup.noLobbies")}
-                </p>
-                {!isLoadingRooms && (
-                  <p className="mt-1.5 max-w-[13.5rem] text-xs font-medium leading-snug text-white/24">
-                    {t("setup.noLobbiesHint")}
-                  </p>
-                )}
-              </div>
+              <EmptyState
+                icon={Search}
+                className="min-h-[10.5rem]"
+                title={isLoadingRooms ? t("common.loading") : t("setup.noLobbies")}
+                description={!isLoadingRooms ? t("setup.noLobbiesHint") : undefined}
+              />
             )}
           </div>
 
