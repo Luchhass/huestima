@@ -11,9 +11,13 @@ import {
 import {
   GAME_FAMILIES,
   GAME_MODES,
+  ROUND_COUNT_OPTIONS,
 } from "../server/src/constants.js";
 import { generateTargetColors } from "../server/src/game/colorGenerator.js";
-import { validateGameModeForFamily } from "../server/src/rooms/roomValidation.js";
+import {
+  validateGameModeForFamily,
+  validateRoundCount,
+} from "../server/src/rooms/roomValidation.js";
 
 const GENERATED_SUFFIXES = [
   "scene.webp",
@@ -37,6 +41,24 @@ test("the server accepts every multiplayer UI mode", () => {
     for (const mode of modes) {
       assert.equal(validateGameModeForFamily(mode, family).ok, true);
     }
+  }
+});
+
+test("multiplayer accepts every level count shown by the client", () => {
+  assert.deepEqual(ROUND_COUNT_OPTIONS, [1, 3, 5, 10, 20]);
+
+  for (const roundCount of ROUND_COUNT_OPTIONS) {
+    assert.equal(validateRoundCount(roundCount).ok, true);
+  }
+});
+
+test("every multiplayer family has a room route", () => {
+  for (const family of Object.keys(MULTIPLAYER_GAME_FAMILY_MODE_IDS)) {
+    assert.equal(
+      existsSync(`src/app/${family}/[roomCode]/page.jsx`),
+      true,
+      `Missing room route for ${family}`,
+    );
   }
 });
 

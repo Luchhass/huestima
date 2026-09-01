@@ -318,7 +318,7 @@ export default function HowItWorksPage() {
   return (
     <FooterPageShell
       mainRef={mainRef}
-      scrollable={false}
+      scrollable
       className="text-zinc-950 dark:text-zinc-50"
       action={
         <FooterPageAction

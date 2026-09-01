@@ -36,7 +36,7 @@ export const DIFFICULTIES = {
   HARD: "hard",
 };
 
-export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10];
+export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10, 20];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
 export const DUEL_MAX_ROUNDS = 64;

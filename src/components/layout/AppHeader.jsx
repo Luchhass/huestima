@@ -470,6 +470,25 @@ export default function AppHeader() {
             <div data-sound-kind="switch" className="mt-auto flex items-center gap-1 pb-1">
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
+                  <Link
+                    href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
+                    aria-label={t("notifications.open")}
+                    onClick={(event) =>
+                      handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
+                    }
+                    className="relative inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+                  >
+                    <Bell className="size-6.5" strokeWidth={1.9} />
+                    {unreadAnnouncementCount > 0 && (
+                      <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[0.6rem] font-semibold leading-4 text-white dark:bg-white dark:text-zinc-950">
+                        {unreadAnnouncementCount > 9 ? "9+" : unreadAnnouncementCount}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+              </div>
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
                   <LanguageToggle />
                 </div>
               </div>
@@ -593,22 +612,7 @@ export default function AppHeader() {
           {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
         </div>
 
-        <div data-sound-kind="switch" className="md:hidden">
-          <Link
-            href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
-            aria-label={t("notifications.open")}
-            onClick={(event) =>
-              handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
-            }
-            className="relative inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
-          >
-            <Bell className="size-6.5" strokeWidth={1.9} />
-            {unreadAnnouncementCount > 0 && (
-              <span className="absolute right-1 top-1 grid min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[0.6rem] font-semibold leading-4 text-white dark:bg-white dark:text-zinc-950">
-                {unreadAnnouncementCount > 9 ? "9+" : unreadAnnouncementCount}
-              </span>
-            )}
-          </Link>
+        <div className="md:hidden">
           {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
         </div>
 
