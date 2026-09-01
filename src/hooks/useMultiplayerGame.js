@@ -181,7 +181,7 @@ export function useMultiplayerGame({
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const shouldMemorizeRound =
     isSequenceMode ||
-    isSprintMode;
+    (isSprintMode && cleanGameFamily === "color");
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),
@@ -380,7 +380,10 @@ export function useMultiplayerGame({
 
   const prepareRound = useCallback(
     (nextRoundIndex) => {
-      const colors = gamePayload?.targetColors || targetColors;
+      const payloadColors = gamePayload?.targetColors || [];
+      const colors = targetColors.length >= payloadColors.length
+        ? targetColors
+        : payloadColors;
       hintActionRef.current = false;
       setHintActive(false);
 

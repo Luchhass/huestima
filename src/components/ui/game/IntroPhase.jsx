@@ -15,6 +15,7 @@ function getResumedStepIndex(elapsedMs) {
 
 export default function IntroPhase({
   onComplete,
+  ready = true,
   resumeElapsedMs = 0,
   resumeInstantly = false,
 }) {
@@ -22,6 +23,8 @@ export default function IntroPhase({
   const scopeRef = useRef(null);
   const wordRefs = useRef([]);
   const onCompleteRef = useRef(onComplete);
+  const readyRef = useRef(ready);
+  const completionRequestedRef = useRef(false);
   const steps = useMemo(
     () => [t("game.ready"), t("game.set"), t("game.go")],
     [t]
@@ -40,17 +43,33 @@ export default function IntroPhase({
   }, [onComplete]);
 
   useEffect(() => {
+    readyRef.current = ready;
+    if (ready && completionRequestedRef.current) {
+      completionRequestedRef.current = false;
+      onCompleteRef.current?.();
+    }
+  }, [ready]);
+
+  const requestComplete = () => {
+    if (readyRef.current) {
+      onCompleteRef.current?.();
+      return;
+    }
+    completionRequestedRef.current = true;
+  };
+
+  useEffect(() => {
     if (!resumeInstantly) return undefined;
 
     const remainingMs = Math.max(INTRO_TOTAL_DURATION_MS - resumeElapsedMs, 0);
 
     if (remainingMs <= 0) {
-      onCompleteRef.current?.();
+      requestComplete();
       return undefined;
     }
 
     const timeoutId = window.setTimeout(() => {
-      onCompleteRef.current?.();
+      requestComplete();
     }, remainingMs);
 
     return () => window.clearTimeout(timeoutId);
@@ -69,7 +88,7 @@ export default function IntroPhase({
 
       const timeline = gsap.timeline({
         onComplete: () => {
-          onCompleteRef.current?.();
+          requestComplete();
         },
       });
 

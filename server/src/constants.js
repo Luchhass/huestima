@@ -1,3 +1,5 @@
+import { MULTIPLAYER_GAME_FAMILY_MODE_IDS } from "../../shared/gameFamilyModes.mjs";
+
 export const ROOM_STATUSES = {
   LOBBY: "lobby",
   STARTING: "starting",
@@ -25,6 +27,8 @@ export const GAME_FAMILIES = {
   BRAND: "brand",
   TEAM: "team",
 };
+
+export const GAME_FAMILY_MODES = MULTIPLAYER_GAME_FAMILY_MODE_IDS;
 
 export const DIFFICULTIES = {
   EASY: "easy",

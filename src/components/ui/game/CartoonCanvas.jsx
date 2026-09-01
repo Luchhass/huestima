@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { renderCartoonFrame } from "@/lib/cartoonRenderService";
 
 function layerKey(layers) {
@@ -24,6 +24,7 @@ export default function CartoonCanvas({
   minRenderWidth = 0,
 }) {
   const canvasRef = useRef(null);
+  const requestKey = useId();
   const requestRef = useRef(0);
   const frameRef = useRef(null);
   const widthRef = useRef(0);
@@ -52,7 +53,7 @@ export default function CartoonCanvas({
     widthRef.current = width;
     const requestId = ++requestRef.current;
 
-    renderCartoonFrame({ ...input, width })
+    renderCartoonFrame({ ...input, width, requestKey })
       .then((bitmap) => {
         if (requestId !== requestRef.current || !canvas.isConnected) {
           bitmap.close();

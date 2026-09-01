@@ -9,6 +9,7 @@ import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
 import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
 import {
+  GAME_FAMILY_IDS,
   getGameFamilyHref,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
@@ -83,7 +84,13 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
   const [isRenderedShellExpanded, setIsRenderedShellExpanded] = useState(false);
   const [isRenderedCardLeaving, setIsRenderedCardLeaving] = useState(false);
 
-  useMusicScene(renderedView === "game" ? null : MUSIC_SCENES.MENU);
+  useMusicScene(
+    renderedView === "game"
+      ? null
+      : cleanGameFamily === GAME_FAMILY_IDS.CARTOON
+        ? MUSIC_SCENES.CARTOON_MENU
+        : MUSIC_SCENES.MENU,
+  );
 
   useEffect(() => {
     if (!session || (!kickedMessage && !closedMessage)) return;

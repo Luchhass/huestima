@@ -2,7 +2,8 @@
 
 import { SOUND_STORAGE_KEY } from "./constants";
 
-const MASTER_VOLUME = 0.92;
+const SOUND_EFFECT_GAIN_BOOST = 15;
+const MASTER_VOLUME = 0.92 * 5 * SOUND_EFFECT_GAIN_BOOST;
 const MUTED_VOLUME = 0.0001;
 const SOUND_CHANGE_EVENT = "huestima-sound-change";
 
@@ -91,8 +92,16 @@ function ensureAudioContext() {
       ? MASTER_VOLUME
       : MUTED_VOLUME;
 
+    const limiter = audioContext.createDynamicsCompressor();
+    limiter.threshold.value = -1;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.08;
+
     compressor.connect(masterGain);
-    masterGain.connect(audioContext.destination);
+    masterGain.connect(limiter);
+    limiter.connect(audioContext.destination);
     mixBus = compressor;
     didPrimeGraph = false;
   }
@@ -473,6 +482,164 @@ export function playButtonClick() {
     duration: 0.085,
     delay: 0.038,
     attack: 0.006,
+  });
+}
+
+export function playNavigationHover() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("navigation-hover", 64)) return;
+
+  scheduleNoise(context, {
+    duration: 0.028,
+    gain: 0.012,
+    filterFrequency: 6800,
+    filterType: "highpass",
+    q: 1.4,
+    pan: 0.12,
+  });
+
+  scheduleTone(context, {
+    frequency: 520,
+    endFrequency: 780,
+    type: "sine",
+    gain: 0.026,
+    duration: 0.09,
+    attack: 0.008,
+    pan: -0.1,
+  });
+
+  scheduleTone(context, {
+    frequency: 1040,
+    endFrequency: 1320,
+    type: "sine",
+    gain: 0.014,
+    duration: 0.075,
+    delay: 0.018,
+    attack: 0.006,
+    pan: 0.14,
+  });
+}
+
+export function playNavigationClick() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("navigation-click", 42)) return;
+
+  scheduleNoise(context, {
+    duration: 0.025,
+    gain: 0.025,
+    filterFrequency: 2400,
+    filterType: "bandpass",
+    q: 4.5,
+  });
+
+  scheduleTone(context, {
+    frequency: 196,
+    endFrequency: 146,
+    type: "sine",
+    gain: 0.055,
+    duration: 0.115,
+    attack: 0.004,
+    pan: -0.08,
+  });
+
+  scheduleTone(context, {
+    frequency: 587,
+    endFrequency: 784,
+    type: "triangle",
+    gain: 0.038,
+    duration: 0.11,
+    delay: 0.012,
+    attack: 0.005,
+    pan: 0.1,
+  });
+
+  scheduleTone(context, {
+    frequency: 1175,
+    endFrequency: 988,
+    type: "sine",
+    gain: 0.018,
+    duration: 0.09,
+    delay: 0.045,
+    attack: 0.006,
+    pan: 0.16,
+  });
+}
+
+export function playSwitchHover() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("switch-hover", 58)) return;
+
+  scheduleNoise(context, {
+    duration: 0.012,
+    gain: 0.018,
+    filterFrequency: 4100,
+    filterType: "highpass",
+    q: 2.6,
+  });
+
+  scheduleTone(context, {
+    frequency: 880,
+    endFrequency: 1040,
+    type: "square",
+    gain: 0.018,
+    duration: 0.045,
+    attack: 0.002,
+    pan: -0.08,
+  });
+
+  scheduleTone(context, {
+    frequency: 1320,
+    endFrequency: 1560,
+    type: "sine",
+    gain: 0.014,
+    duration: 0.06,
+    delay: 0.012,
+    attack: 0.003,
+    pan: 0.08,
+  });
+}
+
+export function playSwitchClick() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("switch-click", 38)) return;
+
+  scheduleNoise(context, {
+    duration: 0.018,
+    gain: 0.035,
+    filterFrequency: 1900,
+    filterType: "bandpass",
+    q: 7,
+  });
+
+  scheduleTone(context, {
+    frequency: 132,
+    endFrequency: 104,
+    type: "sine",
+    gain: 0.066,
+    duration: 0.075,
+    attack: 0.002,
+  });
+
+  scheduleTone(context, {
+    frequency: 740,
+    endFrequency: 980,
+    type: "square",
+    gain: 0.032,
+    duration: 0.055,
+    delay: 0.006,
+    attack: 0.002,
+    pan: -0.1,
+  });
+
+  scheduleTone(context, {
+    frequency: 1110,
+    endFrequency: 1480,
+    type: "sine",
+    gain: 0.025,
+    duration: 0.07,
+    delay: 0.038,
+    attack: 0.003,
+    pan: 0.12,
   });
 }
 
@@ -1087,7 +1254,7 @@ export function playSequenceColorStep(index = 0) {
   });
 }
 
-export function startRgbHoverDrive() {
+export function startRgbHoverDrive(onDriveUpdate) {
   const context = getPlayableContext();
   if (!context) return () => {};
 
@@ -1099,17 +1266,31 @@ export function startRgbHoverDrive() {
   const pulse = () => {
     if (!isActive) return;
 
-    const progress = clamp01((getNowMs() - startedAt) / 1500);
-    const interval = Math.max(96, 210 - progress * 116);
-    const base = 88 + progress * 42 + (step % 3) * 6;
+    const elapsed = getNowMs() - startedAt;
+    const drive = elapsed / 900;
+    const acceleration = Math.log2(1 + drive);
+    const interval = Math.max(12, 200 / (1 + elapsed / 700) ** 0.67);
+    const base = 90 + acceleration * 68 + (step % 3) * 7;
+    const playbackRate = 1 + (elapsed / 800) ** 0.78 * 0.85;
+
+    onDriveUpdate?.({ acceleration, elapsed, playbackRate });
+
+    scheduleNoise(context, {
+      duration: Math.min(0.016, interval / 5200),
+      gain: 0.006 + Math.min(0.008, acceleration * 0.0025),
+      filterFrequency: 1100 + acceleration * 760,
+      filterType: "bandpass",
+      q: 5.5,
+      pan: Math.sin(step * 1.18) * 0.07,
+    });
 
     scheduleTone(context, {
       frequency: base,
-      endFrequency: base * (1.08 + progress * 0.08),
+      endFrequency: base * (1.08 + Math.min(0.24, acceleration * 0.07)),
       type: "sine",
-      gain: 0.022 + progress * 0.014,
-      duration: Math.min(0.18, interval / 1000 + 0.035),
-      attack: 0.025,
+      gain: 0.022 + Math.min(0.02, acceleration * 0.01),
+      duration: Math.min(0.18, interval / 1000 + 0.03),
+      attack: Math.max(0.006, Math.min(0.025, interval / 5000)),
       pan: Math.sin(step * 0.9) * 0.06,
     });
 
@@ -1117,10 +1298,10 @@ export function startRgbHoverDrive() {
       frequency: base * 2.5,
       endFrequency: base * 2.75,
       type: "triangle",
-      gain: 0.012 + progress * 0.009,
-      duration: 0.105,
-      delay: 0.018,
-      attack: 0.018,
+      gain: 0.012 + Math.min(0.012, acceleration * 0.006),
+      duration: Math.min(0.105, interval / 740),
+      delay: Math.min(0.018, interval / 4000),
+      attack: Math.max(0.004, Math.min(0.018, interval / 6000)),
       pan: Math.sin(step * 0.9 + 1.4) * 0.05,
     });
 
@@ -1128,12 +1309,228 @@ export function startRgbHoverDrive() {
     timerId = window.setTimeout(pulse, interval);
   };
 
-  timerId = window.setTimeout(pulse, 120);
+  timerId = window.setTimeout(pulse, 90);
 
   return () => {
     isActive = false;
     if (timerId) window.clearTimeout(timerId);
   };
+}
+
+export function playPageIntroLogoAppear() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("page-intro-logo-appear", 1800)) return;
+
+  scheduleNoise(context, {
+    duration: 0.11,
+    gain: 0.008,
+    filterFrequency: 5200,
+    filterType: "highpass",
+    q: 1.4,
+  });
+
+  scheduleTone(context, {
+    frequency: 523.25,
+    endFrequency: 659.25,
+    type: "sine",
+    gain: 0.022,
+    duration: 0.38,
+    attack: 0.035,
+    pan: -0.06,
+  });
+
+  scheduleTone(context, {
+    frequency: 1046.5,
+    endFrequency: 1318.51,
+    type: "sine",
+    gain: 0.011,
+    duration: 0.3,
+    delay: 0.09,
+    attack: 0.028,
+    pan: 0.08,
+  });
+}
+
+export function playPageIntroBrandReveal() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("page-intro-brand-reveal", 1800)) return;
+
+  scheduleNoise(context, {
+    duration: 0.48,
+    gain: 0.008,
+    filterFrequency: 5600,
+    filterType: "highpass",
+    q: 1.1,
+    pan: -0.1,
+  });
+
+  scheduleTone(context, {
+    frequency: 220,
+    endFrequency: 246.94,
+    type: "sine",
+    gain: 0.02,
+    duration: 0.82,
+    attack: 0.11,
+    pan: -0.06,
+  });
+
+  [
+    { delay: 0.12, frequency: 440, pan: 0.1, gain: 0.018 },
+    { delay: 0.4, frequency: 587.33, pan: -0.1, gain: 0.02 },
+  ].forEach(({ delay, frequency, pan, gain }) => {
+    scheduleTone(context, {
+      frequency,
+      type: "sine",
+      gain,
+      duration: 0.58,
+      delay,
+      attack: 0.06,
+      pan,
+      releaseFloor: 0.000001,
+      stopPadding: 0.45,
+    });
+  });
+
+  [
+    { frequency: 293.66, pan: -0.2, gain: 0.018 },
+    { frequency: 369.99, pan: -0.07, gain: 0.016 },
+    { frequency: 440, pan: 0.08, gain: 0.015 },
+    { frequency: 587.33, pan: 0.2, gain: 0.012 },
+  ].forEach(({ frequency, pan, gain }) => {
+    scheduleTone(context, {
+      frequency,
+      type: "sine",
+      gain,
+      duration: 1.24,
+      delay: 0.5,
+      attack: 0.12,
+      pan,
+      releaseFloor: 0.000001,
+      stopPadding: 0.75,
+    });
+  });
+
+  scheduleTone(context, {
+    frequency: 1174.66,
+    endFrequency: 1318.51,
+    type: "sine",
+    gain: 0.006,
+    duration: 0.78,
+    delay: 0.64,
+    attack: 0.055,
+    pan: 0.12,
+    releaseFloor: 0.000001,
+    stopPadding: 0.6,
+  });
+}
+
+export function playPageIntroBrandExit() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("page-intro-brand-exit", 1800)) return;
+
+  scheduleNoise(context, {
+    duration: 0.32,
+    gain: 0.018,
+    filterFrequency: 1250,
+    filterType: "bandpass",
+    q: 2.8,
+  });
+
+  scheduleTone(context, {
+    frequency: 620,
+    endFrequency: 174,
+    type: "triangle",
+    gain: 0.04,
+    duration: 0.43,
+    attack: 0.025,
+    pan: 0.08,
+  });
+
+  scheduleTone(context, {
+    frequency: 156,
+    endFrequency: 92,
+    type: "sine",
+    gain: 0.048,
+    duration: 0.45,
+    attack: 0.03,
+    pan: -0.06,
+  });
+}
+
+export function playPageIntroCardMorph() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("page-intro-card-morph", 1800)) return;
+
+  scheduleNoise(context, {
+    duration: 0.88,
+    gain: 0.034,
+    filterFrequency: 720,
+    filterType: "lowpass",
+    q: 1.4,
+  });
+
+  scheduleTone(context, {
+    frequency: 128,
+    endFrequency: 48,
+    type: "sine",
+    gain: 0.075,
+    duration: 1.08,
+    attack: 0.055,
+  });
+
+  scheduleTone(context, {
+    frequency: 740,
+    endFrequency: 196,
+    type: "triangle",
+    gain: 0.036,
+    duration: 0.92,
+    delay: 0.04,
+    attack: 0.045,
+    pan: -0.1,
+  });
+
+  scheduleTone(context, {
+    frequency: 1040,
+    endFrequency: 330,
+    type: "sine",
+    gain: 0.02,
+    duration: 0.78,
+    delay: 0.12,
+    attack: 0.055,
+    pan: 0.12,
+  });
+}
+
+export function playPageIntroCardSettle() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("page-intro-card-settle", 1800)) return;
+
+  scheduleNoise(context, {
+    duration: 0.04,
+    gain: 0.048,
+    filterFrequency: 980,
+    filterType: "bandpass",
+    q: 4.5,
+  });
+
+  scheduleTone(context, {
+    frequency: 82,
+    endFrequency: 52,
+    type: "sine",
+    gain: 0.092,
+    duration: 0.16,
+    attack: 0.004,
+  });
+
+  scheduleTone(context, {
+    frequency: 392,
+    endFrequency: 294,
+    type: "triangle",
+    gain: 0.034,
+    duration: 0.13,
+    delay: 0.018,
+    attack: 0.004,
+  });
 }
 
 export function playIntroStep(stepIndex) {

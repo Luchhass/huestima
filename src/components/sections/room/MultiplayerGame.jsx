@@ -8,7 +8,7 @@ import {
   isFlagFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
-import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
+import { useVisualAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -17,6 +17,7 @@ import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import { upsertMatchHistoryEntry } from "@/lib/matchHistory";
+import { releaseVisualRenderService } from "@/lib/cartoonRenderService";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
 import MemorizePhase from "@/components/ui/game/MemorizePhase";
@@ -130,9 +131,9 @@ export default function MultiplayerGame({
   const isBrandMode = isLogoFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
     if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
-    if (game.targetColors.length) return game.targetColors;
-    return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
+    const nextTargets = game.targetColors.slice(game.roundIndex, game.roundIndex + 2);
+    return nextTargets.length ? nextTargets : game.targetColor ? [game.targetColor] : [];
+  }, [game.roundIndex, game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
@@ -165,13 +166,22 @@ export default function MultiplayerGame({
       : 0;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isFlagMode || isCartoonMode || isBrandMode, visualPreloadTargets);
+  const visualPreload = useVisualAssetPreload(
+    isFlagMode || isCartoonMode || isBrandMode,
+    visualPreloadTargets,
+  );
   useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"
-      : MUSIC_SCENES.GAME,
+      : isCartoonMode
+        ? MUSIC_SCENES.CARTOON_GAME
+        : MUSIC_SCENES.GAME,
   );
+
+  useEffect(() => {
+    return () => releaseVisualRenderService();
+  }, []);
 
   useEffect(() => {
     if (!game.hasRestoredSession) return undefined;
@@ -513,6 +523,7 @@ export default function MultiplayerGame({
             <IntroPhase
               key={`intro-${game.roundIndex}`}
               onComplete={game.finishIntro}
+              ready={visualPreload.isReady}
               resumeElapsedMs={resumeElapsedMs}
               resumeInstantly={resumePhase === GAME_PHASES.INTRO}
             />

@@ -313,8 +313,16 @@ export default function MultiplayerCard({
   const router = useRouter();
   const { t } = useTranslation();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
-  const defaultGameMode = initialGameMode || getDefaultGameModeForFamily(cleanGameFamily);
-  const defaultGameModeOption = getGameModeOption(defaultGameMode, GAME_MODE_OPTIONS, cleanGameFamily);
+  const requestedGameMode = initialGameMode || getDefaultGameModeForFamily(cleanGameFamily);
+  const multiplayerGameModeOptions = GAME_MODE_OPTIONS.filter(
+    (option) => !option.singleplayerOnly,
+  );
+  const defaultGameModeOption = getGameModeOption(
+    requestedGameMode,
+    multiplayerGameModeOptions,
+    cleanGameFamily,
+  );
+  const defaultGameMode = defaultGameModeOption.id;
   const defaultDifficulty =
     initialDifficulty || defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
   const scopeRef = useRef(null);

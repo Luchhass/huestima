@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
 import { isBrandColor } from "@/lib/color";
 import CartoonCanvas from "./CartoonCanvas";
 
@@ -10,7 +12,9 @@ const SIZE_CLASSES = {
 };
 
 export default function BrandOverlay({ color, className = "", size = "card" }) {
+  const [readyScenePath, setReadyScenePath] = useState(null);
   if (!isBrandColor(color) || !color.originalScenePath || !color.baseScenePath) return null;
+  const isSurfaceReady = readyScenePath === color.baseScenePath;
 
   return (
     <span
@@ -18,6 +22,16 @@ export default function BrandOverlay({ color, className = "", size = "card" }) {
       className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-[inherit] ${className}`}
     >
       {size !== "tile" && <span className="brand-team-spotlight" aria-hidden="true" />}
+      <Image
+        src={color.baseScenePath}
+        alt=""
+        fill
+        sizes="(max-width: 640px) 100vw, 768px"
+        unoptimized
+        className={`relative z-[1] object-contain ${
+          isSurfaceReady ? "invisible" : "visible"
+        } ${SIZE_CLASSES[size] || SIZE_CLASSES.card}`}
+      />
       <CartoonCanvas
         baseSrc={color.baseScenePath}
         sourceSrc={color.originalScenePath}
@@ -25,7 +39,8 @@ export default function BrandOverlay({ color, className = "", size = "card" }) {
         color={color}
         fit="contain"
         minRenderWidth={768}
-        className={`relative z-[1] ${SIZE_CLASSES[size] || SIZE_CLASSES.card}`}
+        onReady={() => setReadyScenePath(color.baseScenePath)}
+        className={`relative z-[2] ${SIZE_CLASSES[size] || SIZE_CLASSES.card}`}
       />
     </span>
   );

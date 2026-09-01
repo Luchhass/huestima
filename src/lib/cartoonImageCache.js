@@ -2,12 +2,26 @@
 
 const imageCache = new Map();
 const resolvedImageCache = new Map();
+const MAX_CACHED_IMAGES = 80;
+
+function touchCacheEntry(cache, key, value) {
+  cache.delete(key);
+  cache.set(key, value);
+}
+
+function trimImageCaches() {
+  while (resolvedImageCache.size > MAX_CACHED_IMAGES) {
+    const oldestKey = resolvedImageCache.keys().next().value;
+    resolvedImageCache.delete(oldestKey);
+    imageCache.delete(oldestKey);
+  }
+}
 
 function unique(values) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-export function getCartoonAssetPaths(cartoon, mode = "full") {
+export function getVisualAssetPaths(cartoon, mode = "full") {
   const isFullPreload = mode === "full";
 
   return unique([
@@ -28,9 +42,16 @@ export function getCartoonAssetPaths(cartoon, mode = "full") {
   ]);
 }
 
-export function loadCartoonImage(src) {
+export function loadVisualImage(src) {
   if (!src) return Promise.resolve(null);
-  if (imageCache.has(src)) return imageCache.get(src);
+  if (imageCache.has(src)) {
+    const cachedPromise = imageCache.get(src);
+    touchCacheEntry(imageCache, src, cachedPromise);
+    if (resolvedImageCache.has(src)) {
+      touchCacheEntry(resolvedImageCache, src, resolvedImageCache.get(src));
+    }
+    return cachedPromise;
+  }
 
   const promise = new Promise((resolve, reject) => {
     const image = new Image();
@@ -45,6 +66,7 @@ export function loadCartoonImage(src) {
       }
 
       resolvedImageCache.set(src, image);
+      trimImageCaches();
       resolve(image);
     };
     image.onerror = () => reject(new Error(`Could not load cartoon image: ${src}`));
@@ -59,16 +81,17 @@ export function loadCartoonImage(src) {
   return promise;
 }
 
-export function getCachedCartoonImage(src) {
+export function getCachedVisualImage(src) {
   return resolvedImageCache.get(src) || null;
 }
 
-export async function preloadCartoonAssets(cartoons, options = {}) {
+export async function preloadVisualAssets(cartoons, options = {}) {
   const { concurrency = 6, mode = "full", signal } = options;
   const paths = unique(
-    (cartoons || []).flatMap((cartoon) => getCartoonAssetPaths(cartoon, mode)),
+    (cartoons || []).flatMap((cartoon) => getVisualAssetPaths(cartoon, mode)),
   );
   let cursor = 0;
+  const failedPaths = [];
 
   async function worker() {
     while (!signal?.aborted && cursor < paths.length) {
@@ -76,9 +99,10 @@ export async function preloadCartoonAssets(cartoons, options = {}) {
       cursor += 1;
 
       try {
-        await loadCartoonImage(path);
+        await loadVisualImage(path);
       } catch {
         // A bad asset should not block the rest of the pack from warming up.
+        failedPaths.push(path);
       }
     }
   }
@@ -89,4 +113,12 @@ export async function preloadCartoonAssets(cartoons, options = {}) {
       worker,
     ),
   );
+
+  return { failedPaths };
 }
+
+// Compatibility exports for scene-building utilities that still use the old names.
+export const getCartoonAssetPaths = getVisualAssetPaths;
+export const loadCartoonImage = loadVisualImage;
+export const getCachedCartoonImage = getCachedVisualImage;
+export const preloadCartoonAssets = preloadVisualAssets;

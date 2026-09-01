@@ -7,6 +7,7 @@ import {
   isFlagColor,
   relativeLuminance,
 } from "@/lib/color";
+import { loadVisualImage } from "@/lib/cartoonImageCache";
 
 const SAMPLE_REGIONS = {
   topLeft: [0.04, 0.04, 0.28, 0.2],
@@ -99,10 +100,9 @@ export default function useVisualOverlayTones(color) {
   useEffect(() => {
     if (!isVisual || !imagePath) return undefined;
 
-    const image = new Image();
     let cancelled = false;
 
-    image.onload = () => {
+    void loadVisualImage(imagePath).then((image) => {
       if (cancelled || !image.naturalWidth || !image.naturalHeight) return;
 
       const canvas = document.createElement("canvas");
@@ -125,9 +125,7 @@ export default function useVisualOverlayTones(color) {
       const tones = unifiedTones(toneForLuminance(darkestOverlayArea));
 
       if (!cancelled) setSampled({ colorKey, tones });
-    };
-
-    image.src = imagePath;
+    }).catch(() => {});
 
     return () => {
       cancelled = true;

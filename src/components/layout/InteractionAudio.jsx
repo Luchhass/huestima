@@ -13,8 +13,12 @@ import {
   playButtonHover,
   playDifficultyHover,
   playGameModeHover,
+  playNavigationClick,
+  playNavigationHover,
   prepareAudio,
   resumeAudioIfAllowed,
+  playSwitchClick,
+  playSwitchHover,
   startRgbHoverDrive,
   unlockAudio,
 } from "@/lib/sound";
@@ -38,6 +42,8 @@ function shouldSkipHoverSound(element) {
 }
 
 function getSoundKind(element) {
+  const explicitKind = element.closest("[data-sound-kind]")?.dataset.soundKind;
+  if (explicitKind === "navigation" || explicitKind === "switch") return explicitKind;
   if (element.closest(".solo-close-button")) return "close";
   if (element.closest(".difficulty-switch")) return "difficulty";
   if (element.closest(".game-mode-picker")) return "game-mode";
@@ -105,11 +111,29 @@ export default function InteractionAudio() {
         return;
       }
 
+      if (soundKind === "navigation") {
+        playNavigationHover();
+        return;
+      }
+
+      if (soundKind === "switch") {
+        playSwitchHover();
+        return;
+      }
+
       playButtonHover();
 
       if (element.classList.contains("rgb-hover-button")) {
         stopHoverDrive(element);
-        const stopDrive = startRgbHoverDrive();
+        const stopDrive = startRgbHoverDrive(({ playbackRate }) => {
+          if (typeof element.getAnimations !== "function") return;
+
+          element.getAnimations({ subtree: true }).forEach((animation) => {
+            if (animation.animationName === "rgb-disk-spin") {
+              animation.playbackRate = playbackRate;
+            }
+          });
+        });
         hoverDriveStops.set(element, stopDrive);
       }
     };
@@ -138,6 +162,16 @@ export default function InteractionAudio() {
         return;
       }
 
+      if (soundKind === "navigation") {
+        playNavigationClick();
+        return;
+      }
+
+      if (soundKind === "switch") {
+        playSwitchClick();
+        return;
+      }
+
       playButtonClick();
     };
 
@@ -156,6 +190,16 @@ export default function InteractionAudio() {
 
       if (soundKind === "close") {
         playCloseClick();
+        return;
+      }
+
+      if (soundKind === "navigation") {
+        playNavigationClick();
+        return;
+      }
+
+      if (soundKind === "switch") {
+        playSwitchClick();
         return;
       }
 

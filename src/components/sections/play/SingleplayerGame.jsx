@@ -11,7 +11,7 @@ import {
   isTeamFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
-import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
+import { useVisualAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useGameChrome } from "@/hooks/useGameChrome";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
@@ -26,6 +26,7 @@ import GuessPhase from "@/components/ui/game/GuessPhase";
 import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
 import { LEAVE_ACTIVE_GAME_EVENT } from "@/lib/gameNavigation";
+import { releaseVisualRenderService } from "@/lib/cartoonRenderService";
 
 const FLAG_WIDGET_EXIT_DELAY_MS = 680;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
@@ -78,9 +79,9 @@ export default function SingleplayerGame({
   const isTeamMode = isTeamFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
     if (!isFlagMode && !isCartoonMode && !isBrandMode && !isTeamMode) return [];
-    if (game.targetColors.length) return game.targetColors;
-    return game.targetColor ? [game.targetColor] : [];
-  }, [game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode, isTeamMode]);
+    const nextTargets = game.targetColors.slice(game.roundIndex, game.roundIndex + 2);
+    return nextTargets.length ? nextTargets : game.targetColor ? [game.targetColor] : [];
+  }, [game.roundIndex, game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode, isTeamMode]);
   const homeHref = getGameFamilyHref(cleanGameFamily);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
@@ -114,12 +115,17 @@ export default function SingleplayerGame({
       : 0;
 
   useGameChrome(isImmersivePhase);
-  useCartoonAssetPreload(isFlagMode || isCartoonMode || isBrandMode, visualPreloadTargets);
-  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode);
+  const visualPreload = useVisualAssetPreload(
+    isFlagMode || isCartoonMode || isBrandMode || isTeamMode,
+    visualPreloadTargets,
+  );
+  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode || isTeamMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"
-      : MUSIC_SCENES.GAME,
+      : isCartoonMode
+        ? MUSIC_SCENES.CARTOON_GAME
+        : MUSIC_SCENES.GAME,
   );
 
   useEffect(() => {
@@ -170,6 +176,10 @@ export default function SingleplayerGame({
       window.removeEventListener("pagehide", markUnload);
       window.removeEventListener("beforeunload", markUnload);
     };
+  }, []);
+
+  useEffect(() => {
+    return () => releaseVisualRenderService();
   }, []);
 
   useEffect(() => {
@@ -431,6 +441,7 @@ export default function SingleplayerGame({
             <IntroPhase
               key={`intro-${game.roundIndex}`}
               onComplete={game.finishIntro}
+              ready={visualPreload.isReady}
               resumeElapsedMs={resumeElapsedMs}
               resumeInstantly={resumePhase === GAME_PHASES.INTRO}
             />

@@ -2,6 +2,7 @@ import {
   DIFFICULTIES,
   DEFAULT_ROUND_COUNT,
   GAME_FAMILIES,
+  GAME_FAMILY_MODES,
   GAME_MODES,
   PLAYER_NAME_MAX_LENGTH,
   PLAYER_NAME_MIN_LENGTH,
@@ -85,6 +86,15 @@ export function validateGameFamily(gameFamily) {
   }
 
   return ok({ gameFamily: cleanFamily });
+}
+
+export function validateGameModeForFamily(gameMode, gameFamily) {
+  const allowedModes = GAME_FAMILY_MODES[gameFamily];
+  if (!allowedModes?.includes(gameMode)) {
+    return fail("This game mode is not available for the selected game family.");
+  }
+
+  return ok({ gameMode, gameFamily });
 }
 
 export function validateRoundCount(roundCount) {

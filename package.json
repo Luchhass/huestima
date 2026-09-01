@@ -5,10 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build:cartoons": "node scripts/build-cartoon-scenes.mjs",
+    "build:cartoon-theme": "node scripts/inspect-midi.mjs public/music/cartoon/ben-10-theme-pep-band-arrangement.mid src/lib/cartoonTheme.generated.js 5760 CARTOON_THEME",
+    "build:cartoon-menu-theme": "node scripts/inspect-midi.mjs public/music/cartoon/adventure-time-island-song.mid src/lib/cartoonMenuTheme.generated.js 0 CARTOON_MENU_THEME",
     "build:flags": "node scripts/build-flag-scenes.mjs",
     "build:brands": "node scripts/build-brand-scenes.mjs",
     "build:teams": "node scripts/rebuild-team-catalog.mjs && node scripts/build-team-scenes.mjs",
     "check:colors": "node scripts/check-color-mechanics.mjs",
+    "check:games": "node --test tests/game-mechanics.test.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

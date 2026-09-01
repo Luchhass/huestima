@@ -179,18 +179,28 @@ function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, fl
   );
 }
 
-function hasValidBrandTargets(colors, roundCount) {
+function isVisualTargetForFamily(color, gameFamily) {
+  if (isFlagFamily(gameFamily)) return isFlagColor(color);
+  if (isCartoonFamily(gameFamily)) return isCartoonColor(color);
+  if (isTeamFamily(gameFamily)) return isBrandColor(color) && Boolean(color?.teamId);
+  if (isBrandFamily(gameFamily)) return isBrandColor(color) && !color?.teamId;
+  return false;
+}
+
+function hasValidVisualTargets(colors, targetCount, gameFamily) {
   return (
     Array.isArray(colors) &&
-    colors.length >= roundCount &&
-    colors.slice(0, roundCount).every(isBrandColor)
+    colors.length >= targetCount &&
+    colors.slice(0, targetCount).every((color) =>
+      isVisualTargetForFamily(color, gameFamily),
+    )
   );
 }
 
-function normalizeBrandTargets(colors, roundCount) {
-  return hasValidBrandTargets(colors, roundCount)
+function normalizeVisualTargets(colors, targetCount, gameFamily, createFallback) {
+  return hasValidVisualTargets(colors, targetCount, gameFamily)
     ? colors
-    : randomBrandTargetColors(roundCount);
+    : createFallback();
 }
 
 export function useSingleplayerGame(
@@ -241,6 +251,9 @@ export function useSingleplayerGame(
         gameMode.id,
         roundCount,
         hintsEnabled ? "hints-on" : "hints-off",
+        flagDifficulty || "all-flags",
+        Array.isArray(cartoonIds) ? cartoonIds.join(",") : "all-cartoons",
+        Array.isArray(teamIds) ? teamIds.join(",") : "all-teams",
       ]),
     [
       cleanGameFamily,
@@ -248,6 +261,9 @@ export function useSingleplayerGame(
       gameMode.id,
       hintsEnabled,
       roundCount,
+      flagDifficulty,
+      cartoonIds,
+      teamIds,
     ],
   );
   const initialGameSession = useMemo(
@@ -259,7 +275,32 @@ export function useSingleplayerGame(
   const [phaseStartedAt, setPhaseStartedAt] = useState(() => Date.now());
   const [roundIndex, setRoundIndex] = useState(0);
   const [targetColor, setTargetColor] = useState(null);
-  const [targetColors, setTargetColors] = useState([]);
+  const [targetColors, setTargetColors] = useState(() => {
+    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
+    const restoredRoundIndex = Math.max(
+      Number(initialGameSession?.roundIndex) || 0,
+      0,
+    );
+    const targetCount = isSprintMode || isEndlessMode
+      ? restoredRoundIndex + 2
+      : roundCount;
+
+    return normalizeVisualTargets(
+      initialGameSession?.targetColors,
+      targetCount,
+      cleanGameFamily,
+      () =>
+        createTargetColors(
+          effectiveDifficulty.id,
+          gameMode.id,
+          cleanGameFamily,
+          targetCount,
+          flagDifficulty,
+          cartoonIds,
+          teamIds,
+        ),
+    );
+  });
   const [guessColor, setGuessColor] = useState(() =>
     createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily),
   );
@@ -314,11 +355,29 @@ export function useSingleplayerGame(
             : Date.now(),
         );
         setRoundIndex(restoredRoundIndex);
-        const restoredTargetColors = isBrandMode
-          ? normalizeBrandTargets(initialGameSession.targetColors, roundCount)
+        const isVisualMode = isFlagMode || isCartoonMode || isBrandMode;
+        const restoredTargetCount = isSprintMode || isEndlessMode
+          ? restoredRoundIndex + 2
+          : roundCount;
+        const restoredTargetColors = isVisualMode
+          ? normalizeVisualTargets(
+              initialGameSession.targetColors,
+              restoredTargetCount,
+              cleanGameFamily,
+              () =>
+                createTargetColors(
+                  effectiveDifficulty.id,
+                  gameMode.id,
+                  cleanGameFamily,
+                  restoredTargetCount,
+                  flagDifficulty,
+                  cartoonIds,
+                  teamIds,
+                ),
+            )
           : initialGameSession.targetColors || [];
-        const restoredTargetColor = isBrandMode
-          ? isBrandColor(initialGameSession.targetColor)
+        const restoredTargetColor = isVisualMode
+          ? isVisualTargetForFamily(initialGameSession.targetColor, cleanGameFamily)
             ? initialGameSession.targetColor
             : restoredTargetColors[restoredRoundIndex] || null
           : initialGameSession.targetColor || null;
@@ -326,8 +385,8 @@ export function useSingleplayerGame(
         setTargetColor(restoredTargetColor);
         setTargetColors(restoredTargetColors);
         setGuessColor(
-          isBrandMode
-            ? isBrandColor(initialGameSession.guessColor)
+          isVisualMode
+            ? isVisualTargetForFamily(initialGameSession.guessColor, cleanGameFamily)
               ? constrainGuessColor(
                   initialGameSession.guessColor,
                   effectiveDifficulty,
@@ -384,8 +443,14 @@ export function useSingleplayerGame(
     hintsEnabled,
     initialGameSession,
     isBrandMode,
+    isCartoonMode,
+    isFlagMode,
+    isEndlessMode,
     isSprintMode,
     roundCount,
+    cartoonIds,
+    flagDifficulty,
+    teamIds,
   ]);
 
   useEffect(() => {
@@ -495,16 +560,20 @@ export function useSingleplayerGame(
     }
 
     if (isFlagMode) {
-      if (isSprintMode) {
-        const nextTargetColor = randomFlagTargetColors(1, Math.random, flagDifficulty)[0];
-        setTargetColors((currentColors) => [...currentColors, nextTargetColor]);
+      if (isSprintMode || isEndlessMode) {
+        const sprintTargets = [...targetColors];
+        while (sprintTargets.length <= nextRoundIndex + 1) {
+          sprintTargets.push(randomFlagTargetColors(1, Math.random, flagDifficulty)[0]);
+        }
+        const nextTargetColor = sprintTargets[nextRoundIndex];
+        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
         return;
       }
       const flagTargetColors =
-        nextRoundIndex === 0 || targetColors.length < roundCount
+        !hasValidVisualTargets(targetColors, roundCount, cleanGameFamily)
           ? randomFlagTargetColors(roundCount, Math.random, flagDifficulty)
           : targetColors;
       const nextTargetColor = flagTargetColors[nextRoundIndex];
@@ -526,16 +595,20 @@ export function useSingleplayerGame(
     }
 
     if (isCartoonMode) {
-      if (isSprintMode) {
-        const nextTargetColor = randomCartoonTargetColors(1, Math.random, cartoonIds)[0];
-        setTargetColors((currentColors) => [...currentColors, nextTargetColor]);
+      if (isSprintMode || isEndlessMode) {
+        const sprintTargets = [...targetColors];
+        while (sprintTargets.length <= nextRoundIndex + 1) {
+          sprintTargets.push(randomCartoonTargetColors(1, Math.random, cartoonIds)[0]);
+        }
+        const nextTargetColor = sprintTargets[nextRoundIndex];
+        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
         return;
       }
       const cartoonTargetColors =
-        nextRoundIndex === 0 || targetColors.length < roundCount
+        !hasValidVisualTargets(targetColors, roundCount, cleanGameFamily)
           ? randomCartoonTargetColors(roundCount, Math.random, cartoonIds)
           : targetColors;
       const nextTargetColor = cartoonTargetColors[nextRoundIndex];
@@ -557,18 +630,24 @@ export function useSingleplayerGame(
     }
 
     if (isBrandMode) {
-      if (isSprintMode) {
-        const nextTargetColor = isTeamFamily(cleanGameFamily)
-          ? randomTeamTargetColors(1, Math.random, teamIds)[0]
-          : randomBrandTargetColors(1)[0];
-        setTargetColors((currentColors) => [...currentColors, nextTargetColor]);
+      if (isSprintMode || isEndlessMode) {
+        const sprintTargets = [...targetColors];
+        while (sprintTargets.length <= nextRoundIndex + 1) {
+          sprintTargets.push(
+            isTeamFamily(cleanGameFamily)
+              ? randomTeamTargetColors(1, Math.random, teamIds)[0]
+              : randomBrandTargetColors(1)[0],
+          );
+        }
+        const nextTargetColor = sprintTargets[nextRoundIndex];
+        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
         return;
       }
       const brandTargetColors =
-        nextRoundIndex === 0 || !hasValidBrandTargets(targetColors, roundCount)
+        !hasValidVisualTargets(targetColors, roundCount, cleanGameFamily)
           ? isTeamFamily(cleanGameFamily)
           ? randomTeamTargetColors(roundCount, Math.random, teamIds)
             : randomBrandTargetColors(roundCount)
@@ -610,6 +689,7 @@ export function useSingleplayerGame(
     gameMode,
     isCartoonMode,
     isBrandMode,
+    isEndlessMode,
     isSprintMode,
     flagDifficulty,
     cartoonIds,
@@ -840,7 +920,19 @@ export function useSingleplayerGame(
     hintActionRef.current = false;
     setRoundIndex(0);
     setTargetColor(null);
-    setTargetColors([]);
+    setTargetColors(
+      isFlagMode || isCartoonMode || isBrandMode
+        ? createTargetColors(
+            effectiveDifficulty.id,
+            gameMode.id,
+            cleanGameFamily,
+            isSprintMode || isEndlessMode ? 2 : roundCount,
+            flagDifficulty,
+            cartoonIds,
+            teamIds,
+          )
+        : [],
+    );
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
     setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
     setHintActive(false);
@@ -856,7 +948,15 @@ export function useSingleplayerGame(
     gameMode,
     gameSessionKey,
     hintsEnabled,
+    isBrandMode,
+    isCartoonMode,
+    isEndlessMode,
+    isFlagMode,
+    isSprintMode,
     roundCount,
+    cartoonIds,
+    flagDifficulty,
+    teamIds,
   ]);
 
   const abandonSession = useCallback(() => {

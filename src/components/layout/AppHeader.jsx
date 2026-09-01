@@ -382,7 +382,7 @@ export default function AppHeader() {
   if (pathname === "/maintenance") {
     return (
       <header key="maintenance-header" className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-end p-6 sm:p-8">
-        <div className="pointer-events-auto">
+        <div data-sound-kind="switch" className="pointer-events-auto">
           <LanguageToggle />
         </div>
       </header>
@@ -435,6 +435,7 @@ export default function AppHeader() {
           >
             <nav
               aria-label={t("gameFamily.label")}
+              data-sound-kind="navigation"
               className="flex w-full flex-col items-start gap-3 text-[clamp(2.85rem,13vw,4.9rem)] font-semibold leading-[0.96] tracking-normal"
             >
               {GAME_FAMILY_OPTIONS.map((option) => {
@@ -466,7 +467,7 @@ export default function AppHeader() {
               })}
             </nav>
 
-            <div className="mt-auto flex items-center gap-1 pb-1">
+            <div data-sound-kind="switch" className="mt-auto flex items-center gap-1 pb-1">
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
                   <LanguageToggle />
@@ -506,6 +507,7 @@ export default function AppHeader() {
         <nav
           ref={familyNavRef}
           aria-label={t("gameFamily.label")}
+          data-sound-kind="navigation"
           onMouseLeave={() => setHoveredFamily(null)}
           className="relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
         >
@@ -525,7 +527,6 @@ export default function AppHeader() {
                 }}
                 href={option.href}
                 aria-current={active ? "page" : undefined}
-                data-sound="off"
                 onMouseEnter={() => setHoveredFamily(option.href)}
                 onClick={(event) =>
                   handleFamilyNavigation(event, option.href, active)
@@ -558,6 +559,7 @@ export default function AppHeader() {
         {adminSessionOpen && (
           <Link
             href="/admin"
+            data-sound-kind="navigation"
             onClick={(event) =>
               handleFamilyNavigation(event, "/admin", pathname === "/admin")
             }
@@ -568,7 +570,7 @@ export default function AppHeader() {
             {locale === "tr" ? "Admin oturumu açık" : "Admin session open"}
           </Link>
         )}
-        <div className="hidden items-center gap-1 md:inline-flex">
+        <div data-sound-kind="switch" className="hidden items-center gap-1 md:inline-flex">
           <Link
             href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
             aria-label={t("notifications.open")}
@@ -591,7 +593,7 @@ export default function AppHeader() {
           {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
         </div>
 
-        <div className="md:hidden">
+        <div data-sound-kind="switch" className="md:hidden">
           <Link
             href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
             aria-label={t("notifications.open")}
@@ -612,6 +614,7 @@ export default function AppHeader() {
 
         <button
           ref={menuButtonRef}
+          data-sound-kind="switch"
           type="button"
           aria-label={isNavRendered ? t("common.closeMenu") : t("common.openMenu")}
           aria-expanded={isNavRendered}

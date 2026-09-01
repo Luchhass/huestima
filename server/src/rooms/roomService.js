@@ -27,6 +27,7 @@ import {
   validateDifficulty,
   validateGameFamily,
   validateGameMode,
+  validateGameModeForFamily,
   validatePlayerId,
   validatePlayerName,
   validateRoundCount,
@@ -335,6 +336,12 @@ function validateRoomCreatePayload(payload) {
   const gameFamily = validateGameFamily(payload.gameFamily);
   if (!gameFamily.ok) return gameFamily;
 
+  const familyMode = validateGameModeForFamily(
+    gameMode.data.gameMode,
+    gameFamily.data.gameFamily,
+  );
+  if (!familyMode.ok) return familyMode;
+
   const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
   if (!roundCount.ok) return roundCount;
 
@@ -574,6 +581,12 @@ export function updateRoomSettings(payload) {
   if (payload.gameMode !== undefined || payload.mode !== undefined) {
     const gameMode = validateGameMode(payload.gameMode || payload.mode);
     if (!gameMode.ok) return gameMode;
+
+    const familyMode = validateGameModeForFamily(
+      gameMode.data.gameMode,
+      room.gameFamily,
+    );
+    if (!familyMode.ok) return familyMode;
 
     room.gameMode = gameMode.data.gameMode;
     room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);

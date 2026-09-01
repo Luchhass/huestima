@@ -94,7 +94,7 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <nav data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
+      <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
         {[
           [
             [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
@@ -111,7 +111,7 @@ export default function AppFooter() {
             {row.map(([href, label], index) => (
               <span key={href} className="route-transition-footer-item">
                 {index > 0 && <span className="route-transition-footer-separator" aria-hidden="true">·</span>}
-                <Link href={href} data-sound="off" onClick={(event) => void handleFooterNavigation(event, href)} className={footerLinkClass}>
+                <Link href={href} onClick={(event) => void handleFooterNavigation(event, href)} className={footerLinkClass}>
                   {label}
                 </Link>
               </span>

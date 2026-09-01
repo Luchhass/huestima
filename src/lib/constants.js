@@ -83,6 +83,7 @@ export const GAME_MODE_OPTIONS = [
     description: "Classic five-second rounds with no final limit.",
     revealDurationMs: MEMORIZE_DURATION_MS,
     isEndless: true,
+    singleplayerOnly: true,
   },
   {
     id: GAME_MODE_IDS.FLASH,

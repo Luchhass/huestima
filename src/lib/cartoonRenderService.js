@@ -1,8 +1,9 @@
 "use client";
 
-import { loadCartoonImage } from "@/lib/cartoonImageCache";
+import { loadVisualImage } from "@/lib/cartoonImageCache";
 
 const MAX_RENDER_WIDTH = 1400;
+const MAX_TEXTURE_CACHE_SIZE = 64;
 const POSITIONS = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
 
 const VERTEX_SHADER = `
@@ -181,8 +182,14 @@ class VisualRenderService {
 
   texture(src) {
     if (!src) return Promise.resolve(null);
+    if (this.textureCache.has(src)) {
+      const cachedTexture = this.textureCache.get(src);
+      this.textureCache.delete(src);
+      this.textureCache.set(src, cachedTexture);
+      return cachedTexture;
+    }
     if (!this.textureCache.has(src)) {
-      const texture = loadCartoonImage(src)
+      const texture = loadVisualImage(src)
         .then((image) => createTexture(this.gl, image))
         .catch((error) => {
           this.textureCache.delete(src);
@@ -191,6 +198,19 @@ class VisualRenderService {
       this.textureCache.set(src, texture);
     }
     return this.textureCache.get(src);
+  }
+
+  trimTextureCache() {
+    while (this.textureCache.size > MAX_TEXTURE_CACHE_SIZE) {
+      const oldestSource = this.textureCache.keys().next().value;
+      const texturePromise = this.textureCache.get(oldestSource);
+      this.textureCache.delete(oldestSource);
+      void texturePromise
+        .then((texture) => {
+          if (texture?.texture) this.gl.deleteTexture(texture.texture);
+        })
+        .catch(() => {});
+    }
   }
 
   bind(program, texture, width, height) {
@@ -208,8 +228,24 @@ class VisualRenderService {
 
   render(request) {
     return new Promise((resolve, reject) => {
+      if (request.requestKey) {
+        const supersededJobs = this.queue.filter(
+          (job) => job.requestKey === request.requestKey,
+        );
+        this.queue = this.queue.filter(
+          (job) => job.requestKey !== request.requestKey,
+        );
+        for (const job of supersededJobs) {
+          job.reject(new DOMException("Superseded visual frame", "AbortError"));
+        }
+      }
       // Newly visible cards and the newest slider value should render first.
-      this.queue.unshift({ prepared: this.prepare(request), resolve, reject });
+      this.queue.unshift({
+        requestKey: request.requestKey,
+        prepared: this.prepare(request),
+        resolve,
+        reject,
+      });
       this.processQueue();
     });
   }
@@ -255,6 +291,7 @@ class VisualRenderService {
     }
 
     this.isRendering = false;
+    this.trimTextureCache();
   }
 
   draw({ base, preparedLayers, color, width }) {
@@ -312,4 +349,19 @@ let service;
 export function renderCartoonFrame(request) {
   if (!service) service = new VisualRenderService();
   return service.render(request);
+}
+
+export function releaseVisualRenderService() {
+  if (!service) return;
+  const gl = service.gl;
+  for (const texturePromise of service.textureCache.values()) {
+    void texturePromise
+      .then((texture) => {
+        if (texture?.texture) gl.deleteTexture(texture.texture);
+      })
+      .catch(() => {});
+  }
+  service.textureCache.clear();
+  gl.getExtension("WEBGL_lose_context")?.loseContext();
+  service = null;
 }

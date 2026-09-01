@@ -1,8 +1,20 @@
 "use client";
 
 import { MUSIC_STORAGE_KEY } from "./constants";
+import {
+  CARTOON_THEME_BPM,
+  CARTOON_THEME_EVENTS,
+  CARTOON_THEME_LOOP_STEPS,
+} from "./cartoonTheme.generated";
+import {
+  CARTOON_MENU_THEME_BPM,
+  CARTOON_MENU_THEME_EVENTS,
+  CARTOON_MENU_THEME_LOOP_STEPS,
+} from "./cartoonMenuTheme.generated";
 
 export const MUSIC_SCENES = {
+  CARTOON_GAME: "cartoon-game",
+  CARTOON_MENU: "cartoon-menu",
   GAME: "game",
   MENU: "menu",
 };
@@ -13,8 +25,11 @@ const MUSIC_DISABLED_VALUE = "off";
 const MUSIC_ENABLED_VALUE = "on";
 const SCREEN_REVEAL_COMPLETE_EVENT = "huestima-screen-reveal-complete";
 const PAGE_INTRO_COMPLETE_EVENT = "page-intro:complete";
-const MASTER_VOLUME = 0.58;
+const MASTER_VOLUME = 0.58 * 5;
 const MUTED_VOLUME = 0.0001;
+const CARTOON_GAME_THEME_GAIN = 50;
+const CARTOON_MENU_THEME_GAIN = 126.4;
+const SHARED_THEME_GAIN = 18;
 const LOOKAHEAD_SECONDS = 0.22;
 const SCHEDULER_MS = 34;
 const AUTO_START_FADE_SECONDS = 1.35;
@@ -23,34 +38,58 @@ const SCENE_FADE_OUT_SECONDS = 0.5;
 const SCENE_FADE_IN_SECONDS = 1.0;
 const INITIAL_REVEAL_FALLBACK_MS = 7800;
 const AUTOPLAY_RETRY_DELAYS_MS = [280, 760, 1500, 2600];
+const CARTOON_THEME_EVENTS_BY_STEP = CARTOON_THEME_EVENTS.reduce((steps, event) => {
+  const step = event[0];
+  const current = steps.get(step) || [];
+  current.push(event);
+  steps.set(step, current);
+  return steps;
+}, new Map());
+const CARTOON_MENU_THEME_EVENTS_BY_STEP = CARTOON_MENU_THEME_EVENTS.reduce((steps, event) => {
+  const step = event[0];
+  const current = steps.get(step) || [];
+  current.push(event);
+  steps.set(step, current);
+  return steps;
+}, new Map());
 
 const SCENE_CONFIG = {
   [MUSIC_SCENES.MENU]: {
-    bpm: 88,
-    loopSteps: 128,
+    bpm: 92,
+    loopSteps: 512,
     chords: [
-      [60, 64, 67, 71],
-      [57, 62, 64, 69],
-      [53, 57, 60, 67],
-      [55, 60, 62, 69],
-      [59, 64, 67, 74],
-      [55, 59, 62, 67],
-      [52, 57, 60, 64],
-      [55, 62, 67, 71],
+      [48, 55, 59, 64], [45, 52, 55, 60], [41, 48, 52, 57], [43, 50, 55, 60],
+      [40, 47, 52, 55], [45, 52, 57, 60], [38, 45, 50, 53], [43, 50, 55, 59],
+      [40, 48, 55, 64], [47, 55, 59, 62], [45, 52, 55, 60], [41, 48, 52, 57],
+      [38, 45, 50, 53], [40, 47, 52, 55], [41, 48, 53, 57], [43, 50, 55, 59],
+      [45, 52, 55, 60], [41, 48, 52, 57], [48, 55, 59, 64], [43, 50, 55, 62],
+      [40, 47, 52, 55], [41, 48, 53, 57], [38, 45, 50, 53], [43, 50, 55, 59],
+      [48, 55, 59, 64], [45, 52, 57, 60], [41, 48, 52, 57], [43, 50, 55, 60],
+      [38, 45, 50, 53], [40, 47, 52, 55], [41, 48, 53, 57], [43, 50, 55, 59],
     ],
   },
+  [MUSIC_SCENES.CARTOON_GAME]: {
+    bpm: CARTOON_THEME_BPM,
+    loopSteps: CARTOON_THEME_LOOP_STEPS,
+    chords: [],
+  },
+  [MUSIC_SCENES.CARTOON_MENU]: {
+    bpm: CARTOON_MENU_THEME_BPM,
+    loopSteps: CARTOON_MENU_THEME_LOOP_STEPS,
+    chords: [],
+  },
   [MUSIC_SCENES.GAME]: {
-    bpm: 126,
-    loopSteps: 128,
+    bpm: 132,
+    loopSteps: 512,
     chords: [
-      [50, 57, 62, 66],
-      [53, 60, 64, 69],
-      [48, 55, 60, 64],
-      [55, 62, 66, 71],
-      [52, 59, 64, 67],
-      [57, 64, 69, 72],
-      [45, 52, 57, 62],
-      [55, 62, 67, 71],
+      [38, 45, 50, 53], [41, 48, 53, 57], [36, 43, 48, 52], [43, 50, 55, 58],
+      [46, 53, 58, 62], [36, 43, 48, 52], [38, 45, 50, 53], [45, 52, 57, 61],
+      [38, 45, 50, 53], [41, 48, 53, 57], [43, 50, 55, 58], [45, 52, 57, 61],
+      [46, 53, 58, 62], [43, 50, 55, 58], [41, 48, 53, 57], [45, 52, 57, 61],
+      [38, 45, 50, 53], [46, 53, 58, 62], [41, 48, 53, 57], [36, 43, 48, 52],
+      [43, 50, 55, 58], [46, 53, 58, 62], [45, 52, 57, 61], [45, 52, 57, 60],
+      [38, 45, 50, 53], [41, 48, 53, 57], [36, 43, 48, 52], [43, 50, 55, 58],
+      [46, 53, 58, 62], [43, 50, 55, 58], [45, 52, 57, 61], [38, 45, 50, 53],
     ],
   },
 };
@@ -88,6 +127,7 @@ let autoplayRetryIndex = 0;
 let schedulerId = storedEngine?.schedulerId || null;
 let stepIndex = storedEngine?.stepIndex || 0;
 let nextStepAt = storedEngine?.nextStepAt || 0;
+const activeMusicSources = new Set();
 
 if (schedulerId && typeof window !== "undefined") {
   window.clearInterval(schedulerId);
@@ -173,7 +213,7 @@ function getLoopSteps(scene = currentScene) {
 }
 
 function normalizeMusicScene(scene) {
-  return scene === MUSIC_SCENES.GAME ? MUSIC_SCENES.GAME : MUSIC_SCENES.MENU;
+  return SCENE_CONFIG[scene] ? scene : MUSIC_SCENES.MENU;
 }
 
 function fadeSecondsToMs(seconds) {
@@ -200,6 +240,22 @@ function clearAutoplayRetry() {
 
 function midiToFrequency(midi) {
   return 440 * 2 ** ((midi - 69) / 12);
+}
+
+function trackMusicSource(source) {
+  activeMusicSources.add(source);
+  source.addEventListener("ended", () => activeMusicSources.delete(source), { once: true });
+}
+
+function stopMusicSources(sources) {
+  for (const source of sources) {
+    activeMusicSources.delete(source);
+    try {
+      source.stop();
+    } catch {
+      // The source may already have ended naturally.
+    }
+  }
 }
 
 function isDocumentVisible() {
@@ -246,8 +302,16 @@ function ensureMusicContext() {
     masterGain = audioContext.createGain();
     masterGain.gain.value = MUTED_VOLUME;
 
+    const limiter = audioContext.createDynamicsCompressor();
+    limiter.threshold.value = -1;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.08;
+
     compressor.connect(masterGain);
-    masterGain.connect(audioContext.destination);
+    masterGain.connect(limiter);
+    limiter.connect(audioContext.destination);
     musicBus = compressor;
   }
 
@@ -278,7 +342,7 @@ function setMusicGainTarget(targetGain, {
     return;
   }
 
-  gain.setTargetAtTime(targetGain, now, Math.max(0.01, duration));
+  gain.linearRampToValueAtTime(targetGain, now + Math.max(0.01, duration));
 }
 
 function applyMusicGain({
@@ -358,7 +422,11 @@ function scheduleTone(
 
   const oscillator = context.createOscillator();
   const envelope = context.createGain();
-  const peak = Math.max(0.0001, gain);
+  const sceneGain =
+    currentScene === MUSIC_SCENES.MENU || currentScene === MUSIC_SCENES.GAME
+      ? SHARED_THEME_GAIN
+      : 1;
+  const peak = Math.max(0.0001, gain * sceneGain);
   const attackEnd = time + Math.max(0.004, attack);
   const decayEnd = attackEnd + Math.max(0.002, decay);
   const releaseStart = Math.max(decayEnd + 0.002, time + duration);
@@ -382,6 +450,7 @@ function scheduleTone(
 
   oscillator.start(time);
   oscillator.stop(endTime + 0.04);
+  trackMusicSource(oscillator);
 }
 
 function scheduleNoise(
@@ -402,7 +471,11 @@ function scheduleNoise(
 
   const source = context.createBufferSource();
   const envelope = context.createGain();
-  const peak = Math.max(0.0001, gain);
+  const sceneGain =
+    currentScene === MUSIC_SCENES.MENU || currentScene === MUSIC_SCENES.GAME
+      ? SHARED_THEME_GAIN
+      : 1;
+  const peak = Math.max(0.0001, gain * sceneGain);
   const attackEnd = time + Math.max(0.002, attack);
   const releaseStart = time + duration;
   const endTime = releaseStart + release;
@@ -423,6 +496,7 @@ function scheduleNoise(
 
   source.start(time);
   source.stop(endTime + 0.02);
+  trackMusicSource(source);
 }
 
 function scheduleSoftPulse(context, time, frequency, gain = 0.02) {
@@ -444,32 +518,68 @@ function scheduleMenuStep(context, step, time) {
   const localStep = step % 16;
   const phraseStep = step % getLoopSteps(MUSIC_SCENES.MENU);
   const bar = Math.floor(phraseStep / 16);
+  const section = Math.floor(bar / 8);
   const chord = config.chords[bar] || config.chords[0];
   const nextChord = config.chords[(bar + 1) % config.chords.length] || chord;
 
   if (localStep === 0) {
     chord.forEach((midi, index) => {
       scheduleTone(context, {
-        attack: 0.12,
-        decay: 0.58,
-        duration: 2.2,
-        filterFrequency: 1180 + index * 180,
+        attack: 0.16,
+        decay: 0.7,
+        duration: 2.45,
+        filterFrequency: 980 + index * 210 + section * 90,
         frequency: midiToFrequency(midi),
-        gain: 0.0068 - index * 0.0005,
+        gain: 0.0085 - index * 0.0006,
         pan: (index - 1.5) * 0.16,
-        release: 1.1,
+        release: 1.25,
         time,
         type: index % 2 === 0 ? "sine" : "triangle",
       });
     });
+
+    scheduleTone(context, {
+      attack: 0.08,
+      decay: 0.32,
+      duration: 2.15,
+      filterFrequency: 420,
+      frequency: midiToFrequency(chord[0] - 24),
+      gain: 0.0125,
+      pan: -0.04,
+      release: 0.72,
+      time,
+      type: "sine",
+    });
   }
 
   if (localStep === 0 || localStep === 8) {
-    scheduleSoftPulse(context, time, midiToFrequency(chord[0] - 12), 0.013);
+    scheduleSoftPulse(
+      context,
+      time,
+      midiToFrequency((localStep === 8 ? chord[1] : chord[0]) - 12),
+      section >= 2 ? 0.017 : 0.014,
+    );
+  }
+
+  if (localStep === 0 || localStep === 6 || localStep === 10) {
+    const bassNotes = [chord[0], chord[1], nextChord[0]];
+    const bassIndex = localStep === 0 ? 0 : localStep === 6 ? 1 : 2;
+    scheduleTone(context, {
+      attack: 0.016,
+      decay: 0.13,
+      duration: localStep === 10 ? 0.24 : 0.32,
+      filterFrequency: 760,
+      frequency: midiToFrequency(bassNotes[bassIndex] - 12),
+      gain: section === 0 ? 0.009 : 0.012,
+      pan: localStep === 6 ? 0.08 : -0.06,
+      release: 0.2,
+      time,
+      type: "triangle",
+    });
   }
 
   if (localStep % 2 === 0) {
-    const prism = [
+    const prisms = [[
       chord[0] + 12,
       chord[2] + 12,
       chord[1] + 19,
@@ -478,7 +588,17 @@ function scheduleMenuStep(context, step, time) {
       chord[2] + 19,
       chord[1] + 12,
       chord[3] + 19,
-    ];
+    ], [
+      chord[1] + 12,
+      chord[3] + 12,
+      chord[2] + 19,
+      nextChord[0] + 24,
+      chord[3] + 19,
+      chord[1] + 24,
+      nextChord[2] + 12,
+      chord[0] + 24,
+    ]];
+    const prism = prisms[section % prisms.length];
 
     scheduleTone(context, {
       attack: 0.01,
@@ -486,10 +606,50 @@ function scheduleMenuStep(context, step, time) {
       duration: 0.09,
       filterFrequency: localStep % 8 === 0 ? 3600 : 4300,
       frequency: midiToFrequency(prism[(phraseStep / 2) % prism.length]),
-      gain: localStep % 8 === 0 ? 0.011 : 0.0075,
+      gain: localStep % 8 === 0 ? 0.014 : 0.0095,
       pan: ((phraseStep % 16) - 7.5) / 38,
       q: 1.1,
       release: 0.16,
+      time,
+      type: "sine",
+    });
+  }
+
+  const leadPatterns = [
+    [3, 11],
+    [1, 5, 11, 15],
+    [3, 7, 9, 15],
+    [1, 5, 9, 13, 15],
+  ];
+  if (leadPatterns[section].includes(localStep)) {
+    const contour = [0, 2, 1, 3, 2, 1, 3, 0];
+    const toneIndex = contour[(bar + localStep) % contour.length];
+    const lift = section >= 2 && localStep >= 9 ? 24 : 12;
+    scheduleTone(context, {
+      attack: 0.028,
+      decay: 0.14,
+      duration: localStep === 15 ? 0.42 : 0.26,
+      filterFrequency: 3400 + section * 380,
+      frequency: midiToFrequency(chord[toneIndex] + lift),
+      gain: section === 0 ? 0.006 : 0.0095,
+      pan: localStep < 8 ? -0.22 : 0.22,
+      q: 1.15,
+      release: 0.28,
+      time,
+      type: section % 2 ? "triangle" : "sine",
+    });
+  }
+
+  if (section >= 2 && (localStep === 1 || localStep === 9 || localStep === 13)) {
+    scheduleTone(context, {
+      attack: 0.04,
+      decay: 0.2,
+      duration: 0.48,
+      filterFrequency: 2100,
+      frequency: midiToFrequency((localStep === 13 ? nextChord[2] : chord[2]) + 7),
+      gain: 0.0058,
+      pan: localStep === 9 ? -0.28 : 0.28,
+      release: 0.38,
       time,
       type: "sine",
     });
@@ -510,11 +670,11 @@ function scheduleMenuStep(context, step, time) {
     });
   }
 
-  if (localStep === 6 || localStep === 10 || localStep === 14) {
+  if (localStep === 2 || localStep === 6 || localStep === 10 || localStep === 14) {
     scheduleNoise(context, {
       duration: localStep === 10 ? 0.018 : 0.03,
       filterFrequency: localStep === 10 ? 7600 : 6200,
-      gain: localStep === 10 ? 0.0014 : 0.0025,
+      gain: localStep === 10 ? 0.0022 : 0.0032 + section * 0.00035,
       pan: localStep < 8 ? -0.1 : 0.1,
       time,
     });
@@ -526,11 +686,29 @@ function scheduleGameStep(context, step, time) {
   const localStep = step % 16;
   const phraseStep = step % getLoopSteps(MUSIC_SCENES.GAME);
   const bar = Math.floor(phraseStep / 16);
+  const section = Math.floor(bar / 8);
   const chord = config.chords[bar] || config.chords[0];
   const nextChord = config.chords[(bar + 1) % config.chords.length] || chord;
 
-  if (localStep === 0 || localStep === 8) {
-    scheduleSoftPulse(context, time, midiToFrequency(chord[0] - 12), 0.021);
+  if (localStep === 0) {
+    chord.forEach((midi, index) => {
+      scheduleTone(context, {
+        attack: 0.035,
+        decay: 0.22,
+        duration: 1.55,
+        filterFrequency: 1050 + index * 260 + section * 120,
+        frequency: midiToFrequency(midi),
+        gain: 0.0048 - index * 0.00035,
+        pan: (index - 1.5) * 0.13,
+        release: 0.48,
+        time,
+        type: index % 2 ? "triangle" : "sine",
+      });
+    });
+  }
+
+  if (localStep === 0 || localStep === 8 || (section >= 2 && (localStep === 4 || localStep === 12))) {
+    scheduleSoftPulse(context, time, midiToFrequency(chord[0] - 12), localStep % 8 === 0 ? 0.028 : 0.019);
   }
 
   if (localStep === 4 || localStep === 12) {
@@ -547,8 +725,26 @@ function scheduleGameStep(context, step, time) {
     });
   }
 
+  if (localStep === 0 || localStep === 3 || localStep === 6 || localStep === 10 || localStep === 13) {
+    const bassContour = [0, 0, 1, 2, 0];
+    const bassSlot = [0, 3, 6, 10, 13].indexOf(localStep);
+    const sourceChord = localStep === 13 ? nextChord : chord;
+    scheduleTone(context, {
+      attack: 0.006,
+      decay: 0.075,
+      duration: localStep === 13 ? 0.18 : 0.13,
+      filterFrequency: 680 + section * 90,
+      frequency: midiToFrequency(sourceChord[bassContour[bassSlot]] - 12),
+      gain: 0.021 + section * 0.0018,
+      pan: localStep % 2 ? 0.07 : -0.07,
+      release: 0.12,
+      time,
+      type: "sawtooth",
+    });
+  }
+
   if (localStep % 2 === 1) {
-    const spectrum = [
+    const spectra = [[
       chord[0] + 12,
       chord[1] + 12,
       chord[2] + 12,
@@ -557,7 +753,17 @@ function scheduleGameStep(context, step, time) {
       chord[2] + 17,
       nextChord[1] + 12,
       chord[0] + 24,
-    ];
+    ], [
+      chord[0] + 24,
+      chord[2] + 12,
+      chord[1] + 19,
+      chord[3] + 12,
+      nextChord[0] + 24,
+      chord[2] + 19,
+      nextChord[2] + 12,
+      chord[1] + 24,
+    ]];
+    const spectrum = spectra[section % spectra.length];
 
     scheduleTone(context, {
       attack: 0.006,
@@ -566,12 +772,36 @@ function scheduleGameStep(context, step, time) {
       duration: localStep === 15 ? 0.052 : 0.074,
       filterFrequency: localStep === 15 ? 4200 : 3150,
       frequency: midiToFrequency(spectrum[Math.floor(phraseStep / 2) % spectrum.length]),
-      gain: localStep === 15 ? 0.006 : 0.0105,
+      gain: localStep === 15 ? 0.008 : 0.0135,
       pan: localStep % 4 === 1 ? -0.18 : 0.18,
       q: 1.2,
       release: 0.09,
       time,
       type: "square",
+    });
+  }
+
+  const gameLeadPatterns = [
+    [7, 15],
+    [3, 7, 11, 15],
+    [1, 5, 7, 11, 15],
+    [1, 3, 7, 9, 11, 15],
+  ];
+  if (gameLeadPatterns[section].includes(localStep)) {
+    const contour = [0, 2, 3, 1, 2, 0, 3, 2];
+    const toneIndex = contour[(bar + localStep) % contour.length];
+    scheduleTone(context, {
+      attack: 0.008,
+      decay: 0.07,
+      duration: localStep === 15 ? 0.24 : 0.14,
+      filterFrequency: 3900 + section * 420,
+      frequency: midiToFrequency((localStep === 15 ? nextChord : chord)[toneIndex] + 24),
+      gain: 0.008 + section * 0.0014,
+      pan: localStep < 8 ? -0.24 : 0.24,
+      q: 1.25,
+      release: 0.16,
+      time,
+      type: section >= 2 ? "square" : "triangle",
     });
   }
 
@@ -607,18 +837,113 @@ function scheduleGameStep(context, step, time) {
     });
   }
 
-  if (localStep === 3 || localStep === 6 || localStep === 11 || localStep === 14 || localStep === 15) {
+  if (localStep === 1 || localStep === 3 || localStep === 5 || localStep === 6 || localStep === 9 || localStep === 11 || localStep === 13 || localStep === 14 || localStep === 15) {
     scheduleNoise(context, {
       duration: localStep === 15 ? 0.018 : 0.026,
       filterFrequency: localStep === 15 ? 7800 : 6500,
-      gain: localStep === 15 ? 0.002 : 0.0038,
+      gain: localStep === 15 ? 0.0032 : 0.0045 + section * 0.00045,
       pan: localStep < 8 ? -0.12 : 0.12,
       time,
     });
   }
 }
 
+function scheduleCartoonDrum(context, note, velocity, time) {
+  const strength = Math.max(0.25, velocity / 127);
+
+  if (note === 35 || note === 36) {
+    scheduleTone(context, {
+      attack: 0.003,
+      decay: 0.045,
+      duration: 0.055,
+      filterFrequency: 240,
+      frequency: note === 35 ? 54 : 61,
+      gain: 0.018 * strength * CARTOON_GAME_THEME_GAIN,
+      release: 0.08,
+      time,
+      type: "sine",
+    });
+    return;
+  }
+
+  const isCymbal = note >= 42;
+  scheduleNoise(context, {
+    duration: isCymbal ? 0.055 : 0.035,
+    filterFrequency: isCymbal ? 6600 : 1900,
+    filterType: isCymbal ? "highpass" : "bandpass",
+    gain: (isCymbal ? 0.0032 : 0.0055) * strength * CARTOON_GAME_THEME_GAIN,
+    pan: note % 2 ? -0.08 : 0.08,
+    release: isCymbal ? 0.1 : 0.055,
+    time,
+  });
+}
+
+function scheduleCartoonGameStep(context, step, time) {
+  const events = CARTOON_THEME_EVENTS_BY_STEP.get(step);
+  if (!events) return;
+
+  const stepSeconds = getStepSeconds(MUSIC_SCENES.CARTOON_GAME);
+  for (const [, durationSteps, note, velocity, track] of events) {
+    if (track === 11) {
+      scheduleCartoonDrum(context, note, velocity, time);
+      continue;
+    }
+
+    const isBass = track === 2 || track >= 8;
+    const isLead = track === 0 || track === 1 || track === 5;
+    const strength = Math.max(0.22, velocity / 127);
+    scheduleTone(context, {
+      attack: isBass ? 0.012 : 0.006,
+      decay: isLead ? 0.075 : 0.11,
+      duration: Math.max(0.055, durationSteps * stepSeconds * 0.88),
+      filterFrequency: isBass ? 920 : isLead ? 3300 : 2200,
+      frequency: midiToFrequency(note),
+      gain: (isBass ? 0.0032 : isLead ? 0.0022 : 0.00135) * strength * CARTOON_GAME_THEME_GAIN,
+      pan: ((track % 5) - 2) * 0.09,
+      q: isLead ? 1.05 : 0.72,
+      release: isBass ? 0.12 : 0.075,
+      time,
+      type: isBass ? "triangle" : track % 3 === 0 ? "sine" : "square",
+    });
+  }
+}
+
+function scheduleCartoonMenuStep(context, step, time) {
+  const events = CARTOON_MENU_THEME_EVENTS_BY_STEP.get(step);
+  if (!events) return;
+
+  const stepSeconds = getStepSeconds(MUSIC_SCENES.CARTOON_MENU);
+  for (const [, durationSteps, note, velocity, track] of events) {
+    const isBass = track === 3 || track === 5 || track === 7;
+    const isLead = track === 0 || track === 1 || track === 4;
+    const strength = Math.max(0.22, velocity / 127);
+    scheduleTone(context, {
+      attack: isBass ? 0.016 : 0.009,
+      decay: isLead ? 0.09 : 0.13,
+      duration: Math.max(0.07, durationSteps * stepSeconds * 0.9),
+      filterFrequency: isBass ? 1050 : isLead ? 3600 : 2400,
+      frequency: midiToFrequency(note),
+      gain: (isBass ? 0.0032 : isLead ? 0.0022 : 0.00135) * strength * CARTOON_MENU_THEME_GAIN,
+      pan: ((track % 5) - 2) * 0.08,
+      q: isLead ? 0.95 : 0.7,
+      release: isBass ? 0.14 : 0.09,
+      time,
+      type: track === 4 ? "sine" : isBass ? "triangle" : "square",
+    });
+  }
+}
+
 function scheduleSceneStep(context, scene, step, time) {
+  if (scene === MUSIC_SCENES.CARTOON_MENU) {
+    scheduleCartoonMenuStep(context, step, time);
+    return;
+  }
+
+  if (scene === MUSIC_SCENES.CARTOON_GAME) {
+    scheduleCartoonGameStep(context, step, time);
+    return;
+  }
+
   if (scene === MUSIC_SCENES.GAME) {
     scheduleGameStep(context, step, time);
     return;
@@ -690,6 +1015,7 @@ function startScheduler({
   deferUntilReveal = false,
   fadeInDuration = null,
   fadeInFromZero = false,
+  immediateGain = false,
   reset = false,
   smoothAutoFade = false,
 } = {}) {
@@ -704,6 +1030,7 @@ function startScheduler({
       deferUntilReveal,
       fadeInDuration,
       fadeInFromZero,
+      immediateGain,
       reset,
       smoothAutoFade,
     };
@@ -733,11 +1060,13 @@ function startScheduler({
     nextStepAt = context.currentTime + 0.06;
   }
 
-  const gainOptions = smoothAutoFade
-    ? { duration: AUTO_START_FADE_SECONDS, fromZero: !didAutoFadeIn }
-    : fadeInDuration
-      ? { duration: fadeInDuration, fromZero: fadeInFromZero }
-      : undefined;
+  const gainOptions = immediateGain
+    ? { immediate: true }
+    : smoothAutoFade
+      ? { duration: AUTO_START_FADE_SECONDS, fromZero: !didAutoFadeIn }
+      : fadeInDuration
+        ? { duration: fadeInDuration, fromZero: fadeInFromZero }
+        : undefined;
 
   applyMusicGain(gainOptions);
 
@@ -780,14 +1109,28 @@ export function resumeMusicIfAllowed() {
   startScheduler();
 }
 
-export function pauseMusic() {
-  stopScheduler();
+export function pauseMusic({ duration = SCENE_FADE_OUT_SECONDS } = {}) {
+  clearSceneTransitionTimer();
+  const outgoingSources = [...activeMusicSources];
+  stopScheduler({ fade: false });
+  setMusicGainTarget(MUTED_VOLUME, { duration });
+
+  if (typeof window === "undefined") {
+    stopMusicSources(outgoingSources);
+    return;
+  }
+
+  window.setTimeout(
+    () => stopMusicSources(outgoingSources),
+    fadeSecondsToMs(duration) + 20,
+  );
 }
 
 export function startMusicScene(scene, {
   deferUntilReveal = false,
   duration = SCENE_FADE_IN_SECONDS,
   fromZero = true,
+  immediate = false,
   reset = true,
 } = {}) {
   clearSceneTransitionTimer();
@@ -812,12 +1155,12 @@ export function startMusicScene(scene, {
     deferUntilReveal,
     fadeInDuration: duration,
     fadeInFromZero: fromZero,
+    immediateGain: immediate,
     reset,
   });
 }
 
 export function transitionMusicToScene(scene, {
-  fadeIn = SCENE_FADE_IN_SECONDS,
   fadeOut = SCENE_FADE_OUT_SECONDS,
   reset = true,
 } = {}) {
@@ -838,8 +1181,7 @@ export function transitionMusicToScene(scene, {
   if (currentScene === nextScene) {
     pendingSceneTransitionTarget = null;
     startMusicScene(nextScene, {
-      duration: fadeIn,
-      fromZero: false,
+      immediate: true,
       reset: false,
     });
     return Promise.resolve();
@@ -849,20 +1191,20 @@ export function transitionMusicToScene(scene, {
     pendingSceneTransitionTarget = null;
     startMusicScene(nextScene, {
       deferUntilReveal: true,
-      duration: fadeIn,
-      fromZero: true,
+      immediate: true,
       reset,
     });
     return Promise.resolve();
   }
 
+  const outgoingSources = [...activeMusicSources];
   stopScheduler({ fade: false });
   setMusicGainTarget(MUTED_VOLUME, { duration: fadeOut });
 
   if (typeof window === "undefined") {
+    stopMusicSources(outgoingSources);
     startMusicScene(nextScene, {
-      duration: fadeIn,
-      fromZero: true,
+      immediate: true,
       reset,
     });
     return Promise.resolve();
@@ -872,9 +1214,9 @@ export function transitionMusicToScene(scene, {
     sceneTransitionTimerId = window.setTimeout(() => {
       sceneTransitionTimerId = null;
       pendingSceneTransitionTarget = null;
+      stopMusicSources(outgoingSources);
       startMusicScene(nextScene, {
-        duration: fadeIn,
-        fromZero: true,
+        immediate: true,
         reset,
       });
       resolve();
@@ -908,10 +1250,12 @@ export function setMusicScene(scene) {
   persistEngineState();
 
   if (loadMusicPreference()) {
+    const startAtFullVolume = nextScene === MUSIC_SCENES.CARTOON_GAME;
     startScheduler({
       deferUntilReveal: true,
+      immediateGain: startAtFullVolume,
       reset: false,
-      smoothAutoFade: true,
+      smoothAutoFade: !startAtFullVolume,
     });
   }
 }

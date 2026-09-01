@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { X } from "lucide-react";
+import gsap from "gsap";
 import PushNotification from "@/components/ui/PushNotification";
 import ModeSelector from "./ModeSelector";
 import MultiplayerCard from "./MultiplayerCard";
@@ -19,7 +21,9 @@ import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { useSiteOperations } from "@/hooks/useSiteOperations";
 import {
   playScreenFadeOut,
+  SCREEN_FADE_OUT_EVENT,
   SCREEN_REVEAL_REPLAY_EVENT,
+  SCREEN_REVEAL_START_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
 import {
@@ -126,6 +130,7 @@ export default function HomeCard({
   const [notification, setNotification] = useState(null);
   const contentRef = useRef(null);
   const cardRef = useRef(null);
+  const stickerRef = useRef(null);
   const isFooterReturnRef = useRef(false);
   const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
   const difficultyBurstTimerRef = useRef(null);
@@ -163,7 +168,11 @@ export default function HomeCard({
       gameMode === GAME_MODE_IDS.FLAG ||
       gameMode === GAME_MODE_IDS.CARTOON,
   );
-  useMusicScene(MUSIC_SCENES.MENU);
+  useMusicScene(
+    cleanGameFamily === GAME_FAMILY_IDS.CARTOON
+      ? MUSIC_SCENES.CARTOON_MENU
+      : MUSIC_SCENES.MENU,
+  );
   useScreenReveal(
     contentRef,
     [view, cleanGameFamily, locale],
@@ -173,6 +182,63 @@ export default function HomeCard({
       defer: isFooterReturnRef.current || isAdminReturnPending,
     },
   );
+
+  useLayoutEffect(() => {
+    const sticker = stickerRef.current;
+    if (!sticker) return undefined;
+
+    let tween = null;
+
+    const stopTween = () => {
+      tween?.kill();
+      tween = null;
+    };
+
+    const handleRevealStart = (event) => {
+      if (view !== "home") return;
+
+      stopTween();
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
+        return;
+      }
+
+      tween = gsap.fromTo(
+        sticker,
+        { autoAlpha: 1, yPercent: 110 },
+        {
+          autoAlpha: 1,
+          yPercent: 0,
+          duration: event.detail?.duration ?? 0.9,
+          ease: event.detail?.ease ?? "power4.out",
+          overwrite: true,
+        },
+      );
+    };
+
+    const handleFadeOut = (event) => {
+      if (view !== "home") return;
+
+      stopTween();
+      tween = gsap.to(sticker, {
+        autoAlpha: 0,
+        duration: event.detail?.duration ?? 0.24,
+        ease: event.detail?.ease ?? "power2.out",
+        overwrite: true,
+      });
+    };
+
+    gsap.set(sticker, { autoAlpha: 0 });
+    window.addEventListener(SCREEN_REVEAL_START_EVENT, handleRevealStart);
+    window.addEventListener(SCREEN_FADE_OUT_EVENT, handleFadeOut);
+
+    return () => {
+      window.removeEventListener(SCREEN_REVEAL_START_EVENT, handleRevealStart);
+      window.removeEventListener(SCREEN_FADE_OUT_EVENT, handleFadeOut);
+      stopTween();
+    };
+  }, [cleanGameFamily, view]);
 
   useLayoutEffect(() => {
     if (!hasPendingAdminHomeReturn()) return undefined;
@@ -405,7 +471,7 @@ export default function HomeCard({
 
                   <div
                     data-screen-reveal
-                    className="home-actions mt-auto self-start"
+                    className="home-actions relative z-10 mt-auto self-start"
                   >
                     <ModeSelector
                       onSingleplayer={() => changeView("singleplayer")}
@@ -473,6 +539,37 @@ export default function HomeCard({
             />
           )}
         </div>
+
+        {(cleanGameFamily === GAME_FAMILY_IDS.TEAM ||
+          cleanGameFamily === GAME_FAMILY_IDS.CARTOON) && (
+          <div
+            ref={stickerRef}
+            aria-hidden="true"
+            className={`team-home-sticker pointer-events-none absolute z-0 select-none opacity-0 will-change-[opacity] ${
+              cleanGameFamily === GAME_FAMILY_IDS.CARTOON
+                ? "-bottom-[140px] right-[-52px] w-[268px] sm:-bottom-[170px] sm:right-[-44px] sm:w-[335px]"
+                : "-bottom-8 right-4 w-40 sm:-bottom-12 sm:right-6 sm:w-56"
+            }`}
+          >
+            <Image
+              src={
+                cleanGameFamily === GAME_FAMILY_IDS.CARTOON
+                  ? "/game-modes/cartoon/ben-10/ben-home-character.png"
+                  : "/game-modes/team/team-logos/fenerbahce.png"
+              }
+              alt=""
+              width={cleanGameFamily === GAME_FAMILY_IDS.CARTOON ? 1101 : 3000}
+              height={cleanGameFamily === GAME_FAMILY_IDS.CARTOON ? 1600 : 3000}
+              sizes={
+                cleanGameFamily === GAME_FAMILY_IDS.CARTOON
+                  ? "(max-width: 640px) 268px, 335px"
+                  : "(max-width: 640px) 160px, 224px"
+              }
+              className="h-auto w-full drop-shadow-[0_14px_24px_rgba(0,0,0,0.38)]"
+              priority
+            />
+          </div>
+        )}
       </section>
     </main>
   );

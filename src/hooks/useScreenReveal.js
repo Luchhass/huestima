@@ -24,10 +24,14 @@ function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function dispatchScreenLifecycleEvent(eventName) {
+function dispatchScreenLifecycleEvent(eventName, detail) {
   if (typeof window === "undefined") return;
 
-  window.dispatchEvent(new Event(eventName));
+  window.dispatchEvent(
+    detail === undefined
+      ? new Event(eventName)
+      : new CustomEvent(eventName, { detail }),
+  );
 }
 
 function waitForIntro(callback) {
@@ -116,13 +120,16 @@ export function playScreenFadeOut(scopeRef, options = {}) {
   const scope = scopeRef?.current || scopeRef;
   if (!scope || prefersReducedMotion()) return Promise.resolve();
 
-  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT);
+  const duration = options.duration ?? 0.24;
+  const ease = options.ease ?? "power2.out";
+
+  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT, { duration, ease });
 
   return new Promise((resolve) => {
     gsap.to(scope, {
       autoAlpha: 0,
-      duration: options.duration ?? 0.24,
-      ease: "power2.out",
+      duration,
+      ease,
       overwrite: true,
       onComplete: resolve,
     });
@@ -286,7 +293,10 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
       const startTimeline = () => {
         const revealDelayId = window.setTimeout(() => {
           gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
-          dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
+          dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT, {
+            duration: options.duration ?? REVEAL_DURATION,
+            ease: options.ease ?? "power4.out",
+          });
 
           timeline = gsap.timeline({
             defaults: { overwrite: "auto" },
