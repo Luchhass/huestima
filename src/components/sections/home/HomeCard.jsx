@@ -135,6 +135,7 @@ export default function HomeCard({
   const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
   const difficultyBurstTimerRef = useRef(null);
   const isChangingViewRef = useRef(false);
+  const colorWaveGradientRef = useRef(null);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
@@ -173,6 +174,30 @@ export default function HomeCard({
       ? MUSIC_SCENES.CARTOON_MENU
       : MUSIC_SCENES.MENU,
   );
+
+  // Animate the RGB spectrum from JavaScript instead of SVG SMIL. SMIL
+  // gradient transforms are frozen by several mobile WebViews/Safari builds.
+  // A single rAF loop is lightweight and works consistently across browsers.
+  useEffect(() => {
+    if (cleanGameFamily !== GAME_FAMILY_IDS.COLOR || !colorWaveGradientRef.current) {
+      return undefined;
+    }
+
+    const gradient = colorWaveGradientRef.current;
+    const duration = 24000;
+    let startedAt = null;
+    let frameId = 0;
+
+    const tick = (timestamp) => {
+      startedAt ??= timestamp;
+      const progress = ((timestamp - startedAt) % duration) / duration;
+      gradient.setAttribute("gradientTransform", `translate(${(-1400 + progress * 1400).toFixed(2)} 0)`);
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [cleanGameFamily]);
   useScreenReveal(
     contentRef,
     [view, cleanGameFamily, locale],
@@ -573,15 +598,6 @@ export default function HomeCard({
                     id="home-color-wave-shape"
                     d="M 90 520 C 100 474 112 438 148 428 C 186 418 207 399 232 370 C 260 337 285 307 319 315 C 356 325 379 338 410 312 C 441 286 450 251 476 237 C 494 228 510 238 525 251 L 525 525 L 90 525 Z"
                   >
-                    <animate
-                      attributeName="d"
-                      dur="12s"
-                      repeatCount="indefinite"
-                      calcMode="spline"
-                      keyTimes="0;0.5;1"
-                      keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
-                      values="M 90 520 C 100 474 112 438 148 428 C 186 418 207 399 232 370 C 260 337 285 307 319 315 C 356 325 379 338 410 312 C 441 286 450 251 476 237 C 494 228 510 238 525 251 L 525 525 L 90 525 Z; M 84 520 C 98 468 118 443 152 433 C 192 421 213 404 238 376 C 268 343 290 316 324 323 C 360 332 383 343 416 317 C 446 293 455 258 481 245 C 498 236 513 245 525 257 L 525 525 L 84 525 Z; M 90 520 C 100 474 112 438 148 428 C 186 418 207 399 232 370 C 260 337 285 307 319 315 C 356 325 379 338 410 312 C 441 286 450 251 476 237 C 494 228 510 238 525 251 L 525 525 L 90 525 Z"
-                    />
                   </path>
                   <filter
                     id="home-color-wave-soften"
@@ -602,6 +618,7 @@ export default function HomeCard({
                   </mask>
                   <linearGradient
                     id="home-color-rgb-spectrum"
+                    ref={colorWaveGradientRef}
                     x1="0"
                     y1="0"
                     x2="1400"
@@ -619,13 +636,6 @@ export default function HomeCard({
                     <stop offset="0.75" stopColor="#176bff" />
                     <stop offset="0.875" stopColor="#7347ff" />
                     <stop offset="1" stopColor="#d600ff" />
-                    <animateTransform
-                      attributeName="gradientTransform"
-                      type="translate"
-                      values="-1400 0;0 0"
-                      dur="24s"
-                      repeatCount="indefinite"
-                    />
                   </linearGradient>
                 </defs>
                 <rect
@@ -634,12 +644,6 @@ export default function HomeCard({
                   fill="url(#home-color-rgb-spectrum)"
                   mask="url(#home-color-wave-mask)"
                 >
-                  <animate
-                    attributeName="opacity"
-                    values="0.92;1;0.92"
-                    dur="5.5s"
-                    repeatCount="indefinite"
-                  />
                 </rect>
               </svg>
             ) : cleanGameFamily === GAME_FAMILY_IDS.FLAG ? (
