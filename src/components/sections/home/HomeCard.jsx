@@ -74,6 +74,27 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const CARD_RESIZE_DURATION_MS = 700;
 const DIFFICULTY_BURST_LIFETIME_MS = 1180;
+const CARTOON_TRANSFORM_DURATION_MS = 1080;
+const CARTOON_EASTER_EGG_CHARACTERS = {
+  ben: {
+    src: "/game-modes/cartoon/ben-10/ben-home-character.png",
+    width: 1101,
+    height: 1600,
+    imageClassName: "cartoon-home-character--ben",
+  },
+  fourArms: {
+    src: "/game-modes/cartoon/ben-10/four-arms-home-character.png",
+    width: 875,
+    height: 1387,
+    imageClassName: "cartoon-home-character--four-arms",
+  },
+  xlr8: {
+    src: "/game-modes/cartoon/ben-10/xlr8-home-character.png",
+    width: 1076,
+    height: 1139,
+    imageClassName: "cartoon-home-character--xlr8",
+  },
+};
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -214,6 +235,8 @@ export default function HomeCard({
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBursts, setDifficultyBursts] = useState([]);
   const [levelCountImpacts, setLevelCountImpacts] = useState([]);
+  const [cartoonCharacter, setCartoonCharacter] = useState("ben");
+  const [cartoonBurst, setCartoonBurst] = useState(null);
   const [notification, setNotification] = useState(null);
   const [deferViewReveal, setDeferViewReveal] = useState(false);
   const contentRef = useRef(null);
@@ -223,6 +246,8 @@ export default function HomeCard({
   const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
   const difficultyBurstTimersRef = useRef(new Map());
   const levelCountImpactTimersRef = useRef(new Map());
+  const cartoonTransformTimersRef = useRef([]);
+  const nextCartoonAlienRef = useRef("fourArms");
   const isChangingViewRef = useRef(false);
   const colorWaveGradientRef = useRef(null);
 
@@ -469,12 +494,14 @@ export default function HomeCard({
   useEffect(() => {
     const difficultyBurstTimers = difficultyBurstTimersRef.current;
     const levelCountImpactTimers = levelCountImpactTimersRef.current;
+    const cartoonTransformTimers = cartoonTransformTimersRef.current;
     return () => {
       difficultyBurstTimers.forEach((timerId) => window.clearTimeout(timerId));
       difficultyBurstTimers.clear();
       levelCountImpactTimers.forEach((timerId) => window.clearTimeout(timerId));
       levelCountImpactTimers.clear();
-
+      cartoonTransformTimers.forEach((timerId) => window.clearTimeout(timerId));
+      cartoonTransformTimers.length = 0;
     };
   }, []);
 
@@ -620,6 +647,38 @@ export default function HomeCard({
     setDifficulty(nextDifficulty);
   };
 
+  const triggerCartoonTransformation = () => {
+    if (cartoonBurst || view !== "home") return;
+
+    const returningToBen = cartoonCharacter !== "ben";
+    const nextCharacter = returningToBen
+      ? "ben"
+      : nextCartoonAlienRef.current;
+    const color = returningToBen ? "red" : "green";
+    const burstKey = `${color}-${Date.now()}`;
+
+    cartoonTransformTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    cartoonTransformTimersRef.current.length = 0;
+    setCartoonBurst({ key: burstKey, color });
+
+    cartoonTransformTimersRef.current.push(
+      window.setTimeout(() => {
+        setCartoonCharacter(nextCharacter);
+        if (returningToBen) {
+          nextCartoonAlienRef.current =
+            cartoonCharacter === "fourArms" ? "xlr8" : "fourArms";
+        }
+      }, 255),
+      window.setTimeout(() => {
+        setCartoonBurst(null);
+        cartoonTransformTimersRef.current.length = 0;
+      }, CARTOON_TRANSFORM_DURATION_MS),
+    );
+  };
+
+  const cartoonCharacterConfig =
+    CARTOON_EASTER_EGG_CHARACTERS[cartoonCharacter];
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -666,6 +725,20 @@ export default function HomeCard({
             <span className="level-card-impact__pressure" />
           </span>
         ))}
+
+        {cartoonBurst && (
+          <span
+            key={cartoonBurst.key}
+            aria-hidden="true"
+            className={`cartoon-transform-burst cartoon-transform-burst--${cartoonBurst.color}`}
+          >
+            <span className="cartoon-transform-burst__wash" />
+            <span className="cartoon-transform-burst__rays cartoon-transform-burst__rays--wide" />
+            <span className="cartoon-transform-burst__rays cartoon-transform-burst__rays--tight" />
+            <span className="cartoon-transform-burst__ring" />
+            <span className="cartoon-transform-burst__core" />
+          </span>
+        )}
 
         {(isSingleplayer || isMultiplayer) && (
           <button
@@ -957,12 +1030,13 @@ export default function HomeCard({
               </>
             ) : cleanGameFamily === GAME_FAMILY_IDS.CARTOON ? (
               <Image
-                src="/game-modes/cartoon/ben-10/ben-home-character.png"
+                key={cartoonCharacter}
+                src={cartoonCharacterConfig.src}
                 alt=""
-                width={1101}
-                height={1600}
+                width={cartoonCharacterConfig.width}
+                height={cartoonCharacterConfig.height}
                 sizes="(max-width: 640px) 268px, 335px"
-                className="h-auto w-full drop-shadow-[0_14px_24px_rgba(0,0,0,0.38)]"
+                className={`cartoon-home-character ${cartoonCharacterConfig.imageClassName}`}
                 priority
               />
             ) : (
@@ -988,6 +1062,16 @@ export default function HomeCard({
               </>
             )}
           </div>
+        )}
+
+        {view === "home" && cleanGameFamily === GAME_FAMILY_IDS.CARTOON && (
+          <button
+            type="button"
+            onClick={triggerCartoonTransformation}
+            disabled={Boolean(cartoonBurst)}
+            aria-label="Ben 10 easter egg"
+            className="cartoon-easter-egg-trigger absolute z-20 rounded-[42%] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65ff43] focus-visible:ring-offset-4 focus-visible:ring-offset-black disabled:cursor-default"
+          />
         )}
       </section>
     </main>

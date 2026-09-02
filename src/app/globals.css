@@ -1697,3 +1697,205 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .app-head
 html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-controls > button {
   color: #ffffff !important;
 }
+
+/* Cartoon home easter egg: a compact Omnitrix-style transformation flash. */
+.cartoon-easter-egg-trigger {
+  right: -0.5rem;
+  bottom: 0;
+  width: 13.5rem;
+  height: 20.5rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cartoon-home-character {
+  position: relative;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 24px rgb(0 0 0 / 38%));
+  animation: cartoon-character-materialize 620ms cubic-bezier(0.16, 0.84, 0.26, 1) both;
+  will-change: opacity, filter, clip-path;
+}
+
+.cartoon-home-character--four-arms {
+  top: -2rem;
+  left: 18%;
+  width: 82%;
+}
+
+.cartoon-home-character--xlr8 {
+  top: -2rem;
+  left: -52%;
+  width: 110%;
+  max-width: none;
+}
+
+@keyframes cartoon-character-materialize {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+    filter: brightness(4) saturate(0) drop-shadow(0 0 28px rgb(113 255 62 / 90%));
+  }
+  28% { opacity: 1; }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1) saturate(1) drop-shadow(0 14px 24px rgb(0 0 0 / 38%));
+  }
+}
+
+.cartoon-transform-burst {
+  --cartoon-burst-rgb: 92 255 48;
+  --cartoon-burst-core-rgb: 218 255 202;
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  isolation: isolate;
+  animation: cartoon-transform-burst-life 1080ms linear both;
+}
+
+.cartoon-transform-burst--red {
+  --cartoon-burst-rgb: 255 39 51;
+  --cartoon-burst-core-rgb: 255 210 205;
+}
+
+.cartoon-transform-burst__wash,
+.cartoon-transform-burst__rays,
+.cartoon-transform-burst__ring,
+.cartoon-transform-burst__core {
+  position: absolute;
+  left: 73%;
+  top: 54%;
+  pointer-events: none;
+  will-change: transform, opacity, filter;
+}
+
+.cartoon-transform-burst__wash {
+  width: 150%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgb(255 255 255 / 100%) 0 2.5%,
+    rgb(var(--cartoon-burst-core-rgb) / 100%) 4%,
+    rgb(var(--cartoon-burst-rgb) / 98%) 9%,
+    rgb(var(--cartoon-burst-rgb) / 82%) 19%,
+    rgb(var(--cartoon-burst-rgb) / 45%) 34%,
+    rgb(var(--cartoon-burst-rgb) / 16%) 52%,
+    transparent 70%);
+  filter: blur(2px) saturate(1.22);
+  animation: cartoon-transform-wash 1080ms cubic-bezier(0.14, 0.72, 0.24, 1) both;
+}
+
+.cartoon-transform-burst__rays {
+  width: 118%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 7deg,
+    transparent 0deg 7deg,
+    rgb(var(--cartoon-burst-rgb) / 88%) 8deg 10deg,
+    rgb(255 255 255 / 82%) 10deg 11.25deg,
+    transparent 12deg 21deg
+  );
+  mask-image: radial-gradient(circle, transparent 0 7%, black 13% 58%, transparent 78%);
+  filter: blur(0.7px) drop-shadow(0 0 9px rgb(var(--cartoon-burst-rgb) / 90%));
+  animation: cartoon-transform-rays 860ms cubic-bezier(0.1, 0.76, 0.18, 1) both;
+}
+
+.cartoon-transform-burst__rays--tight {
+  width: 86%;
+  background: repeating-conic-gradient(
+    from -4deg,
+    transparent 0deg 12deg,
+    rgb(255 255 255 / 96%) 13deg 14.5deg,
+    rgb(var(--cartoon-burst-rgb) / 94%) 15deg 18deg,
+    transparent 19deg 31deg
+  );
+  animation-name: cartoon-transform-rays-tight;
+  animation-duration: 780ms;
+}
+
+.cartoon-transform-burst__ring {
+  width: 6.5rem;
+  aspect-ratio: 1;
+  border: 0.28rem solid rgb(var(--cartoon-burst-core-rgb) / 94%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 0.2rem rgb(var(--cartoon-burst-rgb) / 56%),
+    0 0 1.4rem 0.45rem rgb(var(--cartoon-burst-rgb) / 90%),
+    inset 0 0 1rem rgb(var(--cartoon-burst-rgb) / 80%);
+  animation: cartoon-transform-ring 820ms cubic-bezier(0.08, 0.74, 0.18, 1) both;
+}
+
+.cartoon-transform-burst__core {
+  width: 3.2rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: white;
+  box-shadow:
+    0 0 1.3rem 0.5rem white,
+    0 0 4rem 1.8rem rgb(var(--cartoon-burst-rgb) / 100%);
+  animation: cartoon-transform-core 720ms cubic-bezier(0.12, 0.72, 0.2, 1) both;
+}
+
+@keyframes cartoon-transform-burst-life {
+  0% { opacity: 0; }
+  4% { opacity: 1; }
+  58% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes cartoon-transform-wash {
+  0% { transform: translate(-50%, -50%) scale(0.035); opacity: 0; }
+  8% { transform: translate(-50%, -50%) scale(0.11); opacity: 1; }
+  26% { transform: translate(-50%, -50%) scale(0.88); opacity: 1; }
+  48% { transform: translate(-50%, -50%) scale(1.18); opacity: 0.93; }
+  100% { transform: translate(-50%, -50%) scale(1.36); opacity: 0; filter: blur(12px) saturate(1.05); }
+}
+
+@keyframes cartoon-transform-rays {
+  0% { transform: translate(-50%, -50%) rotate(-22deg) scale(0.05); opacity: 0; }
+  12% { opacity: 1; }
+  42% { transform: translate(-50%, -50%) rotate(5deg) scale(1.03); opacity: 0.98; }
+  100% { transform: translate(-50%, -50%) rotate(18deg) scale(1.34); opacity: 0; }
+}
+
+@keyframes cartoon-transform-rays-tight {
+  0% { transform: translate(-50%, -50%) rotate(18deg) scale(0.03); opacity: 0; }
+  10% { opacity: 1; }
+  46% { transform: translate(-50%, -50%) rotate(-8deg) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(-20deg) scale(1.4); opacity: 0; }
+}
+
+@keyframes cartoon-transform-ring {
+  0% { transform: translate(-50%, -50%) scale(0.05); opacity: 0; }
+  10% { opacity: 1; }
+  62% { transform: translate(-50%, -50%) scale(4.6); opacity: 0.88; }
+  100% { transform: translate(-50%, -50%) scale(6.2); opacity: 0; }
+}
+
+@keyframes cartoon-transform-core {
+  0% { transform: translate(-50%, -50%) scale(0.08); opacity: 0; }
+  9% { transform: translate(-50%, -50%) scale(0.72); opacity: 1; }
+  30% { transform: translate(-50%, -50%) scale(2.7); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(4.2); opacity: 0; }
+}
+
+@media (min-width: 640px) {
+  .cartoon-easter-egg-trigger {
+    right: -0.25rem;
+    width: 17rem;
+    height: 23.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartoon-home-character,
+  .cartoon-transform-burst,
+  .cartoon-transform-burst * {
+    animation-duration: 1ms !important;
+  }
+}
