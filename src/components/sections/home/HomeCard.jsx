@@ -249,7 +249,6 @@ export default function HomeCard({
   const cartoonTransformTimersRef = useRef([]);
   const nextCartoonAlienRef = useRef("fourArms");
   const isChangingViewRef = useRef(false);
-  const colorWaveGradientRef = useRef(null);
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
@@ -294,29 +293,6 @@ export default function HomeCard({
       : MUSIC_SCENES.MENU,
   );
 
-  // Animate the RGB spectrum from JavaScript instead of SVG SMIL. SMIL
-  // gradient transforms are frozen by several mobile WebViews/Safari builds.
-  // A single rAF loop is lightweight and works consistently across browsers.
-  useEffect(() => {
-    if (cleanGameFamily !== GAME_FAMILY_IDS.COLOR || !colorWaveGradientRef.current) {
-      return undefined;
-    }
-
-    const gradient = colorWaveGradientRef.current;
-    const duration = 12000;
-    let startedAt = null;
-    let frameId = 0;
-
-    const tick = (timestamp) => {
-      startedAt ??= timestamp;
-      const progress = ((timestamp - startedAt) % duration) / duration;
-      gradient.setAttribute("gradientTransform", `translate(${(-1400 + progress * 1400).toFixed(2)} 0)`);
-      frameId = window.requestAnimationFrame(tick);
-    };
-
-    frameId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frameId);
-  }, [cleanGameFamily]);
   useScreenReveal(
     contentRef,
     [view, cleanGameFamily, locale],
@@ -873,7 +849,9 @@ export default function HomeCard({
               <svg
                 viewBox="0 0 500 500"
                 preserveAspectRatio="none"
-                className="absolute inset-0 size-full"
+                className={`home-color-spectrum absolute inset-0 size-full ${
+                  view === "home" ? "home-color-spectrum--active" : ""
+                }`}
                 aria-hidden="true"
               >
                 <defs>
@@ -911,37 +889,35 @@ export default function HomeCard({
                   </mask>
                   <linearGradient
                     id="home-color-rgb-spectrum"
-                    ref={colorWaveGradientRef}
                     x1="0"
                     y1="0"
-                    x2="1400"
+                    x2="500"
                     y2="0"
                     gradientUnits="userSpaceOnUse"
                     spreadMethod="repeat"
                     colorInterpolation="sRGB"
                   >
                     <stop offset="0" stopColor="#ff5f7a" />
-                    <stop offset="0.1" stopColor="#f7d046" />
-                    <stop offset="0.2" stopColor="#32d989" />
-                    <stop offset="0.3" stopColor="#45a6ff" />
-                    <stop offset="0.4" stopColor="#9d6cff" />
-                    <stop offset="0.5" stopColor="#ff5f7a" />
-                    <stop offset="0.6" stopColor="#f7d046" />
-                    <stop offset="0.7" stopColor="#32d989" />
-                    <stop offset="0.8" stopColor="#45a6ff" />
-                    <stop offset="0.9" stopColor="#9d6cff" />
+                    <stop offset="0.2" stopColor="#f7d046" />
+                    <stop offset="0.4" stopColor="#32d989" />
+                    <stop offset="0.6" stopColor="#45a6ff" />
+                    <stop offset="0.8" stopColor="#9d6cff" />
                     <stop offset="1" stopColor="#ff5f7a" />
                   </linearGradient>
                 </defs>
-                <rect
-                  x="-40"
-                  width="580"
-                  height="500"
-                  fill="url(#home-color-rgb-spectrum)"
+                <g
+                  className="home-color-spectrum__shell"
                   filter="url(#home-color-spectrum-blend)"
                   mask="url(#home-color-wave-mask)"
                 >
-                </rect>
+                  <rect
+                    className="home-color-spectrum__track"
+                    x="-500"
+                    width="1500"
+                    height="500"
+                    fill="url(#home-color-rgb-spectrum)"
+                  />
+                </g>
               </svg>
             ) : cleanGameFamily === GAME_FAMILY_IDS.FLAG ? (
               <>

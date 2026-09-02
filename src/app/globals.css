@@ -1700,11 +1700,12 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
 
 /* Cartoon home easter egg: a compact Omnitrix-style transformation flash. */
 .cartoon-easter-egg-trigger {
-  right: -0.5rem;
+  right: -2.5rem;
   bottom: 0;
-  width: 13.5rem;
+  width: 15.75rem;
   height: 20.5rem;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1886,8 +1887,8 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
 
 @media (min-width: 640px) {
   .cartoon-easter-egg-trigger {
-    right: -0.25rem;
-    width: 17rem;
+    right: -2.5rem;
+    width: 18rem;
     height: 23.5rem;
   }
 }
@@ -1897,5 +1898,43 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
   .cartoon-transform-burst,
   .cartoon-transform-burst * {
     animation-duration: 1ms !important;
+  }
+}
+
+.home-color-spectrum {
+  contain: strict;
+  transform: translateZ(0);
+}
+
+.home-color-spectrum__track {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  animation: home-color-spectrum-slide 12s linear infinite paused;
+  will-change: transform;
+}
+
+.home-color-spectrum--active .home-color-spectrum__track {
+  animation-play-state: running;
+}
+
+@keyframes home-color-spectrum-slide {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(500px, 0, 0); }
+}
+
+@media (max-width: 639px) {
+  .home-color-spectrum__shell {
+    filter: none;
+  }
+
+  .home-color-spectrum__track {
+    animation-duration: 15s;
+    filter: blur(6px) saturate(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-color-spectrum__track {
+    animation: none;
   }
 }
