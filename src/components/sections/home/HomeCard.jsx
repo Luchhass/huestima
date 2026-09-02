@@ -53,6 +53,7 @@ import { getAvailableGameModeOptions } from "@/lib/gameMode";
 import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
 import { CARTOON_PACKS } from "@/lib/cartoons";
 import { TEAM_OPTIONS } from "@/lib/teams";
+import { playSoundFile, preloadSoundFile } from "@/lib/sound";
 import {
   getLevelCountImpactPreset,
   playLevelCountRecoil,
@@ -74,27 +75,22 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const CARD_RESIZE_DURATION_MS = 700;
 const DIFFICULTY_BURST_LIFETIME_MS = 1180;
-const CARTOON_TRANSFORM_DURATION_MS = 1080;
-const CARTOON_EASTER_EGG_CHARACTERS = {
-  ben: {
-    src: "/game-modes/cartoon/ben-10/ben-home-character.png",
-    width: 1101,
-    height: 1600,
-    imageClassName: "cartoon-home-character--ben",
-  },
-  fourArms: {
-    src: "/game-modes/cartoon/ben-10/four-arms-home-character.png",
-    width: 875,
-    height: 1387,
-    imageClassName: "cartoon-home-character--four-arms",
-  },
-  xlr8: {
-    src: "/game-modes/cartoon/ben-10/xlr8-home-character.png",
-    width: 1076,
-    height: 1139,
-    imageClassName: "cartoon-home-character--xlr8",
-  },
-};
+const CARTOON_TRANSFORM_DURATION_MS = 2300;
+const CARTOON_TIMEOUT_DURATION_MS = 4500;
+const CARTOON_TRANSFORM_SOUND = "/audio/omnitrix-transform.mp3";
+const CARTOON_RETURN_SOUND = "/audio/omnitrix-time-out.mp3";
+const CARTOON_EASTER_EGG_CHARACTERS = [
+  { id: "ben", src: "/game-modes/cartoon/ben-10/ben-home-character-new.png", width: 600, height: 1400, imageClassName: "cartoon-home-character--ben" },
+  { id: "heatblast", src: "/game-modes/cartoon/ben-10/heatblast-home-character.png", width: 472, height: 1244, imageClassName: "cartoon-home-character--heatblast" },
+  { id: "wildmutt", src: "/game-modes/cartoon/ben-10/wildmutt-home-character.png", width: 1024, height: 723, imageClassName: "cartoon-home-character--wildmutt" },
+  { id: "cannonbolt", src: "/game-modes/cartoon/ben-10/cannonbolt-home-character.png", width: 1024, height: 944, imageClassName: "cartoon-home-character--cannonbolt" },
+  { id: "diamondhead", src: "/game-modes/cartoon/ben-10/diamondhead-home-character.png", width: 688, height: 1554, imageClassName: "cartoon-home-character--diamondhead" },
+  { id: "xlr8", src: "/game-modes/cartoon/ben-10/xlr8-home-character-new.png", width: 1024, height: 1024, imageClassName: "cartoon-home-character--xlr8" },
+  { id: "fourArms", src: "/game-modes/cartoon/ben-10/four-arms-home-character-new.png", width: 875, height: 1387, imageClassName: "cartoon-home-character--four-arms" },
+  { id: "stinkfly", src: "/game-modes/cartoon/ben-10/stinkfly-home-character.png", width: 559, height: 759, imageClassName: "cartoon-home-character--stinkfly" },
+  { id: "upgrade", src: "/game-modes/cartoon/ben-10/upgrade-home-character.png", width: 896, height: 1310, imageClassName: "cartoon-home-character--upgrade" },
+  { id: "wildvine", src: "/game-modes/cartoon/ben-10/wildvine-home-character.png", width: 685, height: 1200, imageClassName: "cartoon-home-character--wildvine" },
+];
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -235,7 +231,7 @@ export default function HomeCard({
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
   const [difficultyBursts, setDifficultyBursts] = useState([]);
   const [levelCountImpacts, setLevelCountImpacts] = useState([]);
-  const [cartoonCharacter, setCartoonCharacter] = useState("ben");
+  const [cartoonCharacterIndex, setCartoonCharacterIndex] = useState(0);
   const [cartoonBurst, setCartoonBurst] = useState(null);
   const [notification, setNotification] = useState(null);
   const [deferViewReveal, setDeferViewReveal] = useState(false);
@@ -247,7 +243,8 @@ export default function HomeCard({
   const difficultyBurstTimersRef = useRef(new Map());
   const levelCountImpactTimersRef = useRef(new Map());
   const cartoonTransformTimersRef = useRef([]);
-  const nextCartoonAlienRef = useRef("fourArms");
+  const cartoonCharacterRef = useRef(null);
+  const nextCartoonAlienIndexRef = useRef(1);
   const isChangingViewRef = useRef(false);
 
   const isSingleplayer = view === "singleplayer";
@@ -292,6 +289,27 @@ export default function HomeCard({
       ? MUSIC_SCENES.CARTOON_MENU
       : MUSIC_SCENES.MENU,
   );
+
+  useEffect(() => {
+    if (cleanGameFamily !== GAME_FAMILY_IDS.CARTOON) return;
+    preloadSoundFile(CARTOON_TRANSFORM_SOUND);
+    preloadSoundFile(CARTOON_RETURN_SOUND);
+  }, [cleanGameFamily]);
+
+  useEffect(() => {
+    if (cleanGameFamily !== GAME_FAMILY_IDS.CARTOON || typeof window === "undefined") {
+      return;
+    }
+
+    CARTOON_EASTER_EGG_CHARACTERS.forEach((character) => {
+      const image = new window.Image();
+      image.decoding = "async";
+      image.fetchPriority = "high";
+      image.src = character.src;
+      const decodePromise = image.decode?.();
+      if (decodePromise) void decodePromise.catch(() => {});
+    });
+  }, [cleanGameFamily]);
 
   useScreenReveal(
     contentRef,
@@ -626,34 +644,64 @@ export default function HomeCard({
   const triggerCartoonTransformation = () => {
     if (cartoonBurst || view !== "home") return;
 
-    const returningToBen = cartoonCharacter !== "ben";
-    const nextCharacter = returningToBen
-      ? "ben"
-      : nextCartoonAlienRef.current;
+    const returningToBen = cartoonCharacterIndex !== 0;
+    const nextCharacterIndex = returningToBen
+      ? 0
+      : nextCartoonAlienIndexRef.current;
     const color = returningToBen ? "red" : "green";
     const burstKey = `${color}-${Date.now()}`;
+    const cardBounds = cardRef.current?.getBoundingClientRect();
+    const characterBounds = cartoonCharacterRef.current?.getBoundingClientRect();
+    let burstX = 73;
+    let burstY = 55;
+
+    if (cardBounds && characterBounds) {
+      const anchorX = returningToBen ? 0.5 : 0.335;
+      const anchorY = returningToBen ? 0.42 : 0.36;
+      burstX = ((characterBounds.left + characterBounds.width * anchorX - cardBounds.left) / cardBounds.width) * 100;
+      burstY = ((characterBounds.top + characterBounds.height * anchorY - cardBounds.top) / cardBounds.height) * 100;
+    }
+
+    playSoundFile(returningToBen ? CARTOON_RETURN_SOUND : CARTOON_TRANSFORM_SOUND, {
+      volume: returningToBen ? 0.78 : 0.82,
+      playbackRate: 1,
+      startAt: returningToBen ? 0.05 : 0.52,
+    });
 
     cartoonTransformTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
     cartoonTransformTimersRef.current.length = 0;
-    setCartoonBurst({ key: burstKey, color });
+    setCartoonBurst({
+      key: burstKey,
+      color,
+      mode: returningToBen ? "timeout" : "transform",
+      x: burstX,
+      y: burstY,
+    });
+
+    const characterSwapDelay = returningToBen ? 3330 : 430;
+    const burstDuration = returningToBen
+      ? CARTOON_TIMEOUT_DURATION_MS
+      : CARTOON_TRANSFORM_DURATION_MS;
 
     cartoonTransformTimersRef.current.push(
       window.setTimeout(() => {
-        setCartoonCharacter(nextCharacter);
-        if (returningToBen) {
-          nextCartoonAlienRef.current =
-            cartoonCharacter === "fourArms" ? "xlr8" : "fourArms";
+        setCartoonCharacterIndex(nextCharacterIndex);
+        if (!returningToBen) {
+          nextCartoonAlienIndexRef.current =
+            nextCharacterIndex + 1 >= CARTOON_EASTER_EGG_CHARACTERS.length
+              ? 1
+              : nextCharacterIndex + 1;
         }
-      }, 255),
+      }, characterSwapDelay),
       window.setTimeout(() => {
         setCartoonBurst(null);
         cartoonTransformTimersRef.current.length = 0;
-      }, CARTOON_TRANSFORM_DURATION_MS),
+      }, burstDuration),
     );
   };
 
   const cartoonCharacterConfig =
-    CARTOON_EASTER_EGG_CHARACTERS[cartoonCharacter];
+    CARTOON_EASTER_EGG_CHARACTERS[cartoonCharacterIndex];
 
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
@@ -706,7 +754,11 @@ export default function HomeCard({
           <span
             key={cartoonBurst.key}
             aria-hidden="true"
-            className={`cartoon-transform-burst cartoon-transform-burst--${cartoonBurst.color}`}
+            className={`cartoon-transform-burst cartoon-transform-burst--${cartoonBurst.color} cartoon-transform-burst--${cartoonBurst.mode}`}
+            style={{
+              "--cartoon-burst-x": `${cartoonBurst.x}%`,
+              "--cartoon-burst-y": `${cartoonBurst.y}%`,
+            }}
           >
             <span className="cartoon-transform-burst__wash" />
             <span className="cartoon-transform-burst__rays cartoon-transform-burst__rays--wide" />
@@ -1005,16 +1057,32 @@ export default function HomeCard({
                 />
               </>
             ) : cleanGameFamily === GAME_FAMILY_IDS.CARTOON ? (
-              <Image
-                key={cartoonCharacter}
-                src={cartoonCharacterConfig.src}
-                alt=""
-                width={cartoonCharacterConfig.width}
-                height={cartoonCharacterConfig.height}
-                sizes="(max-width: 640px) 268px, 335px"
-                className={`cartoon-home-character ${cartoonCharacterConfig.imageClassName}`}
-                priority
-              />
+              <>
+                <Image
+                  ref={cartoonCharacterRef}
+                  key={cartoonCharacterConfig.id}
+                  src={cartoonCharacterConfig.src}
+                  alt=""
+                  width={cartoonCharacterConfig.width}
+                  height={cartoonCharacterConfig.height}
+                  sizes="(max-width: 640px) 268px, 335px"
+                  className={`cartoon-home-character ${cartoonCharacterConfig.imageClassName}`}
+                  priority
+                />
+                <div className="cartoon-home-character-preload" aria-hidden="true">
+                  {CARTOON_EASTER_EGG_CHARACTERS.map((character) => (
+                    <Image
+                      key={character.id}
+                      src={character.src}
+                      alt=""
+                      width={1}
+                      height={1}
+                      sizes="1px"
+                      loading="eager"
+                    />
+                  ))}
+                </div>
+              </>
             ) : (
               <>
                 <Image
@@ -1045,6 +1113,7 @@ export default function HomeCard({
             type="button"
             onClick={triggerCartoonTransformation}
             disabled={Boolean(cartoonBurst)}
+            data-hover-sound="off"
             aria-label="Ben 10 easter egg"
             className="cartoon-easter-egg-trigger absolute z-20 rounded-[42%] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65ff43] focus-visible:ring-offset-4 focus-visible:ring-offset-black disabled:cursor-default"
           />

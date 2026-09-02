@@ -15,6 +15,10 @@ let userActivated = false;
 let soundEnabled = true;
 let soundPreferenceLoaded = false;
 let didPrimeGraph = false;
+const fileAudioPlayers = new Map();
+const fileAudioBuffers = new Map();
+const fileAudioLoads = new Map();
+let didBindFileAudioPreference = false;
 
 const lastPlayedAt = new Map();
 
@@ -161,6 +165,95 @@ function allowSound(key, spacingMs) {
 
   lastPlayedAt.set(key, now);
   return true;
+}
+
+function getFileAudio(src) {
+  if (typeof window === "undefined") return null;
+
+  const existing = fileAudioPlayers.get(src);
+  if (existing) return existing;
+
+  const audio = new Audio(src);
+  audio.preload = "auto";
+  audio.setAttribute("aria-hidden", "true");
+  audio.volume = 0.88;
+  const player = { audio, volume: 0.88 };
+  fileAudioPlayers.set(src, player);
+
+  if (!didBindFileAudioPreference) {
+    didBindFileAudioPreference = true;
+    window.addEventListener(SOUND_CHANGE_EVENT, () => {
+      const enabled = isSoundEnabled();
+      fileAudioPlayers.forEach(({ audio: currentAudio, volume }) => {
+        currentAudio.volume = enabled ? volume : 0;
+      });
+    });
+  }
+
+  audio.load();
+  return player;
+}
+
+function decodeSoundFile(src) {
+  if (typeof window === "undefined") return;
+  if (fileAudioBuffers.has(src) || fileAudioLoads.has(src)) return;
+
+  const context = ensureAudioContext();
+  if (!context) return;
+
+  const load = fetch(src)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Could not load sound file: ${src}`);
+      return response.arrayBuffer();
+    })
+    .then((data) => context.decodeAudioData(data))
+    .then((buffer) => {
+      fileAudioBuffers.set(src, buffer);
+      fileAudioLoads.delete(src);
+      return buffer;
+    })
+    .catch(() => {
+      fileAudioLoads.delete(src);
+      return null;
+    });
+
+  fileAudioLoads.set(src, load);
+}
+
+export function preloadSoundFile(src) {
+  getFileAudio(src);
+  decodeSoundFile(src);
+}
+
+export function playSoundFile(
+  src,
+  { volume = 0.88, playbackRate = 1, startAt = 0 } = {},
+) {
+  if (!isSoundEnabled()) return;
+
+  const context = getPlayableContext();
+  const buffer = fileAudioBuffers.get(src);
+  if (context && mixBus && buffer) {
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = playbackRate;
+    gain.gain.value = volume * 0.14;
+    source.connect(gain);
+    gain.connect(mixBus);
+    source.start(0, Math.max(0, startAt));
+    return;
+  }
+
+  const player = getFileAudio(src);
+  if (!player) return;
+
+  const { audio } = player;
+  player.volume = volume;
+  audio.volume = volume;
+  audio.playbackRate = playbackRate;
+  audio.currentTime = Math.max(0, startAt);
+  void audio.play().catch(() => {});
 }
 
 function clamp01(value) {
