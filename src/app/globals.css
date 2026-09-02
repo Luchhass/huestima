@@ -171,47 +171,18 @@ input {
   }
 }
 
-@keyframes difficulty-wash {
-  0% {
-    opacity: 0;
+@keyframes difficulty-wave-expand {
+  from {
+    transform: translate(-50%, -50%) scale(0.001);
   }
-
-  6% {
-    opacity: 0.9;
-  }
-
-  100% {
-    opacity: 0;
+  to {
+    transform: translate(-50%, -50%) scale(1.02);
   }
 }
 
-@keyframes difficulty-blast {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.08);
-  }
-
-  9% {
-    opacity: 0.86;
-    transform: translate(-50%, -50%) scale(0.62);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2.2);
-  }
-}
-
-@keyframes difficulty-flash {
-  0% {
-    opacity: 0.95;
-    transform: translate(-50%, -50%) scale(0.05);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.25);
-  }
+@keyframes difficulty-wave-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @layer utilities {
@@ -250,51 +221,51 @@ input {
     pointer-events: none;
     border-radius: inherit;
     overflow: hidden;
-    background: rgb(var(--difficulty-burst-rgb) / 0.88);
-    opacity: 0;
-    animation: difficulty-wash 3.8s linear both;
-    will-change: opacity;
+    isolation: isolate;
   }
 
-  .difficulty-burst::before,
-  .difficulty-burst::after {
-    content: "";
+  .difficulty-burst__wave {
     position: absolute;
-    left: 50%;
-    top: 50%;
+    left: var(--difficulty-burst-x, 50%);
+    top: var(--difficulty-burst-y, 78%);
+    width: calc(var(--difficulty-burst-radius, 680px) * 3.2);
+    aspect-ratio: 1;
     pointer-events: none;
     border-radius: 999px;
-    transform: translate(-50%, -50%);
-    will-change: opacity, transform;
-  }
-
-  .difficulty-burst::before {
-    width: 132%;
-    aspect-ratio: 1;
-    background:
-      radial-gradient(
-        circle,
-        rgb(255 255 255 / 0.36) 0 8%,
-        rgb(var(--difficulty-burst-rgb) / 0.95) 22%,
-        rgb(var(--difficulty-burst-rgb) / 0.58) 44%,
-        transparent 78%
-      );
-    filter: blur(22px) saturate(1.08);
-    animation: difficulty-blast 2.9s cubic-bezier(0.12, 0.72, 0.2, 1) both;
-  }
-
-  .difficulty-burst::after {
-    width: 38%;
-    aspect-ratio: 1;
-    background: radial-gradient(
+    background: rgb(var(--difficulty-burst-rgb));
+    -webkit-mask-image: radial-gradient(
       circle,
-      rgb(255 255 255 / 0.9) 0 8%,
-      rgb(var(--difficulty-burst-rgb) / 0.72) 22%,
-      transparent 68%
+      #000 0 62%,
+      rgb(0 0 0 / 0.9) 68%,
+      rgb(0 0 0 / 0.65) 77%,
+      rgb(0 0 0 / 0.35) 87%,
+      rgb(0 0 0 / 0.12) 94%,
+      transparent 100%
     );
-    filter: blur(10px);
-    animation: difficulty-flash 0.72s cubic-bezier(0.12, 0.72, 0.2, 1) both;
+    mask-image: radial-gradient(
+      circle,
+      #000 0 62%,
+      rgb(0 0 0 / 0.9) 68%,
+      rgb(0 0 0 / 0.65) 77%,
+      rgb(0 0 0 / 0.35) 87%,
+      rgb(0 0 0 / 0.12) 94%,
+      transparent 100%
+    );
+    transform: translate(-50%, -50%) scale(0.001);
+    will-change: opacity, transform;
+    animation:
+      difficulty-wave-expand 0.86s cubic-bezier(0.3, 0.55, 0.45, 1) both,
+      difficulty-wave-fade 0.3s 0.76s cubic-bezier(0.4, 0, 1, 1) both;
   }
+
+  .difficulty-burst--easy .difficulty-burst__wave {
+    filter: saturate(1.02) brightness(1.04);
+  }
+
+  .difficulty-burst--hard .difficulty-burst__wave {
+    filter: saturate(1.16) contrast(1.04);
+  }
+
 
   .gradient-icon-flow {
     background: conic-gradient(
@@ -330,7 +301,8 @@ input {
     top: 50%;
     left: 50%;
     z-index: 0;
-    width: max(155%, 172px);
+    width: 100%;
+    height: 100%;
     aspect-ratio: 1;
     border-radius: 999px;
     opacity: 0;
@@ -1129,6 +1101,67 @@ input {
     --level-count-thumb-size: 2.875rem;
   }
 
+  .level-card-impact {
+    --level-card-impact-strength: 0.18;
+    --level-card-impact-spread: 0.9;
+    --level-card-impact-rise: 0.26s;
+    --level-card-impact-fade: 0.72s;
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    isolation: isolate;
+  }
+
+  .level-card-impact__field,
+  .level-card-impact__pressure {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .level-card-impact__field {
+    inset: -42% -28%;
+    background: radial-gradient(
+      ellipse 72% 68% at 50% 50%,
+      rgb(255 255 255 / var(--level-card-impact-strength)) 0%,
+      rgb(255 255 255 / calc(var(--level-card-impact-strength) * 0.95)) 21%,
+      rgb(255 255 255 / calc(var(--level-card-impact-strength) * 0.78)) 39%,
+      rgb(255 255 255 / calc(var(--level-card-impact-strength) * 0.55)) 57%,
+      rgb(255 255 255 / calc(var(--level-card-impact-strength) * 0.3)) 73%,
+      rgb(255 255 255 / calc(var(--level-card-impact-strength) * 0.11)) 88%,
+      transparent 100%
+    );
+    filter: blur(28px);
+    mix-blend-mode: screen;
+    transform-origin: 50% 50%;
+    animation:
+      level-card-flash-pop var(--level-card-impact-rise) cubic-bezier(0.2, 0.72, 0.24, 1) both,
+      level-card-flash-fade var(--level-card-impact-fade) var(--level-card-impact-rise) linear both;
+  }
+
+  .level-card-impact__pressure {
+    display: none;
+  }
+
+  @keyframes level-card-flash-pop {
+    from {
+      transform: scale(0.08);
+    }
+    72% {
+      transform: scale(calc(var(--level-card-impact-spread) * 1.025));
+    }
+    to {
+      transform: scale(var(--level-card-impact-spread));
+    }
+  }
+
+  @keyframes level-card-flash-fade {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
   .level-count-picker__rail {
     position: absolute;
     left: calc(var(--level-count-thumb-size) / 2);
@@ -1174,6 +1207,40 @@ input {
     transform-origin: center center;
     will-change: transform, opacity;
     contain: layout paint;
+  }
+
+  .game-mode-picker {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 rgb(255 255 255 / 0);
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .game-mode-picker:hover,
+  .game-mode-picker:focus-visible,
+  .game-mode-picker[data-dragging="true"] {
+    border-color: white;
+    background-color: rgb(255 255 255 / 0.055);
+    box-shadow: inset 0 0 18px rgb(255 255 255 / 0.035);
+  }
+
+  .game-mode-picker__item {
+    isolation: isolate;
+  }
+
+  .game-mode-picker__icon {
+    position: relative;
+    color: rgb(255 255 255 / 0.9);
+  }
+
+  .game-mode-picker__count {
+    color: rgb(255 255 255 / 0.42);
+  }
+
+  .game-mode-picker__count {
+    color: rgb(255 255 255 / 0.5);
   }
 
   .home-view-actions:has(.game-mode-picker[data-open="true"]) {

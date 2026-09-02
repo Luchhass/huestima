@@ -40,7 +40,7 @@ export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false
   const [activeGroup, setActiveGroup] = useState(ALL_GROUP_KEY);
   const leavePage = useFooterPageTransition(mainRef);
   const from = searchParams.get("from");
-  const testLabPath = from ? `/test-lab?from=${from}` : "/test-lab";
+  const testLabPath = from ? `/test?from=${from}` : "/test";
   const groups = useMemo(() => {
     if (!isTeam) return groupBrands(items);
     const leagues = new Map();

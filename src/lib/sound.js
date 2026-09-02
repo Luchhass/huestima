@@ -812,37 +812,40 @@ export function playDifficultyHover(index = 1) {
   const context = getPlayableContext();
   if (!context || !allowSound("difficulty-hover", 48)) return;
 
-  const base = 255 + index * 74;
-  const pan = (index - 1) * 0.05;
+  const tier = Math.max(0, Math.min(2, index));
+  const pan = (tier - 1) * 0.025;
+  const base = [147, 98, 73][tier];
 
+  // A short, light preview of the click motif: the same transient,
+  // descending body and harmonic accent in three intensity tiers.
   scheduleNoise(context, {
-    duration: 0.012,
-    gain: 0.016,
-    filterFrequency: 2450 + index * 420,
+    duration: [0.014, 0.02, 0.028][tier],
+    gain: [0.012, 0.017, 0.022][tier],
+    filterFrequency: [1550, 820, 610][tier],
     filterType: "bandpass",
-    q: 5,
+    q: 6.5,
     pan,
   });
 
   scheduleTone(context, {
     frequency: base,
-    endFrequency: base * 1.38,
+    endFrequency: [110, 65, 49][tier],
     type: "triangle",
-    gain: 0.045,
-    duration: 0.118,
-    attack: 0.012,
+    gain: [0.028, 0.035, 0.041][tier],
+    duration: [0.085, 0.105, 0.125][tier],
+    attack: 0.004,
     pan,
   });
 
   scheduleTone(context, {
-    frequency: base * 2.05,
-    endFrequency: base * 2.32,
-    type: "sine",
-    gain: 0.025,
-    duration: 0.125,
-    delay: 0.008,
-    attack: 0.018,
-    pan: (index - 1) * 0.04,
+    frequency: [294, 196, 147][tier],
+    endFrequency: [220, 120, 82][tier],
+    type: "triangle",
+    gain: [0.012, 0.017, 0.021][tier],
+    duration: [0.075, 0.095, 0.115][tier],
+    delay: 0.018,
+    attack: 0.005,
+    pan: -pan,
   });
 }
 
@@ -928,93 +931,120 @@ export function playDifficultySwitch(index = 1) {
   });
 }
 
-export function playDifficultySelect(difficultyId = "normal", index = 1) {
+export function playDifficultySelect(difficultyId = "normal") {
   const context = getPlayableContext();
   if (!context || !allowSound(`difficulty-select-${difficultyId}`, 120)) return;
 
-  const presets = {
-    easy: {
-      start: 1020,
-      end: 360,
-      sub: 78,
-      duration: 0.155,
-      wave: "square",
-      gain: 0.086,
-      subGain: 0.078,
-      noise: 3200,
-      noiseGain: 0.052,
-      tailFrequency: 540,
-      tailGain: 0.032,
-    },
-    normal: {
-      start: 760,
-      end: 170,
-      sub: 54,
-      duration: 0.2,
-      wave: "sawtooth",
-      gain: 0.09,
-      subGain: 0.092,
-      noise: 2200,
-      noiseGain: 0.05,
-      tailFrequency: 265,
-      tailGain: 0.026,
-    },
-    hard: {
-      start: 520,
-      end: 58,
-      sub: 36,
-      duration: 0.28,
-      wave: "sawtooth",
-      gain: 0.088,
-      subGain: 0.1,
-      noise: 1250,
-      noiseGain: 0.05,
-      tailFrequency: 88,
-      tailGain: 0.032,
-    },
-  };
+  // Easy inherits the former Normal sound, Normal inherits former Hard,
+  // and Hard adds a new, heavier fourth tier of the same motif.
+  const tier = difficultyId === "easy" ? 1 : difficultyId === "hard" ? 3 : 2;
+  const pan = (tier - 2) * 0.025;
+  const fundamental = [196, 147, 98, 73][tier];
 
-  const preset = presets[difficultyId] || presets.normal;
-  const lift = 1 + index * 0.035;
+  // Shared cabinet-button transient, synchronized with the origin flash.
+  scheduleNoise(context, {
+    duration: [0.018, 0.032, 0.052, 0.072][tier],
+    gain: [0.021, 0.034, 0.049, 0.062][tier],
+    filterFrequency: [2700, 1550, 820, 610][tier],
+    filterType: "bandpass",
+    q: 6.5,
+    pan,
+  });
 
+  // The same tonal logo grows lower, longer and heavier at each level.
   scheduleTone(context, {
-    frequency: preset.start * lift,
-    endFrequency: preset.end,
-    type: preset.wave,
-    gain: preset.gain,
-    duration: preset.duration,
-    attack: 0.001,
+    frequency: fundamental,
+    endFrequency: [294, 82, 42, 31][tier],
+    type: "triangle",
+    gain: [0.06, 0.079, 0.098, 0.105][tier],
+    duration: [0.14, 0.205, 0.275, 0.34][tier],
+    attack: 0.002,
+    pan,
   });
 
   scheduleTone(context, {
-    frequency: preset.sub,
-    endFrequency: preset.sub * 0.55,
+    frequency: [110, 82, 58, 46][tier],
+    endFrequency: [72, 48, 32, 24][tier],
     type: "sine",
-    gain: preset.subGain,
-    duration: preset.duration * 0.9,
+    gain: [0.055, 0.082, 0.108, 0.102][tier],
+    duration: [0.17, 0.23, 0.31, 0.39][tier],
+    delay: 0.004,
     attack: 0.002,
   });
 
-  scheduleNoise(context, {
-    duration: 0.028,
-    gain: preset.noiseGain,
-    filterFrequency: preset.noise,
-    filterType: "bandpass",
-    q: 6,
+  // Secondary pulse lands as the color front clears the switch.
+  scheduleTone(context, {
+    frequency: [392, 294, 196, 147][tier],
+    endFrequency: [523, 196, 98, 62][tier],
+    type: "triangle",
+    gain: [0.027, 0.04, 0.052, 0.064][tier],
+    duration: 0.13 + tier * 0.032,
+    delay: 0.058 + tier * 0.015,
+    attack: 0.004,
+    pan: -pan,
   });
 
-  if (preset.tailGain > 0) {
+  if (tier >= 1) {
+    scheduleNoise(context, {
+      duration: 0.026 + tier * 0.012,
+      gain: 0.019 + tier * 0.009,
+      delay: 0.07,
+      filterFrequency: [2050, 2050, 980, 690][tier],
+      filterType: "bandpass",
+      q: 7,
+    });
+
     scheduleTone(context, {
-      frequency: preset.tailFrequency,
-      endFrequency:
-        difficultyId === "easy"
-          ? preset.tailFrequency * 1.18
-          : preset.tailFrequency * 0.78,
+      frequency: [294, 294, 196, 147][tier],
+      endFrequency: [147, 147, 73, 49][tier],
+      type: "square",
+      gain: [0.012, 0.012, 0.022, 0.032][tier],
+      duration: [0.12, 0.12, 0.19, 0.24][tier],
+      delay: 0.082,
+      attack: 0.003,
+      pan: -pan,
+    });
+  }
+
+  if (tier >= 2) {
+    scheduleTone(context, {
+      frequency: tier === 3 ? 294 : 330,
+      endFrequency: tier === 3 ? 98 : 147,
+      type: "square",
+      gain: tier === 3 ? 0.035 : 0.032,
+      duration: tier === 3 ? 0.21 : 0.15,
+      delay: 0.145,
+      attack: 0.004,
+      pan: 0.04,
+    });
+    scheduleTone(context, {
+      frequency: tier === 3 ? 38 : 46,
+      endFrequency: tier === 3 ? 22 : 29,
       type: "sine",
-      gain: preset.tailGain,
-      duration: difficultyId === "hard" ? 0.18 : 0.105,
-      delay: preset.duration * 0.62,
-      attack: 0.01,
+      gain: tier === 3 ? 0.09 : 0.086,
+      duration: tier === 3 ? 0.31 : 0.23,
+      delay: 0.13,
+      attack: 0.004,
+    });
+  }
+
+  if (tier === 3) {
+    scheduleNoise(context, {
+      duration: 0.085,
+      gain: 0.024,
+      delay: 0.17,
+      filterFrequency: 480,
+      filterType: "bandpass",
+      q: 5.5,
+    });
+    scheduleTone(context, {
+      frequency: 73,
+      endFrequency: 36,
+      type: "sawtooth",
+      gain: 0.013,
+      duration: 0.22,
+      delay: 0.18,
+      attack: 0.004,
     });
   }
 }
@@ -1689,36 +1719,52 @@ export function playSliderRatchet(position = 0.5) {
 
 export function playLevelCountStep(index = 0, total = 5) {
   const context = getPlayableContext();
-  if (!context || !allowSound("level-count-step", 34)) return;
+  if (!context || !allowSound("level-count-step", 42)) return;
 
-  const normalized = total > 1 ? clamp01(index / (total - 1)) : 0;
-  const accent = index === total - 1 ? 1.16 : index === 0 ? 1.08 : 1;
-  const pitch = 188 + normalized * 58;
+  const tier = Math.max(0, Math.min(Math.max(total - 1, 0), index));
+  const normalized = total > 1 ? clamp01(tier / (total - 1)) : 0;
+  const switchTone = [150, 180, 215, 260, 320][tier] || 320;
+  const bodyTone = [95, 110, 128, 150, 178][tier] || 178;
+  const primaryGain = [0.026, 0.034, 0.043, 0.054, 0.067][tier] || 0.067;
+  const bodyGain = [0.034, 0.038, 0.043, 0.049, 0.056][tier] || 0.056;
+  const bodyEndRatio = [0.62, 0.66, 0.7, 0.74, 0.78][tier] || 0.78;
+  const bodyDuration = [0.105, 0.095, 0.087, 0.079, 0.072][tier] || 0.072;
 
+  // A bright front click keeps the textured switch tone readable on small speakers.
   scheduleNoise(context, {
-    duration: 0.01,
-    gain: 0.0085 * accent,
-    filterFrequency: 1800 + normalized * 1200,
+    duration: 0.018 - normalized * 0.005,
+    gain: 0.009 + normalized * 0.012,
+    filterFrequency: 1800 + normalized * 1700,
     filterType: "bandpass",
-    q: 8,
+    q: 7.5,
+  });
+
+  // All layers start together, so every level reads as one tactile click.
+  scheduleTone(context, {
+    frequency: bodyTone,
+    endFrequency: bodyTone * bodyEndRatio,
+    type: "sine",
+    gain: bodyGain,
+    duration: bodyDuration,
+    attack: 0.001,
   });
 
   scheduleTone(context, {
-    frequency: pitch,
-    endFrequency: pitch * 0.92,
+    frequency: switchTone,
+    endFrequency: switchTone * 0.68,
     type: "triangle",
-    gain: 0.018 * accent,
-    duration: 0.04,
-    attack: 0.002,
+    gain: primaryGain,
+    duration: 0.088 - normalized * 0.02,
+    attack: 0.001,
   });
 
   scheduleTone(context, {
-    frequency: pitch * 2.22,
-    endFrequency: pitch * 1.88,
-    type: "square",
-    gain: 0.0068 * accent,
-    duration: 0.022,
-    delay: 0.003,
+    frequency: switchTone * 1.72,
+    endFrequency: switchTone * 1.08,
+    type: "sawtooth",
+    gain: primaryGain * (0.18 + normalized * 0.16),
+    duration: 0.052 - normalized * 0.012,
+    delay: 0.002,
     attack: 0.001,
   });
 }

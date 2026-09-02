@@ -31,16 +31,17 @@ export default function AppFooter() {
     pathname === "/brand-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
-  const isTestLabRoute = pathname === "/test-lab";
+  const isTestRoute = pathname === "/test";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
+  const isStandaloneCardRoute =
+    pathname === "/notifications" || pathname === "/history";
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
   const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
     ? familyFromQuery
     : ["color", "flag", "cartoon", "brand", "team"].includes(pathnameFamily)
       ? pathnameFamily
       : "color";
-  const testPageLabel = locale === "tr" ? "test sayfası" : "test page";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
 
@@ -78,7 +79,7 @@ export default function AppFooter() {
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestLabRoute || isCreditsRoute || isDownloadRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestRoute || isCreditsRoute || isDownloadRoute || isStandaloneCardRoute) return null;
 
   return (
     <>
@@ -99,7 +100,6 @@ export default function AppFooter() {
           [
             [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
             [`/history?from=${family}`, t("history.footerLink")],
-            [`/test-lab?from=${family}`, testPageLabel],
           ],
           [
             [`/how-it-works?from=${family}`, howItWorksLabel],

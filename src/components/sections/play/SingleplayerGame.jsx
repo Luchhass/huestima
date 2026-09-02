@@ -87,6 +87,7 @@ export default function SingleplayerGame({
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
   const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
+  const [isIntroCardShrinking, setIsIntroCardShrinking] = useState(false);
   const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   const isPageUnloadRef = useRef(false);
@@ -240,6 +241,22 @@ export default function SingleplayerGame({
     renderedPhase,
     usesShowcaseTransition,
   ]);
+
+  // Singleplayer setup opens at scoreboard height, then settles to the normal
+  // game height as the Ready/Set/Go intro begins.
+  useEffect(() => {
+    if (renderedPhase !== GAME_PHASES.INTRO) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsIntroCardShrinking(false);
+      return undefined;
+    }
+
+    const shrinkId = window.setTimeout(() => {
+      setIsIntroCardShrinking(true);
+    }, 260);
+
+    return () => window.clearTimeout(shrinkId);
+  }, [renderedPhase]);
 
   useEffect(() => {
     let resetId = null;
@@ -434,7 +451,10 @@ export default function SingleplayerGame({
             : null
         }
         heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
-        isExpanded={renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome}
+        isExpanded={
+          (renderedPhase === GAME_PHASES.INTRO && !isIntroCardShrinking) ||
+          (renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome)
+        }
       >
         <div data-route-transition-scope className="h-full min-h-[inherit]">
           {renderedPhase === GAME_PHASES.INTRO && (

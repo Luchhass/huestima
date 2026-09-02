@@ -22,11 +22,15 @@ export default function DifficultySwitch({
   );
   const visualIndex = disabled ? difficultyIndex : hoverIndex ?? difficultyIndex;
 
-  const handleSelect = (optionId, optionIndex) => {
+  const handleSelect = (event, optionId, optionIndex) => {
     if (disabled) return;
 
     playDifficultySelect(optionId, optionIndex);
-    onSelectFeedback?.(optionId, optionIndex);
+    const rect = event.currentTarget.getBoundingClientRect();
+    onSelectFeedback?.(optionId, optionIndex, {
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2,
+    });
 
     if (optionId !== value) {
       onChange(optionId);
@@ -58,7 +62,7 @@ export default function DifficultySwitch({
             onPointerEnter={() => setHoverIndex(optionIndex)}
             onFocus={() => setHoverIndex(optionIndex)}
             onBlur={() => setHoverIndex(null)}
-            onClick={() => handleSelect(option.id, optionIndex)}
+            onClick={(event) => handleSelect(event, option.id, optionIndex)}
             className={`relative z-10 min-w-0 rounded-full px-0 text-[9px] font-semibold uppercase tracking-[0.035em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-2 sm:text-[11px] sm:tracking-[0.08em] ${
               visuallyActive
                 ? "text-zinc-950"

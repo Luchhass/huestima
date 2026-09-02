@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCheck, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
-import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import {
+  playScreenFadeOut,
+  SCREEN_REVEAL_REPLAY_EVENT,
+  useScreenReveal,
+} from "@/hooks/useScreenReveal";
+import { markDownloadReturn } from "@/hooks/useFooterPageTransition";
 import { useSiteOperations } from "@/hooks/useSiteOperations";
 import { useTranslation } from "@/hooks/useLanguage";
 import { readNotificationInbox } from "@/lib/notificationInbox";
@@ -32,10 +37,16 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setIsExpanded(true), 40);
-    return () => window.clearTimeout(timeoutId);
+    const revealTimeoutId = window.setTimeout(() => {
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    }, 780);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearTimeout(revealTimeoutId);
+    };
   }, []);
 
-  useScreenReveal(scopeRef, [announcements.length, locale], { delay: 240 });
+  useScreenReveal(scopeRef, [locale], { defer: true });
 
   const readIds = readNotificationInbox().readIds;
   const requestedReturnTo = searchParams.get("from") || "/color";
@@ -50,7 +61,8 @@ export default function NotificationsPage() {
 
     await playScreenFadeOut(scopeRef, { duration: 0.24 });
     setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, 760));
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    markDownloadReturn();
     router.push(returnTo);
   };
 
@@ -59,7 +71,7 @@ export default function NotificationsPage() {
       <section
         data-intro-card-target
         data-notification-card
-        className="relative flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
+        className="relative flex w-full max-w-125 overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardHeight ? { height: cardHeight } : undefined}
       >
         <button
@@ -72,16 +84,9 @@ export default function NotificationsPage() {
           <X className="size-6 sm:size-[26px]" strokeWidth={1.7} />
         </button>
         <div ref={scopeRef} data-route-transition-scope className="relative flex h-full min-h-0 flex-col">
-          <div data-screen-reveal className="overflow-hidden">
-              <div className="flex items-start justify-between gap-5">
-                <div>
-                <h1 className="mt-3 text-[clamp(2.55rem,7vw,4.8rem)] font-semibold leading-[0.88] tracking-[-0.065em]">{t("notifications.title")}</h1>
-                </div>
-            </div>
-          </div>
-
-          <div data-screen-reveal className="mt-5 overflow-hidden">
-            <p className="max-w-[35rem] text-sm font-medium leading-[1.4] text-white/68 sm:text-base">{t("notifications.description")}</p>
+          <div data-screen-reveal className="overflow-hidden pr-8">
+            <h1 className="mt-3 text-[clamp(2.8rem,7vw,3.85rem)] font-semibold leading-[0.92] tracking-normal">{t("notifications.title")}</h1>
+            <p className="mt-5 max-w-[35rem] text-sm font-medium leading-[1.4] text-white/68 sm:text-base">{t("notifications.description")}</p>
           </div>
 
           <div data-screen-reveal className="mt-6 min-h-0 flex-1 overflow-hidden">
@@ -120,7 +125,6 @@ export default function NotificationsPage() {
               )}
             </div>
           </div>
-
         </div>
       </section>
     </main>

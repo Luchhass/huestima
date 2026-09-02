@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import gsap from "gsap";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Blend,
-  ChevronDown,
   Eye,
   Flag,
   Infinity,
@@ -18,594 +16,154 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import { playGameModeSelect } from "@/lib/sound";
 
-const GAME_MODE_ICONS = {
-  normal: Eye,
-  endless: Infinity,
-  flash: Zap,
-  sequence: Layers,
-  timed: Timer,
-  sprint: Zap,
-  gradient: Blend,
-  flag: Flag,
-  cartoon: Palette,
-  duel: Swords,
-};
+const ICONS = { normal: Eye, endless: Infinity, flash: Zap, sequence: Layers, timed: Timer, sprint: Zap, gradient: Blend, flag: Flag, cartoon: Palette, duel: Swords };
+const SNAP_THRESHOLD = 0.28;
 
-const FALLBACK_ITEM_HEIGHT = 58;
-const PANEL_EXTRA_HEIGHT = 82;
-const PANEL_SHADOW =
-  "0 22px 54px rgba(0,0,0,0.38), 0 8px 18px rgba(0,0,0,0.22)";
-const PANEL_SHADOW_REST =
-  "0 6px 14px rgba(0,0,0,0), 0 2px 6px rgba(0,0,0,0)";
-const WHEEL_DELTA_THRESHOLD = 82;
-const WHEEL_STEP_GUARD = 58;
-const WHEEL_GESTURE_GAP = 180;
-const MAX_WHEEL_STEPS_PER_EVENT = 3;
-const DRAG_START_THRESHOLD = 5;
-const DRAG_LOOP_THRESHOLD_RATIO = 0.5;
-
-function wrapIndex(index, length) {
-  if (length <= 0) return 0;
-
-  return ((index % length) + length) % length;
+function wrap(index, length) {
+  return length ? ((index % length) + length) % length : 0;
 }
 
-function getSignedCircularDistance(index, centerIndex, length) {
-  if (length <= 1) return index - centerIndex;
-
-  let distance = index - centerIndex;
-  const halfLength = length / 2;
-
-  while (distance > halfLength) distance -= length;
-  while (distance < -halfLength) distance += length;
-
-  return distance;
+function distance(index, center, length) {
+  if (length < 2) return index - center;
+  let result = index - center;
+  if (result > length / 2) result -= length;
+  if (result < -length / 2) result += length;
+  return result;
 }
 
-function getCircularDistance(firstIndex, secondIndex, length) {
-  return Math.abs(getSignedCircularDistance(firstIndex, secondIndex, length));
-}
-
-export default function GameModePicker({
-  value,
-  onChange,
-  ariaLabel,
-  disabled = false,
-  className = "",
-  options = GAME_MODE_OPTIONS,
-}) {
+export default function GameModePicker({ value, onChange, ariaLabel, disabled = false, className = "", options = GAME_MODE_OPTIONS }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [renderOpen, setRenderOpen] = useState(false);
-  const [wheelIndex, setWheelIndex] = useState(0);
+  const trackRef = useRef(null);
+  const dragRef = useRef(null);
+  const [width, setWidth] = useState(280);
+  const selectedIndex = Math.max(options.findIndex((item) => item.id === value), 0);
+  const [index, setIndex] = useState(selectedIndex);
+  const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [itemHeight, setItemHeight] = useState(FALLBACK_ITEM_HEIGHT);
-  const scopeRef = useRef(null);
-  const triggerRef = useRef(null);
-  const panelRef = useRef(null);
-  const wheelAreaRef = useRef(null);
-  const selectedValueRef = useRef(value);
-  const wheelIndexRef = useRef(0);
-  const dragOffsetRef = useRef(0);
-  const wheelStateRef = useRef({
-    accumulator: 0,
-    lastDirection: 0,
-    lastEventAt: 0,
-    lastStepAt: 0,
-  });
-  const dragStateRef = useRef({
-    active: false,
-    moved: false,
-    pointerId: null,
-    lastY: 0,
-    startY: 0,
-  });
+  const currentIndex = dragging ? index : selectedIndex;
 
-  const selectedIndex = Math.max(
-    options.findIndex((option) => option.id === value),
-    0,
-  );
-  const optionCount = options.length;
-  const selectedOption = options[selectedIndex] || options[0];
-  const SelectedIcon = GAME_MODE_ICONS[selectedOption?.id] || Eye;
-  const usesFamilyAsOnlyMode =
-    optionCount === 1 &&
-    (selectedOption?.id === "flag" || selectedOption?.id === "cartoon");
-  const selectedLabel = selectedOption
-    ? usesFamilyAsOnlyMode
-      ? t("gameMode.normal")
-      : t(`gameMode.${selectedOption.id}`)
-    : t("gameMode.label");
-  const panelHeight = itemHeight + PANEL_EXTRA_HEIGHT;
-
-  const commitMode = useCallback(
-    (optionId, optionIndex) => {
-      if (disabled) return;
-      if (optionId === selectedValueRef.current) return;
-
-      selectedValueRef.current = optionId;
-      playGameModeSelect(optionId, optionIndex);
-      onChange(optionId);
-    },
-    [disabled, onChange],
-  );
-
-  const moveToIndex = useCallback(
-    (nextIndex, { commit = true } = {}) => {
-      if (!optionCount) return;
-
-      const wrappedIndex = wrapIndex(nextIndex, optionCount);
-      const option = options[wrappedIndex];
-      if (!option) return;
-
-      wheelIndexRef.current = wrappedIndex;
-      dragOffsetRef.current = 0;
-      setWheelIndex(wrappedIndex);
-      setDragOffset(0);
-
-      if (commit) {
-        commitMode(option.id, wrappedIndex);
-      }
-    },
-    [commitMode, optionCount, options],
-  );
-
-  const stepWheel = useCallback(
-    (direction) => {
-      if (optionCount < 2) return;
-
-      moveToIndex(wheelIndexRef.current + direction);
-    },
-    [moveToIndex, optionCount],
-  );
-
-  const moveWheelPreview = useCallback(
-    (nextIndex, nextOffset) => {
-      if (!optionCount) return;
-
-      const wrappedIndex = wrapIndex(nextIndex, optionCount);
-
-      wheelIndexRef.current = wrappedIndex;
-      dragOffsetRef.current = nextOffset;
-      setWheelIndex(wrappedIndex);
-      setDragOffset(nextOffset);
-    },
-    [optionCount],
-  );
-
-  const closePicker = useCallback(() => {
-    setOpen(false);
+  useEffect(() => {
+    const node = trackRef.current;
+    if (!node) return undefined;
+    const update = () => setWidth(node.getBoundingClientRect().width || 280);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    selectedValueRef.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    if (!open) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (!scopeRef.current?.contains(event.target)) {
-        closePicker();
-      }
-    };
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") closePicker();
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown, true);
-    document.addEventListener("keydown", handleKeyDown, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown, true);
-      document.removeEventListener("keydown", handleKeyDown, true);
-    };
-  }, [closePicker, open]);
-
-  useLayoutEffect(() => {
-    if (!renderOpen) return undefined;
-
-    const panel = panelRef.current;
-    if (!panel) return undefined;
-
-    gsap.killTweensOf(panel);
-
-    if (open) {
-      gsap.fromTo(
-        panel,
-        {
-          height: itemHeight,
-          autoAlpha: 1,
-          boxShadow: PANEL_SHADOW_REST,
-          yPercent: -50,
-        },
-        {
-          height: panelHeight,
-          autoAlpha: 1,
-          boxShadow: PANEL_SHADOW,
-          duration: 0.34,
-          ease: "expo.out",
-          overwrite: true,
-        },
-      );
-    } else {
-      gsap.fromTo(
-        panel,
-        {
-          height: panel.getBoundingClientRect().height || panelHeight,
-          autoAlpha: 1,
-          boxShadow: PANEL_SHADOW,
-          yPercent: -50,
-        },
-        {
-          height: itemHeight,
-          autoAlpha: 1,
-          boxShadow: PANEL_SHADOW_REST,
-          duration: 0.22,
-          ease: "power3.inOut",
-          overwrite: true,
-          onComplete: () => {
-            setRenderOpen(false);
-          },
-        },
-      );
+  const select = useCallback((nextIndex) => {
+    const safeIndex = wrap(nextIndex, options.length);
+    const option = options[safeIndex];
+    if (!option || disabled) return;
+    setIndex(safeIndex);
+    setOffset(0);
+    if (option.id !== value) {
+      playGameModeSelect(option.id, safeIndex);
+      onChange(option.id);
     }
+  }, [disabled, onChange, options, value]);
 
-    return () => {
-      gsap.killTweensOf(panel);
-    };
-  }, [itemHeight, open, panelHeight, renderOpen]);
-
-  const handleTriggerClick = () => {
-    if (disabled) return;
-
-    if (open) {
-      closePicker();
-      return;
-    }
-
-    const nextHeight =
-      triggerRef.current?.getBoundingClientRect().height || FALLBACK_ITEM_HEIGHT;
-
-    setItemHeight(nextHeight);
-    wheelIndexRef.current = selectedIndex;
-    dragOffsetRef.current = 0;
-    setWheelIndex(selectedIndex);
-    setDragOffset(0);
-    setRenderOpen(true);
-    setOpen(true);
-  };
-
-  const handleWheel = useCallback(
-    (event) => {
-      if (disabled || optionCount < 2) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const normalizedDelta =
-        event.deltaMode === 1
-          ? event.deltaY * 16
-          : event.deltaMode === 2
-            ? event.deltaY * window.innerHeight
-            : event.deltaY;
-      const direction = Math.sign(normalizedDelta);
-      if (direction === 0) return;
-
-      const now = event.timeStamp;
-      const wheelState = wheelStateRef.current;
-
-      if (
-        direction !== wheelState.lastDirection ||
-        now - wheelState.lastEventAt > WHEEL_GESTURE_GAP
-      ) {
-        wheelState.accumulator = 0;
-        wheelState.lastDirection = direction;
-      }
-
-      wheelState.lastEventAt = now;
-      wheelState.accumulator += normalizedDelta;
-
-      if (Math.abs(wheelState.accumulator) < WHEEL_DELTA_THRESHOLD) return;
-
-      if (now - wheelState.lastStepAt < WHEEL_STEP_GUARD) {
-        wheelState.accumulator = 0;
-        return;
-      }
-
-      let steps = 0;
-      while (
-        Math.abs(wheelState.accumulator) >= WHEEL_DELTA_THRESHOLD &&
-        steps < MAX_WHEEL_STEPS_PER_EVENT
-      ) {
-        stepWheel(direction);
-        wheelState.accumulator -= direction * WHEEL_DELTA_THRESHOLD;
-        wheelState.lastStepAt = now;
-        steps += 1;
-      }
-    },
-    [disabled, optionCount, stepWheel],
-  );
-
-  useEffect(() => {
-    if (!renderOpen) return undefined;
-
-    const wheelArea = wheelAreaRef.current;
-    if (!wheelArea) return undefined;
-
-    wheelArea.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      wheelArea.removeEventListener("wheel", handleWheel);
-    };
-  }, [handleWheel, renderOpen]);
-
-  const handleWheelPointerDown = (event) => {
-    if (disabled) return;
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-
-    dragStateRef.current = {
-      active: true,
+  const handlePointerDown = (event) => {
+    if (disabled || options.length < 2 || (event.pointerType === "mouse" && event.button !== 0)) return;
+    dragRef.current = {
+      id: event.pointerId,
+      startX: event.clientX,
       moved: false,
-      pointerId: event.pointerId,
-      lastY: event.clientY,
-      startY: event.clientY,
+      originIndex: currentIndex,
+      previewIndex: currentIndex,
     };
-    dragOffsetRef.current = 0;
     setDragging(true);
-    setDragOffset(0);
-
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
-  const handleOptionClick = (optionId, optionIndex) => {
-    if (disabled) return;
-
-    if (dragStateRef.current.moved) {
-      dragStateRef.current.moved = false;
-      return;
-    }
-
-    if (optionIndex === wheelIndexRef.current) {
-      closePicker();
-      return;
-    }
-
-    moveToIndex(optionIndex, { commit: false });
-    commitMode(optionId, optionIndex);
+  const handlePointerMove = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) > 5) drag.moved = true;
+    let nextIndex = drag.originIndex;
+    let nextOffset = delta;
+    while (nextOffset > width * SNAP_THRESHOLD) { nextIndex -= 1; nextOffset -= width; }
+    while (nextOffset < -width * SNAP_THRESHOLD) { nextIndex += 1; nextOffset += width; }
+    drag.previewIndex = nextIndex;
+    setIndex(wrap(nextIndex, options.length));
+    setOffset(nextOffset);
   };
 
-  useEffect(() => {
-    if (!dragging) return undefined;
+  const handlePointerUp = (event) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId) return;
+    dragRef.current = null;
+    setDragging(false);
+    select(drag.moved ? drag.previewIndex : currentIndex);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
 
-    const handleWindowPointerMove = (event) => {
-      const dragState = dragStateRef.current;
-      if (!dragState.active) return;
-      if (
-        dragState.pointerId !== null &&
-        event.pointerId !== dragState.pointerId
-      ) {
-        return;
-      }
+  const handleWheel = (event) => {
+    if (disabled || options.length < 2) return;
+    event.preventDefault();
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(delta) >= 12) select(currentIndex + (delta > 0 ? 1 : -1));
+  };
 
-      event.preventDefault();
-
-      const deltaY = event.clientY - dragState.lastY;
-      let nextIndex = wheelIndexRef.current;
-      let nextOffset = dragOffsetRef.current + deltaY;
-      const loopThreshold = itemHeight * DRAG_LOOP_THRESHOLD_RATIO;
-
-      if (Math.abs(event.clientY - dragState.startY) > DRAG_START_THRESHOLD) {
-        dragState.moved = true;
-      }
-
-      while (nextOffset > loopThreshold) {
-        nextIndex -= 1;
-        nextOffset -= itemHeight;
-      }
-
-      while (nextOffset < -loopThreshold) {
-        nextIndex += 1;
-        nextOffset += itemHeight;
-      }
-
-      dragState.lastY = event.clientY;
-      moveWheelPreview(nextIndex, nextOffset);
-    };
-
-    const handleWindowPointerEnd = (event) => {
-      const dragState = dragStateRef.current;
-      if (!dragState.active) return;
-      if (
-        dragState.pointerId !== null &&
-        event.pointerId !== dragState.pointerId
-      ) {
-        return;
-      }
-
-      const captureTarget = wheelAreaRef.current;
-      const finalIndex = wheelIndexRef.current;
-
-      dragStateRef.current = {
-        active: false,
-        moved: dragState.moved,
-        pointerId: null,
-        lastY: 0,
-        startY: 0,
-      };
-
-      setDragging(false);
-      moveToIndex(finalIndex);
-
-      if (
-        dragState.pointerId !== null &&
-        captureTarget?.hasPointerCapture?.(dragState.pointerId)
-      ) {
-        captureTarget.releasePointerCapture(dragState.pointerId);
-      }
-
-      window.setTimeout(() => {
-        dragStateRef.current.moved = false;
-      }, 0);
-    };
-
-    window.addEventListener("pointermove", handleWindowPointerMove, {
-      passive: false,
-    });
-    window.addEventListener("pointerup", handleWindowPointerEnd);
-    window.addEventListener("pointercancel", handleWindowPointerEnd);
-
-    return () => {
-      window.removeEventListener("pointermove", handleWindowPointerMove);
-      window.removeEventListener("pointerup", handleWindowPointerEnd);
-      window.removeEventListener("pointercancel", handleWindowPointerEnd);
-    };
-  }, [dragging, itemHeight, moveToIndex, moveWheelPreview]);
+  const handleKeyDown = (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    select(currentIndex + (event.key === "ArrowRight" ? 1 : -1));
+  };
 
   return (
     <div
-      ref={scopeRef}
-      data-open={open ? "true" : "false"}
-      className={`game-mode-picker relative h-[58px] min-w-0 sm:h-[62px] ${
-        open || renderOpen ? "z-[180]" : "z-0"
-      } ${className}`}
+      ref={trackRef}
+      role="listbox"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={ariaLabel || t("gameMode.label")}
+      aria-disabled={disabled}
+      data-dragging={dragging ? "true" : "false"}
+      className={`game-mode-picker card-control-frame card-action-height relative min-w-0 cursor-grab overflow-hidden select-none outline-none active:cursor-grabbing ${className}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onWheel={handleWheel}
+      onKeyDown={handleKeyDown}
+      style={{ touchAction: "pan-y" }}
     >
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={ariaLabel || t("gameMode.label")}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        data-game-mode-index={selectedIndex}
-        disabled={disabled}
-        onClick={handleTriggerClick}
-        className={`card-control-frame card-action-height group flex w-full min-w-0 items-center gap-2 overflow-hidden p-1 pr-2 text-left text-white transition hover:bg-white/[0.035] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-default disabled:opacity-60 sm:gap-3.5 sm:pr-4 ${
-          open ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
-      >
-        <span className="grid h-full aspect-square shrink-0 place-items-center rounded-full bg-white text-zinc-950 shadow-[0_10px_24px_rgba(0,0,0,0.24)]">
-          <SelectedIcon className="size-5" strokeWidth={2.15} />
-        </span>
-
-        <span className="flex min-w-0 flex-1 flex-col justify-center">
-          <span className="block text-[0.48rem] font-bold uppercase leading-[0.92] tracking-[0.1em] text-white/42 sm:text-[0.56rem] sm:leading-none sm:tracking-[0.16em]">
-            {t("gameMode.label")}
-          </span>
-          <span className="mt-1 block truncate text-[0.9rem] font-semibold leading-none text-white sm:mt-1.5 sm:text-base">
-            {selectedLabel}
-          </span>
-        </span>
-
-      </button>
-
-      {renderOpen && (
-        <div
-          ref={panelRef}
-          className="game-mode-picker__panel absolute left-0 top-1/2 z-[220] w-full overflow-hidden rounded-[29px] border-2 border-white/96 bg-black text-white"
-          style={{ height: itemHeight, boxShadow: PANEL_SHADOW_REST }}
-          role="listbox"
-          aria-label={ariaLabel || t("gameMode.label")}
-        >
+      {options.map((option, optionIndex) => {
+        const itemDistance = distance(optionIndex, currentIndex, options.length);
+        const active = optionIndex === currentIndex && Math.abs(offset) < width * 0.5;
+        const Icon = ICONS[option.id] || Eye;
+        const label = option.id === "flag" || option.id === "cartoon" ? t("gameMode.normal") : t(`gameMode.${option.id}`);
+        return (
           <div
-            ref={wheelAreaRef}
-            onPointerDown={handleWheelPointerDown}
-            className={`relative h-full cursor-grab overflow-hidden px-1 select-none touch-none active:cursor-grabbing ${
-              dragging ? "game-mode-picker__wheel--dragging" : ""
-            }`}
+            key={option.id}
+            id={`game-mode-${option.id}`}
+            role="option"
+            aria-selected={active}
+            className={`game-mode-picker__item pointer-events-none absolute inset-0 flex items-center px-4 text-left text-white will-change-transform ${dragging ? "" : "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"}`}
+            style={{
+              opacity: Math.abs(itemDistance) > 1 ? 0 : 1,
+              transform: `translate3d(${itemDistance * width + offset}px, 0, 0)`,
+              zIndex: active ? 2 : 1,
+            }}
           >
-            {options.map((option, optionIndex) => {
-              const active = wheelIndex === optionIndex;
-              const signedDistance = getSignedCircularDistance(
-                optionIndex,
-                wheelIndex,
-                optionCount,
-              );
-              const visualDistance = Math.abs(
-                signedDistance + dragOffset / itemHeight,
-              );
-              const distance = getCircularDistance(
-                wheelIndex,
-                optionIndex,
-                optionCount,
-              );
-              const Icon = GAME_MODE_ICONS[option.id] || Eye;
-              const label = t(`gameMode.${option.id}`);
-              const y = signedDistance * itemHeight + dragOffset;
-              const scale = active
-                ? 1
-                : visualDistance < 1.4
-                  ? 0.94
-                  : 0.88;
-              const opacity = active
-                ? 1
-                : visualDistance < 1.4
-                  ? 0.72
-                  : visualDistance < 2.4
-                    ? 0.36
-                    : 0;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  data-game-mode-index={optionIndex}
-                  onClick={() => handleOptionClick(option.id, optionIndex)}
-                  className={`absolute -left-0.5 -right-0.5 top-1/2 z-10 flex h-[58px] items-center gap-2 rounded-full border-2 border-transparent p-1 pr-2 text-left will-change-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:h-[62px] sm:gap-3.5 sm:pr-4 ${
-                    dragging
-                      ? ""
-                      : "transition-[opacity,transform,color] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  } ${
-                    active
-                      ? "text-white"
-                      : distance === 1
-                        ? "text-white/62"
-                        : "text-white/36"
-                  }`}
-                  style={{
-                    opacity,
-                    transform: `translate3d(0, calc(-50% + ${y}px), 0) scale(${scale})`,
-                    zIndex: active ? 18 : Math.max(1, 12 - Math.round(visualDistance)),
-                  }}
-                >
-                  <span
-                    className={`grid h-full aspect-square shrink-0 place-items-center rounded-full transition-colors duration-300 ${
-                      active
-                        ? "bg-white text-zinc-950 shadow-[0_10px_24px_rgba(0,0,0,0.24)]"
-                        : "bg-transparent text-white/72"
-                    }`}
-                  >
-                    <Icon className="size-4.5" strokeWidth={2.15} />
-                  </span>
-
-                  <span className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span
-                      className={`block text-[0.48rem] font-bold uppercase leading-[0.92] tracking-[0.1em] sm:text-[0.56rem] sm:leading-none sm:tracking-[0.16em] ${
-                        active ? "text-white/42" : "text-white/32"
-                      }`}
-                    >
-                      {t("gameMode.label")}
-                    </span>
-                    <span
-                      className={`block truncate font-semibold leading-none ${
-                        active
-                          ? "mt-1 text-[0.9rem] text-white sm:mt-1.5 sm:text-base"
-                          : "mt-1.5 text-[0.86rem] text-white/72 sm:text-[0.95rem]"
-                      }`}
-                    >
-                      {label}
-                    </span>
-                  </span>
-
-                </button>
-              );
-            })}
+            <span className="game-mode-picker__icon grid h-8 w-9 shrink-0 place-items-center sm:h-9 sm:w-10">
+              <Icon className="size-[1.15rem] sm:size-5" strokeWidth={2} />
+            </span>
+            <span className="ml-2.5 flex min-w-0 flex-1 items-center pr-10 sm:ml-3">
+              <span className="block truncate text-base font-semibold leading-none sm:text-[1.05rem]">
+                {label}
+              </span>
+            </span>
+            {options.length > 1 && (
+              <span className="game-mode-picker__count absolute right-4 top-1/2 -translate-y-1/2 text-[0.68rem] font-semibold leading-none tabular-nums tracking-[0.01em]">
+                {optionIndex + 1}/{options.length}
+              </span>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }

@@ -36,6 +36,7 @@ export default function SingleplayerCard({
   onDifficultyFeedback,
   onGameModeChange,
   onRoundCountChange,
+  onRoundCountFeedback,
   flagDifficulty = "starter",
   onFlagDifficultyChange,
   flagDifficulties = [],
@@ -53,20 +54,29 @@ export default function SingleplayerCard({
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
   const roundCountLocked = Boolean(gameModeOption?.isEndless || gameModeOption?.isSprint);
-  const roundCountLabel = roundCountLocked
-    ? t("levelCount.infinity")
-    : String(roundCount);
-  const setupCopyKey =
-    gameFamily !== GAME_FAMILY_IDS.COLOR &&
-    (gameMode === "normal" || gameMode === "endless" || gameMode === "timed" || gameMode === "sprint")
-      ? `visual${gameMode[0].toUpperCase()}${gameMode.slice(1)}`
-      : gameMode || DEFAULT_GAME_MODE_ID;
-  const description = [
-    t(`setup.singleCopy.${setupCopyKey}`, {
-      roundCount: roundCountLabel,
-    }),
-    t(`setup.difficultyCopy.${difficulty || DEFAULT_DIFFICULTY_ID}`),
-  ].join(" ");
+  const selectedMode = gameMode || DEFAULT_GAME_MODE_ID;
+  const selectedDifficulty = difficulty || DEFAULT_DIFFICULTY_ID;
+  const isVisualFamily = gameFamily !== GAME_FAMILY_IDS.COLOR;
+  const visualModeKeys = ["normal", "endless", "timed", "sprint"];
+  const mechanicsKey = isVisualFamily && visualModeKeys.includes(selectedMode)
+    ? `visual${selectedMode[0].toUpperCase()}${selectedMode.slice(1)}`
+    : selectedMode;
+  const difficultyKey = selectedMode === "gradient" ? "gradient" : selectedDifficulty;
+  const runKey = selectedMode === "endless"
+    ? "endless"
+    : selectedMode === "sprint"
+      ? "sprint"
+      : selectedMode === "timed"
+        ? "timed"
+        : "fixed";
+  const roundUnit = roundCount === 1
+    ? t("setup.roundUnit.single")
+    : t("setup.roundUnit.plural");
+  const overviewCopy = `${t(`setup.familyObjective.${gameFamily}`)} ${t(`setup.modeMechanics.${mechanicsKey}`)}`;
+  const rulesCopy = `${t(`setup.difficultyDetail.${difficultyKey}`)} ${t(`setup.runDetail.${runKey}`, {
+    roundCount,
+    roundUnit,
+  })}`;
 
   useGameModeShock(scopeRef, gameMode);
 
@@ -99,18 +109,29 @@ export default function SingleplayerCard({
           {t("setup.singleplayer")}
         </h1>
 
-        <p
-          data-game-mode-shock-target
-          className="mt-3.5 max-w-[35.5rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.98rem]"
-        >
-          {description}
-        </p>
+        <div className="mt-3.5 max-w-[35.5rem] space-y-2.5 sm:mt-4 sm:max-w-[36.75rem] sm:space-y-3">
+          <p
+            data-game-mode-shock-target
+            className="text-[0.9rem] font-medium leading-[1.28] text-white/84 sm:text-[0.96rem]"
+          >
+            {overviewCopy}
+          </p>
+          <p
+            data-game-mode-shock-target
+            className="text-[0.9rem] font-medium leading-[1.28] text-white/68 sm:text-[0.96rem]"
+          >
+            {rulesCopy}
+          </p>
+        </div>
 
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-auto w-full">
         <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
-          <div data-game-mode-shock-target className="min-w-0">
+          <div
+            data-game-mode-shock-target
+            className="min-w-0"
+          >
             <DifficultySwitch
               value={difficulty}
               onChange={onDifficultyChange}
@@ -126,6 +147,7 @@ export default function SingleplayerCard({
             <LevelCountPicker
               value={roundCount}
               onChange={onRoundCountChange}
+              onImpact={onRoundCountFeedback}
               isEndless={roundCountLocked}
               disabled={roundCountLocked}
             />
@@ -135,7 +157,11 @@ export default function SingleplayerCard({
 
       <div data-screen-reveal className="home-view-actions mt-3 w-full">
         <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
-          <div data-game-mode-shock-target className="min-w-0">
+          <div
+            data-game-mode-shock-target
+            data-game-mode-shock-weight="strong"
+            className="min-w-0"
+          >
             <GameModePicker
               value={gameMode}
               onChange={onGameModeChange}
@@ -153,14 +179,19 @@ export default function SingleplayerCard({
               </div>
             )}
 
-            <Link
+            <div
               data-game-mode-shock-target
-              href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
-              onClick={handlePlay}
-              className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
+              data-game-mode-shock-weight="strong"
+              className="min-w-0 flex-1"
             >
-              <span className="relative z-10">{t("setup.play")}</span>
-            </Link>
+              <Link
+                href={`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}`}
+                onClick={handlePlay}
+                className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:px-6 sm:text-base"
+              >
+                <span className="relative z-10">{t("setup.play")}</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

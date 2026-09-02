@@ -8,12 +8,14 @@ export default async function HistoryRoute({ searchParams }) {
   );
   const selectedMatchId = resolvedSearchParams?.match || "";
   const initialView = resolvedSearchParams?.view || "";
+  const initialFrom = resolvedSearchParams?.from || "color";
 
   return (
     <HistoryPage
       sharedMatch={sharedMatch}
       selectedMatchId={selectedMatchId}
       initialView={initialView}
+      initialFrom={initialFrom}
     />
   );
 }

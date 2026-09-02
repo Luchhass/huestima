@@ -113,7 +113,7 @@ export const ROUTE_SEO = {
   testLab: {
     title: "Huestima Test Page",
     description: "Quick access to Huestima material libraries, mode screens, and development test surfaces.",
-    path: "/test-lab",
+    path: "/test",
   },
   brandSingleplayer: {
     title: "Huestima Brand Singleplayer",

@@ -4,7 +4,7 @@ import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata("testLab");
 
-export default function TestLabRoute() {
+export default function TestRoute() {
   return (
     <Suspense fallback={null}>
       <TestLabPage />

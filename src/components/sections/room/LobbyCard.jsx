@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clipboard, Pencil, UserMinus, X } from "lucide-react";
+import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
@@ -25,6 +26,10 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
+import {
+  getLevelCountImpactPreset,
+  playLevelCountRecoil,
+} from "@/lib/levelCountFeedback";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -41,7 +46,80 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const EXPANDED_REVEAL_DELAY = 320;
-const DIFFICULTY_BURST_LIFETIME_MS = 3900;
+const DIFFICULTY_BURST_LIFETIME_MS = 1180;
+
+function getDifficultyBurstGeometry(card, origin, optionIndex) {
+  const rect = card?.getBoundingClientRect();
+  if (!rect) return { x: "50%", y: "78%", radius: "680px" };
+  const fallbackX = rect.width * (0.18 + optionIndex * 0.16);
+  const rawX = origin ? origin.clientX - rect.left : fallbackX;
+  const rawY = origin ? origin.clientY - rect.top : rect.height * 0.78;
+  const x = Math.max(0, Math.min(rect.width, rawX));
+  const y = Math.max(0, Math.min(rect.height, rawY));
+  const radius = Math.hypot(Math.max(x, rect.width - x), Math.max(y, rect.height - y));
+  return { x: `${x}px`, y: `${y}px`, radius: `${radius}px` };
+}
+
+function playDifficultyRecoil(card, origin, optionIndex) {
+  if (!card || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cardRect = card.getBoundingClientRect();
+  const source = origin || {
+    clientX: cardRect.left + cardRect.width * (0.18 + optionIndex * 0.16),
+    clientY: cardRect.top + cardRect.height * 0.78,
+  };
+  const strength = [7.5, 11, 15.5][optionIndex] || 11;
+  const shake = [2.1, 3.1, 4.4][optionIndex] || 3.1;
+  const targets = Array.from(card.querySelectorAll("[data-game-mode-shock-target]"))
+    .filter((target) => !target.querySelector(".difficulty-switch"));
+
+  targets.forEach((target, targetIndex) => {
+    const response = target.dataset.gameModeShockWeight === "strong" ? 1.42 : 1;
+    const rect = target.getBoundingClientRect();
+    const dx = rect.left + rect.width / 2 - source.clientX;
+    const dy = rect.top + rect.height / 2 - source.clientY;
+    const length = Math.hypot(dx, dy) || 1;
+    const ux = dx / length;
+    const uy = dy / length;
+    const px = -uy;
+    const py = ux;
+
+    gsap.killTweensOf(target);
+    gsap.timeline({ delay: targetIndex * 0.006 })
+      .to(target, {
+        x: ux * strength * response,
+        y: uy * strength * response,
+        duration: 0.065 + optionIndex * 0.008,
+        ease: "power3.out",
+        overwrite: true,
+      })
+      .to(target, {
+        x: ux * strength * 0.68 * response + px * shake * response,
+        y: uy * strength * 0.68 * response + py * shake * response,
+        duration: 0.052,
+        ease: "power1.inOut",
+      })
+      .to(target, {
+        x: ux * strength * 0.43 * response - px * shake * 0.82 * response,
+        y: uy * strength * 0.43 * response - py * shake * 0.82 * response,
+        duration: 0.048,
+        ease: "none",
+      })
+      .to(target, {
+        x: ux * strength * 0.2 * response + px * shake * 0.46 * response,
+        y: uy * strength * 0.2 * response + py * shake * 0.46 * response,
+        duration: 0.052,
+        ease: "none",
+      })
+      .to(target, {
+        x: 0,
+        y: 0,
+        duration: 0.17 + optionIndex * 0.022,
+        ease: `back.out(${1.35 + optionIndex * 0.12})`,
+        clearProps: "transform",
+      });
+  });
+}
+
 export default function LobbyCard({
   room,
   currentPlayerId,
@@ -68,11 +146,14 @@ export default function LobbyCard({
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
   const [notification, setNotification] = useState(null);
-  const [difficultyBurst, setDifficultyBurst] = useState(null);
+  const [difficultyBursts, setDifficultyBursts] = useState([]);
+  const [levelCountImpacts, setLevelCountImpacts] = useState([]);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
   const scopeRef = useRef(null);
+  const cardRef = useRef(null);
   const copiedTimerRef = useRef(null);
-  const difficultyBurstTimerRef = useRef(null);
+  const difficultyBurstTimersRef = useRef(new Map());
+  const levelCountImpactTimersRef = useRef(new Map());
 
   const isHost = room?.hostPlayerId === currentPlayerId;
   const isDifficultyLocked = Boolean(
@@ -111,36 +192,64 @@ export default function LobbyCard({
     delay: EXPANDED_REVEAL_DELAY,
   });
 
-  const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
+  const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1, origin = null) => {
     const burst =
       DIFFICULTY_BURST_COLORS[nextDifficulty] ||
       DIFFICULTY_BURST_COLORS[DIFFICULTY_IDS.NORMAL];
 
-    if (difficultyBurstTimerRef.current) {
-      window.clearTimeout(difficultyBurstTimerRef.current);
-    }
-
-    setDifficultyBurst({
+    const key = `${nextDifficulty}-${optionIndex}-${Date.now()}-${Math.random()}`;
+    const geometry = getDifficultyBurstGeometry(cardRef.current, origin, optionIndex);
+    setDifficultyBursts((current) => [...current, {
       id: nextDifficulty,
       color: burst.color,
       rgb: burst.rgb,
-      key: `${nextDifficulty}-${optionIndex}-${Date.now()}`,
-    });
+      key,
+      ...geometry,
+    }].slice(-6));
+    playDifficultyRecoil(cardRef.current, origin, optionIndex);
 
-    difficultyBurstTimerRef.current = window.setTimeout(() => {
-      setDifficultyBurst(null);
-      difficultyBurstTimerRef.current = null;
+    const timerId = window.setTimeout(() => {
+      setDifficultyBursts((current) => current.filter((item) => item.key !== key));
+      difficultyBurstTimersRef.current.delete(key);
     }, DIFFICULTY_BURST_LIFETIME_MS);
+    difficultyBurstTimersRef.current.set(key, timerId);
+  };
+
+  const triggerLevelCountFeedback = ({ index = 0 }) => {
+    if (!cardRef.current) return;
+    const key = `level-${index}-${Date.now()}-${Math.random()}`;
+    const preset = getLevelCountImpactPreset(index);
+    const impact = {
+      key,
+      strength: preset.strength,
+      spread: preset.spread,
+      rise: `${preset.rise}s`,
+      fade: `${preset.fade}s`,
+    };
+
+    levelCountImpactTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    levelCountImpactTimersRef.current.clear();
+    setLevelCountImpacts([impact]);
+    playLevelCountRecoil(cardRef.current, index);
+
+    const timerId = window.setTimeout(() => {
+      setLevelCountImpacts((current) => current.filter((item) => item.key !== key));
+      levelCountImpactTimersRef.current.delete(key);
+    }, (preset.rise + preset.fade) * 1000 + 120);
+    levelCountImpactTimersRef.current.set(key, timerId);
   };
 
   useEffect(() => {
+    const difficultyBurstTimers = difficultyBurstTimersRef.current;
+    const levelCountImpactTimers = levelCountImpactTimersRef.current;
     return () => {
       if (copiedTimerRef.current) {
         window.clearTimeout(copiedTimerRef.current);
       }
-      if (difficultyBurstTimerRef.current) {
-        window.clearTimeout(difficultyBurstTimerRef.current);
-      }
+      difficultyBurstTimers.forEach((timerId) => window.clearTimeout(timerId));
+      difficultyBurstTimers.clear();
+      levelCountImpactTimers.forEach((timerId) => window.clearTimeout(timerId));
+      levelCountImpactTimers.clear();
     };
   }, []);
 
@@ -238,7 +347,7 @@ export default function LobbyCard({
   };
 
   return (
-    <div className="lobby-card relative isolate flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
+    <div ref={cardRef} className="lobby-card relative isolate flex h-full flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
       <PushNotification
         notification={notification}
         onClose={() => setNotification(null)}
@@ -276,17 +385,39 @@ export default function LobbyCard({
         </div>
       )}
 
-      {difficultyBurst && (
-        <span
+      {difficultyBursts.map((difficultyBurst) => (
+          <span
           key={difficultyBurst.key}
           className={`difficulty-burst difficulty-burst--${difficultyBurst.id}`}
           style={{
             "--difficulty-burst-color": difficultyBurst.color,
             "--difficulty-burst-rgb": difficultyBurst.rgb,
-          }}
+            "--difficulty-burst-x": difficultyBurst.x,
+            "--difficulty-burst-y": difficultyBurst.y,
+            "--difficulty-burst-radius": difficultyBurst.radius,
+            }}
+            aria-hidden="true"
+          >
+            <span className="difficulty-burst__wave" />
+          </span>
+      ))}
+
+      {levelCountImpacts.map((impact) => (
+        <span
+          key={impact.key}
           aria-hidden="true"
-        />
-      )}
+          className="level-card-impact"
+          style={{
+            "--level-card-impact-strength": impact.strength,
+            "--level-card-impact-spread": impact.spread,
+            "--level-card-impact-rise": impact.rise,
+            "--level-card-impact-fade": impact.fade,
+          }}
+        >
+          <span className="level-card-impact__field" />
+          <span className="level-card-impact__pressure" />
+        </span>
+      ))}
 
       <div
         ref={scopeRef}
@@ -415,6 +546,7 @@ export default function LobbyCard({
               <LevelCountPicker
                 value={room?.roundCount}
                 onChange={handleRoundCountChange}
+                onImpact={triggerLevelCountFeedback}
                 isEndless={isUnlimitedRoundMode}
                 disabled={room?.gameMode === GAME_MODE_IDS.SPRINT || !isHost || isUpdatingSettings || room?.status !== "lobby"}
                 className="w-full"

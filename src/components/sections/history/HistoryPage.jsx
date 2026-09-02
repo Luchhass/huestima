@@ -4,7 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Play, Share2, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
-import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import {
+  playScreenFadeOut,
+  SCREEN_REVEAL_REPLAY_EVENT,
+  useScreenReveal,
+} from "@/hooks/useScreenReveal";
+import { markDownloadReturn } from "@/hooks/useFooterPageTransition";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   readStoredPlayerName,
@@ -301,6 +306,7 @@ export default function HistoryPage({
   sharedMatch = "",
   selectedMatchId = "",
   initialView = "",
+  initialFrom = "color",
 }) {
   const router = useRouter();
   const { locale, t } = useTranslation();
@@ -316,6 +322,9 @@ export default function HistoryPage({
   const listView = !activeEntry;
   const sharedEntry = useMemo(() => sharedMatch || null, [sharedMatch]);
   const isSharedView = Boolean(sharedEntry);
+  const from = ["color", "flag", "cartoon", "brand", "team"].includes(initialFrom)
+    ? initialFrom
+    : "color";
 
   useEffect(() => {
     const savedEntries = readMatchHistory();
@@ -337,11 +346,15 @@ export default function HistoryPage({
   }, [initialView, selectedMatchId, sharedEntry]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setIsExpanded(true);
-    }, 40);
+    const timeoutId = window.setTimeout(() => setIsExpanded(true), 40);
+    const revealTimeoutId = window.setTimeout(() => {
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    }, 780);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearTimeout(revealTimeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -371,9 +384,24 @@ export default function HistoryPage({
     };
   }, []);
 
-  useScreenReveal(scopeRef, [listView, activeEntry?.id, entries.length, locale], {
-    delay: 240,
-  });
+  useScreenReveal(scopeRef, [listView, activeEntry?.id, locale], { defer: true });
+
+  const replayReveal = () => {
+    window.setTimeout(() => {
+      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    }, 80);
+  };
+
+  const handleClose = async () => {
+    if (isLeavingRef.current) return;
+    isLeavingRef.current = true;
+    setIsLeaving(true);
+    await playScreenFadeOut(scopeRef, { duration: 0.24 });
+    setIsExpanded(false);
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    markDownloadReturn();
+    router.push(`/${from}`);
+  };
 
   const handleDelete = (entryId) => {
     const nextEntries = removeMatchHistoryEntry(entryId);
@@ -412,6 +440,7 @@ export default function HistoryPage({
     setCopied(false);
     setCopyError(false);
     router.replace(`/history?match=${entry.id}&view=detail`, { scroll: false });
+    replayReveal();
   };
 
   const handleBackToList = async () => {
@@ -425,6 +454,7 @@ export default function HistoryPage({
     setCopied(false);
     setCopyError(false);
     router.replace("/history", { scroll: false });
+    replayReveal();
   };
 
   const handleShare = async () => {
@@ -552,11 +582,22 @@ export default function HistoryPage({
               ) : null}
             </>
           ) : (
-            <>
-              <div data-screen-reveal>
+            <div className="flex h-full min-h-0 flex-col">
+              <button
+                type="button"
+                onClick={() => void handleClose()}
+                aria-label={t("history.backToList")}
+                className="absolute right-0 top-0 z-20 grid size-9 place-items-center rounded-full text-white/75 transition-opacity hover:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                <X className="size-6" strokeWidth={1.7} />
+              </button>
+              <div data-screen-reveal className="pr-10">
                 <h1 className="text-[clamp(2.8rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">
                   {t("history.listTitle")}
                 </h1>
+                <p className="mt-5 max-w-[26rem] text-sm font-medium leading-[1.4] text-white/68 sm:text-base">
+                  {t("history.intro")}
+                </p>
               </div>
 
               <div
@@ -579,7 +620,7 @@ export default function HistoryPage({
                   <HistoryEmptyState t={t} />
                 )}
               </div>
-            </>
+            </div>
           )}
         </div>
 

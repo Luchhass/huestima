@@ -53,6 +53,10 @@ import { getAvailableGameModeOptions } from "@/lib/gameMode";
 import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
 import { CARTOON_PACKS } from "@/lib/cartoons";
 import { TEAM_OPTIONS } from "@/lib/teams";
+import {
+  getLevelCountImpactPreset,
+  playLevelCountRecoil,
+} from "@/lib/levelCountFeedback";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -69,7 +73,7 @@ const DIFFICULTY_BURST_COLORS = {
   },
 };
 const CARD_RESIZE_DURATION_MS = 700;
-const DIFFICULTY_BURST_LIFETIME_MS = 3900;
+const DIFFICULTY_BURST_LIFETIME_MS = 1180;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -81,6 +85,88 @@ const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) =
 function waitForCardResize() {
   return new Promise((resolve) => {
     window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+  });
+}
+
+function waitForNextPaint() {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(resolve);
+    });
+  });
+}
+
+function getDifficultyBurstGeometry(card, origin, optionIndex) {
+  const rect = card?.getBoundingClientRect();
+  if (!rect) return { x: "50%", y: "78%", radius: "680px" };
+
+  const fallbackX = rect.width * (0.18 + optionIndex * 0.16);
+  const rawX = origin ? origin.clientX - rect.left : fallbackX;
+  const rawY = origin ? origin.clientY - rect.top : rect.height * 0.78;
+  const x = Math.max(0, Math.min(rect.width, rawX));
+  const y = Math.max(0, Math.min(rect.height, rawY));
+  const radius = Math.hypot(Math.max(x, rect.width - x), Math.max(y, rect.height - y));
+
+  return { x: `${x}px`, y: `${y}px`, radius: `${radius}px` };
+}
+
+function playDifficultyRecoil(card, origin, optionIndex) {
+  if (!card || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cardRect = card.getBoundingClientRect();
+  const source = origin || {
+    clientX: cardRect.left + cardRect.width * (0.18 + optionIndex * 0.16),
+    clientY: cardRect.top + cardRect.height * 0.78,
+  };
+  const strength = [7.5, 11, 15.5][optionIndex] || 11;
+  const shake = [2.1, 3.1, 4.4][optionIndex] || 3.1;
+  const targets = Array.from(card.querySelectorAll("[data-game-mode-shock-target]"))
+    .filter((target) => !target.querySelector(".difficulty-switch"));
+
+  targets.forEach((target, targetIndex) => {
+    const response = target.dataset.gameModeShockWeight === "strong" ? 1.42 : 1;
+    const rect = target.getBoundingClientRect();
+    const dx = rect.left + rect.width / 2 - source.clientX;
+    const dy = rect.top + rect.height / 2 - source.clientY;
+    const length = Math.hypot(dx, dy) || 1;
+    const ux = dx / length;
+    const uy = dy / length;
+    const px = -uy;
+    const py = ux;
+
+    gsap.killTweensOf(target);
+    gsap.timeline({ delay: targetIndex * 0.006 })
+      .to(target, {
+        x: ux * strength * response,
+        y: uy * strength * response,
+        duration: 0.065 + optionIndex * 0.008,
+        ease: "power3.out",
+        overwrite: true,
+      })
+      .to(target, {
+        x: ux * strength * 0.68 * response + px * shake * response,
+        y: uy * strength * 0.68 * response + py * shake * response,
+        duration: 0.052,
+        ease: "power1.inOut",
+      })
+      .to(target, {
+        x: ux * strength * 0.43 * response - px * shake * 0.82 * response,
+        y: uy * strength * 0.43 * response - py * shake * 0.82 * response,
+        duration: 0.048,
+        ease: "none",
+      })
+      .to(target, {
+        x: ux * strength * 0.2 * response + px * shake * 0.46 * response,
+        y: uy * strength * 0.2 * response + py * shake * 0.46 * response,
+        duration: 0.052,
+        ease: "none",
+      })
+      .to(target, {
+        x: 0,
+        y: 0,
+        duration: 0.17 + optionIndex * 0.022,
+        ease: `back.out(${1.35 + optionIndex * 0.12})`,
+        clearProps: "transform",
+      });
   });
 }
 
@@ -126,14 +212,17 @@ export default function HomeCard({
   );
   const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState("singleplayer");
   const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
-  const [difficultyBurst, setDifficultyBurst] = useState(null);
+  const [difficultyBursts, setDifficultyBursts] = useState([]);
+  const [levelCountImpacts, setLevelCountImpacts] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [deferViewReveal, setDeferViewReveal] = useState(false);
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const stickerRef = useRef(null);
   const isFooterReturnRef = useRef(false);
   const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
-  const difficultyBurstTimerRef = useRef(null);
+  const difficultyBurstTimersRef = useRef(new Map());
+  const levelCountImpactTimersRef = useRef(new Map());
   const isChangingViewRef = useRef(false);
   const colorWaveGradientRef = useRef(null);
 
@@ -142,7 +231,12 @@ export default function HomeCard({
   const isCartoonPool = view === "cartoonPool";
   const isFlagPool = view === "flagPool";
   const isTeamPool = view === "teamPool";
-  const isExpandedCard = isMultiplayer && isMultiplayerTallStep;
+  const isSingleplayerTallView =
+    isSingleplayer ||
+    ((isCartoonPool || isFlagPool || isTeamPool) &&
+      cartoonPoolReturnView === "singleplayer");
+  const isExpandedCard =
+    isSingleplayerTallView || (isMultiplayer && isMultiplayerTallStep);
   const cardHeight = useResponsiveCardHeight(
     isExpandedCard || isCartoonPool || isFlagPool,
   );
@@ -184,7 +278,7 @@ export default function HomeCard({
     }
 
     const gradient = colorWaveGradientRef.current;
-    const duration = 24000;
+    const duration = 12000;
     let startedAt = null;
     let frameId = 0;
 
@@ -204,13 +298,23 @@ export default function HomeCard({
     {
       // Footer return state is intentionally read once to defer the entry reveal.
       // eslint-disable-next-line react-hooks/refs
-      defer: isFooterReturnRef.current || isAdminReturnPending,
+      defer: isFooterReturnRef.current || isAdminReturnPending || deferViewReveal,
     },
   );
 
   useLayoutEffect(() => {
     const sticker = stickerRef.current;
     if (!sticker) return undefined;
+
+    const brandPiecePresets = [
+      { at: 0.02, duration: 0.56, y: 84, x: -6, scale: 0.93, ease: "back.out(1.18)" },
+      { at: 0.12, duration: 0.67, y: 116, x: 5, scale: 0.89, ease: "power4.out" },
+      { at: 0.18, duration: 0.53, y: 91, x: -4, scale: 0.96, ease: "back.out(1.12)" },
+      { at: 0.28, duration: 0.71, y: 130, x: 7, scale: 0.9, ease: "power4.out" },
+      { at: 0.35, duration: 0.57, y: 101, x: -6, scale: 0.94, ease: "back.out(1.16)" },
+      { at: 0.46, duration: 0.69, y: 121, x: 4, scale: 0.91, ease: "power4.out" },
+      { at: 0.54, duration: 0.6, y: 96, x: -3, scale: 0.96, ease: "back.out(1.1)" },
+    ];
 
     let tween = null;
 
@@ -226,6 +330,38 @@ export default function HomeCard({
 
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
+        gsap.set(sticker.children, { clearProps: "all" });
+        return;
+      }
+
+      if (cleanGameFamily === GAME_FAMILY_IDS.BRAND) {
+        const pieces = Array.from(sticker.children);
+        gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
+        tween = gsap.timeline();
+
+        pieces.forEach((piece, index) => {
+          const preset = brandPiecePresets[index % brandPiecePresets.length];
+          tween.fromTo(
+            piece,
+            {
+              autoAlpha: 0,
+              x: preset.x,
+              y: preset.y,
+              scale: preset.scale,
+            },
+            {
+              autoAlpha: 1,
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: preset.duration,
+              ease: preset.ease,
+              overwrite: true,
+              clearProps: "transform,opacity,visibility",
+            },
+            preset.at,
+          );
+        });
         return;
       }
 
@@ -331,10 +467,13 @@ export default function HomeCard({
   }, []);
 
   useEffect(() => {
+    const difficultyBurstTimers = difficultyBurstTimersRef.current;
+    const levelCountImpactTimers = levelCountImpactTimersRef.current;
     return () => {
-      if (difficultyBurstTimerRef.current) {
-        window.clearTimeout(difficultyBurstTimerRef.current);
-      }
+      difficultyBurstTimers.forEach((timerId) => window.clearTimeout(timerId));
+      difficultyBurstTimers.clear();
+      levelCountImpactTimers.forEach((timerId) => window.clearTimeout(timerId));
+      levelCountImpactTimers.clear();
 
     };
   }, []);
@@ -345,14 +484,35 @@ export default function HomeCard({
     isChangingViewRef.current = true;
     await playScreenFadeOut(contentRef);
 
-    if (isExpandedCard) {
+    let currentCardIsExpanded = isExpandedCard;
+    if (isMultiplayer && isMultiplayerTallStep) {
       setIsMultiplayerTallStep(false);
       await waitForCardResize();
+      currentCardIsExpanded = false;
     }
 
+    const nextViewIsSingleplayerTall =
+      nextView === "singleplayer" ||
+      ((nextView === "cartoonPool" ||
+        nextView === "flagPool" ||
+        nextView === "teamPool") &&
+        (view === "singleplayer" ||
+          cartoonPoolReturnView === "singleplayer"));
+    const cardWillResize = currentCardIsExpanded !== nextViewIsSingleplayerTall;
+
+    setDeferViewReveal(true);
     setView(nextView);
+
+    if (cardWillResize) {
+      await waitForCardResize();
+    } else {
+      await waitForNextPaint();
+    }
+
+    window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+    setDeferViewReveal(false);
     isChangingViewRef.current = false;
-  }, [isExpandedCard, view]);
+  }, [cartoonPoolReturnView, isExpandedCard, isMultiplayer, isMultiplayerTallStep, view]);
 
   useEffect(() => {
     const isMultiplayerOnlyView =
@@ -394,26 +554,53 @@ export default function HomeCard({
     await changeView(cartoonPoolReturnView);
   };
 
-  const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1) => {
+  const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1, origin = null) => {
     const burst =
       DIFFICULTY_BURST_COLORS[nextDifficulty] ||
       DIFFICULTY_BURST_COLORS[DIFFICULTY_IDS.NORMAL];
 
-    if (difficultyBurstTimerRef.current) {
-      window.clearTimeout(difficultyBurstTimerRef.current);
-    }
-
-    setDifficultyBurst({
+    const key = `${nextDifficulty}-${optionIndex}-${Date.now()}-${Math.random()}`;
+    const geometry = getDifficultyBurstGeometry(cardRef.current, origin, optionIndex);
+    const nextBurst = {
       id: nextDifficulty,
       color: burst.color,
       rgb: burst.rgb,
-      key: `${nextDifficulty}-${optionIndex}-${Date.now()}`,
-    });
+      key,
+      ...geometry,
+    };
 
-    difficultyBurstTimerRef.current = window.setTimeout(() => {
-      setDifficultyBurst(null);
-      difficultyBurstTimerRef.current = null;
+    setDifficultyBursts((current) => [...current, nextBurst].slice(-6));
+    playDifficultyRecoil(cardRef.current, origin, optionIndex);
+
+    const timerId = window.setTimeout(() => {
+      setDifficultyBursts((current) => current.filter((item) => item.key !== key));
+      difficultyBurstTimersRef.current.delete(key);
     }, DIFFICULTY_BURST_LIFETIME_MS);
+    difficultyBurstTimersRef.current.set(key, timerId);
+  };
+
+  const triggerLevelCountFeedback = ({ index = 0 }) => {
+    if (!cardRef.current) return;
+    const key = `level-${index}-${Date.now()}-${Math.random()}`;
+    const preset = getLevelCountImpactPreset(index);
+    const impact = {
+      key,
+      strength: preset.strength,
+      spread: preset.spread,
+      rise: `${preset.rise}s`,
+      fade: `${preset.fade}s`,
+    };
+
+    levelCountImpactTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    levelCountImpactTimersRef.current.clear();
+    setLevelCountImpacts([impact]);
+    playLevelCountRecoil(cardRef.current, index);
+
+    const timerId = window.setTimeout(() => {
+      setLevelCountImpacts((current) => current.filter((item) => item.key !== key));
+      levelCountImpactTimersRef.current.delete(key);
+    }, (preset.rise + preset.fade) * 1000 + 120);
+    levelCountImpactTimersRef.current.set(key, timerId);
   };
 
   const handleGameModeChange = (nextGameMode) => {
@@ -446,17 +633,39 @@ export default function HomeCard({
           onClose={() => setNotification(null)}
         />
 
-        {difficultyBurst && (
+        {difficultyBursts.map((difficultyBurst) => (
           <span
             key={difficultyBurst.key}
             className={`difficulty-burst difficulty-burst--${difficultyBurst.id}`}
             style={{
               "--difficulty-burst-color": difficultyBurst.color,
               "--difficulty-burst-rgb": difficultyBurst.rgb,
+              "--difficulty-burst-x": difficultyBurst.x,
+              "--difficulty-burst-y": difficultyBurst.y,
+              "--difficulty-burst-radius": difficultyBurst.radius,
             }}
             aria-hidden="true"
-          />
-        )}
+          >
+            <span className="difficulty-burst__wave" />
+          </span>
+        ))}
+
+        {levelCountImpacts.map((impact) => (
+          <span
+            key={impact.key}
+            aria-hidden="true"
+            className="level-card-impact"
+            style={{
+              "--level-card-impact-strength": impact.strength,
+              "--level-card-impact-spread": impact.spread,
+              "--level-card-impact-rise": impact.rise,
+              "--level-card-impact-fade": impact.fade,
+            }}
+          >
+            <span className="level-card-impact__field" />
+            <span className="level-card-impact__pressure" />
+          </span>
+        ))}
 
         {(isSingleplayer || isMultiplayer) && (
           <button
@@ -545,6 +754,7 @@ export default function HomeCard({
               onDifficultyFeedback={triggerDifficultyFeedback}
               onGameModeChange={handleGameModeChange}
               onRoundCountChange={setRoundCount}
+              onRoundCountFeedback={triggerLevelCountFeedback}
             />
           ) : (
             <MultiplayerCard
@@ -608,6 +818,16 @@ export default function HomeCard({
                   >
                     <feGaussianBlur stdDeviation="22" />
                   </filter>
+                  <filter
+                    id="home-color-spectrum-blend"
+                    x="-18%"
+                    y="-8%"
+                    width="136%"
+                    height="116%"
+                    colorInterpolationFilters="sRGB"
+                  >
+                    <feGaussianBlur stdDeviation="20 2" />
+                  </filter>
                   <mask id="home-color-wave-mask" maskUnits="userSpaceOnUse">
                     <rect width="500" height="500" fill="black" />
                     <use
@@ -625,23 +845,27 @@ export default function HomeCard({
                     y2="0"
                     gradientUnits="userSpaceOnUse"
                     spreadMethod="repeat"
-                    colorInterpolation="linearRGB"
+                    colorInterpolation="sRGB"
                   >
-                    <stop offset="0" stopColor="#d600ff" />
-                    <stop offset="0.125" stopColor="#ff1744" />
-                    <stop offset="0.25" stopColor="#ff7a00" />
-                    <stop offset="0.375" stopColor="#ffe600" />
-                    <stop offset="0.5" stopColor="#21e65b" />
-                    <stop offset="0.625" stopColor="#00d9ff" />
-                    <stop offset="0.75" stopColor="#176bff" />
-                    <stop offset="0.875" stopColor="#7347ff" />
-                    <stop offset="1" stopColor="#d600ff" />
+                    <stop offset="0" stopColor="#ff5f7a" />
+                    <stop offset="0.1" stopColor="#f7d046" />
+                    <stop offset="0.2" stopColor="#32d989" />
+                    <stop offset="0.3" stopColor="#45a6ff" />
+                    <stop offset="0.4" stopColor="#9d6cff" />
+                    <stop offset="0.5" stopColor="#ff5f7a" />
+                    <stop offset="0.6" stopColor="#f7d046" />
+                    <stop offset="0.7" stopColor="#32d989" />
+                    <stop offset="0.8" stopColor="#45a6ff" />
+                    <stop offset="0.9" stopColor="#9d6cff" />
+                    <stop offset="1" stopColor="#ff5f7a" />
                   </linearGradient>
                 </defs>
                 <rect
-                  width="500"
+                  x="-40"
+                  width="580"
                   height="500"
                   fill="url(#home-color-rgb-spectrum)"
+                  filter="url(#home-color-spectrum-blend)"
                   mask="url(#home-color-wave-mask)"
                 >
                 </rect>

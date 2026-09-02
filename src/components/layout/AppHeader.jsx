@@ -60,7 +60,7 @@ export default function AppHeader() {
   const isTeamLibraryRoute = pathname === "/team-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
-  const isTestLabRoute = pathname === "/test-lab";
+  const isTestRoute = pathname === "/test";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
   const isNotificationsRoute = pathname === "/notifications";
@@ -394,9 +394,11 @@ export default function AppHeader() {
     isLibraryRoute ||
     isPrivacyRoute ||
     isHowItWorksRoute ||
-    isTestLabRoute ||
+    isTestRoute ||
     isCreditsRoute ||
-    isDownloadRoute
+    isDownloadRoute ||
+    isNotificationsRoute ||
+    isHistoryRoute
   ) {
     return null;
   }
