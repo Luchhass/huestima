@@ -8,7 +8,6 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import gsap from "gsap";
-import { APP_NAME } from "@/lib/constants";
 import { SCREEN_REVEAL_REPLAY_EVENT } from "@/hooks/useScreenReveal";
 import { hasPendingFooterReturn } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
@@ -565,7 +564,7 @@ export default function PageIntro() {
             ref={brandTextRef}
             className="inline-block text-7xl font-semibold uppercase leading-none tracking-normal text-white sm:text-8xl md:text-[7.5rem]"
           >
-            {APP_NAME}
+            OC BERRA
           </span>
         </span>
       </div>
