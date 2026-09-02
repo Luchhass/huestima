@@ -1769,6 +1769,24 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
   width: 88%;
 }
 
+.cartoon-home-character--upchuck {
+  top: -10rem;
+  left: 28%;
+  width: 48%;
+}
+
+.cartoon-home-character--ghostfreak {
+  top: -3rem;
+  left: 2%;
+  width: 95%;
+}
+
+.cartoon-home-character--ripjaws {
+  top: -1rem;
+  left: 15%;
+  width: 70%;
+}
+
 .cartoon-home-character--waybig {
   top: -2rem;
   left: 12%;

@@ -90,6 +90,9 @@ const CARTOON_EASTER_EGG_CHARACTERS = [
   { id: "stinkfly", src: "/game-modes/cartoon/ben-10/stinkfly-home-character.png", width: 559, height: 759, imageClassName: "cartoon-home-character--stinkfly" },
   { id: "upgrade", src: "/game-modes/cartoon/ben-10/upgrade-home-character.png", width: 896, height: 1310, imageClassName: "cartoon-home-character--upgrade" },
   { id: "wildvine", src: "/game-modes/cartoon/ben-10/wildvine-home-character.png", width: 685, height: 1200, imageClassName: "cartoon-home-character--wildvine" },
+  { id: "upchuck", src: "/game-modes/cartoon/ben-10/upchuck-home-character.webp", width: 335, height: 473, imageClassName: "cartoon-home-character--upchuck" },
+  { id: "ghostfreak", src: "/game-modes/cartoon/ben-10/ghostfreak-home-character.webp", width: 894, height: 1343, imageClassName: "cartoon-home-character--ghostfreak" },
+  { id: "ripjaws", src: "/game-modes/cartoon/ben-10/ripjaws-home-character.webp", width: 576, height: 1280, imageClassName: "cartoon-home-character--ripjaws" },
 ];
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
@@ -244,7 +247,6 @@ export default function HomeCard({
   const levelCountImpactTimersRef = useRef(new Map());
   const cartoonTransformTimersRef = useRef([]);
   const cartoonCharacterRef = useRef(null);
-  const nextCartoonAlienIndexRef = useRef(1);
   const isChangingViewRef = useRef(false);
 
   const isSingleplayer = view === "singleplayer";
@@ -647,7 +649,7 @@ export default function HomeCard({
     const returningToBen = cartoonCharacterIndex !== 0;
     const nextCharacterIndex = returningToBen
       ? 0
-      : nextCartoonAlienIndexRef.current;
+      : 1 + Math.floor(Math.random() * (CARTOON_EASTER_EGG_CHARACTERS.length - 1));
     const color = returningToBen ? "red" : "green";
     const burstKey = `${color}-${Date.now()}`;
     const cardBounds = cardRef.current?.getBoundingClientRect();
@@ -686,12 +688,6 @@ export default function HomeCard({
     cartoonTransformTimersRef.current.push(
       window.setTimeout(() => {
         setCartoonCharacterIndex(nextCharacterIndex);
-        if (!returningToBen) {
-          nextCartoonAlienIndexRef.current =
-            nextCharacterIndex + 1 >= CARTOON_EASTER_EGG_CHARACTERS.length
-              ? 1
-              : nextCharacterIndex + 1;
-        }
       }, characterSwapDelay),
       window.setTimeout(() => {
         setCartoonBurst(null);
