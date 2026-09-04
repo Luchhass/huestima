@@ -69,13 +69,14 @@ export default function FlagLibraryPage() {
         <div className="mx-auto grid w-full max-w-[68rem] grid-cols-1 gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
           {selectedGroup.items.map((item, index) => (
             <article key={item.id}>
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[18px] border border-foreground/8 bg-white">
+              <div className="relative aspect-[50/39] w-full overflow-hidden rounded-[18px] border border-foreground/8 bg-white">
                 <Image
                   src={item.originalScenePath || item.scenePath}
                   alt={item.label}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   className="object-cover"
+                  style={{ objectPosition: item.sceneObjectPosition }}
                 />
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 px-1">

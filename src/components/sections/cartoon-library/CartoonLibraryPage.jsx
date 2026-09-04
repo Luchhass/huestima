@@ -95,13 +95,14 @@ export default function CartoonLibraryPage() {
         <div className="mx-auto grid w-full max-w-[68rem] grid-cols-1 gap-x-7 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
           {activeGroup.items.map((item) => (
             <article key={item.id}>
-              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[18px] bg-foreground/6">
+              <div className="relative aspect-[50/39] w-full overflow-hidden rounded-[18px] bg-foreground/6">
                 <Image
-                  src={item.sourceImagePath || item.originalScenePath || item.scenePath}
+                  src={item.originalScenePath || item.scenePath}
                   alt={item.labels?.[locale] || item.labels?.tr || item.label}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   className="object-cover"
+                  style={{ objectPosition: item.sceneObjectPosition }}
                 />
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 px-1">

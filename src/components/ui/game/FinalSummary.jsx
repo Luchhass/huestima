@@ -58,7 +58,7 @@ function getScoreColor(score, maxScore) {
   return `hsl(${hue} 100% 58%)`;
 }
 
-function SummaryTile({ result, locale, t }) {
+function SummaryTile({ result, locale, t, isSpotMode = false }) {
   const overlayTones = useVisualOverlayTones(result.target);
   const scoreStyle = {
     color: overlayTextColor(overlayTones.topLeft),
@@ -78,14 +78,22 @@ function SummaryTile({ result, locale, t }) {
         guess: colorTitleLabel(result.guess, locale),
       })}
     >
-      <span
-        data-summary-guess-layer
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: tileGradient(result),
-          clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
-        }}
-      />
+      {isSpotMode ? (
+        <span
+          data-summary-guess-layer
+          className="pointer-events-none absolute left-1/2 top-1/2 size-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: tileGradient(result) }}
+        />
+      ) : (
+        <span
+          data-summary-guess-layer
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: tileGradient(result),
+            clipPath: "polygon(100% 0, 100% 100%, 0 100%)",
+          }}
+        />
+      )}
 
       {isFlagColor(result.target) && (
         <FlagOverlay
@@ -126,6 +134,7 @@ export default function FinalSummary({
   onPlayAgain,
   onBackHome,
   isLeavingHome = false,
+  isSpotMode = false,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -497,6 +506,7 @@ export default function FinalSummary({
               result={result}
               locale={locale}
               t={t}
+              isSpotMode={isSpotMode}
             />
           ))}
         </div>

@@ -25,7 +25,9 @@ const MUSIC_DISABLED_VALUE = "off";
 const MUSIC_ENABLED_VALUE = "on";
 const SCREEN_REVEAL_COMPLETE_EVENT = "huestima-screen-reveal-complete";
 const PAGE_INTRO_COMPLETE_EVENT = "page-intro:complete";
-const MASTER_VOLUME = 0.58 * 5;
+// Keep the four music scenes together at a lower listening level.  This only
+// affects the music bus; one-shot game sound effects retain their volume.
+const MASTER_VOLUME = 0.58 * 5 * 0.7;
 const MUTED_VOLUME = 0.0001;
 const CARTOON_GAME_THEME_GAIN = 50;
 const CARTOON_MENU_THEME_GAIN = 126.4;

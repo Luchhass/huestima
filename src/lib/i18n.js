@@ -357,6 +357,7 @@ export const DICTIONARIES = {
       gradient: "Gradient",
       flag: "Classic",
       duel: "Duel",
+      spot: "Spot",
     },
     gameFamily: {
       label: "Game section",
@@ -377,6 +378,7 @@ export const DICTIONARIES = {
       flag: "Match the background color behind a fixed flag emblem.",
       brand: "Match the colors inside familiar brand logos.",
       duel: "Endless PvP survival with round-by-round eliminations.",
+      spot: "Keep the target visible and match it with the center circle.",
     },
     setup: {
       singleplayer: "singleplayer",
@@ -417,14 +419,15 @@ export const DICTIONARIES = {
       chooseLobbyFirst: "Choose a lobby first.",
       refreshLobbies: "Refresh lobbies",
       familyObjective: {
-        color: "Your target is a pure color: hold its character in your memory, then recreate it with the available color controls.",
-        flag: "The flag’s layout and emblem stay fixed; your task is to match the color field behind them as accurately as possible.",
-        cartoon: "Use the cartoon scene as your reference and rebuild the target color belonging to its featured character or area.",
+        color: "Study the color, then rebuild it with the controls.",
+        flag: "The flag stays fixed; match the color behind it.",
+        cartoon: "Use the scene to match the featured character’s color.",
         brand: "Read the signature color of a familiar brand logo and reproduce that color without changing the logo itself.",
         team: "Study the defining color of the team crest and recreate it while the crest’s shape and details remain fixed.",
       },
       modeMechanics: {
-        normal: "Classic mode shows the target for five seconds; it then disappears and leaves you to rebuild it from memory.",
+        spot: "Spot mode keeps the target color visible beside the playable color field; match it directly on hard difficulty.",
+        normal: "Classic shows the target briefly, then asks you to rebuild it.",
         endless: "Endless mode repeats the same five-second memory cycle without a final level.",
         flash: "Flash mode exposes the target for just one second, so the first impression matters more than careful study.",
         sequence: "Sequence mode presents colors back-to-back for three seconds each; you then reconstruct the full order one color at a time.",
@@ -939,6 +942,7 @@ export const DICTIONARIES = {
       gradient: "Geçiş",
       flag: "Klasik",
       duel: "Düello",
+      spot: "Nokta",
     },
     gameFamily: {
       label: "Oyun bölümü",
@@ -959,6 +963,7 @@ export const DICTIONARIES = {
       flag: "Sabit bayrak sembolünün arkasındaki rengi eşleştir.",
       brand: "Tanıdık marka logolarının içindeki renkleri eşleştir.",
       duel: "Tur tur eleme yapan sonsuz karşılaşma modu.",
+      spot: "Hedef görünür kalırken ortadaki dairenin rengini eşleştir.",
     },
     setup: {
       singleplayer: "singleplayer",
@@ -999,14 +1004,15 @@ export const DICTIONARIES = {
       chooseLobbyFirst: "Önce bir lobi seç.",
       refreshLobbies: "Lobileri yenile",
       familyObjective: {
-        color: "Hedefin saf bir renk: rengin karakterini aklında tut, ardından açık olan renk kontrolleriyle onu yeniden oluştur.",
-        flag: "Bayrağın düzeni ve amblemi sabit kalır; görevin, bu öğelerin arkasındaki renk alanını olabildiğince doğru eşleştirmektir.",
-        cartoon: "Çizgi film sahnesini referans al ve öne çıkan karaktere ya da bölgeye ait hedef rengi yeniden oluştur.",
+        color: "Rengi incele, sonra kontrollerle yeniden oluştur.",
+        flag: "Bayrak sabit kalır; arkasındaki rengi eşleştir.",
+        cartoon: "Sahneyi kullan ve öne çıkan karakterin rengini eşleştir.",
         brand: "Tanıdık bir marka logosunun karakteristik rengini incele ve logonun kendisini değiştirmeden bu rengi yeniden üret.",
         team: "Takım armasını tanımlayan rengi incele; armanın biçimi ve ayrıntıları sabitken bu rengi yeniden oluştur.",
       },
       modeMechanics: {
-        normal: "Klasik mod hedef rengi beş saniye gösterir; ardından renk kaybolur ve onu hafızandan yeniden kurarsın.",
+        spot: "Nokta modu hedef rengi oynanabilir renk alanının yanında görünür tutar; zorda doğrudan eşleştirirsin.",
+        normal: "Klasik mod hedefi kısa süre gösterir, sonra yeniden kurmanı ister.",
         endless: "Sonsuz mod aynı beş saniyelik hafıza döngüsünü son seviye olmadan tekrarlar.",
         flash: "Anlık mod hedef rengi yalnızca bir saniye gösterir; uzun incelemeden çok ilk izlenimine güvenmen gerekir.",
         sequence: "Dizi modu renkleri üçer saniye boyunca arka arkaya gösterir; ardından sıranın tamamını renk renk yeniden kurarsın.",

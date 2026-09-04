@@ -20,6 +20,7 @@ export default function CartoonCanvas({
   color,
   className = "",
   fit = "cover",
+  objectPosition = "center",
   onReady,
   minRenderWidth = 0,
 }) {
@@ -131,7 +132,8 @@ export default function CartoonCanvas({
       aria-hidden="true"
       className={`absolute inset-0 h-full w-full ${
         fit === "contain" ? "object-contain" : "object-cover"
-      } object-center ${className}`}
+      } ${className}`}
+      style={{ objectPosition }}
     />
   );
 }

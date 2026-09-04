@@ -1,6 +1,5 @@
 "use client";
 
-import { Images } from "lucide-react";
 import { useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +7,6 @@ import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
-import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
@@ -19,10 +17,31 @@ import {
 import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
 import { serializeHintsEnabled } from "@/lib/hints";
 import { GAME_FAMILY_IDS } from "@/lib/gameFamily";
+import { CARTOON_PACKS } from "@/lib/cartoons";
+import { TEAM_OPTIONS } from "@/lib/teams";
 
 const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
   GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
 );
+
+function getPoolLinkLabel(gameFamily, locale, { cartoonIds, flagDifficulties, teamIds }) {
+  const isTurkish = locale === "tr";
+  const allLabel = isTurkish ? "tümü" : "all";
+  const multipleLabel = isTurkish ? "birden fazla" : "multiple";
+  const names = gameFamily === GAME_FAMILY_IDS.CARTOON
+    ? CARTOON_PACKS.filter((pack) => pack.itemIds.every((id) => cartoonIds.includes(id))).map((pack) => pack.label)
+    : gameFamily === GAME_FAMILY_IDS.TEAM
+      ? TEAM_OPTIONS.filter((team) => teamIds.includes(team.id)).map((team) => team.label)
+      : flagDifficulties;
+  const title = gameFamily === GAME_FAMILY_IDS.CARTOON
+    ? (isTurkish ? "Çizgi film listesi" : "Cartoon list")
+    : gameFamily === GAME_FAMILY_IDS.FLAG
+      ? (isTurkish ? "Bayrak listesi" : "Flag list")
+      : (isTurkish ? "Takım listesi" : "Team list");
+  const total = gameFamily === GAME_FAMILY_IDS.CARTOON ? CARTOON_PACKS.length : gameFamily === GAME_FAMILY_IDS.TEAM ? TEAM_OPTIONS.length : 3;
+  const selection = names.length === total ? allLabel : names.length === 1 ? names[0] : multipleLabel;
+  return `${title} (${selection})`;
+}
 
 export default function SingleplayerCard({
   difficulty,
@@ -46,8 +65,9 @@ export default function SingleplayerCard({
   onOpenFlagPool,
   teamIds = [],
   onOpenTeamPool,
+  onBeforePlay,
 }) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const router = useRouter();
   const scopeRef = useRef(null);
   const isNavigatingRef = useRef(false);
@@ -89,7 +109,7 @@ export default function SingleplayerCard({
     event.preventDefault();
     isNavigatingRef.current = true;
 
-    await playScreenFadeOut(scopeRef, { duration: 0.28 });
+    await onBeforePlay?.();
     const cartoonQuery = cartoonIds.length ? `&cartoons=${encodeURIComponent(cartoonIds.join(","))}` : "";
     const flagQuery = flagDifficulties.length ? `&flagDifficulties=${encodeURIComponent(flagDifficulties.join(","))}` : `&flagDifficulty=${flagDifficulty}`;
     const teamQuery = teamIds.length ? `&teams=${encodeURIComponent(teamIds.join(","))}` : "";
@@ -127,6 +147,11 @@ export default function SingleplayerCard({
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-auto w-full">
+        {(gameFamily === GAME_FAMILY_IDS.CARTOON || gameFamily === GAME_FAMILY_IDS.FLAG || gameFamily === GAME_FAMILY_IDS.TEAM) && (
+              <button type="button" onClick={gameFamily === GAME_FAMILY_IDS.CARTOON ? onOpenCartoonPool : gameFamily === GAME_FAMILY_IDS.FLAG ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="mb-3 px-1 text-left text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+            {getPoolLinkLabel(gameFamily, locale, { cartoonIds, flagDifficulties, teamIds })}
+          </button>
+        )}
         <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
           <div
             data-game-mode-shock-target
@@ -156,7 +181,7 @@ export default function SingleplayerCard({
       </div>
 
       <div data-screen-reveal className="home-view-actions mt-3 w-full">
-        <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-2 items-end gap-2 sm:gap-3">
           <div
             data-game-mode-shock-target
             data-game-mode-shock-weight="strong"
@@ -170,15 +195,7 @@ export default function SingleplayerCard({
             />
           </div>
 
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            {(gameFamily === GAME_FAMILY_IDS.CARTOON || gameFamily === GAME_FAMILY_IDS.FLAG || gameFamily === GAME_FAMILY_IDS.TEAM) && (
-              <div data-game-mode-shock-target className="shrink-0">
-                <button type="button" onClick={gameFamily === GAME_FAMILY_IDS.CARTOON ? onOpenCartoonPool : gameFamily === GAME_FAMILY_IDS.FLAG ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white p-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                  <Images className="relative z-10 size-5" strokeWidth={2} />
-                </button>
-              </div>
-            )}
-
+          <div className="flex min-w-0 flex-col items-stretch gap-2 sm:gap-3">
             <div
               data-game-mode-shock-target
               data-game-mode-shock-weight="strong"

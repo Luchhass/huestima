@@ -28,13 +28,15 @@ import FinalSummary from "@/components/ui/game/FinalSummary";
 import { LEAVE_ACTIVE_GAME_EVENT } from "@/lib/gameNavigation";
 import { releaseVisualRenderService } from "@/lib/cartoonRenderService";
 
-const FLAG_WIDGET_EXIT_DELAY_MS = 680;
+const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
+const SPOT_GUESS_EXIT_DURATION_MS = 980;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
   SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
 const CARD_RESIZE_DURATION_MS = 700;
 const FINAL_HOME_FADE_DURATION_MS = 240;
+const SHOWCASE_WIDGET_REVEAL_DELAY_MS = 32;
 
 export default function SingleplayerGame({
   initialDifficulty,
@@ -87,7 +89,6 @@ export default function SingleplayerGame({
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
   const [isShowcaseResultExpanded, setIsShowcaseResultExpanded] = useState(false);
-  const [isIntroCardShrinking, setIsIntroCardShrinking] = useState(false);
   const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
   const isPageUnloadRef = useRef(false);
@@ -208,6 +209,26 @@ export default function SingleplayerGame({
 
     if (
       renderedPhase === GAME_PHASES.GUESS &&
+      game.phase === GAME_PHASES.RESULT &&
+      game.isSpotMode
+    ) {
+      const exitStartId = window.setTimeout(() => {
+        setIsShowcaseWidgetExiting(true);
+      }, 0);
+
+      const phaseTimeoutId = window.setTimeout(() => {
+        setRenderedPhase(game.phase);
+        setIsShowcaseWidgetExiting(false);
+      }, SPOT_GUESS_EXIT_DURATION_MS);
+
+      return () => {
+        window.clearTimeout(exitStartId);
+        window.clearTimeout(phaseTimeoutId);
+      };
+    }
+
+    if (
+      renderedPhase === GAME_PHASES.GUESS &&
       usesShowcaseTransition &&
       !sprintExpired
     ) {
@@ -219,7 +240,7 @@ export default function SingleplayerGame({
       const phaseTimeoutId = window.setTimeout(() => {
         setRenderedPhase(game.phase);
         setIsShowcaseWidgetExiting(false);
-      }, FLAG_WIDGET_EXIT_DELAY_MS);
+      }, SHOWCASE_WIDGET_EXIT_DURATION_MS);
 
       return () => {
         window.clearTimeout(exitStartId);
@@ -237,26 +258,12 @@ export default function SingleplayerGame({
   }, [
     game.isSprintMode,
     game.phase,
+    game.isSpotMode,
     game.sprintRemainingMs,
+    isCartoonMode,
     renderedPhase,
     usesShowcaseTransition,
   ]);
-
-  // Singleplayer setup opens at scoreboard height, then settles to the normal
-  // game height as the Ready/Set/Go intro begins.
-  useEffect(() => {
-    if (renderedPhase !== GAME_PHASES.INTRO) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsIntroCardShrinking(false);
-      return undefined;
-    }
-
-    const shrinkId = window.setTimeout(() => {
-      setIsIntroCardShrinking(true);
-    }, 260);
-
-    return () => window.clearTimeout(shrinkId);
-  }, [renderedPhase]);
 
   useEffect(() => {
     let resetId = null;
@@ -272,13 +279,13 @@ export default function SingleplayerGame({
     }, 0);
     const revealId = window.setTimeout(() => {
       setIsShowcaseWidgetEntering(true);
-    }, 560);
+    }, SHOWCASE_WIDGET_REVEAL_DELAY_MS);
 
     return () => {
       window.clearTimeout(resetId);
       window.clearTimeout(revealId);
     };
-  }, [usesExternalGuessChrome]);
+  }, [isCartoonMode, usesExternalGuessChrome]);
 
   useEffect(() => {
     if (!isRenderedShowcaseResultPhase) return undefined;
@@ -392,14 +399,12 @@ export default function SingleplayerGame({
       : renderedPhase === GAME_PHASES.MEMORIZE
         ? game.targetColor
         : renderedPhase === GAME_PHASES.GUESS
-          ? game.guessColor
+          ? game.isSpotMode
+            ? game.targetColor
+            : game.guessColor
+          : renderedPhase === GAME_PHASES.RESULT && game.isSpotMode
+            ? latestResult?.target
           : null;
-  const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode) &&
-    (renderedPhase === GAME_PHASES.MEMORIZE ||
-      renderedPhase === GAME_PHASES.GUESS ||
-      (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
-
   if (!game.hasRestoredSession || renderedPhase === null) {
     return (
       <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
@@ -431,6 +436,10 @@ export default function SingleplayerGame({
           isRenderedShowcaseResultPhase ? "showcase-result-card-shell" : ""
         } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
+        } ${
+          isShowcaseWidgetExiting
+            ? "showcase-game-card-shell--exiting"
+            : ""
         }`}
         cartoonOverlayProps={
           isCartoonMode
@@ -450,10 +459,9 @@ export default function SingleplayerGame({
               }
             : null
         }
-        heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
+        heightMode="normal"
         isExpanded={
-          (renderedPhase === GAME_PHASES.INTRO && !isIntroCardShrinking) ||
-          (renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome)
+          renderedPhase === GAME_PHASES.FINAL && !isLeavingFinalHome
         }
       >
         <div data-route-transition-scope className="h-full min-h-[inherit]">
@@ -515,6 +523,7 @@ export default function SingleplayerGame({
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}
+              isSpotMode={game.isSpotMode}
             />
           )}
 
@@ -533,6 +542,7 @@ export default function SingleplayerGame({
                   : 0
               }
               resumeInstantly={resumePhase === GAME_PHASES.RESULT}
+              isSpotMode={game.isSpotMode}
             />
           )}
 
@@ -545,6 +555,7 @@ export default function SingleplayerGame({
               onPlayAgain={handlePlayAgain}
               onBackHome={handleBackHome}
               isLeavingHome={isLeavingFinalHome}
+              isSpotMode={game.isSpotMode}
             />
           )}
 

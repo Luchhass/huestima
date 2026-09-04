@@ -1,4 +1,5 @@
 import { CARTOON_ITEMS } from "../../shared/cartoonCatalog.mjs";
+import { CARTOON_SAFE_AREAS } from "../../shared/visualSafeAreas.mjs";
 
 const DEFAULT_CARTOON_PACK = "ben-10";
 const CARTOON_INDEX_BY_ID = Object.fromEntries(
@@ -182,6 +183,13 @@ function getGeneratedRoot(item) {
 
 function cartoon(item, index) {
   const { id, label, series, paintLabel, paint } = item;
+  const safeArea = CARTOON_SAFE_AREAS[id] || {
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
+    focusX: 0.5,
+  };
   const assetRoot = getGeneratedRoot(item);
   const scenePath = `${assetRoot}/${id}-scene.webp`;
   const originalScenePath = `${assetRoot}/${id}-original.webp`;
@@ -196,6 +204,8 @@ function cartoon(item, index) {
     series,
     pack: getCartoonPack(item),
     paintLabel,
+    safeArea,
+    sceneObjectPosition: `${safeArea.focusX * 100}% 50%`,
     sourceImagePath: toPublicUrl(item.sourcePath),
     sourceMaskPath: toPublicUrl(item.maskPath),
     sourceTitle: item.sourceTitle || null,

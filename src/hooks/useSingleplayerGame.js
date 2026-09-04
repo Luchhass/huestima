@@ -232,6 +232,7 @@ export function useSingleplayerGame(
   );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const unlimitedHints = isEndlessMode;
   const isFlagMode = isFlagFamily(cleanGameFamily);
@@ -446,6 +447,7 @@ export function useSingleplayerGame(
     isCartoonMode,
     isFlagMode,
     isEndlessMode,
+    isSpotMode,
     isSprintMode,
     roundCount,
     cartoonIds,
@@ -682,7 +684,7 @@ export function useSingleplayerGame(
         nextTargetColor,
       ),
     );
-    transitionToPhase(GAME_PHASES.MEMORIZE);
+    transitionToPhase(isSpotMode ? GAME_PHASES.GUESS : GAME_PHASES.MEMORIZE);
   }, [
     cleanGameFamily,
     effectiveDifficulty,
@@ -690,6 +692,7 @@ export function useSingleplayerGame(
     isCartoonMode,
     isBrandMode,
     isEndlessMode,
+    isSpotMode,
     isSprintMode,
     flagDifficulty,
     cartoonIds,
@@ -987,6 +990,7 @@ export function useSingleplayerGame(
     gameMode,
     isSequenceMode,
     isGradientMode,
+    isSpotMode,
     isEndlessMode,
     isSprintMode,
     isCartoonMode,

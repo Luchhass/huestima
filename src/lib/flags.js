@@ -1,4 +1,5 @@
 import { FLAG_ITEMS } from "../../shared/flagCatalog.mjs";
+import { FLAG_SAFE_AREAS } from "../../shared/visualSafeAreas.mjs";
 import {
   FLAG_DIFFICULTY_IDS,
   FLAG_DIFFICULTY_OPTIONS,
@@ -230,12 +231,21 @@ function flag(item) {
   const originalScenePath = `${assetRoot}/${item.id}-original.webp`;
   const maskPath = `${assetRoot}/${item.id}-scene-mask.png`;
   const mainLayerPath = `${assetRoot}/${item.id}-main-layer.png`;
+  const safeArea = FLAG_SAFE_AREAS[item.id] || {
+    x: 0.14,
+    y: 0,
+    width: 0.72,
+    height: 1,
+    focusX: 0.5,
+  };
 
   return {
     id: item.id,
     label: item.label,
     labels: buildFlagLabels(item),
     paintLabel: "flag",
+    safeArea,
+    sceneObjectPosition: `${safeArea.focusX * 100}% 50%`,
     originalScenePath,
     baseScenePath: scenePath,
     scenePath,

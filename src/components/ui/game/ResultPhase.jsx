@@ -128,6 +128,7 @@ export default function ResultPhase({
   roundLabel = result ? `${result.round}/5` : "",
   visualIntroDelayMs = 0,
   resumeInstantly = false,
+  isSpotMode = false,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -236,7 +237,8 @@ export default function ResultPhase({
     // Every game family uses the same comparison reveal: keep the guess in
     // place, then slide the original in from below before revealing the score.
     const canAnimateSplitReveal = Boolean(
-      scopeRef.current &&
+      !isSpotMode &&
+        scopeRef.current &&
         guessSectionElement &&
         targetSectionElement &&
         splitOverlayElement
@@ -771,7 +773,7 @@ export default function ResultPhase({
       resultCharsTween?.kill();
       ctx.revert();
     };
-  }, [result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
+  }, [isSpotMode, result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
 
   if (!result) return null;
 
@@ -825,6 +827,14 @@ export default function ResultPhase({
           textShadow: overlayTextShadow(targetOverlayTones.bottomLeft),
         }),
   };
+  const spotTextStyle = {
+    color: overlayTextColor(targetOverlayTones.topLeft),
+    textShadow: overlayTextShadow(targetOverlayTones.topLeft),
+  };
+  const activeGuessTone = isSpotMode ? targetTone : guessTone;
+  const activeGuessTopLeftStyle = isSpotMode ? spotTextStyle : guessTopLeftStyle;
+  const activeGuessTopRightStyle = isSpotMode ? spotTextStyle : guessTopRightStyle;
+  const activeGuessBottomLeftStyle = isSpotMode ? spotTextStyle : guessBottomLeftStyle;
 
   return (
     <div
@@ -837,7 +847,7 @@ export default function ResultPhase({
         className="pointer-events-none absolute inset-0 z-60 rounded-[inherit] bg-black opacity-0"
       />
 
-      <section
+      {!isSpotMode && <section
         ref={splitOverlayRef}
         aria-hidden="true"
         className={`pointer-events-none absolute inset-0 z-40 overflow-hidden rounded-[inherit] p-6 sm:p-8 ${guessTone}`}
@@ -874,22 +884,30 @@ export default function ResultPhase({
             {splitOverlayLabel}
           </p>
         )}
-      </section>
+      </section>}
+
+      {isSpotMode && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-1/2 z-10 block size-36 -translate-x-1/2 -translate-y-1/2 rounded-full sm:size-44"
+          style={{ background: colorToneHex(result.guess) }}
+        />
+      )}
 
       <section
         ref={guessSectionRef}
-        className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${guessTone}`}
+        className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${activeGuessTone}`}
         style={{
-          background: guessBackground,
-          ...guessTopLeftStyle,
+          background: isSpotMode ? "transparent" : guessBackground,
+          ...activeGuessTopLeftStyle,
         }}
       >
-        {isFlagColor(result.guess) && (
+        {!isSpotMode && isFlagColor(result.guess) && (
           <FlagOverlay color={result.guess} />
         )}
-        {isBrandGuessResult && <BrandOverlay color={result.guess} />}
+        {!isSpotMode && isBrandGuessResult && <BrandOverlay color={result.guess} />}
 
-        {isCartoonGuessResult && (
+        {!isSpotMode && isCartoonGuessResult && (
           <CartoonOverlay
             color={result.guess}
             variant="guess"
@@ -901,7 +919,7 @@ export default function ResultPhase({
           <p
             ref={roundRef}
             className="text-base font-semibold"
-            style={guessTopLeftStyle}
+            style={activeGuessTopLeftStyle}
           >
             {roundLabel}
           </p>
@@ -912,7 +930,7 @@ export default function ResultPhase({
             <p
               ref={selectionLabelRef}
               className="text-sm font-semibold opacity-90"
-              style={guessBottomLeftStyle}
+              style={activeGuessBottomLeftStyle}
             >
               {t("game.yourSelection")}
             </p>
@@ -922,7 +940,7 @@ export default function ResultPhase({
             <p
               ref={selectionValueRef}
               className="text-sm font-bold"
-              style={guessBottomLeftStyle}
+              style={activeGuessBottomLeftStyle}
             >
               {formatHsb(result.guess)}
             </p>
@@ -934,7 +952,7 @@ export default function ResultPhase({
             <p
               ref={scoreRef}
               className="whitespace-nowrap text-[clamp(4rem,18vw,4.5rem)] leading-[0.82] font-semibold tracking-normal tabular-nums sm:text-[6.3rem]"
-              style={guessTopRightStyle}
+              style={activeGuessTopRightStyle}
             >
               {formatScore(0)}
             </p>
@@ -944,7 +962,7 @@ export default function ResultPhase({
             ref={resultLineRef}
             className="mt-3 whitespace-normal break-normal text-xl leading-[1.08] font-semibold"
             style={{
-              ...guessTopRightStyle,
+              ...activeGuessTopRightStyle,
               opacity: 0,
               visibility: "hidden",
             }}
@@ -958,16 +976,16 @@ export default function ResultPhase({
         ref={targetSectionRef}
         className={`relative min-h-0 overflow-hidden p-6 sm:p-8 ${targetTone}`}
         style={{
-          background: targetBackground,
+          background: isSpotMode ? "transparent" : targetBackground,
           ...targetBottomLeftStyle,
         }}
       >
-        {isFlagColor(result.target) && (
+        {!isSpotMode && isFlagColor(result.target) && (
           <FlagOverlay color={result.target} />
         )}
-        {isBrandTargetResult && <BrandOverlay color={result.target} />}
+        {!isSpotMode && isBrandTargetResult && <BrandOverlay color={result.target} />}
 
-        {isCartoonTargetResult && (
+        {!isSpotMode && isCartoonTargetResult && (
           <CartoonOverlay
             color={result.target}
             variant="reference"

@@ -63,6 +63,7 @@ export default function GuessPhase({
   hintActive = false,
   hintsEnabled = true,
   onUseHint,
+  isSpotMode = false,
 }) {
   const { t } = useTranslation();
   const { enabled: isAdminModeEnabled } = useAdminMode();
@@ -91,6 +92,7 @@ export default function GuessPhase({
   const hintButtonCoreRef = useRef(null);
   const hintButtonRingRef = useRef(null);
   const hintIconRef = useRef(null);
+  const spotRef = useRef(null);
   const [timerRunning, setTimerRunning] = useState(false);
 
   const isGradientGuess = isGradientColor(guessColor);
@@ -805,17 +807,37 @@ export default function GuessPhase({
         ...gsap.utils.toArray("[role=slider], .guess-picker-track"),
       ].filter(Boolean);
 
-      gsap.to(targets, {
-        autoAlpha: 0,
-        duration: 0.52,
-        stagger: 0.025,
-        ease: "power2.in",
-        overwrite: "auto",
-      });
+      gsap.set(scopeRef.current, { pointerEvents: "none" });
+
+      if (isSpotMode && spotRef.current) {
+        gsap
+          .timeline()
+          .to(targets, {
+            autoAlpha: 0,
+            duration: 0.3,
+            stagger: 0.018,
+            ease: "power2.in",
+            overwrite: "auto",
+          })
+          .to(spotRef.current, {
+            left: "50%",
+            duration: 0.48,
+            ease: "expo.inOut",
+            overwrite: "auto",
+          });
+      } else {
+        gsap.to(targets, {
+          autoAlpha: 0,
+          duration: 0.52,
+          stagger: 0.025,
+          ease: "power2.in",
+          overwrite: "auto",
+        });
+      }
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [isExiting, usesShowcaseGuessLayout]);
+  }, [isExiting, isSpotMode, usesShowcaseGuessLayout]);
 
   useLayoutEffect(() => {
     if (!hintActive) return undefined;
@@ -971,7 +993,7 @@ export default function GuessPhase({
   const renderExternalControlWidgets = () => (
     <>
       <div
-        className={`flag-control-widget flag-control-widget--desktop ${
+        className={`flag-control-widget flag-control-widget--desktop showcase-control-widget ${
           !isShowcaseWidgetEntering ? "flag-control-widget--waiting" : ""
         } ${
           isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
@@ -982,7 +1004,7 @@ export default function GuessPhase({
       </div>
 
       <div
-        className={`flag-control-widget flag-control-widget--mobile ${
+        className={`flag-control-widget flag-control-widget--mobile showcase-control-widget ${
           !isShowcaseWidgetEntering ? "flag-control-widget--waiting" : ""
         } ${
           isShowcaseWidgetExiting ? "flag-control-widget--exiting" : ""
@@ -1238,6 +1260,20 @@ export default function GuessPhase({
             </div>
           )}
         </>
+      )}
+
+      {isSpotMode && (
+        <div
+          ref={spotRef}
+          className="pointer-events-none absolute top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `calc(50% + ${pickerWidth / 2}px)` }}
+        >
+          <span
+            className="block size-36 rounded-full sm:size-44"
+            style={{ background: colorToneHex(guessColor) }}
+            aria-hidden="true"
+          />
+        </div>
       )}
 
       <div

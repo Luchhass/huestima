@@ -65,9 +65,6 @@ export default function AppHeader() {
   const isDownloadRoute = pathname === "/download";
   const isNotificationsRoute = pathname === "/notifications";
   const isHistoryRoute = pathname === "/history" || pathname?.startsWith("/history/");
-  const isHomeRoute = GAME_FAMILY_OPTIONS.some((option) => pathname === option.href);
-  const showFullscreenToggle = isHomeRoute || isNotificationsRoute || isHistoryRoute;
-  const disableFullscreenToggle = isNotificationsRoute || isHistoryRoute;
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
@@ -611,11 +608,11 @@ export default function AppHeader() {
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
-          {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
+          <FullscreenToggle />
         </div>
 
         <div className="md:hidden">
-          {showFullscreenToggle && <FullscreenToggle disabled={disableFullscreenToggle} />}
+          <FullscreenToggle />
         </div>
 
         <button

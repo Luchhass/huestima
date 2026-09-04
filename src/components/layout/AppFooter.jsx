@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
-  playPageFade,
   playHomeToFooterExit,
   playCardToCardExit,
 } from "@/hooks/useFooterPageTransition";
@@ -71,9 +70,17 @@ export default function AppFooter() {
     } else if (href.startsWith("/download")) {
       await playHomeToFooterExit(card, content, { scaleCard: false });
     } else if (href.startsWith("/history")) {
-      await playPageFade(content, false);
+      await playHomeToFooterExit(card, content, {
+        scaleCard: false,
+        expandCard: false,
+        hideChrome: true,
+      });
     } else {
-      await playHomeToFooterExit(card, content);
+      await playHomeToFooterExit(card, content, {
+        scaleCard: false,
+        expandCard: false,
+        hideChrome: true,
+      });
     }
 
     router.push(href);

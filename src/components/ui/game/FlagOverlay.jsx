@@ -15,6 +15,7 @@ export default function FlagOverlay({
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
   const originalScenePath = color?.originalScenePath;
   const baseScenePath = color?.baseScenePath || color?.scenePath;
+  const sceneObjectPosition = color?.sceneObjectPosition || "50% 50%";
   const scenePlacementStyle =
     slice === "top"
       ? {
@@ -51,6 +52,7 @@ export default function FlagOverlay({
           sizes="(max-width: 640px) 100vw, 500px"
           unoptimized
           className={`object-cover ${isSurfaceReady ? "invisible" : "visible"}`}
+          style={{ objectPosition: sceneObjectPosition }}
         />
         {originalScenePath && baseScenePath && (
           <CartoonCanvas
@@ -67,6 +69,7 @@ export default function FlagOverlay({
               ]
             }
             color={color}
+            objectPosition={sceneObjectPosition}
             minRenderWidth={minRenderWidth}
             onReady={() => setIsSurfaceReady(true)}
           />

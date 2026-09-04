@@ -1,12 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 
 export const FOOTER_RETURN_KEY = "huestima-card-enter";
 export const ADMIN_HOME_RETURN_KEY = "huestima-admin-home-return";
 export const DOWNLOAD_RETURN_KEY = "huestima-download-return";
+export const FOOTER_FULLSCREEN_COLLAPSE_EVENT = "huestima-footer-fullscreen-collapse";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
 export const SCREEN_FADE_DURATION = 0.24;
@@ -218,24 +219,35 @@ export function playPageFade(scopeRef, visible) {
 export function playHomeToFooterExit(
   cardRef,
   contentRef,
-  { scaleCard = true } = {},
+  { scaleCard = true, expandCard = false, hideChrome = true } = {},
 ) {
   const card = asElement(cardRef);
   const content = asElement(contentRef);
-  const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+  const cardChildren = card
+    ? Array.from(card.children).filter((child) => child !== content)
+    : [];
+  const chrome = hideChrome
+    ? Array.from(document.querySelectorAll(APP_CHROME_SELECTOR))
+    : [];
 
   if (!card || !content) return Promise.resolve();
 
   if (prefersReducedMotion()) {
-    gsap.set([content, ...chrome], { autoAlpha: 0 });
-    if (scaleCard) gsap.set(card, { autoAlpha: 0 });
+    gsap.set([content, ...cardChildren, ...chrome], { autoAlpha: 0 });
+    if (expandCard) {
+      gsap.set(card, { autoAlpha: 1, scale: 8, backgroundColor: "#000000" });
+    } else if (scaleCard) gsap.set(card, { autoAlpha: 0 });
     return Promise.resolve();
   }
 
-  gsap.killTweensOf([card, content, ...chrome]);
+  gsap.killTweensOf([card, content, ...cardChildren, ...chrome]);
   gsap.set(content, { autoAlpha: 1 });
   gsap.set(chrome, { autoAlpha: 1, transition: "none" });
-  gsap.set(card, { autoAlpha: 1, scale: 1 });
+  gsap.set(card, {
+    autoAlpha: 1,
+    scale: 1,
+    ...(expandCard ? { backgroundColor: "#000000" } : {}),
+  });
 
   return new Promise((resolve) => {
     let settled = false;
@@ -251,13 +263,34 @@ export function playHomeToFooterExit(
         onComplete: settle,
         onInterrupt: settle,
       })
-      .to(content, {
+      .to([content, ...cardChildren], {
         autoAlpha: 0,
         duration: SCREEN_FADE_DURATION,
         ease: SCREEN_FADE_EASE,
       });
 
-    if (scaleCard) {
+    if (chrome.length) {
+      timeline.to(chrome, {
+        autoAlpha: 0,
+        duration: SCREEN_FADE_DURATION,
+        ease: SCREEN_FADE_EASE,
+      }, "<");
+    }
+
+    if (expandCard) {
+      const rect = card.getBoundingClientRect();
+      const scale = Math.max(
+        (window.innerWidth * 1.12) / Math.max(1, rect.width),
+        (window.innerHeight * 1.12) / Math.max(1, rect.height),
+      );
+      timeline.to(card, {
+        scale,
+        duration: CARD_SCALE_DURATION,
+        ease: CARD_SCALE_EASE,
+        transformOrigin: "50% 50%",
+        backgroundColor: "#000000",
+      });
+    } else if (scaleCard) {
       timeline.to(card, {
         scale: 0.001,
         duration: CARD_SCALE_DURATION,
@@ -266,30 +299,40 @@ export function playHomeToFooterExit(
       });
     }
 
-    timeline.to(chrome, {
-      autoAlpha: 0,
-      duration: SCREEN_FADE_DURATION,
-      ease: SCREEN_FADE_EASE,
-    });
   });
 }
 
 export function playFooterReturnEntry(cardRef, { scaleCard = true } = {}) {
   const card = asElement(cardRef);
-  const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+  const content = card?.querySelector("[data-route-transition-scope]");
+  const cardChildren = card
+    ? Array.from(card.children).filter((child) => child !== content)
+    : [];
 
   if (!card) return Promise.resolve();
 
   if (prefersReducedMotion()) {
-    gsap.set(chrome, { clearProps: "opacity,visibility" });
+    gsap.set(cardChildren, { clearProps: "opacity,visibility" });
     gsap.set(card, { clearProps: "opacity,visibility,transform" });
     return Promise.resolve();
   }
 
-  gsap.killTweensOf([card, ...chrome]);
-  gsap.set(chrome, { autoAlpha: 0, transition: "none" });
+  const rect = card.getBoundingClientRect();
+  const coverScale = Math.max(
+    (window.innerWidth * 1.12) / Math.max(1, rect.width),
+    (window.innerHeight * 1.12) / Math.max(1, rect.height),
+  );
+
+  gsap.killTweensOf([card, ...cardChildren]);
+  gsap.set(cardChildren, { autoAlpha: 0 });
   gsap.set(card, scaleCard
-    ? { autoAlpha: 1, scale: 0.001, transformOrigin: "50% 50%" }
+    ? {
+        autoAlpha: 1,
+        scale: coverScale,
+        backgroundColor: "#000000",
+        transformOrigin: "50% 50%",
+        transition: "none",
+      }
     : { autoAlpha: 1, scale: 1 });
 
   return new Promise((resolve) => {
@@ -300,17 +343,10 @@ export function playFooterReturnEntry(cardRef, { scaleCard = true } = {}) {
       resolve();
     };
 
-    const timeline = gsap
-      .timeline({
+    const timeline = gsap.timeline({
         defaults: { overwrite: "auto" },
         onComplete: settle,
         onInterrupt: settle,
-      })
-      .to(chrome, {
-        autoAlpha: 1,
-        duration: SCREEN_FADE_DURATION,
-        ease: SCREEN_FADE_REVERSE_EASE,
-        clearProps: "opacity,visibility,transition",
       });
 
     if (scaleCard) {
@@ -318,10 +354,14 @@ export function playFooterReturnEntry(cardRef, { scaleCard = true } = {}) {
         scale: 1,
         duration: CARD_SCALE_DURATION,
         ease: CARD_SCALE_EASE,
-        clearProps: "transform",
+        clearProps: "transform,transition",
+      });
+      timeline.set(cardChildren, {
+        clearProps: "opacity,visibility",
       });
     } else {
       timeline.set(card, { clearProps: "opacity,visibility,transform,transition" });
+      timeline.set(cardChildren, { clearProps: "opacity,visibility" });
     }
   });
 }
@@ -330,22 +370,22 @@ export function useFooterPageTransition(scopeRef) {
   const router = useRouter();
   const isLeavingRef = useRef(false);
 
-  useLayoutEffect(() => {
-    const scope = asElement(scopeRef);
-    if (!scope) return undefined;
-
-    gsap.set(scope, { autoAlpha: 0 });
-    void playPageFade(scope, true);
-
-    return () => gsap.killTweensOf(scope);
-  }, [scopeRef]);
-
   const leave = async (href, { returnToHome = true } = {}) => {
     if (isLeavingRef.current) return;
     isLeavingRef.current = true;
 
     if (returnToHome) markFooterReturn();
-    await playPageFade(scopeRef, false);
+    const scope = asElement(scopeRef);
+    const content = scope?.querySelector("[data-footer-page-content]") || scope;
+    const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+    await Promise.all([
+      playPageFade(content, false),
+      chrome.length ? playPageFade(chrome, false) : Promise.resolve(),
+    ]);
+    window.dispatchEvent(new Event(FOOTER_FULLSCREEN_COLLAPSE_EVENT));
+    if (!prefersReducedMotion()) {
+      await new Promise((resolve) => window.setTimeout(resolve, 700));
+    }
     router.push(href);
   };
 

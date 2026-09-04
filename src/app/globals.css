@@ -108,6 +108,12 @@ input {
   }
 }
 
+.footer-page-dark {
+  --foreground: #ffffff;
+  --background: #000000;
+  --surface: #000000;
+}
+
 @keyframes rgb-disk-spin {
   from {
     transform: translate(-50%, -50%) rotate(0deg);
@@ -301,10 +307,12 @@ input {
     top: 50%;
     left: 50%;
     z-index: 0;
-    width: 100%;
-    height: 100%;
+    /* Oversize a square color plane so rotating it can never uncover the
+       ends of wide pill buttons. The button itself provides the clipping. */
+    width: 160%;
+    height: auto;
     aspect-ratio: 1;
-    border-radius: 999px;
+    border-radius: 0;
     opacity: 0;
     background:
       radial-gradient(
@@ -400,13 +408,13 @@ input {
     grid-template-columns: minmax(0, 1.08fr) minmax(20rem, 0.92fr);
     gap: 1rem;
     width: min(100%, 68rem);
-    height: min(78dvh, 40rem);
+    height: min(520px, calc(100dvh - 88px));
   }
 
   .admin-configuration-card {
     width: min(100%, 31.25rem);
     min-height: 20rem;
-    height: min(32.5rem, calc(100dvh - 5.5rem));
+    height: min(520px, calc(100dvh - 88px));
     border-radius: 26px;
     box-shadow: var(--app-card-shadow);
     overflow: hidden;
@@ -456,6 +464,13 @@ input {
 
   .admin-workspace-title--primary {
     font-size: clamp(2.3rem, 9.2vw, 3.2rem);
+  }
+
+  .admin-workspace-title--card {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(2rem, 7vw, 3.25rem);
+    line-height: 0.95;
   }
 
   .admin-home-title {
@@ -560,6 +575,59 @@ input {
 
   .admin-operations-card--primary [data-screen-reveal] {
     max-width: 42rem;
+  }
+
+  .admin-configuration-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem 3rem;
+  }
+
+  .admin-configuration-column {
+    display: grid;
+    align-content: start;
+    gap: 2.5rem;
+  }
+
+  .admin-configuration-family {
+    min-width: 0;
+  }
+
+  .admin-configuration-family-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.2);
+  }
+
+  .admin-configuration-family-title {
+    min-width: 0;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 650;
+  }
+
+  .admin-configuration-modes {
+    display: grid;
+  }
+
+  .admin-configuration-mode {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.55rem;
+    padding: 0.2rem 0 0.2rem 0.85rem;
+    color: rgb(255 255 255 / 0.68);
+    font-size: 0.9rem;
+  }
+
+  .admin-configuration-mode > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .admin-operations-card--primary .admin-toggle-list {
@@ -706,7 +774,7 @@ input {
 
   .admin-confirm-modal {
     transform-origin: center center;
-    animation: admin-confirm-modal-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: none !important;
     will-change: transform, opacity;
   }
 
@@ -743,7 +811,7 @@ input {
   }
 
   .admin-confirm-modal--closing {
-    animation: admin-confirm-modal-exit 0.28s cubic-bezier(0.7, 0, 0.84, 0) both;
+    animation: none !important;
     pointer-events: none;
   }
 
@@ -955,6 +1023,44 @@ input {
     }
   }
 
+  .showcase-control-widget:not(.flag-control-widget--waiting):not(.flag-control-widget--exiting) {
+    transform-origin: right center;
+    animation: showcase-widget-reveal 0.54s cubic-bezier(0.87, 0, 0.13, 1) both;
+  }
+
+  .showcase-control-widget.flag-control-widget--exiting {
+    transform-origin: right center;
+    animation: showcase-widget-exit 0.54s cubic-bezier(0.87, 0, 0.13, 1) both;
+  }
+
+  .flag-game-card-shell.showcase-game-card-shell--exiting {
+    transform: translateY(0);
+  }
+
+  @keyframes showcase-widget-reveal {
+    from {
+      opacity: 1;
+      transform: translateZ(0) scaleX(0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateZ(0) scaleX(1);
+    }
+  }
+
+  @keyframes showcase-widget-exit {
+    from {
+      opacity: 1;
+      transform: translateZ(0) scaleX(1);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateZ(0) scaleX(0);
+    }
+  }
+
   @keyframes flag-widget-exit {
     from {
       clip-path: inset(0 0 0 0 round 22px);
@@ -982,6 +1088,10 @@ input {
 
     .flag-control-widget--mobile {
       display: none;
+    }
+
+    .flag-game-card-shell.showcase-game-card-shell--exiting {
+      transform: translateX(0);
     }
   }
 
@@ -1043,6 +1153,30 @@ input {
   .route-transition-footer > a:nth-child(6)::before {
     margin-left: 0.15rem;
     margin-right: 0.15rem;
+  }
+
+  @media (min-width: 768px) {
+    .route-transition-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .route-transition-footer-row {
+      display: contents;
+    }
+
+    .route-transition-footer-row + .route-transition-footer-row
+      .route-transition-footer-item:first-child::before {
+      content: "·";
+      color: rgb(113 113 122);
+      font-size: 1.25em;
+      font-weight: 700;
+      line-height: 1;
+      margin-right: 0.75rem;
+    }
   }
 
   @media (max-width: 639px) {
@@ -1699,16 +1833,6 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
 }
 
 /* Cartoon home easter egg: a compact Omnitrix-style transformation flash. */
-.cartoon-easter-egg-trigger {
-  right: -2.5rem;
-  bottom: 0;
-  width: 15.75rem;
-  height: 20.5rem;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
 .cartoon-home-character {
   position: relative;
   width: 100%;
@@ -1716,6 +1840,8 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
   filter: drop-shadow(0 14px 24px rgb(0 0 0 / 38%));
   animation: cartoon-character-materialize 620ms cubic-bezier(0.16, 0.84, 0.26, 1) both;
   will-change: opacity, filter, clip-path;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cartoon-home-character-preload {
@@ -2081,14 +2207,6 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
   }
 }
 
-@media (min-width: 640px) {
-  .cartoon-easter-egg-trigger {
-    right: -2.5rem;
-    width: 18rem;
-    height: 23.5rem;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .cartoon-home-character,
   .cartoon-transform-burst,
@@ -2107,6 +2225,11 @@ html.dark[data-fullscreen-mode="on"] .app-header[data-nav-open="true"] .header-c
   transform-origin: 0 0;
   animation: home-color-spectrum-slide 12s linear infinite paused;
   will-change: transform;
+}
+
+.home-color-spectrum__shell {
+  transform-box: view-box;
+  transform-origin: center;
 }
 
 .home-color-spectrum--active .home-color-spectrum__track {

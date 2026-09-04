@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import { adminRequest } from "@/lib/adminApi";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
@@ -11,7 +11,6 @@ import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
-  playScreenFadeOut,
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
@@ -20,12 +19,9 @@ import { GAME_FAMILY_MODE_IDS, GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import {
   markAdminHomeReturn,
-  playCardToCardExit,
 } from "@/hooks/useFooterPageTransition";
 
-const EXPANDED_REVEAL_DELAY = 320;
 const ADMIN_CARD_SHIFT_DURATION_MS = 720;
-const ADMIN_TRANSITION_REVEAL_GUARD_DELAY = 2000;
 const ADMIN_CARD_SHIFT_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
 const ADMIN_CARD_RADIUS = 26;
 const SIDE_REVEAL_FRAME_COUNT = 60;
@@ -145,6 +141,18 @@ async function fadeWorkspaceContents(scope) {
   items.forEach((item) => {
     item.style.opacity = "0";
   });
+  animations.forEach((animation) => animation.cancel());
+}
+
+async function fadeAdminScreenContents(scope) {
+  if (!scope) return;
+  const items = Array.from(scope.querySelectorAll("[data-screen-reveal]"));
+  if (!items.length) return;
+  const animations = items.map((item) => item.animate(
+    [{ opacity: 1 }, { opacity: 0 }],
+    { duration: 220, easing: "cubic-bezier(0.4, 0, 0.2, 1)", fill: "both" },
+  ));
+  await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
   animations.forEach((animation) => animation.cancel());
 }
 
@@ -383,11 +391,9 @@ export default function AdminPage() {
   const { operations, ready: operationsReady } = useSiteOperations();
   const [ready, setReady] = useState(false);
   const [panel, setPanel] = useState(ADMIN_PANELS.HOME);
+  const [revealKey, setRevealKey] = useState(0);
   const [workspaceSidePhase, setWorkspaceSidePhase] = useState("waiting");
   const [isPrimaryCardHidden, setIsPrimaryCardHidden] = useState(false);
-  const [screenRevealDelay, setScreenRevealDelay] = useState(
-    EXPANDED_REVEAL_DELAY,
-  );
   const [announcement, setAnnouncement] = useState("");
   const [operationBusy, setOperationBusy] = useState("");
   const [systemSummary, setSystemSummary] = useState(null);
@@ -403,14 +409,9 @@ export default function AdminPage() {
   );
   const scopeRef = useRef(null);
   const isChangingPanelRef = useRef(false);
-  useScreenReveal(scopeRef, [ready, panel, locale], {
-    delay: screenRevealDelay,
+  useScreenReveal(scopeRef, [ready, revealKey, locale], {
     defer: !ready,
-    synchronous: false,
-    duration: panel !== ADMIN_PANELS.HOME ? 0.72 : undefined,
-    ease: panel !== ADMIN_PANELS.HOME ? "power3.out" : undefined,
   });
-
   useEffect(() => {
     let active = true;
     let redirecting = false;
@@ -418,7 +419,6 @@ export default function AdminPage() {
     const redirectToLogin = async () => {
       if (redirecting) return;
       redirecting = true;
-      await playScreenFadeOut(scopeRef, { duration: 0.24 });
       if (active) router.replace("/admin/login");
     };
 
@@ -500,114 +500,69 @@ export default function AdminPage() {
 
   async function changePanel(nextPanel) {
     if (nextPanel === panel || isChangingPanelRef.current) return;
+    const usesPanelTransition =
+      nextPanel === ADMIN_PANELS.OPERATIONS ||
+      nextPanel === ADMIN_PANELS.INSIGHTS ||
+      panel === ADMIN_PANELS.OPERATIONS ||
+      panel === ADMIN_PANELS.INSIGHTS;
     isChangingPanelRef.current = true;
-    const isOpeningWorkspace = panel === ADMIN_PANELS.HOME;
-    const currentPrimary = isOpeningWorkspace
+    if (!usesPanelTransition) {
+      setPanel(nextPanel);
+      setRevealKey((key) => key + 1);
+      isChangingPanelRef.current = false;
+      return;
+    }
+
+    const currentPrimary = panel === ADMIN_PANELS.HOME
       ? scopeRef.current?.closest(".game-card-shell")
-      : scopeRef.current?.querySelector("[data-admin-primary-card]") ||
-        scopeRef.current;
-    const isClosingSplitWorkspace =
-      !isOpeningWorkspace && panel !== ADMIN_PANELS.CONFIGURATION;
-    const currentSide = isClosingSplitWorkspace
+      : scopeRef.current?.querySelector("[data-admin-primary-card]") || scopeRef.current;
+    const currentSide = panel !== ADMIN_PANELS.HOME && panel !== ADMIN_PANELS.CONFIGURATION
       ? scopeRef.current?.querySelector("[data-admin-workspace-side]")
       : null;
-    const currentPrimaryRect = currentPrimary?.getBoundingClientRect();
-    const currentSideRect = currentSide?.getBoundingClientRect();
-    const currentGap = currentPrimaryRect && currentSideRect
-      ? currentSideRect.left - currentPrimaryRect.right
-      : 0;
-    let transitionCard = null;
-    let transitionSide = null;
-
+    let transitionCard = createCardTransitionClone(currentPrimary);
+    let transitionSide = currentSide ? createSideTransitionClone(currentSide) : null;
     try {
-      if (isClosingSplitWorkspace) {
-        await fadeWorkspaceContents(scopeRef.current);
-      } else {
-        const currentContent = isOpeningWorkspace
-          ? scopeRef.current
-          : currentPrimary?.querySelector("[data-admin-primary-content]") ||
-            scopeRef.current;
-        await playScreenFadeOut(currentContent, { duration: 0.24 });
-      }
-
-      transitionCard = createCardTransitionClone(currentPrimary);
-      transitionSide = isClosingSplitWorkspace
-        ? createSideTransitionClone(currentSide)
-        : null;
       setIsPrimaryCardHidden(true);
-      setScreenRevealDelay(ADMIN_TRANSITION_REVEAL_GUARD_DELAY);
       setWorkspaceSidePhase("waiting");
       setPanel(nextPanel);
       await waitForPaint();
-
       const nextPrimary = nextPanel === ADMIN_PANELS.HOME
         ? scopeRef.current?.closest(".game-card-shell")
-        : scopeRef.current?.querySelector("[data-admin-primary-card]") ||
-          scopeRef.current;
-
-      const isSplitWorkspace =
-        nextPanel === ADMIN_PANELS.OPERATIONS ||
-        nextPanel === ADMIN_PANELS.INSIGHTS;
-      const nextSide = isSplitWorkspace
+        : scopeRef.current?.querySelector("[data-admin-primary-card]") || scopeRef.current;
+      const nextSide = nextPanel === ADMIN_PANELS.OPERATIONS || nextPanel === ADMIN_PANELS.INSIGHTS
         ? scopeRef.current?.querySelector("[data-admin-workspace-side]")
         : null;
-      const primaryRect = nextPrimary?.getBoundingClientRect();
-      const sideRect = nextSide?.getBoundingClientRect();
-      const finalGap = primaryRect && sideRect
-        ? sideRect.left - primaryRect.right
-        : 0;
-      const sideStartTranslateX = transitionCard?.sourceRect && sideRect
-        ? transitionCard.sourceRect.right + finalGap - sideRect.left
-        : 0;
-      const sideStartTranslateY = transitionCard?.sourceRect && sideRect
-        ? transitionCard.sourceRect.top - sideRect.top
-        : 0;
-      const sideStartScaleY = transitionCard?.sourceRect && sideRect
-        ? transitionCard.sourceRect.height / Math.max(sideRect.height, 1)
-        : 1;
-      const closingSideTargetLeft = transitionSide && primaryRect
-        ? primaryRect.right + currentGap
-        : null;
-      const closingSideTargetTop = transitionSide && primaryRect
-        ? primaryRect.top
-        : null;
-      const cardMotion = animateCardClone(transitionCard, nextPrimary);
-      let sideMotion = Promise.resolve();
-
-      if (isSplitWorkspace) {
-        sideMotion = animateWorkspaceSide(nextSide, {
-          startTranslateX: sideStartTranslateX,
-          startTranslateY: sideStartTranslateY,
-          startScaleY: sideStartScaleY,
-          duration: ADMIN_CARD_SHIFT_DURATION_MS,
-          onComplete: () => setWorkspaceSidePhase("settled"),
-        });
-      } else if (
-        transitionSide &&
-        Number.isFinite(closingSideTargetLeft) &&
-        Number.isFinite(closingSideTargetTop)
-      ) {
-        sideMotion = animateSideCloneToPoint(
-          transitionSide,
-          closingSideTargetLeft,
-          closingSideTargetTop,
-          primaryRect.height,
-        );
-      }
-
-      await Promise.all([cardMotion, sideMotion]);
+      const nextPrimaryRect = nextPrimary?.getBoundingClientRect();
+      const nextSideRect = nextSide?.getBoundingClientRect();
+      const sideMotion = nextSide
+        ? animateWorkspaceSide(nextSide, {
+            startTranslateX: transitionCard?.sourceRect && nextSideRect && nextPrimaryRect
+              ? transitionCard.sourceRect.right + (nextSideRect.left - nextPrimaryRect.right) - nextSideRect.left
+              : 0,
+            startTranslateY: transitionCard?.sourceRect && nextSideRect
+              ? transitionCard.sourceRect.top - nextSideRect.top
+              : 0,
+            startScaleY: transitionCard?.sourceRect && nextSideRect
+              ? transitionCard.sourceRect.height / Math.max(nextSideRect.height, 1)
+              : 1,
+            onComplete: () => setWorkspaceSidePhase("settled"),
+          })
+        : transitionSide && nextPrimaryRect
+          ? animateSideCloneToPoint(transitionSide, nextPrimaryRect.right, nextPrimaryRect.top, nextPrimaryRect.height)
+          : Promise.resolve();
+      await Promise.all([animateCardClone(transitionCard, nextPrimary), sideMotion]);
       setIsPrimaryCardHidden(false);
       await waitForPaint();
       transitionCard?.clone.remove();
-      transitionCard = null;
       transitionSide?.clone.remove();
+      transitionCard = null;
       transitionSide = null;
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     } finally {
       transitionCard?.clone.remove();
       transitionSide?.clone.remove();
       setIsPrimaryCardHidden(false);
-      setScreenRevealDelay(EXPANDED_REVEAL_DELAY);
+      setWorkspaceSidePhase("settled");
       isChangingPanelRef.current = false;
     }
   }
@@ -618,11 +573,6 @@ export default function AdminPage() {
       const response = await adminRequest("/logout", { method: "POST", body: "{}" });
       if (!response.ok) throw new Error(t("admin.messages.logoutFailed"));
       disableAdmin();
-      const card = scopeRef.current?.closest(".game-card-shell");
-      await playCardToCardExit(card, scopeRef, {
-        targetExpanded: false,
-        hideChrome: false,
-      });
       router.replace("/admin/login");
     } catch (error) {
       pushNotification(error.message, "error");
@@ -630,19 +580,11 @@ export default function AdminPage() {
   }
 
   function closeLogoutConfirm() {
-    setIsLogoutConfirmClosing(true);
-    window.setTimeout(() => {
-      setIsLogoutConfirmOpen(false);
-      setIsLogoutConfirmClosing(false);
-    }, 280);
+    setIsLogoutConfirmOpen(false);
+    setIsLogoutConfirmClosing(false);
   }
 
   async function goHome() {
-    const card = scopeRef.current?.closest(".game-card-shell");
-    await playCardToCardExit(card, scopeRef, {
-      targetExpanded: false,
-      hideChrome: false,
-    });
     markAdminHomeReturn();
     router.replace("/color");
   }
@@ -735,11 +677,8 @@ export default function AdminPage() {
   }
 
   function closeMultiplayerConfirm() {
-    setIsMultiplayerConfirmClosing(true);
-    window.setTimeout(() => {
-      setIsMultiplayerConfirmOpen(false);
-      setIsMultiplayerConfirmClosing(false);
-    }, 280);
+    setIsMultiplayerConfirmOpen(false);
+    setIsMultiplayerConfirmClosing(false);
   }
 
   async function confirmMultiplayer() {
@@ -768,11 +707,8 @@ export default function AdminPage() {
   }
 
   function closeMaintenanceConfirm() {
-    setIsMaintenanceConfirmClosing(true);
-    window.setTimeout(() => {
-      setIsMaintenanceConfirmOpen(false);
-      setIsMaintenanceConfirmClosing(false);
-    }, 280);
+    setIsMaintenanceConfirmOpen(false);
+    setIsMaintenanceConfirmClosing(false);
   }
 
   async function confirmMaintenance() {
@@ -931,9 +867,6 @@ export default function AdminPage() {
                   <h1 className="admin-home-title whitespace-nowrap">
                     {t("admin.home.title")}
                   </h1>
-                  <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:text-[0.98rem]">
-                    {t("admin.home.description")}
-                  </p>
                 </div>
 
                 <nav
@@ -1144,29 +1077,44 @@ function AdminGameConfigurationWorkspace({
             <p className="mt-4 text-sm font-medium leading-[1.35] text-white/65 sm:text-base">{t("admin.configuration.description")}</p>
           </div>
           <div data-screen-reveal className="scrollbar-hidden mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
-            {GAME_FAMILY_OPTIONS.map(({ id }) => {
-              const family = configuration[id] || { enabled: true, modes: {} };
-              const modes = GAME_FAMILY_MODE_IDS[id] || [];
-              return (
-                <div data-screen-reveal key={id} className="py-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-lg font-semibold">{t(`gameFamily.${id}`)}</p>
-                    <AdminSwitch checked={family.enabled} disabled={Boolean(operationBusy)} onClick={() => onToggle(id)} ariaLabel={`${t(`gameFamily.${id}`)} ${t("admin.configuration.gameAria")}`} />
+            <div className="admin-configuration-grid">
+            {[0, 1].map((columnIndex) => (
+              <div className="admin-configuration-column" key={columnIndex}>
+              {GAME_FAMILY_OPTIONS.filter(({ id }, index) => {
+                if (id === "team") return columnIndex === 0;
+                if (id === "cartoon") return columnIndex === 1;
+                return index % 2 === columnIndex;
+              }).sort((a, b) => {
+                const order = columnIndex === 0
+                  ? ["color", "team"]
+                  : ["flag", "cartoon", "brand"];
+                return order.indexOf(a.id) - order.indexOf(b.id);
+              }).map(({ id }) => {
+                const family = configuration[id] || { enabled: true, modes: {} };
+                const modes = GAME_FAMILY_MODE_IDS[id] || [];
+                return (
+                  <div data-screen-reveal key={id} className="admin-configuration-family">
+                  <div className="admin-configuration-family-header">
+                    <p className="admin-configuration-family-title">{t(`gameFamily.${id}`)}</p>
+                    <AdminSwitch size="large" checked={family.enabled} disabled={Boolean(operationBusy)} onClick={() => onToggle(id)} ariaLabel={`${t(`gameFamily.${id}`)} ${t("admin.configuration.gameAria")}`} />
                   </div>
-                  <div className="mt-3 grid gap-2 pl-3">
+                  <div className="admin-configuration-modes">
                     {modes.map((modeId) => {
                       const mode = GAME_MODE_OPTIONS.find((option) => option.id === modeId);
                       return (
-                        <div data-screen-reveal key={modeId} className="flex items-center justify-between gap-4 text-sm text-white/65">
+                        <div key={modeId} className="admin-configuration-mode">
                           <span>{t(`gameMode.${modeId}`) || mode?.id || modeId}</span>
-                          <AdminSwitch checked={family.modes?.[modeId] !== false} disabled={!family.enabled || Boolean(operationBusy)} onClick={() => onToggle(id, modeId)} ariaLabel={`${t(`gameMode.${modeId}`)} ${t("admin.configuration.modeAria")}`} />
+                          <AdminSwitch type="check" size="small" checked={family.modes?.[modeId] !== false} disabled={!family.enabled || Boolean(operationBusy)} onClick={() => onToggle(id, modeId)} ariaLabel={`${t(`gameMode.${modeId}`)} ${t("admin.configuration.modeAria")}`} />
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+              </div>
+            ))}
+            </div>
           </div>
         </section>
       </div>
@@ -1287,7 +1235,7 @@ function AdminOperationsWorkspace({
             </button>
             <div data-screen-reveal className="admin-card-header flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.operations.announcementTitle")}</h2>
+                <h2 className="admin-workspace-title admin-workspace-title--card">{t("admin.operations.announcementTitle")}</h2>
                 <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/65 sm:mt-4 sm:text-[0.98rem]">{t("admin.operations.announcementDescription")}</p>
               </div>
             </div>
@@ -1319,11 +1267,6 @@ function AdminOperationsWorkspace({
 
           <div className="admin-side-card-frame">
             <section className="admin-operations-card admin-operations-card--cheat admin-panel-card admin-status-card flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
-              <div data-screen-reveal className="admin-card-header flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="admin-workspace-title admin-workspace-title--compact">{t("admin.operations.currentAnnouncementTitle")}</h2>
-                </div>
-              </div>
               <div data-screen-reveal className="admin-card-body mt-5 flex min-h-0 flex-1 flex-col">
                 {operations.announcement ? (
                   <div className="flex items-start justify-between gap-4 py-4">
@@ -1374,15 +1317,6 @@ function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale,
       <div ref={scopeRef} data-route-transition-scope className="admin-operations-layout">
         <section data-admin-primary-card className={`admin-operations-card admin-operations-card--primary relative min-h-0 overflow-hidden bg-black p-6 text-white sm:p-8 ${primaryHidden ? "admin-primary-card--waiting" : ""}`}>
           <div data-admin-primary-content className="relative flex h-full min-h-0 flex-col">
-          <button
-            type="button"
-            aria-label={t("admin.common.back")}
-            onClick={onClose}
-            className="absolute right-0 top-0 z-20 grid size-11 place-items-center rounded-full text-white/70 transition-opacity hover:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          >
-            <X size={25} strokeWidth={1.8} />
-          </button>
-
           <AdminPanelHeader title={t("admin.insights.title")} description={t("admin.insights.description")} />
 
           <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3">
@@ -1408,6 +1342,7 @@ function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale,
               className="admin-operations-card--announcement"
               t={t}
               live={live}
+              onClose={onClose}
             />
           </div>
 
@@ -1435,14 +1370,14 @@ function InsightBarRow({ label, value, maxValue, color }) {
         <span className="text-xs font-semibold uppercase tracking-[0.1em] text-white/45">{label}</span>
         <strong className="text-2xl font-semibold leading-none tabular-nums text-white">{Number.isFinite(value) ? value : "–"}</strong>
       </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${width}%`, backgroundColor: color }} />
       </div>
     </div>
   );
 }
 
-function FamilyPieCard({ className, t, live }) {
+function FamilyPieCard({ className, t, live, onClose }) {
   const palette = ["#34d399", "#60a5fa", "#fbbf24", "#f472b6"];
   const metrics = [
     { key: "online", value: live.onlineVisitors },
@@ -1461,7 +1396,15 @@ function FamilyPieCard({ className, t, live }) {
   const background = stops.length ? `conic-gradient(${stops.join(", ")})` : "rgba(255,255,255,0.1)";
 
   return (
-    <section className={`admin-operations-card admin-panel-card ${className} flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
+    <section className={`admin-operations-card admin-panel-card ${className} relative flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
+      <button
+        type="button"
+        aria-label={t("admin.common.back")}
+        onClick={onClose}
+        className="admin-panel-close absolute right-5 top-5 z-20 grid size-10 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+      >
+        <X size={22} strokeWidth={1.8} />
+      </button>
       <div data-screen-reveal>
         <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.insights.liveActivity")}</h2>
       </div>
@@ -1502,11 +1445,7 @@ function RecentGamesCard({ className, t, locale, games }) {
 
   return (
     <section className={`admin-operations-card admin-panel-card ${className} flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
-      <div data-screen-reveal>
-        <h2 className="admin-workspace-title admin-workspace-title--secondary">{t("admin.insights.recentGames")}</h2>
-        <p className="mt-3 text-[0.92rem] font-medium leading-[1.28] text-white/65 sm:text-[0.98rem]">{t("admin.insights.recentGamesDescription")}</p>
-      </div>
-      <div data-screen-reveal className="scrollbar-hidden mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div data-screen-reveal className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto">
         {games.length ? games.map((game, index) => (
           <div key={`${game.roomCode}-${game.createdAt}-${index}`} className="flex items-center justify-between gap-4 border-b border-white/10 py-2.5 last:border-b-0">
             <div className="min-w-0">
@@ -1544,7 +1483,7 @@ function formatUptime(seconds, t) {
 function AdminPanelHeader({ title, description }) {
   return (
     <div data-screen-reveal className="max-w-none pr-12">
-      <h1 className="admin-workspace-title admin-workspace-title--primary whitespace-nowrap">
+      <h1 className="admin-workspace-title admin-workspace-title--card">
         {title}
       </h1>
       <p className="mt-3.5 max-w-[36.75rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:text-[0.98rem]">
@@ -1656,7 +1595,9 @@ function AdminToggleRow({
   );
 }
 
-function AdminSwitch({ checked, disabled, onClick, ariaLabel, danger = false }) {
+function AdminSwitch({ checked, disabled, onClick, ariaLabel, danger = false, size = "large", type = "switch" }) {
+  const isSmall = size === "small";
+  const isCheck = type === "check";
   return (
     <button
       type="button"
@@ -1665,7 +1606,7 @@ function AdminSwitch({ checked, disabled, onClick, ariaLabel, danger = false }) 
       aria-label={ariaLabel}
       disabled={disabled}
       onClick={onClick}
-      className={`relative h-8 w-14 shrink-0 rounded-full border-2 p-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`${isCheck ? "grid size-6 place-items-center rounded-md border" : `relative rounded-full border-2 ${isSmall ? "h-7 w-12 p-1" : "h-8 w-14 p-1"}`} shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-50 ${
         checked
           ? danger
             ? "border-red-400 bg-red-400"
@@ -1673,7 +1614,11 @@ function AdminSwitch({ checked, disabled, onClick, ariaLabel, danger = false }) 
           : "border-white/50 bg-transparent"
       }`}
     >
-      <span className={`block size-5 rounded-full transition-transform ${checked ? "translate-x-6 bg-black" : "translate-x-0 bg-white/60"}`} />
+      {isCheck ? (
+        checked && <Check size={17} strokeWidth={3} className="text-black" />
+      ) : (
+        <span className={`block rounded-full transition-transform ${isSmall ? "size-[1.125rem]" : "size-5"} ${checked ? (isSmall ? "translate-x-5" : "translate-x-6") + " bg-black" : "translate-x-0 bg-white/60"}`} />
+      )}
     </button>
   );
 }

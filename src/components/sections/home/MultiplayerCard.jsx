@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   Globe2,
-  Images,
   LoaderCircle,
   Lock,
   LogIn,
@@ -666,7 +665,7 @@ export default function MultiplayerCard({
       >
         <h1
           data-game-mode-shock-target
-          className="text-[clamp(2.3rem,9.2vw,3.2rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.05rem]"
+          className="whitespace-nowrap text-[clamp(2.05rem,8vw,3.1rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[3.75rem]"
         >
           {panel === PANELS.CREATE
             ? t("setup.createLobbyTitle")
@@ -767,8 +766,8 @@ export default function MultiplayerCard({
               />
 
               {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag" || cleanGameFamily === "team") && (
-                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="rgb-hover-button card-action-height inline-flex w-14 shrink-0 items-center justify-center rounded-full border border-white/20 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                  <Images className="relative z-10 size-5" strokeWidth={2} />
+                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="shrink-0 px-1 text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                  {t("common.choosePools")}
                 </button>
               )}
 

@@ -66,6 +66,7 @@ export const GAME_MODE_IDS = {
   SPRINT: "sprint",
   CARTOON: "cartoon",
   DUEL: "duel",
+  SPOT: "spot",
 };
 
 export const DEFAULT_GAME_MODE_ID = GAME_MODE_IDS.NORMAL;
@@ -76,6 +77,13 @@ export const GAME_MODE_OPTIONS = [
     label: "Classic",
     description: "Five seconds to memorize each color.",
     revealDurationMs: MEMORIZE_DURATION_MS,
+  },
+  {
+    id: GAME_MODE_IDS.SPOT,
+    label: "Spot",
+    description: "Match the color shown in the center spot.",
+    revealDurationMs: 0,
+    lockedDifficultyId: DIFFICULTY_IDS.HARD,
   },
   {
     id: GAME_MODE_IDS.ENDLESS,

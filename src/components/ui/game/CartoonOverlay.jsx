@@ -43,12 +43,13 @@ export default function CartoonOverlay({
 }) {
   const isSceneImage = Boolean(color?.scenePath);
   const pulseRef = useRef(null);
-  const [readySurfacePath, setReadySurfacePath] = useState(null);
-  const [hasImageError, setHasImageError] = useState(false);
   const imagePath = color?.scenePath || color?.imagePath || color?.assetPath;
   const originalScenePath = color?.originalScenePath;
   const baseScenePath = color?.baseScenePath || color?.scenePath;
   const maskPath = color?.maskPath || imagePath;
+  const [readySurfacePath, setReadySurfacePath] = useState(null);
+  const [hasImageError, setHasImageError] = useState(false);
+  const sceneObjectPosition = color?.sceneObjectPosition || "50%";
   const isSurfaceReady = readySurfacePath === imagePath;
   const variantStyle = VARIANT_CLASSES[variant] || VARIANT_CLASSES.reference;
   const scenePlacementStyle =
@@ -71,8 +72,8 @@ export default function CartoonOverlay({
   const maskStyle = {
     WebkitMaskImage: `url("${maskPath}")`,
     maskImage: `url("${maskPath}")`,
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
+    WebkitMaskPosition: sceneObjectPosition,
+    maskPosition: sceneObjectPosition,
     WebkitMaskRepeat: "no-repeat",
     maskRepeat: "no-repeat",
     WebkitMaskSize: isSceneImage ? "cover" : "contain",
@@ -141,6 +142,7 @@ export default function CartoonOverlay({
             unoptimized
             onError={() => setHasImageError(true)}
             className={`object-cover ${isSurfaceReady ? "invisible" : "visible"}`}
+            style={{ objectPosition: sceneObjectPosition }}
           />
           {!hasImageError && useCanvas && originalScenePath && baseScenePath && (
             <CartoonCanvas
@@ -156,6 +158,7 @@ export default function CartoonOverlay({
                 ]
               }
               color={color}
+              objectPosition={sceneObjectPosition}
               minRenderWidth={minRenderWidth}
               onReady={() => setReadySurfacePath(imagePath)}
             />

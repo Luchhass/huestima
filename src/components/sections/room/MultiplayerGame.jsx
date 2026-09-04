@@ -27,13 +27,14 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 
-const FLAG_WIDGET_EXIT_DELAY_MS = 680;
+const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
   SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
 const CARD_RESIZE_DURATION_MS = 700;
 const LEADERBOARD_HOME_FADE_DURATION_MS = 240;
+const SHOWCASE_WIDGET_REVEAL_DELAY_MS = 32;
 
 function buildProgressItems(room, currentPlayerId) {
   const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
@@ -260,7 +261,7 @@ export default function MultiplayerGame({
       const phaseTimeoutId = window.setTimeout(() => {
         setRenderedPhase(game.phase);
         setIsShowcaseWidgetExiting(false);
-      }, FLAG_WIDGET_EXIT_DELAY_MS);
+      }, SHOWCASE_WIDGET_EXIT_DURATION_MS);
 
       return () => {
         window.clearTimeout(exitStartId);
@@ -279,6 +280,7 @@ export default function MultiplayerGame({
     game.isSprintMode,
     game.phase,
     game.sprintRemainingMs,
+    isCartoonMode,
     renderedPhase,
     usesShowcaseTransition,
   ]);
@@ -297,13 +299,13 @@ export default function MultiplayerGame({
     }, 0);
     const revealId = window.setTimeout(() => {
       setIsShowcaseWidgetEntering(true);
-    }, 560);
+    }, SHOWCASE_WIDGET_REVEAL_DELAY_MS);
 
     return () => {
       window.clearTimeout(resetId);
       window.clearTimeout(revealId);
     };
-  }, [usesExternalGuessChrome]);
+  }, [isCartoonMode, usesExternalGuessChrome]);
 
   useEffect(() => {
     if (!isRenderedShowcaseResultPhase) return undefined;
@@ -452,12 +454,6 @@ export default function MultiplayerGame({
         : renderedPhase === GAME_PHASES.GUESS
           ? game.guessColor
           : null;
-  const usesCompactShowcaseCard =
-    (isFlagMode || isCartoonMode) &&
-    (renderedPhase === GAME_PHASES.MEMORIZE ||
-      renderedPhase === GAME_PHASES.GUESS ||
-      (renderedPhase === GAME_PHASES.RESULT && !isShowcaseResultExpanded));
-
   if (!game.hasRestoredSession || renderedPhase === null) {
     return (
       <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
@@ -492,6 +488,10 @@ export default function MultiplayerGame({
           isRenderedShowcaseResultPhase ? "showcase-result-card-shell" : ""
         } ${
           isShowcaseWidgetExiting ? "flag-game-card-shell--exiting" : ""
+        } ${
+          isShowcaseWidgetExiting
+            ? "showcase-game-card-shell--exiting"
+            : ""
         }`}
         cartoonOverlayProps={
           isCartoonMode
@@ -511,7 +511,7 @@ export default function MultiplayerGame({
               }
             : null
         }
-        heightMode={usesCompactShowcaseCard ? "compact" : "normal"}
+        heightMode="normal"
         isExpanded={
           renderedPhase === "leaderboard" &&
           !isLeavingLeaderboardHome &&

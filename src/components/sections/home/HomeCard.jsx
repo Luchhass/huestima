@@ -79,6 +79,8 @@ const CARTOON_TRANSFORM_DURATION_MS = 2300;
 const CARTOON_TIMEOUT_DURATION_MS = 4500;
 const CARTOON_TRANSFORM_SOUND = "/audio/omnitrix-transform.mp3";
 const CARTOON_RETURN_SOUND = "/audio/omnitrix-time-out.mp3";
+const CARTOON_CHARACTER_ALPHA_THRESHOLD = 16;
+const cartoonCharacterHitMasks = new WeakMap();
 const CARTOON_EASTER_EGG_CHARACTERS = [
   { id: "ben", src: "/game-modes/cartoon/ben-10/ben-home-character-new.png", width: 600, height: 1400, imageClassName: "cartoon-home-character--ben" },
   { id: "heatblast", src: "/game-modes/cartoon/ben-10/heatblast-home-character.png", width: 472, height: 1244, imageClassName: "cartoon-home-character--heatblast" },
@@ -94,6 +96,41 @@ const CARTOON_EASTER_EGG_CHARACTERS = [
   { id: "ghostfreak", src: "/game-modes/cartoon/ben-10/ghostfreak-home-character.webp", width: 894, height: 1343, imageClassName: "cartoon-home-character--ghostfreak" },
   { id: "ripjaws", src: "/game-modes/cartoon/ben-10/ripjaws-home-character.webp", width: 576, height: 1280, imageClassName: "cartoon-home-character--ripjaws" },
 ];
+
+function isOpaqueCartoonCharacterPixel(image, clientX, clientY) {
+  if (!image?.complete || !image.naturalWidth || !image.naturalHeight) return false;
+
+  const bounds = image.getBoundingClientRect();
+  if (
+    clientX < bounds.left || clientX >= bounds.right ||
+    clientY < bounds.top || clientY >= bounds.bottom
+  ) {
+    return false;
+  }
+
+  let mask = cartoonCharacterHitMasks.get(image);
+
+  if (!mask) {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return false;
+
+    context.drawImage(image, 0, 0);
+    mask = { context, width: canvas.width, height: canvas.height };
+    cartoonCharacterHitMasks.set(image, mask);
+  }
+
+  const x = Math.min(mask.width - 1, Math.floor(((clientX - bounds.left) / bounds.width) * mask.width));
+  const y = Math.min(mask.height - 1, Math.floor(((clientY - bounds.top) / bounds.height) * mask.height));
+
+  try {
+    return mask.context.getImageData(x, y, 1, 1).data[3] > CARTOON_CHARACTER_ALPHA_THRESHOLD;
+  } catch {
+    return false;
+  }
+}
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;
@@ -238,6 +275,7 @@ export default function HomeCard({
   const [cartoonBurst, setCartoonBurst] = useState(null);
   const [notification, setNotification] = useState(null);
   const [deferViewReveal, setDeferViewReveal] = useState(false);
+  const [isStartingSingleplayer, setIsStartingSingleplayer] = useState(false);
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const stickerRef = useRef(null);
@@ -259,7 +297,8 @@ export default function HomeCard({
     ((isCartoonPool || isFlagPool || isTeamPool) &&
       cartoonPoolReturnView === "singleplayer");
   const isExpandedCard =
-    isSingleplayerTallView || (isMultiplayer && isMultiplayerTallStep);
+    !isStartingSingleplayer &&
+    (isSingleplayerTallView || (isMultiplayer && isMultiplayerTallStep));
   const cardHeight = useResponsiveCardHeight(
     isExpandedCard || isCartoonPool || isFlagPool,
   );
@@ -383,6 +422,26 @@ export default function HomeCard({
             preset.at,
           );
         });
+        return;
+      }
+
+      if (cleanGameFamily === GAME_FAMILY_IDS.COLOR) {
+        const colorWave = sticker.querySelector(".home-color-spectrum__shell");
+        gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
+
+        if (!colorWave) return;
+
+        tween = gsap.fromTo(
+          colorWave,
+          { y: 500 },
+          {
+            y: 0,
+            duration: event.detail?.duration ?? 0.9,
+            ease: event.detail?.ease ?? "power4.out",
+            overwrite: true,
+            onComplete: () => gsap.set(colorWave, { clearProps: "transform" }),
+          },
+        );
         return;
       }
 
@@ -643,6 +702,23 @@ export default function HomeCard({
     setDifficulty(nextDifficulty);
   };
 
+  const prepareSingleplayerLaunch = async () => {
+    const closeButton = cardRef.current?.querySelector(".solo-close-button");
+
+    await Promise.all([
+      playScreenFadeOut(contentRef, { duration: 0.28 }),
+      closeButton
+        ? playScreenFadeOut(closeButton, { duration: 0.28 })
+        : Promise.resolve(),
+    ]);
+
+    setIsStartingSingleplayer(true);
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+    });
+  };
+
   const triggerCartoonTransformation = () => {
     if (cartoonBurst || view !== "home") return;
 
@@ -699,11 +775,35 @@ export default function HomeCard({
   const cartoonCharacterConfig =
     CARTOON_EASTER_EGG_CHARACTERS[cartoonCharacterIndex];
 
+  const handleCartoonCharacterClick = (event) => {
+    if (
+      cleanGameFamily !== GAME_FAMILY_IDS.CARTOON ||
+      view !== "home" ||
+      cartoonBurst ||
+      !isOpaqueCartoonCharacterPixel(
+        cartoonCharacterRef.current,
+        event.clientX,
+        event.clientY,
+      )
+    ) {
+      return;
+    }
+
+    triggerCartoonTransformation();
+  };
+
+  const handleCartoonCharacterKeyDown = (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    triggerCartoonTransformation();
+  };
+
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
         ref={cardRef}
+        onClick={handleCartoonCharacterClick}
       className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardStyle}
       >
@@ -852,6 +952,7 @@ export default function HomeCard({
               onGameModeChange={handleGameModeChange}
               onRoundCountChange={setRoundCount}
               onRoundCountFeedback={triggerLevelCountFeedback}
+              onBeforePlay={prepareSingleplayerLaunch}
             />
           ) : (
             <MultiplayerCard
@@ -928,7 +1029,7 @@ export default function HomeCard({
                     <feGaussianBlur stdDeviation="20 2" />
                   </filter>
                   <mask id="home-color-wave-mask" maskUnits="userSpaceOnUse">
-                    <rect width="500" height="500" fill="black" />
+                    <rect y="-30" width="500" height="560" fill="black" />
                     <use
                       href="#home-color-wave-shape"
                       fill="white"
@@ -961,8 +1062,9 @@ export default function HomeCard({
                   <rect
                     className="home-color-spectrum__track"
                     x="-500"
+                    y="-30"
                     width="1500"
-                    height="500"
+                    height="560"
                     fill="url(#home-color-rgb-spectrum)"
                   />
                 </g>
@@ -1063,6 +1165,11 @@ export default function HomeCard({
                   height={cartoonCharacterConfig.height}
                   sizes="(max-width: 640px) 268px, 335px"
                   className={`cartoon-home-character ${cartoonCharacterConfig.imageClassName}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Ben 10 easter egg"
+                  aria-disabled={Boolean(cartoonBurst)}
+                  onKeyDown={handleCartoonCharacterKeyDown}
                   priority
                 />
                 <div className="cartoon-home-character-preload" aria-hidden="true">
@@ -1104,16 +1211,6 @@ export default function HomeCard({
           </div>
         )}
 
-        {view === "home" && cleanGameFamily === GAME_FAMILY_IDS.CARTOON && (
-          <button
-            type="button"
-            onClick={triggerCartoonTransformation}
-            disabled={Boolean(cartoonBurst)}
-            data-hover-sound="off"
-            aria-label="Ben 10 easter egg"
-            className="cartoon-easter-egg-trigger absolute z-20 rounded-[42%] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65ff43] focus-visible:ring-offset-4 focus-visible:ring-offset-black disabled:cursor-default"
-          />
-        )}
       </section>
     </main>
   );
