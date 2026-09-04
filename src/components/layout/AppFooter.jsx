@@ -35,6 +35,14 @@ export default function AppFooter() {
   const isDownloadRoute = pathname === "/download";
   const isStandaloneCardRoute =
     pathname === "/notifications" || pathname === "/history";
+
+  useEffect(() => {
+    document.querySelectorAll(".route-transition-footer").forEach((element) => {
+      element.style.removeProperty("opacity");
+      element.style.removeProperty("visibility");
+      element.style.removeProperty("transition");
+    });
+  }, [pathname]);
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
   const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
     ? familyFromQuery
@@ -68,12 +76,15 @@ export default function AppFooter() {
         });
       }
     } else if (href.startsWith("/download")) {
-      await playHomeToFooterExit(card, content, { scaleCard: false });
+      await playHomeToFooterExit(card, content, {
+        scaleCard: false,
+        hideChrome: false,
+      });
     } else if (href.startsWith("/history")) {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
         expandCard: false,
-        hideChrome: true,
+        hideChrome: false,
       });
     } else {
       await playHomeToFooterExit(card, content, {
@@ -86,7 +97,7 @@ export default function AppFooter() {
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestRoute || isCreditsRoute || isDownloadRoute || isStandaloneCardRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestRoute || isCreditsRoute) return null;
 
   return (
     <>

@@ -75,6 +75,12 @@ export default function AppHeader() {
       (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
     ),
   );
+
+  useEffect(() => {
+    gsap.set(document.querySelectorAll(".app-header"), {
+      clearProps: "opacity,visibility,transition",
+    });
+  }, [pathname]);
   const isNavigatingRef = useRef(false);
   const navigationResetRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -270,13 +276,28 @@ export default function AppHeader() {
   }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
+    const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team)$/.test(pathname || "");
+    if (isSetupHomeRoute) {
+      const card = document.querySelector("[data-intro-card-target]");
+      const content = document.querySelector("[data-route-transition-scope]");
+
+      if (card && content) {
+        await playCardToCardExit(card, content, {
+          targetExpanded: true,
+          hideChrome: false,
+        });
+        router.push(href);
+        return;
+      }
+    }
+
     if (pathname?.startsWith("/notifications")) {
       const card = document.querySelector("[data-notification-card]");
       const content = document.querySelector("[data-route-transition-scope]");
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: false,
+          targetExpanded: true,
           hideChrome: false,
         });
         router.push(href);
@@ -290,7 +311,7 @@ export default function AppHeader() {
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: false,
+          targetExpanded: true,
           hideChrome: false,
         });
         router.push(href);
@@ -392,10 +413,7 @@ export default function AppHeader() {
     isPrivacyRoute ||
     isHowItWorksRoute ||
     isTestRoute ||
-    isCreditsRoute ||
-    isDownloadRoute ||
-    isNotificationsRoute ||
-    isHistoryRoute
+    isCreditsRoute
   ) {
     return null;
   }

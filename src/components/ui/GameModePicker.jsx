@@ -152,13 +152,13 @@ export default function GameModePicker({ value, onChange, ariaLabel, disabled = 
             <span className="game-mode-picker__icon grid h-8 w-9 shrink-0 place-items-center sm:h-9 sm:w-10">
               <Icon className="size-[1.15rem] sm:size-5" strokeWidth={2} />
             </span>
-            <span className="ml-2.5 flex min-w-0 flex-1 items-center pr-10 sm:ml-3">
+            <span className="ml-2.5 flex min-w-0 flex-1 items-center pr-0 sm:ml-3 sm:pr-10">
               <span className="block truncate text-base font-semibold leading-none sm:text-[1.05rem]">
                 {label}
               </span>
             </span>
             {options.length > 1 && (
-              <span className="game-mode-picker__count absolute right-4 top-1/2 -translate-y-1/2 text-[0.68rem] font-semibold leading-none tabular-nums tracking-[0.01em]">
+              <span className="game-mode-picker__count absolute right-4 top-1/2 hidden -translate-y-1/2 text-[0.68rem] font-semibold leading-none tabular-nums tracking-[0.01em] sm:block">
                 {optionIndex + 1}/{options.length}
               </span>
             )}

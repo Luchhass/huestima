@@ -312,7 +312,7 @@ export default function HistoryPage({
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
   const [entries, setEntries] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [activeEntry, setActiveEntry] = useState(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -346,13 +346,11 @@ export default function HistoryPage({
   }, [initialView, selectedMatchId, sharedEntry]);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setIsExpanded(true), 40);
     const revealTimeoutId = window.setTimeout(() => {
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     }, 780);
 
     return () => {
-      window.clearTimeout(timeoutId);
       window.clearTimeout(revealTimeoutId);
     };
   }, []);
@@ -592,12 +590,9 @@ export default function HistoryPage({
                 <X className="size-6" strokeWidth={1.7} />
               </button>
               <div data-screen-reveal className="pr-10">
-                <h1 className="text-[clamp(2.8rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">
+                <h1 className="whitespace-nowrap text-[clamp(2.3rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">
                   {t("history.listTitle")}
                 </h1>
-                <p className="mt-5 max-w-[26rem] text-sm font-medium leading-[1.4] text-white/68 sm:text-base">
-                  {t("history.intro")}
-                </p>
               </div>
 
               <div

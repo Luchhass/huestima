@@ -29,19 +29,17 @@ export default function NotificationsPage() {
   const isClosingRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
   const cardHeight = useResponsiveCardHeight(isExpanded);
   const { announcements } = useSiteOperations();
   const { locale, t } = useTranslation();
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setIsExpanded(true), 40);
     const revealTimeoutId = window.setTimeout(() => {
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     }, 780);
     return () => {
-      window.clearTimeout(timeoutId);
       window.clearTimeout(revealTimeoutId);
     };
   }, []);
@@ -86,7 +84,6 @@ export default function NotificationsPage() {
         <div ref={scopeRef} data-route-transition-scope className="relative flex h-full min-h-0 flex-col">
           <div data-screen-reveal className="overflow-hidden pr-8">
             <h1 className="mt-3 text-[clamp(2.8rem,7vw,3.85rem)] font-semibold leading-[0.92] tracking-normal">{t("notifications.title")}</h1>
-            <p className="mt-5 max-w-[35rem] text-sm font-medium leading-[1.4] text-white/68 sm:text-base">{t("notifications.description")}</p>
           </div>
 
           <div data-screen-reveal className="mt-6 min-h-0 flex-1 overflow-hidden">
@@ -120,7 +117,7 @@ export default function NotificationsPage() {
                   icon={CheckCheck}
                   title={t("notifications.emptyTitle")}
                   description={t("notifications.emptyDescription")}
-                  className="rounded-[22px] border border-dashed border-white/15"
+                  className="w-full items-center px-6 text-center"
                 />
               )}
             </div>
