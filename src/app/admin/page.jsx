@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import UnifiedModal from "@/components/ui/UnifiedModal";
 import { adminRequest } from "@/lib/adminApi";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "@/components/sections/room/RoomCardShell";
@@ -399,11 +400,8 @@ export default function AdminPage() {
   const [systemSummary, setSystemSummary] = useState(null);
   const [summaryAvailable, setSummaryAvailable] = useState(true);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [isLogoutConfirmClosing, setIsLogoutConfirmClosing] = useState(false);
   const [isMaintenanceConfirmOpen, setIsMaintenanceConfirmOpen] = useState(false);
-  const [isMaintenanceConfirmClosing, setIsMaintenanceConfirmClosing] = useState(false);
   const [isMultiplayerConfirmOpen, setIsMultiplayerConfirmOpen] = useState(false);
-  const [isMultiplayerConfirmClosing, setIsMultiplayerConfirmClosing] = useState(false);
   const [gameConfiguration, setGameConfiguration] = useState(
     createDefaultGameConfiguration,
   );
@@ -581,7 +579,6 @@ export default function AdminPage() {
 
   function closeLogoutConfirm() {
     setIsLogoutConfirmOpen(false);
-    setIsLogoutConfirmClosing(false);
   }
 
   async function goHome() {
@@ -678,7 +675,6 @@ export default function AdminPage() {
 
   function closeMultiplayerConfirm() {
     setIsMultiplayerConfirmOpen(false);
-    setIsMultiplayerConfirmClosing(false);
   }
 
   async function confirmMultiplayer() {
@@ -708,7 +704,6 @@ export default function AdminPage() {
 
   function closeMaintenanceConfirm() {
     setIsMaintenanceConfirmOpen(false);
-    setIsMaintenanceConfirmClosing(false);
   }
 
   async function confirmMaintenance() {
@@ -741,11 +736,9 @@ export default function AdminPage() {
         toggleMultiplayer={toggleMultiplayer}
         toggleMaintenance={toggleMaintenance}
         isMaintenanceConfirmOpen={isMaintenanceConfirmOpen}
-        isMaintenanceConfirmClosing={isMaintenanceConfirmClosing}
         closeMaintenanceConfirm={closeMaintenanceConfirm}
         confirmMaintenance={confirmMaintenance}
         isMultiplayerConfirmOpen={isMultiplayerConfirmOpen}
-        isMultiplayerConfirmClosing={isMultiplayerConfirmClosing}
         closeMultiplayerConfirm={closeMultiplayerConfirm}
         confirmMultiplayer={confirmMultiplayer}
         onClose={() => void changePanel(ADMIN_PANELS.HOME)}
@@ -784,58 +777,26 @@ export default function AdminPage() {
 
   return (
     <>
-      {isMaintenanceConfirmOpen && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-          <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMaintenanceConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
-            <div className="max-w-[18.5rem]">
-              <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
-                {t("admin.operations.maintenanceTitle")}
-              </h2>
-              <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">
-                {t("admin.confirm.enableMaintenance")}
-              </p>
-            </div>
-            <div className="mt-5 flex items-center justify-end gap-3">
-              <button type="button" onClick={closeMaintenanceConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                {t("common.no")}
-              </button>
-              <button type="button" onClick={() => void confirmMaintenance()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                {t("common.yes")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {isLogoutConfirmOpen && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-          <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isLogoutConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
-            <div className="max-w-[18.5rem]">
-              <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">
-                {t("admin.confirm.logoutTitle")}
-              </h2>
-              <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">
-                {t("admin.confirm.logoutDescription")}
-              </p>
-            </div>
-            <div className="mt-5 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeLogoutConfirm}
-                className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              >
-                {t("common.no")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmLogout()}
-                className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              >
-                {t("common.yes")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnifiedModal
+        open={isMaintenanceConfirmOpen}
+        title={t("admin.operations.maintenanceTitle")}
+        description={t("admin.confirm.enableMaintenance")}
+        closeLabel={t("common.no")}
+        cancelLabel={t("common.no")}
+        confirmLabel={t("common.yes")}
+        onClose={closeMaintenanceConfirm}
+        onConfirm={() => void confirmMaintenance()}
+      />
+      <UnifiedModal
+        open={isLogoutConfirmOpen}
+        title={t("admin.confirm.logoutTitle")}
+        description={t("admin.confirm.logoutDescription")}
+        closeLabel={t("common.no")}
+        cancelLabel={t("common.no")}
+        confirmLabel={t("common.yes")}
+        onClose={closeLogoutConfirm}
+        onConfirm={() => void confirmLogout()}
+      />
 
       <RoomCardShell
         isExpanded
@@ -1141,45 +1102,35 @@ function AdminOperationsWorkspace({
   toggleMultiplayer,
   toggleMaintenance,
   isMaintenanceConfirmOpen,
-  isMaintenanceConfirmClosing,
   closeMaintenanceConfirm,
   confirmMaintenance,
   isMultiplayerConfirmOpen,
-  isMultiplayerConfirmClosing,
   closeMultiplayerConfirm,
   confirmMultiplayer,
   onClose,
 }) {
   return (
     <>
-    {isMultiplayerConfirmOpen && (
-      <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-        <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMultiplayerConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
-          <div className="max-w-[18.5rem]">
-            <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">{t("admin.operations.multiplayerTitle")}</h2>
-            <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">{t(operations.multiplayerEnabled ? "admin.confirm.disableMultiplayer" : "admin.confirm.enableMultiplayer")}</p>
-          </div>
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <button type="button" onClick={closeMultiplayerConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.no")}</button>
-            <button type="button" onClick={() => void confirmMultiplayer()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.yes")}</button>
-          </div>
-        </div>
-      </div>
-    )}
-    {isMaintenanceConfirmOpen && (
-      <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-        <div className={`admin-confirm-modal pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6 ${isMaintenanceConfirmClosing ? "admin-confirm-modal--closing" : ""}`}>
-          <div className="max-w-[18.5rem]">
-            <h2 className="text-lg font-semibold leading-tight text-white sm:text-xl">{t("admin.operations.maintenanceTitle")}</h2>
-            <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">{t("admin.confirm.enableMaintenance")}</p>
-          </div>
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <button type="button" onClick={closeMaintenanceConfirm} className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.no")}</button>
-            <button type="button" onClick={() => void confirmMaintenance()} className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">{t("common.yes")}</button>
-          </div>
-        </div>
-      </div>
-    )}
+    <UnifiedModal
+      open={isMultiplayerConfirmOpen}
+      title={t("admin.operations.multiplayerTitle")}
+      description={t(operations.multiplayerEnabled ? "admin.confirm.disableMultiplayer" : "admin.confirm.enableMultiplayer")}
+      closeLabel={t("common.no")}
+      cancelLabel={t("common.no")}
+      confirmLabel={t("common.yes")}
+      onClose={closeMultiplayerConfirm}
+      onConfirm={() => void confirmMultiplayer()}
+    />
+    <UnifiedModal
+      open={isMaintenanceConfirmOpen}
+      title={t("admin.operations.maintenanceTitle")}
+      description={t("admin.confirm.enableMaintenance")}
+      closeLabel={t("common.no")}
+      cancelLabel={t("common.no")}
+      confirmLabel={t("common.yes")}
+      onClose={closeMaintenanceConfirm}
+      onConfirm={() => void confirmMaintenance()}
+    />
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-4 sm:p-8">
       <div ref={scopeRef} data-route-transition-scope className="admin-operations-layout">
         <section data-admin-primary-card className={`admin-operations-card admin-operations-card--primary relative min-h-0 overflow-hidden bg-black p-6 text-white sm:p-8 ${primaryHidden ? "admin-primary-card--waiting" : ""}`}>

@@ -250,8 +250,13 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     return response;
   };
 
-  const handleUpdateGameMode = async (gameMode) => {
-    if (!player) return;
+  const handleSaveSettings = async ({
+    gameMode,
+    difficulty,
+    roundCount,
+    flagDifficulty,
+  }) => {
+    if (!player) return { ok: false };
 
     setIsUpdatingSettings(true);
     setError("");
@@ -260,43 +265,9 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       playerId: player.playerId,
       gameMode,
       gameFamily: cleanGameFamily,
-      difficulty: GAME_MODE_LOCKED_DIFFICULTIES[gameMode],
-    });
-
-    setIsUpdatingSettings(false);
-
-    if (!response.ok) {
-      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
-    }
-  };
-
-  const handleUpdateDifficulty = async (difficulty) => {
-    if (!player) return;
-
-    setIsUpdatingSettings(true);
-    setError("");
-
-    const response = await updateSettings({
-      playerId: player.playerId,
-      difficulty,
-    });
-
-    setIsUpdatingSettings(false);
-
-    if (!response.ok) {
-      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
-    }
-  };
-
-  const handleUpdateRoundCount = async (roundCount) => {
-    if (!player) return;
-
-    setIsUpdatingSettings(true);
-    setError("");
-
-    const response = await updateSettings({
-      playerId: player.playerId,
+      difficulty: GAME_MODE_LOCKED_DIFFICULTIES[gameMode] || difficulty,
       roundCount,
+      flagDifficulty,
     });
 
     setIsUpdatingSettings(false);
@@ -304,18 +275,8 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     if (!response.ok) {
       setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
     }
-  };
 
-  const handleUpdateFlagDifficulty = async (flagDifficulty) => {
-    if (!player) return;
-
-    setIsUpdatingSettings(true);
-    setError("");
-    const response = await updateSettings({ playerId: player.playerId, flagDifficulty });
-    setIsUpdatingSettings(false);
-    if (!response.ok) {
-      setError(getMultiplayerErrorMessage(response, t, "room.couldNotUpdateSettings"));
-    }
+    return response;
   };
 
   const handleReturnToLobby = async () => {
@@ -517,10 +478,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
           onCopyInvite={handleCopyInvite}
           onStartGame={handleStartGame}
           onKickPlayer={handleKickPlayer}
-          onGameModeChange={handleUpdateGameMode}
-          onDifficultyChange={handleUpdateDifficulty}
-          onRoundCountChange={handleUpdateRoundCount}
-          onFlagDifficultyChange={handleUpdateFlagDifficulty}
+          onSaveSettings={handleSaveSettings}
           onBackHome={handleBackHome}
           isStarting={isStarting}
           canStartGame={canStartGame}

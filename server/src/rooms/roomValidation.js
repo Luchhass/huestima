@@ -14,6 +14,7 @@ import {
   ROOM_VISIBILITIES,
 } from "../constants.js";
 import { HAS_CARTOON_OPTIONS } from "../game/cartoons.js";
+import { FLAG_DIFFICULTY_IDS } from "../../../shared/flagDifficulty.mjs";
 
 export function fail(error) {
   return { ok: false, error };
@@ -60,6 +61,27 @@ export function validateDifficulty(difficulty) {
   }
 
   return ok({ difficulty: cleanDifficulty });
+}
+
+export function validateFlagDifficulty(flagDifficulty) {
+  const cleanDifficulty = cleanString(flagDifficulty) || FLAG_DIFFICULTY_IDS.STARTER;
+  if (!Object.values(FLAG_DIFFICULTY_IDS).includes(cleanDifficulty)) {
+    return fail("Invalid flag difficulty.");
+  }
+
+  return ok({ flagDifficulty: cleanDifficulty });
+}
+
+export function validateFlagDifficulties(flagDifficulties, fallback = FLAG_DIFFICULTY_IDS.STARTER) {
+  const values = Array.isArray(flagDifficulties) && flagDifficulties.length
+    ? [...new Set(flagDifficulties.map(cleanString))]
+    : [fallback];
+
+  if (values.some((value) => !Object.values(FLAG_DIFFICULTY_IDS).includes(value))) {
+    return fail("Invalid flag difficulty list.");
+  }
+
+  return ok({ flagDifficulties: values });
 }
 
 export function validateGameMode(gameMode) {

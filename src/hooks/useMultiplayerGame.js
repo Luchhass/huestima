@@ -51,6 +51,7 @@ import {
 import { emitWithAck } from "@/lib/socket";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 import { createMatchHistoryId } from "@/lib/matchHistory";
+import { shouldMemorizeMultiplayerRound } from "../../shared/gameMechanics.mjs";
 
 function responseData(response) {
   return response?.data || response || {};
@@ -179,9 +180,10 @@ export function useMultiplayerGame({
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
   const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
-  const shouldMemorizeRound =
-    isSequenceMode ||
-    (isSprintMode && cleanGameFamily === "color");
+  const shouldMemorizeRound = shouldMemorizeMultiplayerRound(
+    gameMode.id,
+    cleanGameFamily,
+  );
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
     () => (lockedDifficultyId ? getDifficultyOption(lockedDifficultyId) : difficulty),

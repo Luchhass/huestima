@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clipboard, Pencil, UserMinus, X } from "lucide-react";
+import { Settings, UserMinus, X } from "lucide-react";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
@@ -13,6 +13,7 @@ import FlagDifficultySwitch from "@/components/ui/FlagDifficultySwitch";
 import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import PushNotification from "@/components/ui/PushNotification";
+import UnifiedModal from "@/components/ui/UnifiedModal";
 import {
   DEFAULT_ROUND_COUNT,
   DIFFICULTY_IDS,
@@ -30,6 +31,7 @@ import {
   getLevelCountImpactPreset,
   playLevelCountRecoil,
 } from "@/lib/levelCountFeedback";
+import { isFixedMultiplayerRoundMode } from "../../../../shared/gameMechanics.mjs";
 
 const DIFFICULTY_BURST_COLORS = {
   [DIFFICULTY_IDS.EASY]: {
@@ -127,10 +129,7 @@ export default function LobbyCard({
   onCopyInvite,
   onStartGame,
   onKickPlayer,
-  onGameModeChange,
-  onDifficultyChange,
-  onRoundCountChange,
-  onFlagDifficultyChange,
+  onSaveSettings,
   onBackHome,
   isStarting,
   canStartGame = true,
@@ -143,6 +142,7 @@ export default function LobbyCard({
   const { t } = useTranslation();
   const [isInviteCopied, setIsInviteCopied] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [draftSettings, setDraftSettings] = useState(null);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
   const [notification, setNotification] = useState(null);
@@ -171,11 +171,25 @@ export default function LobbyCard({
   );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const isUnlimitedRoundMode =
-    room?.gameMode === GAME_MODE_IDS.ENDLESS || room?.gameMode === GAME_MODE_IDS.SPRINT;
+    room?.gameMode === GAME_MODE_IDS.ENDLESS ||
+    isFixedMultiplayerRoundMode(room?.gameMode);
   const roundCountLabel = isUnlimitedRoundMode
     ? t("levelCount.infinity")
     : room?.roundCount || DEFAULT_ROUND_COUNT;
   const difficultyLabel = t(`difficulty.${room?.difficulty || "normal"}`);
+  const activeSettings = draftSettings || {
+    gameMode: room?.gameMode,
+    difficulty: room?.difficulty,
+    roundCount: room?.roundCount,
+    flagDifficulty: room?.flagDifficulty || "starter",
+  };
+  const activeModeOption = GAME_MODE_OPTIONS.find(
+    (option) => option.id === activeSettings.gameMode,
+  );
+  const settingsDifficultyLocked = Boolean(activeModeOption?.lockedDifficultyId);
+  const settingsRoundCountLocked =
+    activeSettings.gameMode === GAME_MODE_IDS.ENDLESS ||
+    isFixedMultiplayerRoundMode(activeSettings.gameMode);
 
   const activeActionError = error && error !== hiddenActionError ? error : "";
 
@@ -188,7 +202,7 @@ export default function LobbyCard({
   useFlagFullscreenLock(
     isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
   );
-  useScreenReveal(scopeRef, [room?.code], {
+  useScreenReveal(scopeRef, [room?.code, isSettingsOpen], {
     delay: EXPANDED_REVEAL_DELAY,
   });
 
@@ -272,12 +286,46 @@ export default function LobbyCard({
     return () => window.clearTimeout(timeoutId);
   }, [activeActionError]);
 
-  const handleToggleSettings = () => {
+  const transitionSettingsView = async (nextOpen) => {
     if (!isHost || isUpdatingSettings) return;
 
     setHiddenActionError("");
     setLastAction(null);
-    setIsSettingsOpen((current) => !current);
+    if (scopeRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      await new Promise((resolve) => {
+        gsap.to(scopeRef.current, {
+          autoAlpha: 0,
+          duration: 0.42,
+          ease: "power2.inOut",
+          onComplete: resolve,
+        });
+      });
+    }
+    if (nextOpen) {
+      setDraftSettings({
+        gameMode: room?.gameMode,
+        difficulty: room?.difficulty,
+        roundCount: room?.roundCount,
+        flagDifficulty: room?.flagDifficulty || "starter",
+      });
+    } else {
+      setDraftSettings(null);
+    }
+    setIsSettingsOpen(nextOpen);
+  };
+
+  const handleOpenSettings = () => transitionSettingsView(true);
+  const handleCloseSettings = () => transitionSettingsView(false);
+
+  const handleSaveSettings = async () => {
+    if (!draftSettings || isUpdatingSettings) return;
+
+    setLastAction("settings");
+    setHiddenActionError("");
+    const response = await onSaveSettings?.(draftSettings);
+    if (response?.ok === false) return;
+
+    await transitionSettingsView(false);
   };
 
   const handleCopyInvite = async () => {
@@ -319,24 +367,6 @@ export default function LobbyCard({
     onKickPlayer?.(targetPlayerId);
   };
 
-  const handleGameModeChange = async (gameMode) => {
-    setLastAction("settings");
-    setHiddenActionError("");
-    await onGameModeChange?.(gameMode);
-  };
-
-  const handleDifficultyChange = async (difficulty) => {
-    setLastAction("settings");
-    setHiddenActionError("");
-    await onDifficultyChange?.(difficulty);
-  };
-
-  const handleRoundCountChange = async (roundCount) => {
-    setLastAction("settings");
-    setHiddenActionError("");
-    await onRoundCountChange?.(roundCount);
-  };
-
   const handleBackHome = () => {
     setIsLeaveConfirmOpen(true);
   };
@@ -353,37 +383,16 @@ export default function LobbyCard({
         onClose={() => setNotification(null)}
       />
 
-      {isLeaveConfirmOpen && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-[240] max-w-[calc(100vw-2rem)]">
-          <div className="pointer-events-auto w-full max-w-[24rem] rounded-[24px] bg-black px-5 py-5 text-white shadow-[var(--app-card-shadow)] sm:px-6 sm:py-6">
-            <div className="max-w-[18.5rem]">
-              <h3 className="text-lg font-semibold leading-tight text-white sm:text-xl">
-                {t("common.backHome")}
-              </h3>
-              <p className="mt-3 text-sm font-medium leading-snug text-white/74 sm:text-[0.95rem]">
-                {isHost ? t("room.confirmLeaveHost") : t("room.confirmLeaveGuest")}
-              </p>
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsLeaveConfirmOpen(false)}
-                className="app-secondary-action inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              >
-                {t("common.no")}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmBackHome}
-                className="rgb-hover-button inline-flex h-11 min-w-[7rem] items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              >
-                {t("common.yes")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnifiedModal
+        open={isLeaveConfirmOpen}
+        title={t("common.backHome")}
+        description={isHost ? t("room.confirmLeaveHost") : t("room.confirmLeaveGuest")}
+        closeLabel={t("common.no")}
+        cancelLabel={t("common.no")}
+        confirmLabel={t("common.yes")}
+        onClose={() => setIsLeaveConfirmOpen(false)}
+        onConfirm={handleConfirmBackHome}
+      />
 
       {difficultyBursts.map((difficultyBurst) => (
           <span
@@ -428,13 +437,98 @@ export default function LobbyCard({
       <button
         data-game-mode-shock-target
         type="button"
-        aria-label={t("common.backHome")}
-        onClick={handleBackHome}
+        aria-label={isSettingsOpen ? t("room.closeSettings") : t("common.backHome")}
+        onClick={isSettingsOpen ? handleCloseSettings : handleBackHome}
         className="lobby-close-button solo-close-button absolute right-0 top-0 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:size-9"
       >
         <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
       </button>
 
+      {isSettingsOpen ? (
+        <>
+          <div data-screen-reveal className="pr-10">
+            <h1
+              data-game-mode-shock-target
+              className="text-[clamp(2.3rem,9.2vw,3.2rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.05rem]"
+            >
+              {t("room.lobbySettings")}
+            </h1>
+            <p
+              data-game-mode-shock-target
+              className="mt-3.5 max-w-[35.5rem] text-[0.9rem] font-medium leading-[1.28] text-white/84 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.96rem]"
+            >
+              {t("room.lobbySummary", {
+                count: players.length,
+                gameMode: t(`gameMode.${activeSettings.gameMode || "normal"}`),
+                difficulty: t(`difficulty.${activeSettings.difficulty || "normal"}`),
+                roundCount: settingsRoundCountLocked
+                  ? t("levelCount.infinity")
+                  : activeSettings.roundCount || DEFAULT_ROUND_COUNT,
+              })}
+            </p>
+          </div>
+
+          <div data-screen-reveal className="home-view-actions mt-auto w-full">
+            <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
+              <div data-game-mode-shock-target className="min-w-0">
+                <DifficultySwitch
+                  value={activeSettings.difficulty}
+                  onChange={(difficulty) => setDraftSettings((current) => ({ ...current, difficulty }))}
+                  onSelectFeedback={triggerDifficultyFeedback}
+                  disabled={settingsDifficultyLocked || isUpdatingSettings || room?.status !== "lobby"}
+                />
+              </div>
+              <div data-game-mode-shock-target className="min-w-0">
+                <LevelCountPicker
+                  value={activeSettings.roundCount}
+                  onChange={(roundCount) => setDraftSettings((current) => ({ ...current, roundCount }))}
+                  onImpact={triggerLevelCountFeedback}
+                  isEndless={settingsRoundCountLocked}
+                  disabled={settingsRoundCountLocked || isUpdatingSettings || room?.status !== "lobby"}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div data-screen-reveal className="home-view-actions mt-3 w-full">
+            <div className="grid w-full grid-cols-2 items-end gap-2 sm:gap-3">
+              <div data-game-mode-shock-target data-game-mode-shock-weight="strong" className="min-w-0">
+                <GameModePicker
+                  value={activeSettings.gameMode}
+                  onChange={(gameMode) => setDraftSettings((current) => {
+                    const lockedDifficultyId = GAME_MODE_OPTIONS.find((option) => option.id === gameMode)?.lockedDifficultyId;
+                    return {
+                      ...current,
+                      gameMode,
+                      difficulty: lockedDifficultyId || current.difficulty,
+                    };
+                  })}
+                  options={multiplayerGameModeOptions}
+                  disabled={multiplayerGameModeOptions.length < 2 || isUpdatingSettings || room?.status !== "lobby"}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={isUpdatingSettings || room?.status !== "lobby"}
+                className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center rounded-full bg-white px-4 text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-6 sm:text-base"
+              >
+                <span className="relative z-10">{t("room.saveSettings")}</span>
+              </button>
+            </div>
+            {isFlagFamily(cleanGameFamily) && (
+              <div data-game-mode-shock-target className="mt-3 min-w-0">
+                <FlagDifficultySwitch
+                  value={activeSettings.flagDifficulty}
+                  onChange={(flagDifficulty) => setDraftSettings((current) => ({ ...current, flagDifficulty }))}
+                  disabled={isUpdatingSettings || room?.status !== "lobby"}
+                />
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
       <div data-screen-reveal className="pr-10">
         <h1
           data-game-mode-shock-target
@@ -522,93 +616,22 @@ export default function LobbyCard({
 
         </div>
 
-        {isSettingsOpen && (
-          <div
-            data-game-mode-shock-target
-            className="lobby-settings-controls mt-4 grid w-full grid-cols-2 gap-3"
-          >
-            <div className="order-1 min-w-0">
-              <DifficultySwitch
-                value={room?.difficulty}
-                onChange={handleDifficultyChange}
-                onSelectFeedback={triggerDifficultyFeedback}
-                disabled={
-                  isDifficultyLocked ||
-                  !isHost ||
-                  isUpdatingSettings ||
-                  room?.status !== "lobby"
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="order-2 min-w-0">
-              <LevelCountPicker
-                value={room?.roundCount}
-                onChange={handleRoundCountChange}
-                onImpact={triggerLevelCountFeedback}
-                isEndless={isUnlimitedRoundMode}
-                disabled={room?.gameMode === GAME_MODE_IDS.SPRINT || !isHost || isUpdatingSettings || room?.status !== "lobby"}
-                className="w-full"
-              />
-            </div>
-
-            <div className="order-3 col-span-2 min-w-0">
-              <GameModePicker
-                value={room?.gameMode}
-                onChange={handleGameModeChange}
-                options={multiplayerGameModeOptions}
-                disabled={
-                  multiplayerGameModeOptions.length < 2 ||
-                  !isHost ||
-                  isUpdatingSettings ||
-                  room?.status !== "lobby"
-                }
-                className="w-full"
-              />
-            </div>
-
-            {isFlagFamily(cleanGameFamily) && (
-              <div className="order-4 col-span-2 min-w-0">
-                <FlagDifficultySwitch
-                  value={room?.flagDifficulty || "starter"}
-                  onChange={onFlagDifficultyChange}
-                  disabled={!isHost || isUpdatingSettings || room?.status !== "lobby"}
-                />
-              </div>
-            )}
-
-          </div>
-        )}
-
         <div data-game-mode-shock-target data-screen-reveal className="lobby-actions mt-3 w-full">
-          <div className="flex w-full items-center gap-3">
+          <div className={`w-full items-center gap-3 ${
+            isHost
+              ? "grid grid-cols-[3.625rem_minmax(0,1fr)_50%]"
+              : "flex"
+          }`}>
             {isHost && (
               <button
                 type="button"
-                aria-label={
-                  isSettingsOpen
-                    ? t("room.closeSettings")
-                    : t("room.editSettings")
-                }
-                title={
-                  isSettingsOpen
-                    ? t("room.closeSettings")
-                    : t("room.editSettings")
-                }
-                onClick={handleToggleSettings}
+                aria-label={t("room.editSettings")}
+                title={t("room.editSettings")}
+                onClick={handleOpenSettings}
                 disabled={isUpdatingSettings}
-                className={`game-action-pop app-icon-action card-action-size grid shrink-0 place-items-center rounded-full border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  isSettingsOpen
-                    ? "border-red-500 bg-red-500 text-white"
-                    : "border-white/95 bg-transparent text-white hover:bg-white/10"
-                }`}
+                className="game-action-pop app-icon-action card-action-size grid shrink-0 place-items-center rounded-full border-2 border-white/95 bg-transparent text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isSettingsOpen ? (
-                  <X size={20} strokeWidth={2.3} />
-                ) : (
-                  <Pencil size={18} strokeWidth={2.2} />
-                )}
+                <Settings size={19} strokeWidth={2.15} />
               </button>
             )}
 
@@ -617,27 +640,17 @@ export default function LobbyCard({
               aria-label={t("room.copyInvite")}
               title={t("room.copyInvite")}
               onClick={handleCopyInvite}
-              className={`app-icon-action rounded-full border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
-                isHost
-                  ? "game-action-pop card-action-size grid shrink-0 place-items-center"
-                  : "card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 px-4 text-center text-sm font-semibold leading-tight sm:text-base"
+              className={`app-icon-action card-action-height inline-flex min-w-0 items-center justify-center rounded-full border-2 px-4 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base ${
+                isHost ? "w-full" : "flex-1"
               } ${
                 isInviteCopied
                     ? "border-emerald-400 bg-emerald-400 text-white"
                     : "border-white/95 bg-transparent text-white hover:bg-white/10"
               }`}
             >
-              {isInviteCopied ? (
-                <Check size={20} strokeWidth={2.35} />
-              ) : (
-                <Clipboard size={19} strokeWidth={2.15} />
-              )}
-
-              {!isHost && (
-                <span className="min-w-0 truncate">
-                  {isInviteCopied ? t("room.copied") : t("room.copyLink")}
-                </span>
-              )}
+              <span className="min-w-0 truncate">
+                {isInviteCopied ? t("room.copied") : t("room.copyLink")}
+              </span>
             </button>
 
             {isHost ? (
@@ -646,7 +659,7 @@ export default function LobbyCard({
                   type="button"
                   onClick={handleStartGame}
                   disabled={isStarting || !canStartGame}
-                  className="rgb-hover-button lobby-primary-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-70 sm:text-base"
+                  className="rgb-hover-button lobby-primary-button card-action-height inline-flex min-w-0 w-full items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-70 sm:text-base"
                 >
                   <span className="relative z-10 min-w-0 truncate">
                     {isStarting
@@ -664,7 +677,9 @@ export default function LobbyCard({
             )}
           </div>
         </div>
-      </div>
+        </div>
+        </>
+      )}
       </div>
     </div>
   );

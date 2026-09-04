@@ -25,6 +25,8 @@ import {
   fail,
   ok,
   validateDifficulty,
+  validateFlagDifficulty,
+  validateFlagDifficulties,
   validateGameFamily,
   validateGameMode,
   validateGameModeForFamily,
@@ -345,6 +347,15 @@ function validateRoomCreatePayload(payload) {
   const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
   if (!roundCount.ok) return roundCount;
 
+  const flagDifficulty = validateFlagDifficulty(payload.flagDifficulty);
+  if (!flagDifficulty.ok) return flagDifficulty;
+
+  const flagDifficulties = validateFlagDifficulties(
+    payload.flagDifficulties,
+    flagDifficulty.data.flagDifficulty,
+  );
+  if (!flagDifficulties.ok) return flagDifficulties;
+
   const roomName = validateRoomName(
     payload.roomName || payload.lobbyName,
     `${playerName.data.playerName}'s lobby`,
@@ -368,8 +379,8 @@ function validateRoomCreatePayload(payload) {
       gameMode.data.gameMode,
       difficulty.data.difficulty,
     ),
-    flagDifficulty: payload.flagDifficulty || "starter",
-    flagDifficulties: Array.isArray(payload.flagDifficulties) && payload.flagDifficulties.length ? payload.flagDifficulties : [payload.flagDifficulty || "starter"],
+    flagDifficulty: flagDifficulty.data.flagDifficulty,
+    flagDifficulties: flagDifficulties.data.flagDifficulties,
     cartoonIds: Array.isArray(payload.cartoonIds) ? payload.cartoonIds : null,
     teamIds: Array.isArray(payload.teamIds) ? payload.teamIds : null,
     roundCount: roundCount.data.roundCount,
@@ -578,6 +589,15 @@ export function updateRoomSettings(payload) {
   if (room.status !== ROOM_STATUSES.LOBBY) return fail("Settings can only be changed in the lobby.");
   if (room.hostPlayerId !== playerId.data.playerId) return fail("Only the host can change lobby settings.");
 
+  let nextGameMode = room.gameMode;
+  let nextDifficulty = room.difficulty;
+  let nextRoundCount = room.roundCount;
+  let nextFlagDifficulty = room.flagDifficulty || "starter";
+  let nextFlagDifficulties = room.flagDifficulties || [nextFlagDifficulty];
+  let nextCartoonIds = room.cartoonIds;
+  let nextTeamIds = room.teamIds;
+  let nextHintsEnabled = room.hintsEnabled !== false;
+
   if (payload.gameMode !== undefined || payload.mode !== undefined) {
     const gameMode = validateGameMode(payload.gameMode || payload.mode);
     if (!gameMode.ok) return gameMode;
@@ -588,43 +608,63 @@ export function updateRoomSettings(payload) {
     );
     if (!familyMode.ok) return familyMode;
 
-    room.gameMode = gameMode.data.gameMode;
-    room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);
+    nextGameMode = gameMode.data.gameMode;
   }
 
   if (payload.difficulty !== undefined) {
     const difficulty = validateDifficulty(payload.difficulty);
     if (!difficulty.ok) return difficulty;
 
-    room.difficulty = resolveModeDifficulty(room.gameMode, difficulty.data.difficulty);
+    nextDifficulty = difficulty.data.difficulty;
   }
 
+  nextDifficulty = resolveModeDifficulty(nextGameMode, nextDifficulty);
+
   if (payload.flagDifficulty !== undefined) {
-    room.flagDifficulty = String(payload.flagDifficulty || "starter");
+    const flagDifficulty = validateFlagDifficulty(payload.flagDifficulty);
+    if (!flagDifficulty.ok) return flagDifficulty;
+    nextFlagDifficulty = flagDifficulty.data.flagDifficulty;
+    if (payload.flagDifficulties === undefined) {
+      nextFlagDifficulties = [nextFlagDifficulty];
+    }
   }
 
   if (payload.flagDifficulties !== undefined) {
-    room.flagDifficulties = Array.isArray(payload.flagDifficulties) && payload.flagDifficulties.length
-      ? payload.flagDifficulties
-      : [room.flagDifficulty || "starter"];
+    const flagDifficulties = validateFlagDifficulties(
+      payload.flagDifficulties,
+      nextFlagDifficulty,
+    );
+    if (!flagDifficulties.ok) return flagDifficulties;
+    nextFlagDifficulties = flagDifficulties.data.flagDifficulties;
   }
 
   if (payload.cartoonIds !== undefined && Array.isArray(payload.cartoonIds)) {
-    room.cartoonIds = payload.cartoonIds;
+    nextCartoonIds = payload.cartoonIds;
   }
 
   if (payload.roundCount !== undefined || payload.levelCount !== undefined) {
     const roundCount = validateRoundCount(payload.roundCount ?? payload.levelCount);
     if (!roundCount.ok) return roundCount;
 
-    room.roundCount = roundCount.data.roundCount;
+    nextRoundCount = roundCount.data.roundCount;
   }
 
   if (payload.hintsEnabled !== undefined) {
-    room.hintsEnabled = payload.hintsEnabled !== false;
+    nextHintsEnabled = payload.hintsEnabled !== false;
   }
 
-  room.difficulty = resolveModeDifficulty(room.gameMode, room.difficulty);
+  if (payload.teamIds !== undefined && Array.isArray(payload.teamIds)) {
+    nextTeamIds = payload.teamIds;
+  }
+
+  room.gameMode = nextGameMode;
+  room.difficulty = nextDifficulty;
+  room.roundCount = nextRoundCount;
+  room.flagDifficulty = nextFlagDifficulty;
+  room.flagDifficulties = nextFlagDifficulties;
+  room.cartoonIds = nextCartoonIds;
+  room.teamIds = nextTeamIds;
+  room.hintsEnabled = nextHintsEnabled;
 
   touchRoom(room);
 

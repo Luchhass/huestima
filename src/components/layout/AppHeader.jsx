@@ -283,7 +283,7 @@ export default function AppHeader() {
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: true,
+          targetExpanded: !/^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href),
           hideChrome: false,
         });
         router.push(href);
@@ -297,7 +297,7 @@ export default function AppHeader() {
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: true,
+          targetExpanded: !/^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href),
           hideChrome: false,
         });
         router.push(href);

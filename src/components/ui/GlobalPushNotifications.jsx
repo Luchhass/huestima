@@ -1,40 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import gsap from "gsap";
 import PushNotification from "@/components/ui/PushNotification";
 import AnnouncementModal from "@/components/ui/AnnouncementModal";
 import { markNotificationRead } from "@/lib/notificationInbox";
 
 const PUSH_EVENT = "huestima-push-notification";
-const APP_SURFACE_SELECTOR = ".app-header, main, .route-transition-footer, .creator-tag, .fullscreen-escape-button";
 const ANNOUNCEMENT_INTRO_DELAY = 2400;
-const ANNOUNCEMENT_FADE_DURATION = 0.36;
-
-function getAppSurfaces() {
-  if (typeof document === "undefined") return [];
-  return Array.from(document.querySelectorAll(APP_SURFACE_SELECTOR));
-}
-
-function animateAppSurfaces(autoAlpha) {
-  const surfaces = getAppSurfaces();
-  if (!surfaces.length) return Promise.resolve();
-
-  // Route reveals can still own opacity tweens on the same frame. Stop those
-  // first so every visible app surface follows this single timeline.
-  gsap.killTweensOf(surfaces);
-
-  return new Promise((resolve) => {
-    gsap.to(surfaces, {
-      autoAlpha,
-      duration: ANNOUNCEMENT_FADE_DURATION,
-      ease: "power2.out",
-      overwrite: true,
-      onComplete: resolve,
-      onInterrupt: resolve,
-    });
-  });
-}
 
 function waitForAnnouncementIntro() {
   if (typeof window === "undefined") return Promise.resolve();
@@ -86,6 +58,8 @@ export function pushNotification(message, variant = "success", durationMs, optio
 
 export default function GlobalPushNotifications() {
   const [notification, setNotification] = useState(null);
+  const [announcement, setAnnouncement] = useState(null);
+  const [announcementOpen, setAnnouncementOpen] = useState(false);
 
   useEffect(() => {
     const handleNotification = async (event) => {
@@ -94,7 +68,9 @@ export default function GlobalPushNotifications() {
         if (event.detail.waitForIntro) {
           await waitForAnnouncementIntro();
         }
-        await animateAppSurfaces(0);
+        setAnnouncement(event.detail);
+        setAnnouncementOpen(true);
+        return;
       }
       setNotification(event.detail);
     };
@@ -104,17 +80,20 @@ export default function GlobalPushNotifications() {
   }, []);
 
   return (
-    notification?.variant === "announcement" ? (
+    <>
       <AnnouncementModal
-        message={notification.message}
+        message={announcement?.message || ""}
+        open={announcementOpen}
         onClose={() => {
-          markNotificationRead(notification.announcementId);
-          setNotification(null);
-          void animateAppSurfaces(1);
+          markNotificationRead(announcement?.announcementId);
+          setAnnouncementOpen(false);
         }}
       />
-    ) : (
-      <PushNotification notification={notification} onClose={() => setNotification(null)} durationMs={notification?.durationMs} />
-    )
+      <PushNotification
+        notification={notification}
+        onClose={() => setNotification(null)}
+        durationMs={notification?.durationMs}
+      />
+    </>
   );
 }

@@ -18,6 +18,7 @@ export const GAME_MODES = {
   SPRINT: "sprint",
   CARTOON: "cartoon",
   DUEL: "duel",
+  SPOT: "spot",
 };
 
 export const GAME_FAMILIES = {
@@ -73,6 +74,10 @@ export const GAME_MODE_CONFIG = {
   [GAME_MODES.GRADIENT]: {
     revealDurationMs: 5000,
     lockedDifficulty: DIFFICULTIES.EASY,
+  },
+  [GAME_MODES.SPOT]: {
+    revealDurationMs: 0,
+    lockedDifficulty: DIFFICULTIES.HARD,
   },
   [GAME_MODES.FLAG]: {
     revealDurationMs: 5000,

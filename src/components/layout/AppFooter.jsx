@@ -71,7 +71,7 @@ export default function AppFooter() {
       const notificationCard = document.querySelector("[data-notification-card]");
       if (notificationCard) {
         await playCardToCardExit(notificationCard, content, {
-          targetExpanded: false,
+          targetExpanded: /^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href) ? false : true,
           hideChrome: false,
         });
       }

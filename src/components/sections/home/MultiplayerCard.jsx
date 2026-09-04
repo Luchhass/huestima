@@ -20,6 +20,7 @@ import PlayerNameField, {
   validatePlayerName,
 } from "@/components/ui/PlayerNameField";
 import PushNotification from "@/components/ui/PushNotification";
+import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import EmptyState from "@/components/ui/EmptyState";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -153,6 +154,7 @@ function PasswordField({
   ariaLabel,
   disabled = false,
 }) {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const Icon = isVisible ? EyeOff : Eye;
 
@@ -185,19 +187,16 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
     {
       id: VISIBILITIES.PUBLIC,
       label: t("setup.publicLobby"),
-      icon: Globe2,
     },
     {
       id: VISIBILITIES.PRIVATE,
       label: t("setup.privateLobby"),
-      icon: Lock,
     },
   ];
 
   return (
-    <div className="card-control-frame card-action-height grid w-[7.25rem] shrink-0 grid-cols-2 overflow-hidden">
+    <div className="card-control-frame card-action-height grid w-full min-w-0 grid-cols-2 overflow-hidden">
       {options.map((option) => {
-        const Icon = option.icon;
         const isActive = value === option.id;
 
         return (
@@ -208,11 +207,11 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
             aria-pressed={isActive}
             title={option.label}
             onClick={() => onChange(option.id)}
-            className={`grid min-w-0 place-items-center px-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 ${
+            className={`grid min-w-0 place-items-center px-2 text-center text-xs font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 sm:text-sm ${
               isActive ? "bg-white text-zinc-950" : "text-white/72"
             }`}
           >
-            <Icon className="size-4 shrink-0" strokeWidth={2.25} />
+            <span className="min-w-0 truncate">{option.label}</span>
           </button>
         );
       })}
@@ -575,14 +574,12 @@ export default function MultiplayerCard({
       visibility,
     });
 
-      void navigator.clipboard
+    void navigator.clipboard
       ?.writeText(`${window.location.origin}${buildRoomHref(response.room.code)}`)
       .then(() => markInviteCopied(response.room.code))
       .catch(() => showNotification(t("room.couldNotCopy"), "error"));
-    showNotification(t("setup.lobbyCreated"), "success");
-    window.setTimeout(() => {
-      router.push(buildRoomHref(response.room.code));
-    }, NOTIFICATION_LIFETIME_MS);
+    pushNotification(t("setup.lobbyCreated"), "success", NOTIFICATION_LIFETIME_MS);
+    router.push(buildRoomHref(response.room.code));
   };
 
   const handleJoinSelectedRoom = async () => {
@@ -755,7 +752,7 @@ export default function MultiplayerCard({
           </div>
 
           <div data-screen-reveal className="home-view-actions mt-3 w-full">
-            <div className="flex w-full items-center gap-2 sm:gap-3">
+            <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
               <VisibilitySwitch
                 value={visibility}
                 onChange={(value) => {
@@ -766,7 +763,7 @@ export default function MultiplayerCard({
               />
 
               {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag" || cleanGameFamily === "team") && (
-                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="shrink-0 px-1 text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="order-3 col-span-2 px-1 text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
                   {t("common.choosePools")}
                 </button>
               )}
@@ -775,7 +772,7 @@ export default function MultiplayerCard({
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating}
-                className="rgb-hover-button card-action-height inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base"
+                className="rgb-hover-button card-action-height inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-wait disabled:opacity-70 sm:px-5 sm:text-base"
               >
                 {isCreating ? (
                   <LoaderCircle
