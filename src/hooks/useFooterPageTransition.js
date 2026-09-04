@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
+import { dispatchScreenFadeOut } from "@/hooks/useScreenReveal";
 
 export const FOOTER_RETURN_KEY = "huestima-card-enter";
 export const ADMIN_HOME_RETURN_KEY = "huestima-admin-home-return";
@@ -107,6 +108,10 @@ export function playCardToCardExit(
   gsap.set(content, { autoAlpha: 1 });
   gsap.set(card, { autoAlpha: 1, transition: "none" });
   if (chrome.length) gsap.set(chrome, { autoAlpha: 1, transition: "none" });
+  dispatchScreenFadeOut({
+    duration: SCREEN_FADE_DURATION,
+    ease: SCREEN_FADE_EASE,
+  });
 
   return new Promise((resolve) => {
     const timeline = gsap.timeline({

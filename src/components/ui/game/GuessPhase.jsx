@@ -306,6 +306,15 @@ export default function GuessPhase({
       const rightPickerTracks = gsap.utils.toArray(".guess-picker-track--right");
       const pickerThumbs = gsap.utils.toArray(".guess-picker-thumb");
       const checkPath = submitIconRef.current?.querySelector("path");
+      const usesStackedControlReveal =
+        usesShowcaseGuessLayout &&
+        window.matchMedia("(max-width: 767.98px)").matches;
+      const pickerEnterFrom = usesStackedControlReveal
+        ? { yPercent: -104 }
+        : { xPercent: -104 };
+      const pickerEnterTo = usesStackedControlReveal
+        ? { yPercent: 0 }
+        : { xPercent: 0 };
 
       gsap.set(roundRef.current, {
         yPercent: -120,
@@ -360,7 +369,7 @@ export default function GuessPhase({
       }
 
       gsap.set(pickerTracks, {
-        xPercent: -104,
+        ...pickerEnterFrom,
         autoAlpha: 0,
         force3D: true,
       });
@@ -449,7 +458,7 @@ export default function GuessPhase({
       timeline
         // Sol slider barları
         .to(pickerTracks, {
-          xPercent: 0,
+          ...pickerEnterTo,
           autoAlpha: 1,
           duration: 0.76,
           ease: "expo.out",

@@ -34,6 +34,10 @@ function dispatchScreenLifecycleEvent(eventName, detail) {
   );
 }
 
+export function dispatchScreenFadeOut(detail) {
+  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT, detail);
+}
+
 function waitForIntro(callback) {
   if (window.__pageIntroDoneForPath === window.location.pathname) {
     const settleId = window.setTimeout(callback, 160);
@@ -123,7 +127,7 @@ export function playScreenFadeOut(scopeRef, options = {}) {
   const duration = options.duration ?? 0.24;
   const ease = options.ease ?? "power2.out";
 
-  dispatchScreenLifecycleEvent(SCREEN_FADE_OUT_EVENT, { duration, ease });
+  dispatchScreenFadeOut({ duration, ease });
 
   return new Promise((resolve) => {
     gsap.to(scope, {

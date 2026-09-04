@@ -91,7 +91,7 @@ export default function AppHeader() {
   const mobileMenuTimelineRef = useRef(null);
   const familyNavRef = useRef(null);
   const familyLinkRefs = useRef(new Map());
-  const closeMenuRef = useRef(() => {});
+  const closeMenuRef = useRef(() => Promise.resolve());
 
   useLayoutEffect(() => {
     const nav = familyNavRef.current;
@@ -236,39 +236,45 @@ export default function AppHeader() {
         "-=0.42",
       );
 
-    closeMenuRef.current = () => {
-      const closeTl = gsap.timeline({
-        defaults: { overwrite: "auto" },
-        onComplete: () => {
-          setIsNavOpen(false);
-          setIsNavRendered(false);
-        },
-      });
-
-      mobileMenuTimelineRef.current = closeTl;
-
-      closeTl
-        .to([...navTargets, ...controlTargets], {
-          autoAlpha: 0,
-          duration: 0.16,
-          stagger: 0.018,
-          ease: "power1.out",
-        })
-        .to(
-          content,
-          {
-            autoAlpha: 0,
-            duration: 0.1,
-            ease: "none",
+    closeMenuRef.current = () =>
+      new Promise((resolve) => {
+        const closeTl = gsap.timeline({
+          defaults: { overwrite: "auto" },
+          onComplete: () => {
+            setIsNavOpen(false);
+            setIsNavRendered(false);
+            // State updates are committed after this GSAP callback. Wait until
+            // the closed menu has actually left the screen before navigation.
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(resolve);
+            });
           },
-          "<",
-        )
-        .to(bubble, {
-          scale: 0,
-          duration: 0.44,
-          ease: "power3.inOut",
         });
-    };
+
+        mobileMenuTimelineRef.current = closeTl;
+
+        closeTl
+          .to([...navTargets, ...controlTargets], {
+            autoAlpha: 0,
+            duration: 0.16,
+            stagger: 0.018,
+            ease: "power1.out",
+          })
+          .to(
+            content,
+            {
+              autoAlpha: 0,
+              duration: 0.1,
+              ease: "none",
+            },
+            "<",
+          )
+          .to(bubble, {
+            scale: 0,
+            duration: 0.44,
+            ease: "power3.inOut",
+          });
+      });
 
     return () => {
       mobileMenuTimelineRef.current?.kill();
@@ -388,11 +394,15 @@ export default function AppHeader() {
       navigationResetRef.current = null;
     }, 1800);
 
-    if (isNavRendered) {
-      closeMenuRef.current();
-    }
+    void (async () => {
+      // Mobile sequence: close animation, remove menu, then page transition.
+      // Desktop navigation remains immediate.
+      if (isNavRendered) {
+        await closeMenuRef.current();
+      }
 
-    void playRouteTransition(href).catch(() => {
+      await playRouteTransition(href);
+    })().catch(() => {
       isNavigatingRef.current = false;
     });
   };

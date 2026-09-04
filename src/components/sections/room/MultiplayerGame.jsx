@@ -503,6 +503,11 @@ export default function MultiplayerGame({
               }
             : undefined
         }
+        brandOverlayProps={
+          isLogoFamily(cleanGameFamily) && renderedPhase === GAME_PHASES.GUESS
+            ? { contentOffset: (game.difficulty?.controls?.length || 1) * 50 }
+            : undefined
+        }
         brandLabelOffset={
           isLogoFamily(cleanGameFamily)
             ? {
@@ -599,6 +604,11 @@ export default function MultiplayerGame({
                   : 0
               }
               resumeInstantly={resumePhase === GAME_PHASES.RESULT}
+              brandGuessControlOffset={
+                isLogoFamily(cleanGameFamily)
+                  ? (game.difficulty?.controls?.length || 1) * 50
+                  : 0
+              }
             />
           )}
 

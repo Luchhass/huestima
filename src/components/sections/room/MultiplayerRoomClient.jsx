@@ -255,6 +255,9 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     difficulty,
     roundCount,
     flagDifficulty,
+    flagDifficulties,
+    cartoonIds,
+    teamIds,
   }) => {
     if (!player) return { ok: false };
 
@@ -268,6 +271,9 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       difficulty: GAME_MODE_LOCKED_DIFFICULTIES[gameMode] || difficulty,
       roundCount,
       flagDifficulty,
+      flagDifficulties,
+      cartoonIds,
+      teamIds,
     });
 
     setIsUpdatingSettings(false);

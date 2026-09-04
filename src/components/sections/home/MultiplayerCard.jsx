@@ -299,14 +299,6 @@ export default function MultiplayerCard({
   initialGameMode = null,
   initialRoundCount = DEFAULT_ROUND_COUNT,
   initialHintsEnabled = true,
-  initialFlagDifficulty = "starter",
-  initialFlagDifficulties = null,
-  cartoonIds = [],
-  onCartoonIdsChange,
-  onOpenCartoonPool,
-  onOpenFlagPool,
-  teamIds = [],
-  onOpenTeamPool,
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -339,8 +331,6 @@ export default function MultiplayerCard({
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
-  const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty);
-  const flagDifficulties = initialFlagDifficulties?.length ? initialFlagDifficulties : [flagDifficulty];
   const actionError = formError || submitError;
   const isPlayerNameReady = !validatePlayerName(playerName, t);
   const isJoinListStep = panel === PANELS.JOIN;
@@ -547,10 +537,6 @@ export default function MultiplayerCard({
       gameFamily: cleanGameFamily,
       roundCount: initialRoundCount,
       hintsEnabled: initialHintsEnabled,
-      flagDifficulty,
-      flagDifficulties,
-      cartoonIds,
-      teamIds,
     });
 
     if (!response.ok) {
@@ -761,12 +747,6 @@ export default function MultiplayerCard({
                 }}
                 disabled={isCreating}
               />
-
-              {(cleanGameFamily === "cartoon" || cleanGameFamily === "flag" || cleanGameFamily === "team") && (
-                <button type="button" onClick={cleanGameFamily === "cartoon" ? onOpenCartoonPool : cleanGameFamily === "flag" ? onOpenFlagPool : onOpenTeamPool} aria-label={t("common.choosePools")} title={t("common.choosePools")} className="order-3 col-span-2 px-1 text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
-                  {t("common.choosePools")}
-                </button>
-              )}
 
               <button
                 type="button"

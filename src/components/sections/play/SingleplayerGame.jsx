@@ -451,6 +451,11 @@ export default function SingleplayerGame({
               }
             : undefined
         }
+        brandOverlayProps={
+          (isBrandMode || isTeamMode) && renderedPhase === GAME_PHASES.GUESS
+            ? { contentOffset: (game.difficulty?.controls?.length || 1) * 50 }
+            : undefined
+        }
         brandLabelOffset={
           (isBrandMode || isTeamMode)
             ? {
@@ -543,6 +548,11 @@ export default function SingleplayerGame({
               }
               resumeInstantly={resumePhase === GAME_PHASES.RESULT}
               isSpotMode={game.isSpotMode}
+              brandGuessControlOffset={
+                (isBrandMode || isTeamMode)
+                  ? (game.difficulty?.controls?.length || 1) * 50
+                  : 0
+              }
             />
           )}
 

@@ -129,6 +129,7 @@ export default function ResultPhase({
   visualIntroDelayMs = 0,
   resumeInstantly = false,
   isSpotMode = false,
+  brandGuessControlOffset = 0,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -156,6 +157,7 @@ export default function ResultPhase({
   const guessSectionRef = useRef(null);
   const targetSectionRef = useRef(null);
   const splitOverlayRef = useRef(null);
+  const splitBrandSceneRef = useRef(null);
   const guessOverlayTones = useVisualOverlayTones(result?.guess);
   const targetOverlayTones = useVisualOverlayTones(result?.target);
 
@@ -196,6 +198,7 @@ export default function ResultPhase({
     const guessSectionElement = guessSectionRef.current;
     const targetSectionElement = targetSectionRef.current;
     const splitOverlayElement = splitOverlayRef.current;
+    const splitBrandSceneElement = splitBrandSceneRef.current;
 
     if (!scoreElement || !resultLineElement) return undefined;
 
@@ -231,6 +234,10 @@ export default function ResultPhase({
         });
       }
 
+      if (splitBrandSceneElement) {
+        gsap.set(splitBrandSceneElement, { left: 0 });
+      }
+
       return undefined;
     }
 
@@ -244,7 +251,16 @@ export default function ResultPhase({
         splitOverlayElement
     );
     const introDelay = Math.max(0, Number(visualIntroDelayMs) || 0) / 1000;
-    const splitRevealDuration = canAnimateSplitReveal ? 1.12 : 0;
+    const shouldCenterBrandGuess = Boolean(
+      canAnimateSplitReveal &&
+        isBrandColor(result.guess) &&
+        splitBrandSceneElement &&
+        Number(brandGuessControlOffset) > 0,
+    );
+    const brandCenterDuration = shouldCenterBrandGuess ? 0.34 : 0;
+    const splitRevealDuration = canAnimateSplitReveal
+      ? 1.12 + brandCenterDuration
+      : 0;
     const revealStart = introDelay + splitRevealDuration;
     const at = (position) => position + revealStart;
     const scoreStartDelayMs = Math.round((revealStart + 1.56) * 1000);
@@ -383,6 +399,24 @@ export default function ResultPhase({
           force3D: true,
         });
 
+        if (shouldCenterBrandGuess) {
+          gsap.set(splitBrandSceneElement, {
+            left: Math.max(0, Number(brandGuessControlOffset) || 0),
+          });
+
+          timeline.to(
+            splitBrandSceneElement,
+            {
+              left: 0,
+              duration: brandCenterDuration,
+              ease: "expo.inOut",
+            },
+            introDelay,
+          );
+        }
+
+        const splitStart = introDelay + brandCenterDuration;
+
         timeline
           .to(
             splitOverlayElement,
@@ -391,7 +425,7 @@ export default function ResultPhase({
               duration: 0.56,
               ease: "expo.inOut",
             },
-            introDelay
+            splitStart
           )
           .to(
             targetSectionElement,
@@ -401,7 +435,7 @@ export default function ResultPhase({
               ease: "expo.out",
               clearProps: "transform,opacity,visibility",
             },
-            introDelay + 0.5
+            splitStart + 0.5
           )
           .to(
             splitOverlayElement,
@@ -410,14 +444,14 @@ export default function ResultPhase({
               duration: 0.16,
               ease: "power2.out",
             },
-            introDelay + 1
+            splitStart + 1
           )
           .set(
             splitOverlayElement,
             {
               pointerEvents: "none",
             },
-            introDelay + 1.12
+            splitStart + 1.12
           );
       }
 
@@ -854,7 +888,13 @@ export default function ResultPhase({
         style={{ background: guessBackground }}
       >
         {isFlagColor(result.guess) && <FlagOverlay color={result.guess} />}
-        {isBrandColor(result.guess) && <BrandOverlay color={result.guess} />}
+        {isBrandColor(result.guess) && (
+          <BrandOverlay
+            color={result.guess}
+            contentOffset={brandGuessControlOffset}
+            sceneRef={splitBrandSceneRef}
+          />
+        )}
 
         {isCartoonGuessResult && (
           <CartoonOverlay

@@ -962,14 +962,6 @@ export default function HomeCard({
               initialGameMode={initialGameMode || defaultGameMode}
               initialRoundCount={roundCount}
               initialHintsEnabled={initialHintsEnabled ?? true}
-              initialFlagDifficulty={flagDifficulty}
-              initialFlagDifficulties={flagDifficulties}
-              cartoonIds={cartoonIds}
-              onCartoonIdsChange={setCartoonIds}
-              onOpenCartoonPool={openCartoonPool}
-              onOpenFlagPool={openFlagPool}
-              teamIds={teamIds}
-              onOpenTeamPool={openTeamPool}
             />
           )}
         </div>

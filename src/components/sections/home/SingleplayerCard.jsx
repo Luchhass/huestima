@@ -17,31 +17,11 @@ import {
 import { getAvailableGameModeOptions, getGameModeOption } from "@/lib/gameMode";
 import { serializeHintsEnabled } from "@/lib/hints";
 import { GAME_FAMILY_IDS } from "@/lib/gameFamily";
-import { CARTOON_PACKS } from "@/lib/cartoons";
-import { TEAM_OPTIONS } from "@/lib/teams";
+import { getPoolLinkLabel } from "@/lib/poolSelection";
 
 const SINGLEPLAYER_GAME_MODE_OPTIONS = getAvailableGameModeOptions(
   GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
 );
-
-function getPoolLinkLabel(gameFamily, locale, { cartoonIds, flagDifficulties, teamIds }) {
-  const isTurkish = locale === "tr";
-  const allLabel = isTurkish ? "tümü" : "all";
-  const multipleLabel = isTurkish ? "birden fazla" : "multiple";
-  const names = gameFamily === GAME_FAMILY_IDS.CARTOON
-    ? CARTOON_PACKS.filter((pack) => pack.itemIds.every((id) => cartoonIds.includes(id))).map((pack) => pack.label)
-    : gameFamily === GAME_FAMILY_IDS.TEAM
-      ? TEAM_OPTIONS.filter((team) => teamIds.includes(team.id)).map((team) => team.label)
-      : flagDifficulties;
-  const title = gameFamily === GAME_FAMILY_IDS.CARTOON
-    ? (isTurkish ? "Çizgi film listesi" : "Cartoon list")
-    : gameFamily === GAME_FAMILY_IDS.FLAG
-      ? (isTurkish ? "Bayrak listesi" : "Flag list")
-      : (isTurkish ? "Takım listesi" : "Team list");
-  const total = gameFamily === GAME_FAMILY_IDS.CARTOON ? CARTOON_PACKS.length : gameFamily === GAME_FAMILY_IDS.TEAM ? TEAM_OPTIONS.length : 3;
-  const selection = names.length === total ? allLabel : names.length === 1 ? names[0] : multipleLabel;
-  return `${title} (${selection})`;
-}
 
 export default function SingleplayerCard({
   difficulty,

@@ -8,12 +8,15 @@ import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
+import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
-import FlagDifficultySwitch from "@/components/ui/FlagDifficultySwitch";
+import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
 import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import PushNotification from "@/components/ui/PushNotification";
+import TeamPoolPicker from "@/components/ui/TeamPoolPicker";
 import UnifiedModal from "@/components/ui/UnifiedModal";
+import { CARTOON_PACKS } from "@/lib/cartoons";
 import {
   DEFAULT_ROUND_COUNT,
   DIFFICULTY_IDS,
@@ -24,9 +27,12 @@ import { FLAG_OPTIONS } from "@/lib/flags";
 import {
   isCartoonFamily,
   isFlagFamily,
+  isTeamFamily,
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getAvailableGameModeOptions } from "@/lib/gameMode";
+import { getPoolLinkLabel } from "@/lib/poolSelection";
+import { TEAM_OPTIONS } from "@/lib/teams";
 import {
   getLevelCountImpactPreset,
   playLevelCountRecoil,
@@ -49,6 +55,8 @@ const DIFFICULTY_BURST_COLORS = {
 };
 const EXPANDED_REVEAL_DELAY = 320;
 const DIFFICULTY_BURST_LIFETIME_MS = 1180;
+const ALL_CARTOON_IDS = CARTOON_PACKS.flatMap((pack) => pack.itemIds);
+const ALL_TEAM_IDS = TEAM_OPTIONS.map((team) => team.id);
 
 function getDifficultyBurstGeometry(card, origin, optionIndex) {
   const rect = card?.getBoundingClientRect();
@@ -139,9 +147,10 @@ export default function LobbyCard({
   error,
 }) {
   const cleanGameFamily = normalizeGameFamily(gameFamily);
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
   const [isInviteCopied, setIsInviteCopied] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsPool, setSettingsPool] = useState(null);
   const [draftSettings, setDraftSettings] = useState(null);
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
@@ -182,6 +191,9 @@ export default function LobbyCard({
     difficulty: room?.difficulty,
     roundCount: room?.roundCount,
     flagDifficulty: room?.flagDifficulty || "starter",
+    flagDifficulties: room?.flagDifficulties || [room?.flagDifficulty || "starter"],
+    cartoonIds: room?.cartoonIds || ALL_CARTOON_IDS,
+    teamIds: room?.teamIds || ALL_TEAM_IDS,
   };
   const activeModeOption = GAME_MODE_OPTIONS.find(
     (option) => option.id === activeSettings.gameMode,
@@ -202,7 +214,7 @@ export default function LobbyCard({
   useFlagFullscreenLock(
     isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
   );
-  useScreenReveal(scopeRef, [room?.code, isSettingsOpen], {
+  useScreenReveal(scopeRef, [room?.code, isSettingsOpen, settingsPool], {
     delay: EXPANDED_REVEAL_DELAY,
   });
 
@@ -307,15 +319,34 @@ export default function LobbyCard({
         difficulty: room?.difficulty,
         roundCount: room?.roundCount,
         flagDifficulty: room?.flagDifficulty || "starter",
+        flagDifficulties: room?.flagDifficulties || [room?.flagDifficulty || "starter"],
+        cartoonIds: room?.cartoonIds || ALL_CARTOON_IDS,
+        teamIds: room?.teamIds || ALL_TEAM_IDS,
       });
     } else {
       setDraftSettings(null);
     }
+    setSettingsPool(null);
     setIsSettingsOpen(nextOpen);
   };
 
   const handleOpenSettings = () => transitionSettingsView(true);
   const handleCloseSettings = () => transitionSettingsView(false);
+
+  const transitionSettingsPool = async (nextPool) => {
+    if (isUpdatingSettings) return;
+    if (scopeRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      await new Promise((resolve) => {
+        gsap.to(scopeRef.current, {
+          autoAlpha: 0,
+          duration: 0.42,
+          ease: "power2.inOut",
+          onComplete: resolve,
+        });
+      });
+    }
+    setSettingsPool(nextPool);
+  };
 
   const handleSaveSettings = async () => {
     if (!draftSettings || isUpdatingSettings) return;
@@ -445,6 +476,29 @@ export default function LobbyCard({
       </button>
 
       {isSettingsOpen ? (
+        settingsPool === "cartoon" ? (
+          <CartoonPoolPicker
+            value={activeSettings.cartoonIds}
+            onChange={(cartoonIds) => setDraftSettings((current) => ({ ...current, cartoonIds }))}
+            onDone={() => transitionSettingsPool(null)}
+          />
+        ) : settingsPool === "flag" ? (
+          <FlagPoolPicker
+            value={activeSettings.flagDifficulties}
+            onChange={(flagDifficulties) => setDraftSettings((current) => ({
+              ...current,
+              flagDifficulties,
+              flagDifficulty: flagDifficulties[0] || current.flagDifficulty,
+            }))}
+            onDone={() => transitionSettingsPool(null)}
+          />
+        ) : settingsPool === "team" ? (
+          <TeamPoolPicker
+            value={activeSettings.teamIds}
+            onChange={(teamIds) => setDraftSettings((current) => ({ ...current, teamIds }))}
+            onDone={() => transitionSettingsPool(null)}
+          />
+        ) : (
         <>
           <div data-screen-reveal className="pr-10">
             <h1
@@ -469,6 +523,16 @@ export default function LobbyCard({
           </div>
 
           <div data-screen-reveal className="home-view-actions mt-auto w-full">
+            {(isCartoonFamily(cleanGameFamily) || isFlagFamily(cleanGameFamily) || isTeamFamily(cleanGameFamily)) && (
+              <button
+                type="button"
+                onClick={() => transitionSettingsPool(cleanGameFamily)}
+                disabled={isUpdatingSettings || room?.status !== "lobby"}
+                className="mb-3 px-1 text-left text-xs font-semibold text-white/65 underline decoration-current underline-offset-4 transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {getPoolLinkLabel(cleanGameFamily, locale, activeSettings)}
+              </button>
+            )}
             <div className="grid w-full grid-cols-2 items-center gap-2 sm:gap-3">
               <div data-game-mode-shock-target className="min-w-0">
                 <DifficultySwitch
@@ -516,17 +580,9 @@ export default function LobbyCard({
                 <span className="relative z-10">{t("room.saveSettings")}</span>
               </button>
             </div>
-            {isFlagFamily(cleanGameFamily) && (
-              <div data-game-mode-shock-target className="mt-3 min-w-0">
-                <FlagDifficultySwitch
-                  value={activeSettings.flagDifficulty}
-                  onChange={(flagDifficulty) => setDraftSettings((current) => ({ ...current, flagDifficulty }))}
-                  disabled={isUpdatingSettings || room?.status !== "lobby"}
-                />
-              </div>
-            )}
           </div>
         </>
+        )
       ) : (
         <>
       <div data-screen-reveal className="pr-10">
