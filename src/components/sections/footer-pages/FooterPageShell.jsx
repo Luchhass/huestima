@@ -1,11 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import FooterCardSurface from "./FooterCardSurface";
 import {
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
-import { FOOTER_FULLSCREEN_COLLAPSE_EVENT } from "@/hooks/useFooterPageTransition";
+import {
+  consumeCardRouteTransition,
+} from "@/hooks/useFooterPageTransition";
 
 export function FooterPageAction({ children, className = "", ...props }) {
   return (
@@ -64,62 +68,92 @@ export default function FooterPageShell({
   action,
   children,
   className = "",
+  effects,
   mainRef,
+  onRevealComplete,
   scrollable = true,
+  scrollableMobile = false,
   staticLanguage = false,
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const cardRef = useRef(null);
   const contentRef = useRef(null);
   const setMainNode = useCallback((node) => {
+    cardRef.current = node;
     if (mainRef) mainRef.current = node;
   }, [mainRef]);
+  useScreenReveal(contentRef, [], { defer: true, onComplete: onRevealComplete });
 
-  useScreenReveal(contentRef, [], { defer: true });
-
-  useEffect(() => {
-    const expandId = window.setTimeout(() => setIsExpanded(true), 40);
-    const revealId = window.setTimeout(() => {
-      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
-    }, 780);
-    const handleCollapse = () => setIsExpanded(false);
-    window.addEventListener(FOOTER_FULLSCREEN_COLLAPSE_EVENT, handleCollapse);
-
-    return () => {
-      window.clearTimeout(expandId);
-      window.clearTimeout(revealId);
-      window.removeEventListener(FOOTER_FULLSCREEN_COLLAPSE_EVENT, handleCollapse);
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const transition = consumeCardRouteTransition();
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = window.innerHeight;
+    // Read the server-rendered normal card; do not resize a fullscreen first paint.
+    const rect = card.getBoundingClientRect();
+    const { width, height } = rect;
+    const normal = {
+      left: rect.left,
+      top: rect.top,
+      width, height, borderRadius: 26,
     };
-  }, []);
+    const scale = Math.max(viewportWidth / width, viewportHeight / height);
+    const cover = {
+      left: (viewportWidth - width * scale) / 2,
+      top: (viewportHeight - height * scale) / 2,
+      width: width * scale, height: height * scale, borderRadius: 0,
+    };
+    let animation;
+    let revealFrame;
+    const reveal = () => {
+      // The very same surface becomes the scrollable page after covering the viewport.
+      gsap.set(card, { left: 0, top: 0, width: viewportWidth, height: viewportHeight });
+      const mobileScrollable = scrollableMobile && window.matchMedia("(max-width: 639px)").matches;
+      card.style.overflowY = scrollable || mobileScrollable ? "auto" : "hidden";
+      revealFrame = requestAnimationFrame(() => {
+        window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+      });
+    };
+    gsap.set(card, transition?.from === "fullscreen" ? cover : normal);
+    card.style.overflow = "hidden";
+    animation = gsap.to(card, {
+      ...cover, duration: reduced || transition?.from === "fullscreen" ? 0 : 0.72,
+      ease: "expo.inOut", onComplete: reveal,
+    });
+    card.footerCollapse = () => new Promise((resolve) => {
+      animation?.kill();
+      cancelAnimationFrame(revealFrame);
+      card.scrollTop = 0;
+      card.style.overflow = "hidden";
+      gsap.set(card, cover);
+      animation = gsap.to(card, {
+        ...normal, duration: reduced ? 0 : 0.66, ease: "expo.inOut",
+        onComplete: resolve, onInterrupt: resolve,
+      });
+    });
+    return () => {
+      cancelAnimationFrame(revealFrame);
+      animation?.kill();
+      gsap.set(card, { clearProps: "left,top,width,height,borderRadius,overflow,overflowY" });
+      delete card.footerCollapse;
+    };
+  }, [scrollable, scrollableMobile]);
 
   return (
     <main
       data-language-static={staticLanguage ? "" : undefined}
-      className={`app-gradient flex h-dvh w-full items-center justify-center overflow-hidden transition-[padding] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] ${isExpanded ? "p-0" : "p-6 sm:p-8"}`}
+      className="app-gradient relative h-dvh w-full overflow-hidden"
     >
-      <article
-        ref={setMainNode}
-        data-footer-fullscreen-card
-        className={`footer-page-dark relative w-full bg-black text-white transition-[height,max-width,border-radius] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] ${
-          isExpanded
-            ? "h-dvh max-w-none rounded-none"
-            : "h-[min(390px,calc(100dvh-8rem))] max-w-125 rounded-[26px]"
-        } ${scrollable ? "overflow-y-auto" : "overflow-clip"} ${className}`}
-      >
-        <div
-          ref={contentRef}
-          data-footer-page-content
-          className={`min-h-full px-6 pt-8 sm:px-10 lg:px-14 ${
-            scrollable ? "pb-16" : "pb-6 sm:pb-8"
-          }`}
-        >
-          <div data-screen-reveal className="min-h-full">
-            {action}
-            <div className="mx-auto w-full max-w-[68rem] pt-16 sm:pt-14">
-              {children}
-            </div>
+      <FooterCardSurface cardRef={setMainNode} className={className}>
+        <div ref={contentRef} data-footer-page-content
+          className={`min-h-full px-6 pt-8 sm:px-10 lg:px-14 ${scrollable || scrollableMobile ? "pb-16" : "pb-6 sm:pb-8"}`}>
+          {action}
+          {effects}
+          <div data-screen-reveal className="mx-auto w-full max-w-[68rem] pt-16 sm:pt-14">
+            {children}
           </div>
         </div>
-      </article>
+      </FooterCardSurface>
     </main>
   );
 }

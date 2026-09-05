@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRef } from "react";
@@ -13,9 +13,9 @@ import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import FooterPageShell, {
-  FooterPageAction,
   FooterPageHeader,
 } from "@/components/sections/footer-pages/FooterPageShell";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const HOW_IT_WORKS_CARTOON_ID = "adventure-time-9596374";
 const CLASSIC_CUTOUT_SRC = "/how-it-works/lady-rainicorn-bad-cutout.png";
@@ -318,17 +318,11 @@ export default function HowItWorksPage() {
   return (
     <FooterPageShell
       mainRef={mainRef}
-      scrollable
-      className="text-zinc-950 dark:text-zinc-50"
+      scrollable={false}
+      scrollableMobile
+      className="text-white"
       action={
-        <FooterPageAction
-          href={returnPath}
-          onClick={handleClose}
-          aria-label={t("common.closeMenu")}
-          className="size-11 p-0 text-foreground/62"
-        >
-          <X size={24} strokeWidth={1.8} aria-hidden="true" />
-        </FooterPageAction>
+        <CardCloseButton href={returnPath} onClick={handleClose} label={t("common.closeMenu")} className="absolute right-6 top-6 text-foreground/62 sm:right-10 sm:top-8 lg:right-14" />
       }
     >
       <FooterPageHeader
@@ -352,11 +346,11 @@ export default function HowItWorksPage() {
             <LineRevealText
               as="h2"
               text={title}
-              className="text-[clamp(1.55rem,2.35vw,2.45rem)] font-semibold leading-[1.04] tracking-normal"
+              className="text-[clamp(1.55rem,2.35vw,2.45rem)] font-semibold leading-[1.04] tracking-normal text-white"
             />
             <LineRevealText
               text={copy}
-              className="mt-3 max-w-[42rem] text-[clamp(0.88rem,1.28vw,1.08rem)] font-medium leading-[1.36] text-zinc-700 dark:text-zinc-300 md:mt-4 md:leading-[1.42]"
+              className="mt-3 max-w-[42rem] text-[clamp(0.88rem,1.28vw,1.08rem)] font-medium leading-[1.36] text-white/68 md:mt-4 md:leading-[1.42]"
             />
           </article>
 
@@ -406,7 +400,7 @@ export default function HowItWorksPage() {
               type="button"
               onClick={() => setActiveStep((step) => Math.max(0, step - 1))}
               disabled={!hasPrevious}
-              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-black text-white shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25 dark:bg-white dark:text-black"
+              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
               aria-label={t("howItWorks.previous")}
             >
               <span className="relative z-10 inline-flex items-center justify-center">
@@ -418,7 +412,7 @@ export default function HowItWorksPage() {
               type="button"
               onClick={() => setActiveStep((step) => Math.min(STEPS.length - 1, step + 1))}
               disabled={!hasNext}
-              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-black text-white shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25 dark:bg-white dark:text-black"
+              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
               aria-label={t("howItWorks.next")}
             >
               <span className="relative z-10 inline-flex items-center justify-center">
