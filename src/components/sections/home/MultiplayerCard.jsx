@@ -305,6 +305,7 @@ export default function MultiplayerCard({
 }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const { operations } = useSiteOperations();
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const requestedGameMode = initialGameMode || getDefaultGameModeForFamily(cleanGameFamily);
   const multiplayerGameModeOptions = GAME_MODE_OPTIONS.filter(
