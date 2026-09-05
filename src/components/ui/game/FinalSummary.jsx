@@ -2,10 +2,11 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardCloseButton from "@/components/ui/CardCloseButton";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 import { MAX_ROUND_SCORE, ROUND_COUNT } from "@/lib/constants";
 import {
   getVisualLabel,
@@ -25,7 +26,7 @@ import CartoonOverlay from "./CartoonOverlay";
 import FlagOverlay from "./FlagOverlay";
 import BrandOverlay from "./BrandOverlay";
 
-const EXPANDED_REVEAL_DELAY = 320;
+const EXPANDED_REVEAL_DELAY = CARD_RESIZE_DURATION_MS;
 
 function tileGradient(result) {
   return gradientBackground(result.guess);
@@ -426,15 +427,7 @@ export default function FinalSummary({
         isLeavingHome ? "opacity-0" : "opacity-100"
       }`}
     >
-      <button
-        ref={closeRef}
-        type="button"
-        onClick={handleBackHome}
-        aria-label={t("common.backHome")}
-        className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
-      >
-        <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </button>
+      <CardCloseButton ref={closeRef} onClick={handleBackHome} label={t("common.backHome")} className="absolute right-4 top-4 sm:right-8 sm:top-8" />
 
       <div data-screen-reveal className="max-w-100 pr-10">
         <div>

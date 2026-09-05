@@ -6,6 +6,7 @@ import { closeAllRooms } from "../rooms/roomService.js";
 import {
   getSiteOperations,
   setAnnouncement,
+  removeAnnouncement,
   setMaintenanceEnabled,
   setMultiplayerEnabled,
   setGameConfiguration,
@@ -137,6 +138,18 @@ router.post("/operations/announcement", operationsSchema, requireAdmin, (request
     active: Boolean(operations.announcement),
   });
   response.json({ ok: true, operations });
+});
+
+router.post("/operations/announcement/delete", operationsSchema, requireAdmin, (request, response) => {
+  const id = request.body?.id;
+  if (typeof id !== "string" || !id) {
+    response.status(400).json({ ok: false, error: "Announcement id is required." });
+    return;
+  }
+  const operations = removeAnnouncement(id);
+  getIo()?.emit("operations:announcement-deleted", { id });
+  getIo()?.emit("operations:state", operations);
+  response.json({ ok: true, operations, id });
 });
 
 router.post("/operations/multiplayer", operationsSchema, requireAdmin, (request, response) => {

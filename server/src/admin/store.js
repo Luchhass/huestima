@@ -153,6 +153,10 @@ export function insertAnnouncement({ id, message, createdAt }) {
   `).run(id, message, createdAt);
 }
 
+export function deleteAnnouncement(id) {
+  database.prepare("DELETE FROM announcement_history WHERE id = ?").run(id);
+}
+
 export function readAnnouncementHistory(limit = 50) {
   const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
   database.prepare("DELETE FROM announcement_history WHERE created_at < ?").run(Date.now() - 48 * 60 * 60 * 1000);

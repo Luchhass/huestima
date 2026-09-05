@@ -4,15 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import gsap from "gsap";
-import { X } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 import {
   playScreenFadeOut,
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
-import { markDownloadReturn } from "@/hooks/useFooterPageTransition";
+import {
+  consumeCardRouteTransition,
+  DOWNLOAD_RESIZE_DURATION_MS,
+  markDownloadReturn,
+  SCREEN_REVEAL_AFTER_RESIZE_MS,
+  SCREEN_REVEAL_DIRECT_MS,
+} from "@/hooks/useFooterPageTransition";
 
 const STORES = {
   ios: process.env.NEXT_PUBLIC_APP_STORE_URL || "https://apps.apple.com/us/genre/ios/id36",
@@ -58,28 +64,32 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
   const { locale, t } = useTranslation();
   const router = useRouter();
   const scopeRef = useRef(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [entryTransition] = useState(consumeCardRouteTransition);
+  const skipsEntryResize = ["large", "download"].includes(entryTransition?.from);
+  const [isExpanded, setIsExpanded] = useState(skipsEntryResize);
   const [hoveredStore, setHoveredStore] = useState(null);
   const [activePreview, setActivePreview] = useState(0);
   const previewRefs = useRef([]);
   const previewAnimatingRef = useRef(false);
   const previewTweenRef = useRef(null);
   const previewDragRef = useRef(null);
-  const from = ["color", "flag", "cartoon", "brand"].includes(initialFrom) ? initialFrom : "color";
+  const from = ["color", "flag", "cartoon", "brand", "team"].includes(initialFrom) ? initialFrom : "color";
   const cardHeight = useResponsiveCardHeight(isExpanded);
 
   useScreenReveal(scopeRef, [locale], { defer: true });
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => setIsExpanded(true), 40);
+    const timeoutId = skipsEntryResize
+      ? null
+      : window.setTimeout(() => setIsExpanded(true), 40);
     const revealTimeoutId = window.setTimeout(() => {
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
-    }, 780);
+    }, skipsEntryResize ? SCREEN_REVEAL_DIRECT_MS : SCREEN_REVEAL_AFTER_RESIZE_MS + 160);
     return () => {
-      window.clearTimeout(timeoutId);
+      if (timeoutId) window.clearTimeout(timeoutId);
       window.clearTimeout(revealTimeoutId);
     };
-  }, []);
+  }, [skipsEntryResize]);
 
   useEffect(() => {
     const front = previewRefs.current[0];
@@ -92,7 +102,7 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
   const handleClose = async () => {
     await playScreenFadeOut(scopeRef, { duration: 0.24 });
     setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    await new Promise((resolve) => window.setTimeout(resolve, DOWNLOAD_RESIZE_DURATION_MS));
     markDownloadReturn();
     router.push(`/${from}`);
   };
@@ -231,8 +241,8 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
   }, [initialPlatform]);
 
   return <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
-    <article data-intro-card-target style={cardHeight ? { height: cardHeight } : undefined} className={`relative w-full overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height,max-width] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8 ${isExpanded ? "max-w-125 lg:max-w-[64rem]" : "max-w-125"}`}>
-      <button type="button" onClick={() => void handleClose()} aria-label={t("download.back")} className="absolute right-4 top-4 z-20 grid size-11 place-items-center rounded-full text-white/70 transition-opacity hover:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 sm:right-7 sm:top-7"><X size={25} strokeWidth={1.8} /></button>
+    <article data-intro-card-target style={cardHeight ? { height: cardHeight } : undefined} className={`relative w-full overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height,max-width] duration-[860ms] ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8 ${isExpanded ? "max-w-125 lg:max-w-[64rem]" : "max-w-125"}`}>
+      <CardCloseButton onClick={() => void handleClose()} label={t("download.back")} className="absolute right-4 top-4 sm:right-7 sm:top-7" />
       <div ref={scopeRef} data-route-transition-scope className="relative grid h-full min-h-0 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
         <section className="flex min-h-0 flex-col">
           <div data-screen-reveal className="max-w-[40rem]">

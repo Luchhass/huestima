@@ -22,7 +22,8 @@ import PlayerNameField, {
 import PushNotification from "@/components/ui/PushNotification";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import EmptyState from "@/components/ui/EmptyState";
-import { useScreenReveal } from "@/hooks/useScreenReveal";
+import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   DEFAULT_DIFFICULTY_ID,
@@ -36,6 +37,7 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { getGameModeOption } from "@/lib/gameMode";
+import { useSiteOperations } from "@/hooks/useSiteOperations";
 import { emitWithAck, getSocket } from "@/lib/socket";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 import {
@@ -59,7 +61,7 @@ const VISIBILITIES = {
 const MAX_LOBBY_NAME_LENGTH = 28;
 const MIN_LOBBY_NAME_LENGTH = 2;
 const MIN_LOBBY_PASSWORD_LENGTH = 3;
-const EXPANDED_REVEAL_DELAY = 320;
+const EXPANDED_REVEAL_DELAY = CARD_RESIZE_DURATION_MS;
 const NOTIFICATION_LIFETIME_MS = 3000;
 
 function getRoomFamily(room, fallbackFamily = "color") {
@@ -155,6 +157,7 @@ function PasswordField({
   disabled = false,
 }) {
   const { t } = useTranslation();
+  const { operations } = useSiteOperations();
   const [isVisible, setIsVisible] = useState(false);
   const Icon = isVisible ? EyeOff : Eye;
 
@@ -311,11 +314,13 @@ export default function MultiplayerCard({
     requestedGameMode,
     multiplayerGameModeOptions,
     cleanGameFamily,
+    operations.gameConfiguration,
   );
   const defaultGameMode = defaultGameModeOption.id;
   const defaultDifficulty =
     initialDifficulty || defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
   const scopeRef = useRef(null);
+  const isChangingPanelRef = useRef(false);
   const [panel, setPanel] = useState(PANELS.CHOICE);
   const [visibility, setVisibility] = useState(VISIBILITIES.PUBLIC);
   const [lobbyName, setLobbyName] = useState("");
@@ -474,13 +479,17 @@ export default function MultiplayerCard({
     return () => window.clearTimeout(timeoutId);
   }, [actionError]);
 
-  const openPanel = (nextPanel) => {
+  const openPanel = async (nextPanel) => {
+    if (nextPanel === panel || isChangingPanelRef.current) return;
     const playerNameError = validatePlayerName(playerName, t);
     if (playerNameError) {
       setFormError(playerNameError);
       setSubmitError("");
       return;
     }
+
+    isChangingPanelRef.current = true;
+    await playScreenFadeOut(scopeRef);
 
     setPanel(nextPanel);
 
@@ -490,6 +499,22 @@ export default function MultiplayerCard({
 
     setFormError("");
     setSubmitError("");
+    window.setTimeout(() => {
+      isChangingPanelRef.current = false;
+    }, nextPanel === PANELS.JOIN ? CARD_RESIZE_DURATION_MS : 80);
+  };
+
+  const navigateToRoom = async (href) => {
+    await playScreenFadeOut(scopeRef);
+
+    if (panel === PANELS.JOIN) {
+      onTallStepChange?.(false);
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, CARD_RESIZE_DURATION_MS);
+      });
+    }
+
+    router.push(href);
   };
 
   const handleCreate = async () => {
@@ -565,7 +590,7 @@ export default function MultiplayerCard({
       .then(() => markInviteCopied(response.room.code))
       .catch(() => showNotification(t("room.couldNotCopy"), "error"));
     pushNotification(t("setup.lobbyCreated"), "success", NOTIFICATION_LIFETIME_MS);
-    router.push(buildRoomHref(response.room.code));
+    await navigateToRoom(buildRoomHref(response.room.code));
   };
 
   const handleJoinSelectedRoom = async () => {
@@ -630,7 +655,7 @@ export default function MultiplayerCard({
 
     showNotification(t("setup.lobbyJoined"), "success");
     window.setTimeout(() => {
-      router.push(buildRoomHref(selectedRoom.code));
+      void navigateToRoom(buildRoomHref(selectedRoom.code));
     }, NOTIFICATION_LIFETIME_MS);
   };
 
@@ -659,7 +684,7 @@ export default function MultiplayerCard({
 
         <p
           data-game-mode-shock-target
-          className="mt-3.5 max-w-[35.5rem] text-[0.92rem] font-medium leading-[1.28] text-white/82 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.98rem]"
+          className="app-card-copy mt-3.5 max-w-[35.5rem] sm:mt-4 sm:max-w-[36.75rem]"
         >
           {description}
         </p>

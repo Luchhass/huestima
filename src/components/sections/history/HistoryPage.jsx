@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play, Share2, Trash2, X } from "lucide-react";
+import { Check, Play, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import {
@@ -9,7 +9,13 @@ import {
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
-import { markDownloadReturn } from "@/hooks/useFooterPageTransition";
+import {
+  consumeCardRouteTransition,
+  CARD_RESIZE_DURATION_MS,
+  markDownloadReturn,
+  SCREEN_REVEAL_AFTER_RESIZE_MS,
+  SCREEN_REVEAL_DIRECT_MS,
+} from "@/hooks/useFooterPageTransition";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
   readStoredPlayerName,
@@ -38,8 +44,8 @@ import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
 import BrandOverlay from "@/components/ui/game/BrandOverlay";
 import EmptyState from "@/components/ui/EmptyState";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
-const CARD_RESIZE_DURATION_MS = 700;
 const CONTENT_FADE_DURATION_MS = 240;
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
@@ -249,14 +255,7 @@ function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label={t("history.backToList")}
-        className="solo-close-button absolute right-0 top-0 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:size-9"
-      >
-        <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </button>
+      <CardCloseButton onClick={onBack} label={t("history.backToList")} className="absolute right-0 top-0" />
 
       <div data-screen-reveal className="max-w-100 pr-12 sm:pr-14">
         <div className="flex items-end gap-2">
@@ -312,7 +311,9 @@ export default function HistoryPage({
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
   const [entries, setEntries] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [entryTransition] = useState(consumeCardRouteTransition);
+  const skipsEntryResize = ["large", "download"].includes(entryTransition?.from);
+  const [isExpanded, setIsExpanded] = useState(skipsEntryResize);
   const [activeEntry, setActiveEntry] = useState(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -346,14 +347,18 @@ export default function HistoryPage({
   }, [initialView, selectedMatchId, sharedEntry]);
 
   useEffect(() => {
+    const expandTimeoutId = skipsEntryResize
+      ? null
+      : window.setTimeout(() => setIsExpanded(true), 40);
     const revealTimeoutId = window.setTimeout(() => {
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
-    }, 780);
+    }, skipsEntryResize ? SCREEN_REVEAL_DIRECT_MS : SCREEN_REVEAL_AFTER_RESIZE_MS);
 
     return () => {
+      if (expandTimeoutId) window.clearTimeout(expandTimeoutId);
       window.clearTimeout(revealTimeoutId);
     };
-  }, []);
+  }, [skipsEntryResize]);
 
   useEffect(() => {
     const handleHistoryLeave = async () => {
@@ -396,7 +401,7 @@ export default function HistoryPage({
     setIsLeaving(true);
     await playScreenFadeOut(scopeRef, { duration: 0.24 });
     setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    await new Promise((resolve) => window.setTimeout(resolve, CARD_RESIZE_DURATION_MS));
     markDownloadReturn();
     router.push(`/${from}`);
   };
@@ -482,6 +487,7 @@ export default function HistoryPage({
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
+        data-intro-card-target
         data-history-card
         className="relative flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
         style={cardHeight ? { height: cardHeight } : undefined}
@@ -581,14 +587,7 @@ export default function HistoryPage({
             </>
           ) : (
             <div className="flex h-full min-h-0 flex-col">
-              <button
-                type="button"
-                onClick={() => void handleClose()}
-                aria-label={t("history.backToList")}
-                className="absolute right-0 top-0 z-20 grid size-9 place-items-center rounded-full text-white/75 transition-opacity hover:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              >
-                <X className="size-6" strokeWidth={1.7} />
-              </button>
+              <CardCloseButton onClick={() => void handleClose()} label={t("history.backToList")} className="absolute right-0 top-0" />
               <div data-screen-reveal className="pr-10">
                 <h1 className="whitespace-nowrap text-[clamp(2.3rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">
                   {t("history.listTitle")}

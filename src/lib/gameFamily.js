@@ -39,6 +39,15 @@ export const GAME_FAMILY_OPTIONS = [
 
 export const GAME_FAMILY_MODE_IDS = SHARED_GAME_FAMILY_MODE_IDS;
 
+export function isGameFamilyEnabled(configuration, gameFamily) {
+  return configuration?.[normalizeGameFamily(gameFamily)]?.enabled !== false;
+}
+
+export function isConfiguredGameModeEnabled(configuration, gameFamily, gameMode) {
+  const family = normalizeGameFamily(gameFamily);
+  return isGameFamilyEnabled(configuration, family) && configuration?.[family]?.modes?.[gameMode] !== false;
+}
+
 export const DEFAULT_GAME_MODE_BY_FAMILY = {
   [GAME_FAMILY_IDS.COLOR]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.FLAG]: GAME_MODE_IDS.NORMAL,

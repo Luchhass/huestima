@@ -807,7 +807,7 @@ export default function ResultPhase({
       resultCharsTween?.kill();
       ctx.revert();
     };
-  }, [isSpotMode, result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
+  }, [brandGuessControlOffset, isSpotMode, result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
 
   if (!result) return null;
 

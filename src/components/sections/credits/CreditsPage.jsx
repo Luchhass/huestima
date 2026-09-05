@@ -2,15 +2,14 @@
 
 import confetti from "canvas-confetti";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import { playCreditsArrival, resumeAudioIfAllowed } from "@/lib/sound";
 import FooterPageShell, {
-  FooterPageAction,
   FooterPageHeader,
 } from "@/components/sections/footer-pages/FooterPageShell";
-import { X } from "lucide-react";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const CONTRIBUTORS = [
   {
@@ -71,6 +70,9 @@ function CreditsConfetti() {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
+    resumeAudioIfAllowed();
+    playCreditsArrival();
+
     const launchConfetti = confetti.create(canvas, {
       resize: true,
       useWorker: true,
@@ -121,35 +123,36 @@ function CreditsConfetti() {
 export default function CreditsPage() {
   const { locale, t } = useTranslation();
   const mainRef = useRef(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const leavingRef = useRef(false);
+  const handleRevealComplete = useCallback(() => {
+    if (!leavingRef.current) setCelebrating(true);
+  }, []);
   const searchParams = useSearchParams();
   const family = ["color", "flag", "cartoon", "brand", "team"].includes(searchParams.get("from"))
     ? searchParams.get("from")
     : "color";
   const leavePage = useFooterPageTransition(mainRef);
 
-  useEffect(() => {
-    resumeAudioIfAllowed();
-    const soundTimer = window.setTimeout(playCreditsArrival, 90);
-    return () => window.clearTimeout(soundTimer);
-  }, []);
-
   const handleClose = async (event) => {
     event.preventDefault();
+    leavingRef.current = true;
+    setCelebrating(false);
     await leavePage(`/${family}`);
   };
 
   return (
     <FooterPageShell
       mainRef={mainRef}
-      className="text-zinc-950 dark:text-zinc-50"
+      className="credits-page text-white"
+      scrollable={false}
+      onRevealComplete={handleRevealComplete}
+      effects={celebrating ? <CreditsConfetti /> : null}
       action={
-        <FooterPageAction href={`/${family}`} onClick={handleClose} aria-label={t("common.closeCredits")} className="size-11 p-0 text-foreground/62">
-          <X size={24} strokeWidth={1.8} aria-hidden="true" />
-        </FooterPageAction>
+        <CardCloseButton href={`/${family}`} onClick={handleClose} label={t("common.closeCredits")} className="absolute right-6 top-6 text-foreground/62 sm:right-10 sm:top-8 lg:right-14" />
       }
     >
-      <CreditsConfetti />
-      <div className="relative z-10">
+      <div className="credits-content relative z-10">
         <FooterPageHeader
           title={locale === "tr" ? "Emeği geçenler" : "Credits"}
           description={
@@ -161,7 +164,7 @@ export default function CreditsPage() {
         <section data-route-transition-scope className="mt-8 w-full">
           <div className="divide-y divide-foreground/10">
             {CONTRIBUTORS.map((contributor) => (
-              <div key={contributor.name} className="flex items-baseline justify-between gap-6 py-4 first:pt-0">
+              <div key={contributor.name} className="credits-contributor flex items-baseline justify-between gap-6 py-4 first:pt-0">
                 <h2 className="shrink-0 whitespace-nowrap text-base font-semibold text-foreground sm:text-lg">
                   {contributor.href ? (
                     <a

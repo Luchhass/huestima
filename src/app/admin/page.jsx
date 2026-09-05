@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
@@ -11,10 +12,7 @@ import RoomCardShell from "@/components/sections/room/RoomCardShell";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useTranslation } from "@/hooks/useLanguage";
-import {
-  SCREEN_REVEAL_REPLAY_EVENT,
-  useScreenReveal,
-} from "@/hooks/useScreenReveal";
+import { useScreenReveal } from "@/hooks/useScreenReveal";
 import { useSiteOperations } from "@/hooks/useSiteOperations";
 import { GAME_FAMILY_MODE_IDS, GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
@@ -43,7 +41,7 @@ function waitForDuration(duration) {
   return new Promise((resolve) => window.setTimeout(resolve, duration));
 }
 
-function createSideRevealKeyframes(opening, width) {
+function createSideRevealKeyframes(opening, width, vertical = false) {
   const frames = Array.from(
     { length: SIDE_REVEAL_FRAME_COUNT + 1 },
     (_, index) => {
@@ -61,8 +59,9 @@ function createSideRevealKeyframes(opening, width) {
   const orderedFrames = opening ? frames : frames.reverse();
 
   return orderedFrames.map(({ scale, horizontalRadius }, index) => ({
-    transform: `scaleX(${scale})`,
-    borderRadius: `${horizontalRadius}px / ${ADMIN_CARD_RADIUS}px`,
+    transform: `${vertical ? "scaleY" : "scaleX"}(${scale})`,
+    transformOrigin: vertical ? "center top" : "left center",
+    borderRadius: vertical ? `${ADMIN_CARD_RADIUS}px` : `${horizontalRadius}px / ${ADMIN_CARD_RADIUS}px`,
     offset: index / SIDE_REVEAL_FRAME_COUNT,
   }));
 }
@@ -157,6 +156,13 @@ async function fadeAdminScreenContents(scope) {
   animations.forEach((animation) => animation.cancel());
 }
 
+function hideAdminRevealContents(scope) {
+  scope?.querySelectorAll("[data-screen-reveal]").forEach((item) => {
+    item.style.opacity = "0";
+    item.style.visibility = "hidden";
+  });
+}
+
 async function animateSideCloneToPoint(
   transitionSide,
   targetLeftX,
@@ -172,15 +178,16 @@ async function animateSideCloneToPoint(
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   const { clone, sourceRect } = transitionSide;
+  const mobileLayout = window.matchMedia("(max-width: 860px)").matches;
   const frameAnimations = Array.from(
     clone.querySelectorAll(":scope > .admin-side-card-frame"),
   ).map((frame) => {
     const revealTarget = frame.firstElementChild || frame;
     const width = frame.getBoundingClientRect().width;
-    revealTarget.style.transformOrigin = "left center";
+    revealTarget.style.transformOrigin = mobileLayout ? "center top" : "left center";
     revealTarget.style.willChange = "transform, border-radius";
     return revealTarget.animate(
-      createSideRevealKeyframes(false, width),
+      createSideRevealKeyframes(false, width, mobileLayout),
       {
         duration: ADMIN_CARD_SHIFT_DURATION_MS,
         easing: ADMIN_CARD_SHIFT_EASE,
@@ -224,6 +231,7 @@ async function animateCardClone(transitionCard, targetCard) {
 
   const { clone, sourceRect } = transitionCard;
   const targetRect = targetCard.getBoundingClientRect();
+  const mobileLayout = window.matchMedia("(max-width: 860px)").matches;
   const animation = clone.animate(
     [
       {
@@ -235,8 +243,8 @@ async function animateCardClone(transitionCard, targetCard) {
       {
         left: `${targetRect.left}px`,
         top: `${targetRect.top}px`,
-        width: `${targetRect.width}px`,
-        height: `${targetRect.height}px`,
+        width: `${mobileLayout ? sourceRect.width : targetRect.width}px`,
+        height: `${mobileLayout ? sourceRect.height : targetRect.height}px`,
       },
     ],
     {
@@ -271,6 +279,7 @@ async function animateWorkspaceSide(
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
+  const mobileLayout = window.matchMedia("(max-width: 860px)").matches;
   const sideFrames = Array.from(
     side.querySelectorAll(":scope > .admin-side-card-frame"),
   );
@@ -283,15 +292,15 @@ async function animateWorkspaceSide(
       width / 2,
       ADMIN_CARD_RADIUS / 0.001,
     );
-    revealTarget.style.transform = "scaleX(0.001)";
-    revealTarget.style.transformOrigin = "left center";
-    revealTarget.style.borderRadius = `${startHorizontalRadius}px / ${ADMIN_CARD_RADIUS}px`;
+    revealTarget.style.transform = `${mobileLayout ? "scaleY" : "scaleX"}(0.001)`;
+    revealTarget.style.transformOrigin = mobileLayout ? "center top" : "left center";
+    revealTarget.style.borderRadius = mobileLayout ? `${ADMIN_CARD_RADIUS}px` : `${startHorizontalRadius}px / ${ADMIN_CARD_RADIUS}px`;
     revealTarget.style.willChange = "transform, border-radius";
   });
   side.style.height = `${startHeight}px`;
   side.style.visibility = "visible";
   side.style.opacity = "1";
-  side.style.transformOrigin = "left top";
+  side.style.transformOrigin = mobileLayout ? "center top" : "left top";
 
   if (reducedMotion) {
     onComplete?.();
@@ -321,7 +330,7 @@ async function animateWorkspaceSide(
     const revealTarget = frame.firstElementChild || frame;
     const width = frame.getBoundingClientRect().width;
     return revealTarget.animate(
-      createSideRevealKeyframes(true, width),
+      createSideRevealKeyframes(true, width, mobileLayout),
       {
         duration: duration ?? ADMIN_CARD_SHIFT_DURATION_MS,
         easing: ADMIN_CARD_SHIFT_EASE,
@@ -389,10 +398,10 @@ export default function AdminPage() {
     refreshSession,
     sessionValid,
   } = useAdminMode();
-  const { operations, ready: operationsReady } = useSiteOperations();
+  const { operations, announcements, ready: operationsReady } = useSiteOperations();
   const [ready, setReady] = useState(false);
-  const [panel, setPanel] = useState(ADMIN_PANELS.HOME);
   const [revealKey, setRevealKey] = useState(0);
+  const [panel, setPanel] = useState(ADMIN_PANELS.HOME);
   const [workspaceSidePhase, setWorkspaceSidePhase] = useState("waiting");
   const [isPrimaryCardHidden, setIsPrimaryCardHidden] = useState(false);
   const [announcement, setAnnouncement] = useState("");
@@ -406,9 +415,16 @@ export default function AdminPage() {
     createDefaultGameConfiguration,
   );
   const scopeRef = useRef(null);
+  const sideScopeRef = useRef(null);
   const isChangingPanelRef = useRef(false);
   useScreenReveal(scopeRef, [ready, revealKey, locale], {
     defer: !ready,
+    preserveScopeVisibility: true,
+  });
+  useScreenReveal(sideScopeRef, [ready, panel, revealKey, locale], {
+    defer: !ready || revealKey === 0,
+    preserveScopeVisibility: true,
+    deferContentVisibility: true,
   });
   useEffect(() => {
     let active = true;
@@ -504,8 +520,12 @@ export default function AdminPage() {
       panel === ADMIN_PANELS.OPERATIONS ||
       panel === ADMIN_PANELS.INSIGHTS;
     isChangingPanelRef.current = true;
+    await fadeAdminScreenContents(scopeRef.current);
+    hideAdminRevealContents(scopeRef.current);
     if (!usesPanelTransition) {
       setPanel(nextPanel);
+      await waitForPaint();
+      hideAdminRevealContents(scopeRef.current);
       setRevealKey((key) => key + 1);
       isChangingPanelRef.current = false;
       return;
@@ -530,32 +550,46 @@ export default function AdminPage() {
       const nextSide = nextPanel === ADMIN_PANELS.OPERATIONS || nextPanel === ADMIN_PANELS.INSIGHTS
         ? scopeRef.current?.querySelector("[data-admin-workspace-side]")
         : null;
+      hideAdminRevealContents(scopeRef.current);
       const nextPrimaryRect = nextPrimary?.getBoundingClientRect();
       const nextSideRect = nextSide?.getBoundingClientRect();
+      const transitionGap = nextPrimary?.parentElement
+        ? Number.parseFloat(window.getComputedStyle(nextPrimary.parentElement).columnGap) || 16
+        : 16;
+      const transitionRowGap = nextPrimary?.parentElement
+        ? Number.parseFloat(window.getComputedStyle(nextPrimary.parentElement).rowGap) || 16
+        : 16;
+      const mobileLayout = window.matchMedia("(max-width: 860px)").matches;
       const sideMotion = nextSide
         ? animateWorkspaceSide(nextSide, {
-            startTranslateX: transitionCard?.sourceRect && nextSideRect && nextPrimaryRect
+            startTranslateX: mobileLayout ? 0 : transitionCard?.sourceRect && nextSideRect && nextPrimaryRect
               ? transitionCard.sourceRect.right + (nextSideRect.left - nextPrimaryRect.right) - nextSideRect.left
               : 0,
-            startTranslateY: transitionCard?.sourceRect && nextSideRect
+            startTranslateY: mobileLayout ? -transitionRowGap : transitionCard?.sourceRect && nextSideRect
               ? transitionCard.sourceRect.top - nextSideRect.top
               : 0,
-            startScaleY: transitionCard?.sourceRect && nextSideRect
+            startScaleY: mobileLayout ? 0 : transitionCard?.sourceRect && nextSideRect
               ? transitionCard.sourceRect.height / Math.max(nextSideRect.height, 1)
               : 1,
             onComplete: () => setWorkspaceSidePhase("settled"),
           })
         : transitionSide && nextPrimaryRect
-          ? animateSideCloneToPoint(transitionSide, nextPrimaryRect.right, nextPrimaryRect.top, nextPrimaryRect.height)
+          ? animateSideCloneToPoint(
+              transitionSide,
+              mobileLayout ? nextPrimaryRect.left : nextPrimaryRect.right + transitionGap,
+              mobileLayout ? nextPrimaryRect.bottom : nextPrimaryRect.top,
+              mobileLayout ? 0 : nextPrimaryRect.height,
+            )
           : Promise.resolve();
       await Promise.all([animateCardClone(transitionCard, nextPrimary), sideMotion]);
-      setIsPrimaryCardHidden(false);
-      await waitForPaint();
+      flushSync(() => {
+        setIsPrimaryCardHidden(false);
+      });
       transitionCard?.clone.remove();
       transitionSide?.clone.remove();
       transitionCard = null;
       transitionSide = null;
-      window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+      setRevealKey((key) => key + 1);
     } finally {
       transitionCard?.clone.remove();
       transitionSide?.clone.remove();
@@ -621,7 +655,9 @@ export default function AdminPage() {
             ? Object.fromEntries(
                 Object.keys(family.modes || {}).map((id) => [id, false]),
               )
-            : family.modes,
+            : Object.fromEntries(
+                Object.keys(family.modes || {}).map((id) => [id, true]),
+              ),
         }
       : { ...family, modes: { ...family.modes, [modeId]: !family.modes[modeId] } };
     const nextConfiguration = { ...previous, [familyId]: nextFamily };
@@ -662,6 +698,15 @@ export default function AdminPage() {
     const enabled = !operations.multiplayerEnabled;
     setIsMultiplayerConfirmOpen(true);
     return;
+  }
+
+  async function deleteAnnouncement(id) {
+    await updateOperation(
+      "/operations/announcement/delete",
+      { id },
+      `delete-announcement-${id}`,
+      t("admin.messages.announcementCleared"),
+    );
   }
 
   async function applyMultiplayerToggle(enabled) {
@@ -719,11 +764,13 @@ export default function AdminPage() {
     return (
       <AdminOperationsWorkspace
         scopeRef={scopeRef}
+        sideScopeRef={sideScopeRef}
         sidePhase={workspaceSidePhase}
         primaryHidden={isPrimaryCardHidden}
         t={t}
         announcement={announcement}
         setAnnouncement={setAnnouncement}
+        announcements={announcements}
         operations={operations}
         operationsReady={operationsReady}
         operationBusy={operationBusy}
@@ -733,6 +780,7 @@ export default function AdminPage() {
         disableAdmin={disableAdmin}
         publishAnnouncement={publishAnnouncement}
         clearAnnouncement={clearAnnouncement}
+        deleteAnnouncement={deleteAnnouncement}
         toggleMultiplayer={toggleMultiplayer}
         toggleMaintenance={toggleMaintenance}
         isMaintenanceConfirmOpen={isMaintenanceConfirmOpen}
@@ -750,6 +798,7 @@ export default function AdminPage() {
     return (
       <AdminInsightsWorkspace
         scopeRef={scopeRef}
+        sideScopeRef={sideScopeRef}
         sidePhase={workspaceSidePhase}
         primaryHidden={isPrimaryCardHidden}
         t={t}
@@ -1039,18 +1088,7 @@ function AdminGameConfigurationWorkspace({
           </div>
           <div data-screen-reveal className="scrollbar-hidden mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
             <div className="admin-configuration-grid">
-            {[0, 1].map((columnIndex) => (
-              <div className="admin-configuration-column" key={columnIndex}>
-              {GAME_FAMILY_OPTIONS.filter(({ id }, index) => {
-                if (id === "team") return columnIndex === 0;
-                if (id === "cartoon") return columnIndex === 1;
-                return index % 2 === columnIndex;
-              }).sort((a, b) => {
-                const order = columnIndex === 0
-                  ? ["color", "team"]
-                  : ["flag", "cartoon", "brand"];
-                return order.indexOf(a.id) - order.indexOf(b.id);
-              }).map(({ id }) => {
+            {GAME_FAMILY_OPTIONS.map(({ id }) => {
                 const family = configuration[id] || { enabled: true, modes: {} };
                 const modes = GAME_FAMILY_MODE_IDS[id] || [];
                 return (
@@ -1072,9 +1110,7 @@ function AdminGameConfigurationWorkspace({
                   </div>
                   </div>
                 );
-              })}
-              </div>
-            ))}
+            })}
             </div>
           </div>
         </section>
@@ -1085,11 +1121,14 @@ function AdminGameConfigurationWorkspace({
 
 function AdminOperationsWorkspace({
   scopeRef,
+  sideScopeRef,
   sidePhase,
   primaryHidden,
   t,
   announcement,
   setAnnouncement,
+  announcements,
+  deleteAnnouncement,
   operations,
   operationsReady,
   operationBusy,
@@ -1098,7 +1137,6 @@ function AdminOperationsWorkspace({
   enableAdmin,
   disableAdmin,
   publishAnnouncement,
-  clearAnnouncement,
   toggleMultiplayer,
   toggleMaintenance,
   isMaintenanceConfirmOpen,
@@ -1134,6 +1172,14 @@ function AdminOperationsWorkspace({
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-4 sm:p-8">
       <div ref={scopeRef} data-route-transition-scope className="admin-operations-layout">
         <section data-admin-primary-card className={`admin-operations-card admin-operations-card--primary relative min-h-0 overflow-hidden bg-black p-6 text-white sm:p-8 ${primaryHidden ? "admin-primary-card--waiting" : ""}`}>
+          <button
+            type="button"
+            aria-label={t("admin.common.back")}
+            onClick={onClose}
+            className="admin-primary-close absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            <X size={22} strokeWidth={1.8} />
+          </button>
           <div data-admin-primary-content className="relative flex h-full min-h-0 flex-col">
           <div data-screen-reveal className="admin-command-header">
             <AdminPanelHeader title={t("admin.operations.title")} description={t("admin.operations.description")} />
@@ -1173,7 +1219,7 @@ function AdminOperationsWorkspace({
           </div>
         </section>
 
-        <div data-admin-workspace-side className={`admin-operations-side admin-operations-side--${sidePhase}`}>
+        <div ref={sideScopeRef} data-admin-workspace-side className={`admin-operations-side admin-operations-side--${sidePhase}`}>
           <div className="admin-side-card-frame">
             <section className="admin-operations-card admin-operations-card--announcement admin-panel-card admin-action-card relative flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
             <button
@@ -1218,21 +1264,29 @@ function AdminOperationsWorkspace({
 
           <div className="admin-side-card-frame">
             <section className="admin-operations-card admin-operations-card--cheat admin-panel-card admin-status-card flex min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8">
-              <div data-screen-reveal className="admin-card-body mt-5 flex min-h-0 flex-1 flex-col">
-                {operations.announcement ? (
-                  <div className="flex items-start justify-between gap-4 py-4">
-                    <p className="min-w-0 text-[0.92rem] font-medium leading-[1.28] text-white/70 sm:text-[0.98rem]">
-                      {operations.announcement.message}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={!operationsReady || Boolean(operationBusy)}
-                      onClick={clearAnnouncement}
-                      className="shrink-0 text-xs font-semibold text-white/45 transition-colors hover:text-white disabled:pointer-events-none disabled:opacity-25"
-                    >
-                      {t("admin.operations.clearAnnouncement")}
-                    </button>
-                  </div>
+              <div data-screen-reveal className="scrollbar-hidden admin-card-body mt-5 flex min-h-0 flex-1 flex-col overflow-y-auto">
+                {announcements.length ? (
+                  announcements.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-4 border-b border-white/10 py-2.5 first:pt-0 last:border-b-0">
+                      <p className="min-w-0 text-[0.92rem] font-medium leading-[1.28] text-white/70 sm:text-[0.98rem]">
+                        {item.message}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <time className="text-xs font-medium text-white/40">
+                          {new Date(item.createdAt).toLocaleString("tr-TR")}
+                        </time>
+                        <button
+                          type="button"
+                          aria-label={t("admin.operations.deleteAnnouncement")}
+                          disabled={Boolean(operationBusy)}
+                          onClick={() => void deleteAnnouncement(item.id)}
+                          className="grid size-6 place-items-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                        >
+                          <X size={16} strokeWidth={1.8} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
                 ) : (
                   <EmptyState
                     className="admin-empty-state"
@@ -1250,7 +1304,7 @@ function AdminOperationsWorkspace({
   );
 }
 
-function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale, summary, summaryAvailable, onClose }) {
+function AdminInsightsWorkspace({ scopeRef, sideScopeRef, sidePhase, primaryHidden, t, locale, summary, summaryAvailable, onClose }) {
   const live = summary?.live || {};
   const games = summary?.games || {};
   const values = [
@@ -1267,6 +1321,14 @@ function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale,
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-4 sm:p-8">
       <div ref={scopeRef} data-route-transition-scope className="admin-operations-layout">
         <section data-admin-primary-card className={`admin-operations-card admin-operations-card--primary relative min-h-0 overflow-hidden bg-black p-6 text-white sm:p-8 ${primaryHidden ? "admin-primary-card--waiting" : ""}`}>
+          <button
+            type="button"
+            aria-label={t("admin.common.back")}
+            onClick={onClose}
+            className="admin-primary-close absolute right-4 top-4 z-20 grid size-10 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            <X size={22} strokeWidth={1.8} />
+          </button>
           <div data-admin-primary-content className="relative flex h-full min-h-0 flex-col">
           <AdminPanelHeader title={t("admin.insights.title")} description={t("admin.insights.description")} />
 
@@ -1287,7 +1349,7 @@ function AdminInsightsWorkspace({ scopeRef, sidePhase, primaryHidden, t, locale,
           </div>
         </section>
 
-        <div data-admin-workspace-side className={`admin-operations-side admin-operations-side--${sidePhase}`}>
+        <div ref={sideScopeRef} data-admin-workspace-side className={`admin-operations-side admin-operations-side--${sidePhase}`}>
           <div className="admin-side-card-frame">
             <FamilyPieCard
               className="admin-operations-card--announcement"
@@ -1398,7 +1460,7 @@ function RecentGamesCard({ className, t, locale, games }) {
     <section className={`admin-operations-card admin-panel-card ${className} flex min-h-0 flex-col overflow-hidden bg-black text-white`}>
       <div data-screen-reveal className="scrollbar-hidden flex min-h-0 flex-1 flex-col overflow-y-auto">
         {games.length ? games.map((game, index) => (
-          <div key={`${game.roomCode}-${game.createdAt}-${index}`} className="flex items-center justify-between gap-4 border-b border-white/10 py-2.5 last:border-b-0">
+          <div key={`${game.roomCode}-${game.createdAt}-${index}`} className="flex items-center justify-between gap-4 border-b border-white/10 py-2.5 first:pt-0 last:border-b-0">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{t(`gameFamily.${game.gameFamily}`)}</p>
               <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.08em] text-white/35">{game.gameMode} · {game.playerCount} {t("admin.insights.playerUnit")}</p>
@@ -1534,7 +1596,7 @@ function AdminToggleRow({
   danger = false,
 }) {
   return (
-    <div className="flex items-center justify-between gap-5 border-t border-white/15 py-5 first:border-t-0 first:pt-0 last:pb-0">
+    <div className="flex items-end justify-between gap-5 border-t border-white/15 py-5 first:border-t-0 first:pt-0 last:pb-0">
       <div>
         <p className={`text-[0.95rem] font-semibold sm:text-base ${danger && checked ? "text-red-300" : ""}`}>
           {title}

@@ -8,6 +8,7 @@ export default function ModeSelector({
   onSingleplayer,
   onMultiplayer,
   multiplayerEnabled = true,
+  singleplayerEnabled = true,
 }) {
   const { t } = useTranslation();
   const [labelKey, setLabelKey] = useState("home.modeDefault");
@@ -29,9 +30,10 @@ export default function ModeSelector({
           <button
             type="button"
             onClick={onSingleplayer}
+            disabled={!singleplayerEnabled}
             aria-label={t("home.singleAria")}
             title={t("home.singleTitle")}
-            className="rgb-hover-button card-action-size grid place-items-center rounded-full bg-white text-zinc-950 shadow-[0_16px_30px_rgba(0,0,0,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            className="rgb-hover-button card-action-size grid place-items-center rounded-full bg-white text-zinc-950 shadow-[0_16px_30px_rgba(0,0,0,0.24)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <User className="relative z-10" size={27} strokeWidth={2.15} />
           </button>

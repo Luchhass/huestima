@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
 import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
 import {
   colorToneHex,
@@ -19,9 +19,9 @@ import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
 import BrandOverlay from "@/components/ui/game/BrandOverlay";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 
 const MULTIPLAYER_MAX_ROUND_SCORE = 10;
-const EXPANDED_REVEAL_DELAY = 320;
 
 function formatTotal(score) {
   return formatScore(score);
@@ -77,7 +77,7 @@ export default function LeaderboardCard({
 
   useAppChromeHidden(true);
   useScreenReveal(scopeRef, [leaderboard?.completedAt], {
-    delay: EXPANDED_REVEAL_DELAY,
+    delay: CARD_RESIZE_DURATION_MS,
   });
 
   const rows = leaderboard?.leaderboard || [];
@@ -120,14 +120,7 @@ export default function LeaderboardCard({
         isLeavingHome ? "opacity-0" : "opacity-100"
       }`}
     >
-      <button
-        type="button"
-        onClick={handleBackHome}
-        aria-label={t("common.backHome")}
-        className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
-      >
-        <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </button>
+      <CardCloseButton onClick={handleBackHome} label={t("common.backHome")} className="absolute right-4 top-4 sm:right-8 sm:top-8" />
 
       {winner && (
         <div data-screen-reveal className="max-w-100 pr-10">

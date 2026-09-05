@@ -52,6 +52,7 @@ export default function GuessPhase({
   sprintDurationMs = null,
   sprintRemainingMs = null,
   progressItems = [],
+  gameFamily = "color",
   isShowcaseWidgetEntering = true,
   isShowcaseWidgetExiting = false,
   isExiting = false,
@@ -79,6 +80,7 @@ export default function GuessPhase({
       ? Math.ceil(Math.max(0, sprintRemainingMs) / 1000)
       : null,
   );
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
 
   const adminButtonRef = useRef(null);
   const adminButtonCoreRef = useRef(null);
@@ -1054,9 +1056,11 @@ export default function GuessPhase({
           <div
             ref={progressRef}
             className={`absolute left-6 z-20 sm:left-8 ${
-              showGuessTimer
-                ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
-                : "bottom-[5.25rem] sm:bottom-[5.75rem]"
+              usesMiddleProgress
+                ? "top-1/2 -translate-y-1/2"
+                : showGuessTimer
+                  ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
+                  : "bottom-6 sm:bottom-8"
             }`}
             style={{
               color: "var(--game-fg-bottom-left)",
@@ -1327,9 +1331,11 @@ export default function GuessPhase({
         <div
           ref={progressRef}
           className={`absolute z-20 ${
-            showGuessTimer
-              ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
-              : "bottom-[5.25rem] sm:bottom-[5.75rem]"
+            usesMiddleProgress
+              ? "top-1/2 -translate-y-1/2"
+              : showGuessTimer
+                ? "bottom-[6.5rem] sm:bottom-[7.25rem]"
+                : "bottom-6 sm:bottom-8"
           }`}
           style={{
             left: `${contentLeft}px`,

@@ -206,6 +206,7 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
         gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
         dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
         dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
+        options.onComplete?.();
         return;
       }
 
@@ -251,12 +252,16 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
         });
         dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT);
         dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
+        options.onComplete?.();
         return;
       }
 
-      // Keep the whole scope hidden while masks and off-screen start positions
-      // are prepared. Showing it earlier leaks the clipped starting frame.
-      gsap.set(scope, { autoAlpha: 0 });
+      // Most screens reveal a single content scope, so it can stay hidden
+      // while its masks are prepared. Multi-card workspaces keep their card
+      // shells visible and prepare only the marked content instead.
+      if (!options.preserveScopeVisibility) {
+        gsap.set(scope, { autoAlpha: 0 });
+      }
       gsap.set(items, {
         autoAlpha: 1,
         clearProps: "clipPath,opacity,visibility,willChange",
@@ -296,7 +301,9 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
 
       const startTimeline = () => {
         const revealDelayId = window.setTimeout(() => {
-          gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+          if (!options.preserveScopeVisibility) {
+            gsap.set(scope, { autoAlpha: 1, clearProps: "opacity,visibility" });
+          }
           dispatchScreenLifecycleEvent(SCREEN_REVEAL_START_EVENT, {
             duration: options.duration ?? REVEAL_DURATION,
             ease: options.ease ?? "power4.out",
@@ -306,6 +313,7 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
             defaults: { overwrite: "auto" },
             onComplete: () => {
               dispatchScreenLifecycleEvent(SCREEN_REVEAL_COMPLETE_EVENT);
+              options.onComplete?.();
             },
           });
 
@@ -391,7 +399,12 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
     };
 
     if (options.defer) {
-      gsap.set(scope, { autoAlpha: 0 });
+      if (!options.preserveScopeVisibility) {
+        gsap.set(scope, { autoAlpha: 0 });
+      }
+      if (options.deferContentVisibility) {
+        gsap.set(scope.querySelectorAll(REVEAL_SELECTOR), { autoAlpha: 0 });
+      }
       window.addEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
 
       return () => {

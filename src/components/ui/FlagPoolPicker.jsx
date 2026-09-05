@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
 import { FLAG_DIFFICULTY_OPTIONS } from "../../../shared/flagDifficulty.mjs";
 import { FLAG_OPTIONS } from "@/lib/flags";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardPanelHeader from "./CardPanelHeader";
 
 export default function FlagPoolPicker({ value = [], onChange, onDone }) {
   const { t } = useTranslation();
@@ -17,15 +17,7 @@ export default function FlagPoolPicker({ value = [], onChange, onDone }) {
 
   return (
     <div className="flex h-full flex-col text-white">
-      <div data-screen-reveal className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[clamp(1.8rem,7vw,2.8rem)] font-semibold leading-none">{t("pools.flagTitle")}</h1>
-          <p className="mt-2 text-sm font-medium text-white/65">{t("pools.flagSubtitle")}</p>
-        </div>
-        <button type="button" onClick={onDone} aria-label={t("common.closeFlagPool")} className="shrink-0 rounded-full p-1 text-white/80 transition-opacity hover:opacity-60">
-          <X className="size-7" strokeWidth={1.8} />
-        </button>
-      </div>
+      <CardPanelHeader title={t("pools.flagTitle")} description={t("pools.flagSubtitle")} onClose={onDone} closeLabel={t("common.closeFlagPool")} />
       <div data-screen-reveal className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-1">
         <div className="space-y-2">
           {FLAG_DIFFICULTY_OPTIONS.map((item) => {

@@ -15,6 +15,7 @@ import {
 import { generateRoomCode } from "../utils/ids.js";
 import { logger } from "../utils/logger.js";
 import { now } from "../utils/time.js";
+import { getSiteOperations } from "../operations/service.js";
 import {
   deleteRoom,
   getRoom,
@@ -394,6 +395,11 @@ function validateRoomCreatePayload(payload) {
 export function createRoom(payload) {
   const validation = validateRoomCreatePayload(payload);
   if (!validation.ok) return validation;
+
+  const configuredFamily = getSiteOperations().gameConfiguration?.[validation.data.gameFamily];
+  if (configuredFamily?.enabled === false || configuredFamily?.modes?.[validation.data.gameMode] === false) {
+    return fail("This game is currently unavailable.");
+  }
 
   const createdAt = now();
   const room = {

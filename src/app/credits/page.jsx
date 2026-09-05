@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { FooterCardLoading } from "@/components/sections/footer-pages/FooterCardSurface";
 import CreditsPage from "@/components/sections/credits/CreditsPage";
 
 export const metadata = {
@@ -8,7 +9,7 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<FooterCardLoading />}>
       <CreditsPage />
     </Suspense>
   );

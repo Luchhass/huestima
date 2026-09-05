@@ -1,21 +1,54 @@
 "use client";
 
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
-import { dispatchScreenFadeOut } from "@/hooks/useScreenReveal";
+import { dispatchScreenFadeOut, playScreenFadeOut } from "@/hooks/useScreenReveal";
 
 export const FOOTER_RETURN_KEY = "huestima-card-enter";
 export const ADMIN_HOME_RETURN_KEY = "huestima-admin-home-return";
 export const DOWNLOAD_RETURN_KEY = "huestima-download-return";
+export const CARD_ROUTE_TRANSITION_KEY = "huestima-card-route-transition";
 export const FOOTER_FULLSCREEN_COLLAPSE_EVENT = "huestima-footer-fullscreen-collapse";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
 export const SCREEN_FADE_DURATION = 0.24;
 export const SCREEN_FADE_EASE = "power2.out";
 export const CARD_SCALE_DURATION = 0.52;
+export const CARD_RESIZE_DURATION_MS = 700;
+export const DOWNLOAD_RESIZE_DURATION_MS = 860;
+export const SCREEN_REVEAL_AFTER_RESIZE_MS = 780;
+export const SCREEN_REVEAL_DIRECT_MS = 80;
 const SCREEN_FADE_REVERSE_EASE = "power2.in";
 const CARD_SCALE_EASE = "power3.inOut";
+
+// Each persistent chrome component restores itself before paint on route changes.
+export function useFooterChromeReturn(pathname, selector) {
+  const previousPath = useRef(pathname);
+  useLayoutEffect(() => {
+    const returning = getRouteCardKind(previousPath.current) === "fullscreen" &&
+      getRouteCardKind(pathname) !== "fullscreen";
+    previousPath.current = pathname;
+    const elements = Array.from(document.querySelectorAll(selector));
+    if (!elements.length) return;
+    gsap.killTweensOf(elements);
+    if (!returning || prefersReducedMotion()) {
+      gsap.set(elements, { clearProps: "opacity,visibility,transition" });
+      return;
+    }
+    gsap.set(elements, { autoAlpha: 0, transition: "none" });
+    const tween = gsap.to(elements, {
+      autoAlpha: 1,
+      duration: SCREEN_FADE_DURATION,
+      ease: SCREEN_FADE_REVERSE_EASE,
+      clearProps: "opacity,visibility,transition",
+    });
+    return () => {
+      tween.kill();
+      gsap.set(elements, { clearProps: "opacity,visibility,transition" });
+    };
+  }, [pathname, selector]);
+}
 
 function readResponsiveCardHeight(expanded) {
   const viewportHeight =
@@ -34,6 +67,52 @@ function prefersReducedMotion() {
 
 function asElement(scopeRef) {
   return scopeRef?.current || scopeRef;
+}
+
+export function getRouteCardKind(pathname = "") {
+  const cleanPath = String(pathname).split("?")[0];
+  if ([
+    "/how-it-works",
+    "/privacy-policy",
+    "/credits",
+    "/flag-library",
+    "/cartoon-library",
+    "/brand-library",
+    "/team-library",
+    "/test",
+    "/test-lab",
+  ].includes(cleanPath)) {
+    return "fullscreen";
+  }
+  if (cleanPath === "/download") return "download";
+  if (cleanPath === "/history" || cleanPath === "/notifications") return "large";
+  return "default";
+}
+
+export function getRenderedCardKind(card, pathname = "") {
+  const routeKind = getRouteCardKind(pathname);
+  if (routeKind !== "default") return routeKind;
+  return card?.dataset?.cardSize === "large" ? "large" : "default";
+}
+
+export function markCardRouteTransition(href, fromKind = null) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(CARD_ROUTE_TRANSITION_KEY, JSON.stringify({
+    from: fromKind || getRouteCardKind(window.location.pathname),
+    to: getRouteCardKind(href),
+  }));
+}
+
+export function consumeCardRouteTransition() {
+  if (typeof window === "undefined") return null;
+  const raw = window.sessionStorage.getItem(CARD_ROUTE_TRANSITION_KEY);
+  window.sessionStorage.removeItem(CARD_ROUTE_TRANSITION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 export function hasPendingFooterReturn() {
@@ -237,6 +316,14 @@ export function playHomeToFooterExit(
 
   if (!card || !content) return Promise.resolve();
 
+  if (!scaleCard && !expandCard) {
+    return Promise.all([
+      playScreenFadeOut(content),
+      ...cardChildren.map((child) => playPageFade(child, false)),
+      ...chrome.map((element) => playPageFade(element, false)),
+    ]);
+  }
+
   if (prefersReducedMotion()) {
     gsap.set([content, ...cardChildren, ...chrome], { autoAlpha: 0 });
     if (expandCard) {
@@ -378,18 +465,24 @@ export function useFooterPageTransition(scopeRef) {
   const leave = async (href, { returnToHome = true } = {}) => {
     if (isLeavingRef.current) return;
     isLeavingRef.current = true;
+    markCardRouteTransition(href);
+    const sourceCardKind = getRouteCardKind(window.location.pathname);
+    const targetCardKind = getRouteCardKind(href);
+    const shouldCollapseCard =
+      sourceCardKind === "fullscreen" && targetCardKind !== "fullscreen";
 
-    if (returnToHome) markFooterReturn();
+    // The fullscreen card collapses on the source page before routing. The
+    // destination must therefore reveal directly instead of shrinking again.
+    if (returnToHome && targetCardKind === "default") markDownloadReturn();
     const scope = asElement(scopeRef);
     const content = scope?.querySelector("[data-footer-page-content]") || scope;
     const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
     await Promise.all([
-      playPageFade(content, false),
+      playScreenFadeOut(content),
       chrome.length ? playPageFade(chrome, false) : Promise.resolve(),
     ]);
-    window.dispatchEvent(new Event(FOOTER_FULLSCREEN_COLLAPSE_EVENT));
-    if (!prefersReducedMotion()) {
-      await new Promise((resolve) => window.setTimeout(resolve, 700));
+    if (shouldCollapseCard) {
+      if (scope?.footerCollapse) await scope.footerCollapse();
     }
     router.push(href);
   };

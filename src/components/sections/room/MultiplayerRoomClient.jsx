@@ -22,10 +22,13 @@ import LobbyCard from "./LobbyCard";
 import RoomMessageCard from "./RoomMessageCard";
 import LeaderboardCard from "./LeaderboardCard";
 import MultiplayerGame from "./MultiplayerGame";
+import {
+  CARD_RESIZE_DURATION_MS,
+  SCREEN_FADE_DURATION,
+} from "@/hooks/useFooterPageTransition";
 
 const ROOM_CODE_PATTERN = /^\d{6}$/;
-const CARD_RESIZE_DURATION_MS = 700;
-const CARD_CONTENT_FADE_DURATION_MS = 220;
+const CARD_CONTENT_FADE_DURATION_MS = SCREEN_FADE_DURATION * 1000;
 const GAME_MODE_LOCKED_DIFFICULTIES = GAME_MODE_OPTIONS.reduce((locks, option) => {
   if (option.lockedDifficultyId) {
     locks[option.id] = option.lockedDifficultyId;

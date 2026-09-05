@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Crown, Menu, X } from "lucide-react";
+import { Bell, Crown, History, Menu, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
@@ -10,6 +10,10 @@ import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import {
   playCardToCardExit,
+  getRouteCardKind,
+  getRenderedCardKind,
+  markCardRouteTransition,
+  useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 import FullscreenToggle from "./FullscreenToggle";
@@ -52,6 +56,11 @@ export default function AppHeader() {
           : pathname?.startsWith("/team/") || pathname === "/team"
             ? pathname
             : familyHomeHref;
+  const historyReturnFamily =
+    GAME_FAMILY_OPTIONS.find(
+      (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
+    )?.id || historyFamily;
+  const historyHref = `/history?from=${encodeURIComponent(historyReturnFamily)}`;
   const router = useRouter();
   const isLibraryRoute =
     pathname === "/cartoon-library" ||
@@ -76,11 +85,7 @@ export default function AppHeader() {
     ),
   );
 
-  useEffect(() => {
-    gsap.set(document.querySelectorAll(".app-header"), {
-      clearProps: "opacity,visibility,transition",
-    });
-  }, [pathname]);
+  useFooterChromeReturn(pathname, ".app-header");
   const isNavigatingRef = useRef(false);
   const navigationResetRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -282,15 +287,22 @@ export default function AppHeader() {
   }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
+    markCardRouteTransition(href);
+    const targetCardKind = getRouteCardKind(href);
     const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team)$/.test(pathname || "");
     if (isSetupHomeRoute) {
       const card = document.querySelector("[data-intro-card-target]");
       const content = document.querySelector("[data-route-transition-scope]");
 
       if (card && content) {
+        const sourceCardKind = getRenderedCardKind(card, pathname);
+        markCardRouteTransition(href, sourceCardKind);
         await playCardToCardExit(card, content, {
-          targetExpanded: !/^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href),
+          targetExpanded: false,
           hideChrome: false,
+          resizeCard:
+            sourceCardKind === "large" &&
+            (targetCardKind === "default" || targetCardKind === "fullscreen"),
         });
         router.push(href);
         return;
@@ -303,8 +315,9 @@ export default function AppHeader() {
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: !/^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href),
+          targetExpanded: false,
           hideChrome: false,
+          resizeCard: targetCardKind === "default" || targetCardKind === "fullscreen",
         });
         router.push(href);
         return;
@@ -317,8 +330,9 @@ export default function AppHeader() {
 
       if (card && content) {
         await playCardToCardExit(card, content, {
-          targetExpanded: true,
+          targetExpanded: false,
           hideChrome: false,
+          resizeCard: targetCardKind === "default" || targetCardKind === "fullscreen",
         });
         router.push(href);
         return;
@@ -354,14 +368,33 @@ export default function AppHeader() {
       const content = document.querySelector("[data-route-transition-scope]");
 
       if (card && content) {
+        const sourceCardKind = getRenderedCardKind(card, pathname);
+        markCardRouteTransition(href, sourceCardKind);
         await playCardToCardExit(card, content, {
-          targetExpanded: true,
+          targetExpanded: false,
           hideChrome: true,
           chromeFirst: true,
+          resizeCard: sourceCardKind === "large",
         });
         router.push(href);
         return;
       }
+    }
+
+    const routeCard = document.querySelector("[data-intro-card-target]");
+    const routeContent = document.querySelector("[data-route-transition-scope]");
+    if (routeCard && routeContent) {
+      const sourceCardKind = getRenderedCardKind(routeCard, pathname);
+      markCardRouteTransition(href, sourceCardKind);
+      await playCardToCardExit(routeCard, routeContent, {
+        targetExpanded: false,
+        hideChrome: false,
+        resizeCard:
+          sourceCardKind === "large" &&
+          (targetCardKind === "default" || targetCardKind === "fullscreen"),
+      });
+      router.push(href);
+      return;
     }
 
     if (!scope || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -494,7 +527,8 @@ export default function AppHeader() {
               })}
             </nav>
 
-            <div data-sound-kind="switch" className="mt-auto flex items-center gap-1 pb-1">
+            <div className="mt-auto flex items-center gap-1 pb-1">
+              <div data-sound-kind="navigation" className="flex items-center gap-1">
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
                   <Link
@@ -516,6 +550,26 @@ export default function AppHeader() {
               </div>
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
+                  <Link
+                    href={historyHref}
+                    aria-label={t("history.open")}
+                    onClick={(event) =>
+                      handleFamilyNavigation(event, historyHref, isHistoryRoute)
+                    }
+                    className="inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+                  >
+                    <History className="size-6.5" strokeWidth={1.9} />
+                  </Link>
+                </div>
+              </div>
+              </div>
+              <span
+                aria-hidden="true"
+                className="mx-2 h-6 w-[2px] shrink-0 bg-zinc-950/32 dark:bg-white/34"
+              />
+              <div data-sound-kind="switch" className="flex items-center gap-1">
+              <div data-mobile-menu-control className="overflow-hidden">
+                <div>
                   <LanguageToggle />
                 </div>
               </div>
@@ -533,6 +587,7 @@ export default function AppHeader() {
                 <div>
                   <ThemeToggle />
                 </div>
+              </div>
               </div>
             </div>
           </div>
@@ -616,7 +671,8 @@ export default function AppHeader() {
             {locale === "tr" ? "Admin oturumu açık" : "Admin session open"}
           </Link>
         )}
-        <div data-sound-kind="switch" className="hidden items-center gap-1 md:inline-flex">
+        <div className="hidden items-center gap-1 md:inline-flex">
+          <div data-sound-kind="navigation" className="inline-flex items-center gap-1">
           <Link
             href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
             aria-label={t("notifications.open")}
@@ -632,11 +688,28 @@ export default function AppHeader() {
               </span>
             )}
           </Link>
+          <Link
+            href={historyHref}
+            aria-label={t("history.open")}
+            onClick={(event) =>
+              handleFamilyNavigation(event, historyHref, isHistoryRoute)
+            }
+            className="grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+          >
+            <History className="size-6.5" strokeWidth={1.9} />
+          </Link>
+          </div>
+          <span
+            aria-hidden="true"
+            className="mx-2 h-6 w-[2px] bg-zinc-950/32 dark:bg-white/34"
+          />
+          <div data-sound-kind="switch" className="inline-flex items-center gap-1">
           <LanguageToggle />
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
           <FullscreenToggle />
+          </div>
         </div>
 
         <div className="md:hidden">

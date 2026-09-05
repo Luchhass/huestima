@@ -112,13 +112,13 @@ export default function SingleplayerCard({
         <div className="mt-3.5 max-w-[35.5rem] space-y-2.5 sm:mt-4 sm:max-w-[36.75rem] sm:space-y-3">
           <p
             data-game-mode-shock-target
-            className="text-[0.9rem] font-medium leading-[1.28] text-white/84 sm:text-[0.96rem]"
+            className="app-card-copy text-white/84"
           >
             {overviewCopy}
           </p>
           <p
             data-game-mode-shock-target
-            className="text-[0.9rem] font-medium leading-[1.28] text-white/68 sm:text-[0.96rem]"
+            className="app-card-copy text-white/68"
           >
             {rulesCopy}
           </p>

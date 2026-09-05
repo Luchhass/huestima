@@ -18,6 +18,7 @@ export default function MemorizePhase({
   onComplete,
   durationMs = MEMORIZE_DURATION_MS,
   progressItems = [],
+  gameFamily = "color",
   resumeElapsedMs = 0,
   resumeInstantly = false,
 }) {
@@ -26,6 +27,7 @@ export default function MemorizePhase({
   const roundRef = useRef(null);
   const brandRef = useRef(null);
   const progressRef = useRef(null);
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
 
   const { centiseconds } = useCountdown({
     durationMs,
@@ -163,7 +165,11 @@ export default function MemorizePhase({
       {progressItems.length > 0 && (
         <div
           ref={progressRef}
-          className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8"
+          className={`absolute left-6 sm:left-8 ${
+            usesMiddleProgress
+              ? "top-1/2 -translate-y-1/2"
+              : "bottom-6 sm:bottom-8"
+          }`}
           style={{
             color: "var(--game-fg-bottom-left)",
             textShadow: "var(--game-fg-bottom-left-shadow)",

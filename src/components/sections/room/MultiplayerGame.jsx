@@ -26,13 +26,13 @@ import GuessPhase from "@/components/ui/game/GuessPhase";
 import ResultPhase from "@/components/ui/game/ResultPhase";
 import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 
 const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
   SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
-const CARD_RESIZE_DURATION_MS = 700;
 const LEADERBOARD_HOME_FADE_DURATION_MS = 240;
 const SHOWCASE_WIDGET_REVEAL_DELAY_MS = 32;
 
@@ -544,6 +544,7 @@ export default function MultiplayerGame({
                 onColorChange={game.setTargetColor}
                 onComplete={game.finishMemorize}
                 progressItems={progressItems}
+                gameFamily={cleanGameFamily}
                 resumeElapsedMs={resumeElapsedMs}
               />
             ) : (
@@ -554,6 +555,7 @@ export default function MultiplayerGame({
                 durationMs={game.revealDurationMs || undefined}
                 onComplete={game.finishMemorize}
                 progressItems={progressItems}
+                gameFamily={cleanGameFamily}
                 resumeElapsedMs={resumeElapsedMs}
                 resumeInstantly={resumePhase === GAME_PHASES.MEMORIZE}
               />
@@ -574,6 +576,7 @@ export default function MultiplayerGame({
               sprintDurationMs={game.sprintDurationMs}
               sprintRemainingMs={game.sprintRemainingMs}
               progressItems={progressItems}
+              gameFamily={cleanGameFamily}
               showcaseLayoutEnabled={usesShowcaseGuessChrome}
               resumeElapsedMs={resumeElapsedMs}
               resumeInstantly={resumePhase === GAME_PHASES.GUESS}

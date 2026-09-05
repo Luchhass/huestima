@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <RoomCardShell>
+    <RoomCardShell isExpanded>
       <form
         ref={scopeRef}
         data-route-transition-scope

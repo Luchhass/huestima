@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import PlayerNameField, {
   readStoredPlayerName,
@@ -11,6 +9,7 @@ import PlayerNameField, {
 import PushNotification from "@/components/ui/PushNotification";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
 function difficultyLabel(id, t) {
   return t(`difficulty.${id || "normal"}`).toLowerCase();
@@ -100,13 +99,7 @@ export default function JoinRoomCard({
         onClose={() => setNotification(null)}
       />
 
-      <Link
-        href="/color"
-        aria-label={t("common.backHome")}
-        className="solo-close-button absolute right-6 top-6 grid size-9 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8"
-      >
-        <X size={26} strokeWidth={1.7} />
-      </Link>
+      <CardCloseButton href="/color" label={t("common.backHome")} className="absolute right-4 top-4 sm:right-8 sm:top-8" />
 
       <div data-screen-reveal className="max-w-100 pr-10">
         <h1 className="text-[clamp(3rem,10.5vw,4.2rem)] font-semibold lowercase leading-[0.98] tracking-normal text-white">

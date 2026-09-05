@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import FooterPageShell, {
-  FooterPageAction,
   FooterPageHeader,
 } from "@/components/sections/footer-pages/FooterPageShell";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const LINKS = {
   en: [
@@ -58,14 +57,7 @@ export default function TestLabPage() {
       mainRef={mainRef}
       staticLanguage
       action={
-        <FooterPageAction
-          href={returnPath}
-          onClick={handleClose}
-          aria-label={t("common.closeTestPage")}
-          className="size-11 p-0 text-foreground/62"
-        >
-          <X size={24} strokeWidth={1.8} aria-hidden="true" />
-        </FooterPageAction>
+        <CardCloseButton href={returnPath} onClick={handleClose} label={t("common.closeTestPage")} className="absolute right-6 top-6 text-foreground/62 sm:right-10 sm:top-8 lg:right-14" />
       }
     >
       <FooterPageHeader

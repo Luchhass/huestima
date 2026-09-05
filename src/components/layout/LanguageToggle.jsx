@@ -14,7 +14,7 @@ export default function LanguageToggle() {
       document.querySelector("main");
 
     if (!document.querySelector("[data-language-static]")) {
-      await playScreenFadeOut(scope, { duration: 0.28 });
+      await playScreenFadeOut(scope);
     }
     toggleLanguage();
   };

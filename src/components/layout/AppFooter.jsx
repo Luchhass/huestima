@@ -5,8 +5,12 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import {
+  getRouteCardKind,
+  getRenderedCardKind,
   playHomeToFooterExit,
   playCardToCardExit,
+  markCardRouteTransition,
+  useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { requestActiveGameExit } from "@/lib/gameNavigation";
@@ -33,16 +37,11 @@ export default function AppFooter() {
   const isTestRoute = pathname === "/test";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
+  const isCartoonHomeRoute = pathname === "/cartoon";
   const isStandaloneCardRoute =
     pathname === "/notifications" || pathname === "/history";
 
-  useEffect(() => {
-    document.querySelectorAll(".route-transition-footer").forEach((element) => {
-      element.style.removeProperty("opacity");
-      element.style.removeProperty("visibility");
-      element.style.removeProperty("transition");
-    });
-  }, [pathname]);
+  useFooterChromeReturn(pathname, ".route-transition-footer");
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
   const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
     ? familyFromQuery
@@ -56,6 +55,8 @@ export default function AppFooter() {
     event.preventDefault();
     if (isTransitioningRef.current) return;
     isTransitioningRef.current = true;
+    const targetPath = href.split("?")[0];
+    markCardRouteTransition(href);
 
     await requestActiveGameExit();
     clearAllGameSessions();
@@ -67,7 +68,23 @@ export default function AppFooter() {
       return;
     }
 
-    if (pathname === "/notifications") {
+    const sourceCardKind = getRouteCardKind(pathname);
+    const targetCardKind = getRouteCardKind(href);
+    const renderedSourceCardKind = getRenderedCardKind(card, pathname);
+    markCardRouteTransition(href, renderedSourceCardKind);
+
+    if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
+      await playHomeToFooterExit(card, content, { scaleCard: false, hideChrome: true });
+    } else if (
+      !["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath) &&
+      (renderedSourceCardKind === "large" || sourceCardKind === "download") &&
+      targetCardKind === "fullscreen"
+    ) {
+      await playCardToCardExit(card, content, {
+        targetExpanded: false,
+        hideChrome: true,
+      });
+    } else if (pathname === "/notifications") {
       const notificationCard = document.querySelector("[data-notification-card]");
       if (notificationCard) {
         await playCardToCardExit(notificationCard, content, {
@@ -75,6 +92,12 @@ export default function AppFooter() {
           hideChrome: false,
         });
       }
+    } else if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
+      await playHomeToFooterExit(card, content, {
+        scaleCard: false,
+        expandCard: true,
+        hideChrome: true,
+      });
     } else if (href.startsWith("/download")) {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
@@ -116,11 +139,12 @@ export default function AppFooter() {
       <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
         {[
           [
+            ...(isCartoonHomeRoute
+              ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
+              : []),
             [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
-            [`/history?from=${family}`, t("history.footerLink")],
           ],
           [
-            [`/how-it-works?from=${family}`, howItWorksLabel],
             [`/privacy-policy?from=${family}`, locale === "tr" ? "gizlilik politikası" : "privacy policy"],
             [`/credits?from=${family}`, locale === "tr" ? "emeği geçenler" : "credits"],
           ],

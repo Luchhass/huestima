@@ -1,14 +1,13 @@
 "use client";
 
 import { useTranslation } from "@/hooks/useLanguage";
-import { X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useRef } from "react";
 import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import FooterPageShell, {
-  FooterPageAction,
   FooterPageHeader,
 } from "@/components/sections/footer-pages/FooterPageShell";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const CONTENT = {
   en: {
@@ -71,17 +70,10 @@ export default function PrivacyPolicyPage() {
       mainRef={mainRef}
       staticLanguage
       action={
-        <FooterPageAction
-          href={returnPath}
-          onClick={handleClose}
-          aria-label={content.back}
-          className="size-11 p-0 text-foreground/62"
-        >
-          <X size={24} strokeWidth={1.8} aria-hidden="true" />
-        </FooterPageAction>
+        <CardCloseButton href={returnPath} onClick={handleClose} label={content.back} className="absolute right-6 top-6 text-foreground/62 sm:right-10 sm:top-8 lg:right-14" />
       }
     >
-      <article>
+      <article data-screen-reveal>
         <FooterPageHeader
           kicker={null}
           title={content.title}

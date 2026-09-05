@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { X } from "lucide-react";
 import gsap from "gsap";
 import PushNotification from "@/components/ui/PushNotification";
 import ModeSelector from "./ModeSelector";
@@ -17,6 +16,7 @@ import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { useSiteOperations } from "@/hooks/useSiteOperations";
 import {
@@ -33,6 +33,7 @@ import {
   hasPendingAdminHomeReturn,
   hasPendingDownloadReturn,
   hasPendingFooterReturn,
+  CARD_RESIZE_DURATION_MS,
   playAdminHomeReturnEntry,
   playFooterReturnEntry,
 } from "@/hooks/useFooterPageTransition";
@@ -73,7 +74,6 @@ const DIFFICULTY_BURST_COLORS = {
     rgb: "255 63 70",
   },
 };
-const CARD_RESIZE_DURATION_MS = 700;
 const DIFFICULTY_BURST_LIFETIME_MS = 1180;
 const CARTOON_TRANSFORM_DURATION_MS = 2300;
 const CARTOON_TIMEOUT_DURATION_MS = 4500;
@@ -250,6 +250,12 @@ export default function HomeCard({
   const singleplayerGameModeOptions = getAvailableGameModeOptions(
     GAME_MODE_OPTIONS.filter((option) => !option.multiplayerOnly),
     cleanGameFamily,
+    operations.gameConfiguration,
+  );
+  const multiplayerGameModeOptions = getAvailableGameModeOptions(
+    GAME_MODE_OPTIONS.filter((option) => !option.singleplayerOnly),
+    cleanGameFamily,
+    operations.gameConfiguration,
   );
   const [view, setView] = useState(initialView);
   const [difficulty, setDifficulty] = useState(initialDifficulty || defaultDifficulty);
@@ -279,8 +285,9 @@ export default function HomeCard({
   const contentRef = useRef(null);
   const cardRef = useRef(null);
   const stickerRef = useRef(null);
-  const isFooterReturnRef = useRef(false);
+  const [isFooterReturnPending] = useState(() => hasPendingFooterReturn());
   const [isAdminReturnPending] = useState(() => hasPendingAdminHomeReturn());
+  const [isDirectReturnPending] = useState(() => hasPendingDownloadReturn());
   const difficultyBurstTimersRef = useRef(new Map());
   const levelCountImpactTimersRef = useRef(new Map());
   const cartoonTransformTimersRef = useRef([]);
@@ -308,10 +315,6 @@ export default function HomeCard({
   const homeParagraphs = Array.isArray(homeSection?.paragraphs)
     ? homeSection.paragraphs
     : t("home.paragraphs");
-
-  if (typeof window !== "undefined") {
-    isFooterReturnRef.current ||= hasPendingFooterReturn();
-  }
 
   useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool || isTeamPool);
   useCartoonAssetPreload(
@@ -356,9 +359,11 @@ export default function HomeCard({
     contentRef,
     [view, cleanGameFamily, locale],
     {
-      // Footer return state is intentionally read once to defer the entry reveal.
-      // eslint-disable-next-line react-hooks/refs
-      defer: isFooterReturnRef.current || isAdminReturnPending || deferViewReveal,
+      defer:
+        isFooterReturnPending ||
+        isAdminReturnPending ||
+        isDirectReturnPending ||
+        deferViewReveal,
     },
   );
 
@@ -502,7 +507,7 @@ export default function HomeCard({
   }, []);
 
   useLayoutEffect(() => {
-    if (!hasPendingDownloadReturn()) return undefined;
+    if (!isDirectReturnPending) return undefined;
 
     const card = cardRef.current;
     if (!card) return undefined;
@@ -519,10 +524,10 @@ export default function HomeCard({
     return () => {
       active = false;
     };
-  }, []);
+  }, [isDirectReturnPending]);
 
   useLayoutEffect(() => {
-    if (!hasPendingFooterReturn()) return undefined;
+    if (!isFooterReturnPending) return undefined;
 
     const card = cardRef.current;
     if (!card) return undefined;
@@ -532,7 +537,6 @@ export default function HomeCard({
     void playFooterReturnEntry(card).then(() => {
       if (!active) return;
 
-      isFooterReturnRef.current = false;
       clearFooterReturn();
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     });
@@ -540,7 +544,7 @@ export default function HomeCard({
     return () => {
       active = false;
     };
-  }, []);
+  }, [isFooterReturnPending]);
 
   useEffect(() => {
     clearAllGameSessions();
@@ -706,9 +710,9 @@ export default function HomeCard({
     const closeButton = cardRef.current?.querySelector(".solo-close-button");
 
     await Promise.all([
-      playScreenFadeOut(contentRef, { duration: 0.28 }),
+      playScreenFadeOut(contentRef),
       closeButton
-        ? playScreenFadeOut(closeButton, { duration: 0.28 })
+        ? playScreenFadeOut(closeButton)
         : Promise.resolve(),
     ]);
 
@@ -802,6 +806,7 @@ export default function HomeCard({
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
         data-intro-card-target
+        data-card-size={isExpandedCard ? "large" : "default"}
         ref={cardRef}
         onClick={handleCartoonCharacterClick}
       className="home-card relative isolate flex w-full max-w-125 flex-col overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height] duration-700 ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8"
@@ -865,15 +870,12 @@ export default function HomeCard({
         )}
 
         {(isSingleplayer || isMultiplayer) && (
-          <button
+          <CardCloseButton
             data-game-mode-shock-target
-            type="button"
-            aria-label={t("common.backHome")}
             onClick={() => changeView("home")}
-            className="solo-close-button absolute right-4 top-4 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-8 sm:top-8 sm:size-9"
-          >
-            <X className="size-6 sm:size-[26px]" strokeWidth={1.7} />
-          </button>
+            label={t("common.backHome")}
+            className="absolute right-4 top-4 sm:right-8 sm:top-8"
+          />
         )}
 
         <div
@@ -905,11 +907,12 @@ export default function HomeCard({
                     className="home-actions relative z-10 mt-auto self-start"
                   >
                     <ModeSelector
-                      onSingleplayer={() => changeView("singleplayer")}
+                      onSingleplayer={() => singleplayerGameModeOptions.length > 0 && changeView("singleplayer")}
                       onMultiplayer={() =>
                         multiplayerEnabled && changeView("multiplayer")
                       }
-                      multiplayerEnabled={multiplayerEnabled}
+                      multiplayerEnabled={multiplayerEnabled && multiplayerGameModeOptions.length > 0}
+                      singleplayerEnabled={singleplayerGameModeOptions.length > 0}
                     />
                   </div>
 

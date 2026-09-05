@@ -1,8 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
 import { TEAM_OPTIONS } from "@/lib/teams";
 import { useTranslation } from "@/hooks/useLanguage";
+import CardPanelHeader from "./CardPanelHeader";
 
 const LEAGUES = [...new Set(TEAM_OPTIONS.map((team) => team.league))];
 
@@ -19,7 +19,7 @@ export default function TeamPoolPicker({ value = [], onChange, onDone }) {
   };
 
   return <div className="flex h-full flex-col text-white">
-    <div data-screen-reveal className="mb-4 flex items-start justify-between gap-4"><div><h1 className="text-[clamp(1.8rem,7vw,2.8rem)] font-semibold leading-none">{t("pools.teamTitle")}</h1><p className="mt-2 text-sm font-medium text-white/65">{t("pools.teamSubtitle")}</p></div><button type="button" onClick={onDone} aria-label={t("common.closeTeamPool")} className="shrink-0 rounded-full p-1 text-white/80 transition-opacity hover:opacity-60"><X className="size-7" strokeWidth={1.8} /></button></div>
+    <CardPanelHeader title={t("pools.teamTitle")} description={t("pools.teamSubtitle")} onClose={onDone} closeLabel={t("common.closeTeamPool")} />
     <div data-screen-reveal className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-1"><div className="space-y-2">{LEAGUES.map((league) => { const leagueTeams = TEAM_OPTIONS.filter((team) => team.league === league); const active = leagueTeams.some((team) => selected.has(team.id)); return <button key={league} type="button" onClick={() => toggle(league)} className={`block w-full border-b border-white/15 px-1 py-2.5 text-left text-sm font-semibold last:border-b-0 ${active ? "text-white" : "text-white/55 line-through"}`}>{league} <span className="font-normal opacity-55">({leagueTeams.length})</span></button>; })}</div></div>
     <div data-screen-reveal className="mt-3"><button type="button" onClick={onDone} disabled={!selected.size} className="card-action-height w-full rounded-full bg-white text-base font-semibold text-zinc-950 disabled:opacity-40">{t("pools.done")}</button></div>
   </div>;

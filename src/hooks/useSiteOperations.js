@@ -27,6 +27,7 @@ const DEFAULT_OPERATIONS = {
   multiplayerEnabled: true,
   announcement: null,
   updatedAt: 0,
+  gameConfiguration: {},
 };
 
 const SiteOperationsContext = createContext({
@@ -111,8 +112,17 @@ export function SiteOperationsProvider({ children }) {
       showAnnouncement(announcement);
     };
 
+    const handleAnnouncementDeleted = ({ id }) => {
+      if (!active || !id) return;
+      setAnnouncements((current) => current.filter((item) => item.id !== id));
+      setOperations((current) => current.announcement?.id === id
+        ? { ...current, announcement: null }
+        : current);
+    };
+
     socket?.on("operations:state", applyOperations);
     socket?.on("operations:announcement", handleAnnouncement);
+    socket?.on("operations:announcement-deleted", handleAnnouncementDeleted);
 
     fetch(`${API_ROOT}/api/operations`, {
       credentials: "include",
@@ -132,6 +142,7 @@ export function SiteOperationsProvider({ children }) {
       active = false;
       socket?.off("operations:state", applyOperations);
       socket?.off("operations:announcement", handleAnnouncement);
+      socket?.off("operations:announcement-deleted", handleAnnouncementDeleted);
     };
   }, []);
 
@@ -155,6 +166,8 @@ export function SiteOperationsProvider({ children }) {
       destination = "/maintenance";
     } else if (!operations.maintenanceEnabled && pathname === "/maintenance") {
       destination = "/color";
+    } else if (operations.gameConfiguration?.[pathname.split("/").filter(Boolean)[0]]?.enabled === false) {
+      destination = "/color";
     } else if (!operations.multiplayerEnabled) {
       destination = multiplayerFallbackPath(pathname);
     }
@@ -176,7 +189,7 @@ export function SiteOperationsProvider({ children }) {
     ]).finally(() => {
       router.replace(destination);
     });
-  }, [operations.maintenanceEnabled, operations.multiplayerEnabled, pathname, ready, router]);
+  }, [operations.gameConfiguration, operations.maintenanceEnabled, operations.multiplayerEnabled, pathname, ready, router]);
 
   const unreadAnnouncementCount = announcements.filter(
     (announcement) => !inbox.readIds.includes(announcement.id),

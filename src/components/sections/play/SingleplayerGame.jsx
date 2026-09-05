@@ -27,6 +27,7 @@ import ResultPhase from "@/components/ui/game/ResultPhase";
 import FinalSummary from "@/components/ui/game/FinalSummary";
 import { LEAVE_ACTIVE_GAME_EVENT } from "@/lib/gameNavigation";
 import { releaseVisualRenderService } from "@/lib/cartoonRenderService";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 
 const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
 const SPOT_GUESS_EXIT_DURATION_MS = 980;
@@ -34,7 +35,6 @@ const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
   SHOWCASE_RESULT_CENTER_DELAY_MS + SHOWCASE_RESULT_EXPAND_DELAY_MS;
-const CARD_RESIZE_DURATION_MS = 700;
 const FINAL_HOME_FADE_DURATION_MS = 240;
 const SHOWCASE_WIDGET_REVEAL_DELAY_MS = 32;
 

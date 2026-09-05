@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Settings, UserMinus, X } from "lucide-react";
+import { Settings, UserMinus } from "lucide-react";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
-import { useScreenReveal } from "@/hooks/useScreenReveal";
+import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
+import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
 import DifficultySwitch from "@/components/ui/DifficultySwitch";
 import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
@@ -15,6 +16,7 @@ import GameModePicker from "@/components/ui/GameModePicker";
 import LevelCountPicker from "@/components/ui/LevelCountPicker";
 import PushNotification from "@/components/ui/PushNotification";
 import TeamPoolPicker from "@/components/ui/TeamPoolPicker";
+import CardCloseButton from "@/components/ui/CardCloseButton";
 import UnifiedModal from "@/components/ui/UnifiedModal";
 import { CARTOON_PACKS } from "@/lib/cartoons";
 import {
@@ -53,7 +55,6 @@ const DIFFICULTY_BURST_COLORS = {
     rgb: "255 63 70",
   },
 };
-const EXPANDED_REVEAL_DELAY = 320;
 const DIFFICULTY_BURST_LIFETIME_MS = 1180;
 const ALL_CARTOON_IDS = CARTOON_PACKS.flatMap((pack) => pack.itemIds);
 const ALL_TEAM_IDS = TEAM_OPTIONS.map((team) => team.id);
@@ -155,6 +156,7 @@ export default function LobbyCard({
   const [lastAction, setLastAction] = useState(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
   const [notification, setNotification] = useState(null);
+  const [revealDelayMs, setRevealDelayMs] = useState(CARD_RESIZE_DURATION_MS);
   const [difficultyBursts, setDifficultyBursts] = useState([]);
   const [levelCountImpacts, setLevelCountImpacts] = useState([]);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
@@ -215,7 +217,7 @@ export default function LobbyCard({
     isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
   );
   useScreenReveal(scopeRef, [room?.code, isSettingsOpen, settingsPool], {
-    delay: EXPANDED_REVEAL_DELAY,
+    delay: revealDelayMs,
   });
 
   const triggerDifficultyFeedback = (nextDifficulty, optionIndex = 1, origin = null) => {
@@ -303,16 +305,8 @@ export default function LobbyCard({
 
     setHiddenActionError("");
     setLastAction(null);
-    if (scopeRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      await new Promise((resolve) => {
-        gsap.to(scopeRef.current, {
-          autoAlpha: 0,
-          duration: 0.42,
-          ease: "power2.inOut",
-          onComplete: resolve,
-        });
-      });
-    }
+    setRevealDelayMs(0);
+    await playScreenFadeOut(scopeRef);
     if (nextOpen) {
       setDraftSettings({
         gameMode: room?.gameMode,
@@ -335,16 +329,8 @@ export default function LobbyCard({
 
   const transitionSettingsPool = async (nextPool) => {
     if (isUpdatingSettings) return;
-    if (scopeRef.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      await new Promise((resolve) => {
-        gsap.to(scopeRef.current, {
-          autoAlpha: 0,
-          duration: 0.42,
-          ease: "power2.inOut",
-          onComplete: resolve,
-        });
-      });
-    }
+    setRevealDelayMs(0);
+    await playScreenFadeOut(scopeRef);
     setSettingsPool(nextPool);
   };
 
@@ -465,15 +451,12 @@ export default function LobbyCard({
           isLeavingHome ? "opacity-0" : "opacity-100"
         }`}
       >
-      <button
+      <CardCloseButton
         data-game-mode-shock-target
-        type="button"
-        aria-label={isSettingsOpen ? t("room.closeSettings") : t("common.backHome")}
+        label={isSettingsOpen ? t("room.closeSettings") : t("common.backHome")}
         onClick={isSettingsOpen ? handleCloseSettings : handleBackHome}
-        className="lobby-close-button solo-close-button absolute right-0 top-0 grid size-8 place-items-center rounded-full text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:size-9"
-      >
-        <X className="size-6 sm:size-6.5" strokeWidth={1.7} />
-      </button>
+        className="lobby-close-button absolute right-0 top-0"
+      />
 
       {isSettingsOpen ? (
         settingsPool === "cartoon" ? (
@@ -509,7 +492,7 @@ export default function LobbyCard({
             </h1>
             <p
               data-game-mode-shock-target
-              className="mt-3.5 max-w-[35.5rem] text-[0.9rem] font-medium leading-[1.28] text-white/84 sm:mt-4 sm:max-w-[36.75rem] sm:text-[0.96rem]"
+              className="app-card-copy mt-3.5 max-w-[35.5rem] text-white/84 sm:mt-4 sm:max-w-[36.75rem]"
             >
               {t("room.lobbySummary", {
                 count: players.length,
@@ -613,10 +596,10 @@ export default function LobbyCard({
 
       <div
         data-game-mode-shock-target
-        className="mt-6 flex min-h-0 flex-1 flex-col justify-end"
+        className="mt-6 flex min-h-0 flex-1 flex-col"
       >
-        <div data-screen-reveal className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto pr-0.5">
-          <div className="flex flex-wrap content-start gap-2">
+        <div data-screen-reveal className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overflow-x-visible pr-0.5">
+          <div className="flex flex-wrap content-start gap-2 pl-1">
             {players.map((player) => {
               const isCurrentPlayer = player.id === currentPlayerId;
               const canKickPlayer =

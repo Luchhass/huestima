@@ -22,6 +22,7 @@ export default function SequenceMemorizePhase({
   onColorChange,
   onComplete,
   progressItems = [],
+  gameFamily = "color",
   resumeElapsedMs = 0,
 }) {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ export default function SequenceMemorizePhase({
   const lastSecondRef = useRef(Math.ceil(durationMs / 1000));
   const onColorChangeRef = useRef(onColorChange);
   const onCompleteRef = useRef(onComplete);
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
 
   const visibleColors = useMemo(
     () => colors.filter(Boolean).slice(0, roundCount),
@@ -150,7 +152,11 @@ export default function SequenceMemorizePhase({
 
       {progressItems.length > 0 && (
         <div
-          className="absolute bottom-[5.25rem] left-6 z-10 sm:bottom-[5.85rem] sm:left-8"
+          className={`absolute left-6 z-10 sm:left-8 ${
+            usesMiddleProgress
+              ? "top-1/2 -translate-y-1/2"
+              : "bottom-6 sm:bottom-8"
+          }`}
           style={{
             color: "var(--game-fg-bottom-left)",
             textShadow: "var(--game-fg-bottom-left-shadow)",

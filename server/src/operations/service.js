@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import {
   readSiteOperations,
   insertAnnouncement,
+  deleteAnnouncement,
   readAnnouncementHistory,
   writeSiteOperations,
 } from "../admin/store.js";
@@ -83,6 +84,18 @@ export function setAnnouncement(message) {
 
 export function getAnnouncementHistory(limit) {
   return readAnnouncementHistory(limit);
+}
+
+export function removeAnnouncement(id) {
+  const current = getSiteOperations();
+  if (!id) return current;
+  deleteAnnouncement(id);
+  if (current.announcement?.id !== id) return current;
+  return persistOperations({
+    ...current,
+    announcement: null,
+    updatedAt: Date.now(),
+  });
 }
 
 export function setMultiplayerEnabled(enabled) {

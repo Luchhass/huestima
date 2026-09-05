@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import CardCloseButton from "./CardCloseButton";
 
 const EXIT_DURATION_MS = 900;
 
@@ -70,21 +70,18 @@ export default function UnifiedModal({
       <section
         className={`relative z-10 w-full max-w-[27rem] origin-center rounded-[28px] bg-black px-7 py-8 text-white shadow-[var(--app-card-shadow)] transition-transform duration-[460ms] ease-[cubic-bezier(0.65,0,0.35,1)] sm:px-8 sm:py-9 ${visible ? "translate-y-0 scale-100 delay-[280ms]" : "translate-y-10 scale-0 delay-0"}`}
       >
-        <button
-          type="button"
+        <CardCloseButton
           onClick={onClose}
-          aria-label={closeLabel}
-          className="absolute right-5 top-5 grid size-9 place-items-center rounded-full text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:right-6 sm:top-6"
-        >
-          <X className="size-6" strokeWidth={1.8} />
-        </button>
+          label={closeLabel}
+          className="absolute right-4 top-4 sm:right-6 sm:top-6"
+        />
 
-        <div className="max-w-[20rem] pr-8">
-          <h2 id="unified-modal-title" className="text-[clamp(1.65rem,5vw,2.15rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
+        <div className="max-w-[20rem] pr-10">
+          <h2 id="unified-modal-title" className="app-panel-title">
             {title}
           </h2>
           {description ? (
-            <p className="mt-4 text-[0.95rem] font-medium leading-[1.4] text-white/68 sm:text-base">
+            <p className="app-panel-copy mt-4">
               {description}
             </p>
           ) : null}
