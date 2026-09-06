@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { BRAND_ITEMS, TEAM_ITEMS } from "../shared/brandCatalog.mjs";
+import { CARTOON_ITEMS } from "../shared/cartoonCatalog.mjs";
 import { FLAG_ITEMS } from "../shared/flagCatalog.mjs";
+import { CARTOON_PAINT } from "../shared/cartoonPaintCatalog.mjs";
 import { BRAND_PAINT, TEAM_PAINT } from "../shared/visualPaintCatalog.mjs";
 import { resolveGuessChannels } from "../shared/colorMechanics.mjs";
 import { FLAG_OPTIONS as SERVER_FLAG_OPTIONS } from "../server/src/game/flags.js";
@@ -42,6 +44,7 @@ function assertPaintCatalog(items, paintCatalog, label) {
 
 assertPaintCatalog(BRAND_ITEMS, BRAND_PAINT, "Brand");
 assertPaintCatalog(TEAM_ITEMS, TEAM_PAINT, "Team");
+assertPaintCatalog(CARTOON_ITEMS, CARTOON_PAINT, "Cartoon");
 
 const clientFlagIds = FLAG_ITEMS.map((flag) => flag.id);
 const serverFlagIds = SERVER_FLAG_OPTIONS.map((flag) => flag.id);
@@ -53,6 +56,6 @@ for (const flag of FLAG_ITEMS) {
 }
 
 console.log(
-  `Color mechanics healthy: ${BRAND_ITEMS.length} brands, ${TEAM_ITEMS.length} teams, ` +
+  `Color mechanics healthy: ${CARTOON_ITEMS.length} cartoons, ${BRAND_ITEMS.length} brands, ${TEAM_ITEMS.length} teams, ` +
     `${FLAG_ITEMS.length} shared flags, 3 difficulty contracts.`,
 );

@@ -19,7 +19,6 @@ import {
 import { applyDifficultyConstraints, getDifficultyOption } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
 import {
-  earnsHint,
   getInitialHintCount,
   normalizeHintsEnabled,
 } from "@/lib/hints";
@@ -176,6 +175,7 @@ export function useMultiplayerGame({
   );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
   const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
@@ -546,10 +546,6 @@ export function useMultiplayerGame({
 
     const data = responseData(response);
     const nextResult = toResultPhaseShape(data.result);
-    if (hintsEnabled && earnsHint(nextResult.score)) {
-      setHintCount((currentCount) => currentCount + 1);
-    }
-
     setResults((currentResults) => {
       const withoutDuplicate = currentResults.filter(
         (result) => result.roundIndex !== nextResult.roundIndex,
@@ -595,7 +591,6 @@ export function useMultiplayerGame({
     effectiveDifficulty,
     gameMode,
     guessColor,
-    hintsEnabled,
     isSubmitting,
     isSprintMode,
     phase,
@@ -817,6 +812,7 @@ export function useMultiplayerGame({
     isSprintMode,
     isSequenceMode,
     isGradientMode,
+    isSpotMode,
     isDuelMode,
     isCartoonMode,
     isCurrentPlayerEliminated,

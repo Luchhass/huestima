@@ -36,7 +36,6 @@ import {
 } from "@/lib/difficulty";
 import { getGameModeOption } from "@/lib/gameMode";
 import {
-  earnsHint,
   getInitialHintCount,
   normalizeHintsEnabled,
 } from "@/lib/hints";
@@ -809,9 +808,6 @@ export function useSingleplayerGame(
     setResults((currentResults) =>
       normalizeRoundResults([...currentResults, result]),
     );
-    if (hintsEnabled && earnsHint(score)) {
-      setHintCount((currentCount) => currentCount + 1);
-    }
     if (isSprintMode) {
       const nextRoundIndex = roundIndex + 1;
       if (options.finishSprint) {
@@ -828,7 +824,6 @@ export function useSingleplayerGame(
     effectiveDifficulty,
     gameMode,
     guessColor,
-    hintsEnabled,
     isSequenceMode,
     isSprintMode,
     phase,

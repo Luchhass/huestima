@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
         <CardCloseButton
           href="/color"
           label={t("common.closeMenu")}
-          className="absolute right-5 top-5 z-20 text-white/60 hover:text-white sm:right-7 sm:top-7"
+          className="absolute right-6 top-6 z-20 text-white/60 hover:text-white sm:right-8 sm:top-8"
         />
         <div data-screen-reveal className="max-w-[29rem] pr-10">
           <h1 className="whitespace-nowrap text-[clamp(2.4rem,10vw,4rem)] font-semibold leading-[0.88] tracking-[-0.06em]">{t("admin.login.title")}</h1>

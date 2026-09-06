@@ -99,7 +99,7 @@ export default function JoinRoomCard({
         onClose={() => setNotification(null)}
       />
 
-      <CardCloseButton href="/color" label={t("common.backHome")} className="absolute right-4 top-4 sm:right-8 sm:top-8" />
+      <CardCloseButton href="/color" label={t("common.backHome")} className="absolute right-6 top-6 sm:right-8 sm:top-8" />
 
       <div data-screen-reveal className="max-w-100 pr-10">
         <h1 className="text-[clamp(3rem,10.5vw,4.2rem)] font-semibold lowercase leading-[0.98] tracking-normal text-white">

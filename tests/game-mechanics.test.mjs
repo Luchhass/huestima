@@ -18,6 +18,7 @@ import {
   ROUND_COUNT_OPTIONS,
 } from "../server/src/constants.js";
 import { generateTargetColors } from "../server/src/game/colorGenerator.js";
+import { dominantPaint } from "../scripts/lib/visual-scene-pipeline.mjs";
 import {
   createRoom,
   joinRoom,
@@ -33,6 +34,19 @@ import {
   isFixedMultiplayerRoundMode,
   shouldMemorizeMultiplayerRound,
 } from "../shared/gameMechanics.mjs";
+
+test("visual paint anchors follow a real dominant color instead of averaging hues", () => {
+  const pixels = Buffer.from([
+    255, 255, 0, 255,
+    255, 255, 0, 255,
+    255, 255, 0, 255,
+    255, 255, 0, 255,
+    0, 87, 183, 255,
+    0, 87, 183, 255,
+  ]);
+
+  assert.deepEqual(dominantPaint(pixels, 4), { h: 60, s: 100, v: 100 });
+});
 
 const GENERATED_SUFFIXES = [
   "scene.webp",

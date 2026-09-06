@@ -28,6 +28,7 @@ export default function LibraryPageShell({
   children,
   count,
   filters,
+  hueControl,
   mainRef,
   onBack,
   title,
@@ -35,6 +36,7 @@ export default function LibraryPageShell({
   return (
     <FooterPageShell
       mainRef={mainRef}
+      effects={hueControl}
       action={
         <FooterPageAction href={backHref} onClick={onBack}>
           <ArrowLeft size={17} strokeWidth={1.8} aria-hidden="true" />

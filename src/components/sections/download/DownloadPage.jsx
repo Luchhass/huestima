@@ -242,17 +242,17 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
 
   return <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
     <article data-intro-card-target style={cardHeight ? { height: cardHeight } : undefined} className={`relative w-full overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height,max-width] duration-[860ms] ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8 ${isExpanded ? "max-w-125 lg:max-w-[64rem]" : "max-w-125"}`}>
-      <CardCloseButton onClick={() => void handleClose()} label={t("download.back")} className="absolute right-4 top-4 sm:right-7 sm:top-7" />
+      <CardCloseButton onClick={() => void handleClose()} label={t("download.back")} className="absolute right-6 top-6 sm:right-8 sm:top-8" />
       <div ref={scopeRef} data-route-transition-scope className="relative grid h-full min-h-0 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
         <section className="flex min-h-0 flex-col">
           <div data-screen-reveal className="max-w-[40rem]">
-            <h1 className="max-w-[40rem] whitespace-pre-line text-[clamp(2.8rem,7vw,3.85rem)] font-semibold leading-[0.92] tracking-normal text-white">{t("download.title")}</h1>
-            <div className="mt-5 max-w-[29rem] space-y-3 text-[0.95rem] font-medium leading-[1.22] text-white/72 sm:text-base">
+            <h1 className="max-w-[40rem] pr-8 whitespace-pre-line text-[clamp(2.35rem,7vw,3.85rem)] font-semibold leading-[0.95] tracking-normal text-white sm:pr-0">{t("download.title")}</h1>
+            <div className="mt-4 max-w-[29rem] space-y-2.5 text-[0.88rem] font-medium leading-[1.28] text-white/72 sm:mt-5 sm:space-y-3 sm:text-base sm:leading-[1.22]">
               <p>{t("download.intro")}</p>
               <p>{t("download.support")}</p>
             </div>
           </div>
-          <div data-screen-reveal className="mt-auto pt-6">
+          <div data-screen-reveal className="mt-auto pt-5 sm:pt-6">
             <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/82">
               {hoveredStore === "ios"
                 ? locale === "tr"

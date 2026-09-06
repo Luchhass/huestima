@@ -210,10 +210,15 @@ function VisibilitySwitch({ value, onChange, disabled = false }) {
             aria-pressed={isActive}
             title={option.label}
             onClick={() => onChange(option.id)}
-            className={`grid min-w-0 place-items-center px-2 text-center text-xs font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 sm:text-sm ${
+            className={`inline-flex min-w-0 items-center justify-center gap-1.5 px-2 text-center text-xs font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-60 sm:text-sm ${
               isActive ? "bg-white text-zinc-950" : "text-white/72"
             }`}
           >
+            {option.id === VISIBILITIES.PUBLIC ? (
+              <Globe2 className="size-3.5 shrink-0 sm:size-4" strokeWidth={2.1} />
+            ) : (
+              <Lock className="size-3.5 shrink-0 sm:size-4" strokeWidth={2.1} />
+            )}
             <span className="min-w-0 truncate">{option.label}</span>
           </button>
         );
@@ -705,11 +710,12 @@ export default function MultiplayerCard({
               type="button"
               disabled={!isPlayerNameReady}
               onClick={() => openPanel(PANELS.CREATE)}
-              className="rgb-hover-button card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full bg-white px-4 text-center text-[0.95rem] font-semibold text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
+              className="app-secondary-action card-action-height inline-flex min-w-0 items-center justify-center gap-2 rounded-full border-2 border-white/95 bg-transparent px-4 text-center text-[0.95rem] font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:pointer-events-none disabled:opacity-45 sm:px-6 sm:text-base"
             >
               <Plus className="relative z-10 size-5 shrink-0" strokeWidth={2.25} />
               <span className="relative z-10 min-w-0 truncate">
-                {t("setup.createLobbyAction")}
+                <span className="sm:hidden">{t("setup.createLobbyShort")}</span>
+                <span className="hidden sm:inline">{t("setup.createLobbyAction")}</span>
               </span>
             </button>
 
@@ -721,7 +727,8 @@ export default function MultiplayerCard({
             >
               <LogIn className="relative z-10 size-5 shrink-0" strokeWidth={2.2} />
               <span className="relative z-10 min-w-0 truncate">
-                {t("setup.browseLobbyAction")}
+                <span className="sm:hidden">{t("setup.browseLobbyShort")}</span>
+                <span className="hidden sm:inline">{t("setup.browseLobbyAction")}</span>
               </span>
             </button>
           </div>
@@ -733,7 +740,7 @@ export default function MultiplayerCard({
           <div data-screen-reveal className="home-view-actions mt-auto w-full">
             <div
               className={`grid w-full items-center gap-2 sm:gap-3 ${
-                isPrivate ? "grid-cols-2" : "grid-cols-1"
+                isPrivate ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
               }`}
             >
               <TextField

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Settings, UserMinus } from "lucide-react";
+import { Check, Clipboard, Settings, UserMinus } from "lucide-react";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
@@ -157,6 +157,7 @@ export default function LobbyCard({
   const [hiddenActionError, setHiddenActionError] = useState("");
   const [notification, setNotification] = useState(null);
   const [revealDelayMs, setRevealDelayMs] = useState(CARD_RESIZE_DURATION_MS);
+  const [isStartingGameTransition, setIsStartingGameTransition] = useState(false);
   const [difficultyBursts, setDifficultyBursts] = useState([]);
   const [levelCountImpacts, setLevelCountImpacts] = useState([]);
   const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
@@ -370,12 +371,22 @@ export default function LobbyCard({
     }, 2000);
   };
 
-  const handleStartGame = () => {
-    if (!canStartGame || isStarting) return;
+  const handleStartGame = async () => {
+    if (!canStartGame || isStarting || isStartingGameTransition) return;
 
     setLastAction("start");
     setHiddenActionError("");
-    onStartGame();
+    setIsStartingGameTransition(true);
+    setRevealDelayMs(0);
+
+    // Keep the lobby mounted while its content leaves. The room view then
+    // follows the shared card-resize transition before the game is rendered.
+    await playScreenFadeOut(scopeRef);
+    const response = await onStartGame?.();
+    if (response?.ok === false) {
+      setIsStartingGameTransition(false);
+      setRevealDelayMs(CARD_RESIZE_DURATION_MS);
+    }
   };
 
   const handleKickPlayer = (targetPlayerId) => {
@@ -447,16 +458,20 @@ export default function LobbyCard({
 
       <div
         ref={scopeRef}
-        className={`relative z-10 flex h-full flex-col transition-opacity duration-200 ${
-          isLeavingHome ? "opacity-0" : "opacity-100"
+        className={`relative z-10 flex h-full flex-col ${
+          isLeavingHome
+            ? "opacity-0 transition-opacity duration-200"
+            : "opacity-100"
         }`}
       >
-      <CardCloseButton
-        data-game-mode-shock-target
-        label={isSettingsOpen ? t("room.closeSettings") : t("common.backHome")}
-        onClick={isSettingsOpen ? handleCloseSettings : handleBackHome}
-        className="lobby-close-button absolute right-0 top-0"
-      />
+      {(!isSettingsOpen || !settingsPool) && (
+        <CardCloseButton
+          data-game-mode-shock-target
+          label={isSettingsOpen ? t("room.closeSettings") : t("common.backHome")}
+          onClick={isSettingsOpen ? handleCloseSettings : handleBackHome}
+          className="lobby-close-button absolute right-0 top-0"
+        />
+      )}
 
       {isSettingsOpen ? (
         settingsPool === "cartoon" ? (
@@ -658,7 +673,7 @@ export default function LobbyCard({
         <div data-game-mode-shock-target data-screen-reveal className="lobby-actions mt-3 w-full">
           <div className={`w-full items-center gap-3 ${
             isHost
-              ? "grid grid-cols-[3.625rem_minmax(0,1fr)_50%]"
+              ? "grid grid-cols-[3.625rem_3.625rem_minmax(0,1fr)]"
               : "flex"
           }`}>
             {isHost && (
@@ -679,17 +694,13 @@ export default function LobbyCard({
               aria-label={t("room.copyInvite")}
               title={t("room.copyInvite")}
               onClick={handleCopyInvite}
-              className={`app-icon-action card-action-height inline-flex min-w-0 items-center justify-center rounded-full border-2 px-4 text-center text-sm font-semibold leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base ${
-                isHost ? "w-full" : "flex-1"
-              } ${
+              className={`app-icon-action card-action-size grid shrink-0 place-items-center rounded-full border-2 p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                 isInviteCopied
                     ? "border-emerald-400 bg-emerald-400 text-white"
                     : "border-white/95 bg-transparent text-white hover:bg-white/10"
               }`}
             >
-              <span className="min-w-0 truncate">
-                {isInviteCopied ? t("room.copied") : t("room.copyLink")}
-              </span>
+              {isInviteCopied ? <Check size={19} strokeWidth={2.25} /> : <Clipboard size={19} strokeWidth={2.1} />}
             </button>
 
             {isHost ? (
@@ -697,11 +708,11 @@ export default function LobbyCard({
                 <button
                   type="button"
                   onClick={handleStartGame}
-                  disabled={isStarting || !canStartGame}
+                  disabled={isStarting || isStartingGameTransition || !canStartGame}
                   className="rgb-hover-button lobby-primary-button card-action-height inline-flex min-w-0 w-full items-center justify-center gap-2 rounded-full bg-white px-5 text-center text-sm font-semibold leading-tight text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-70 sm:text-base"
                 >
                   <span className="relative z-10 min-w-0 truncate">
-                    {isStarting
+                    {isStarting || isStartingGameTransition
                         ? t("room.starting")
                         : !canStartGame && startDisabledLabel
                           ? startDisabledLabel

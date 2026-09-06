@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { BRAND_OPTIONS } from "@/lib/brands";
@@ -10,6 +9,9 @@ import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import LibraryPageShell, {
   LibraryFilterButton,
 } from "@/components/sections/library/LibraryPageShell";
+import LibraryHueControl from "@/components/sections/library/LibraryHueControl";
+import BrandOverlay from "@/components/ui/game/BrandOverlay";
+import { withBrandHex, withTeamHex } from "@/lib/color";
 
 const ALL_GROUP_KEY = "all";
 
@@ -38,6 +40,7 @@ export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
   const [activeGroup, setActiveGroup] = useState(ALL_GROUP_KEY);
+  const [hue, setHue] = useState(0);
   const leavePage = useFooterPageTransition(mainRef);
   const from = searchParams.get("from");
   const testLabPath = from ? `/test?from=${from}` : "/test";
@@ -79,6 +82,7 @@ export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false
       backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={isTeam ? (locale === "tr" ? "Takımlar" : "Teams") : (locale === "tr" ? "Markalar" : "Brands")}
       count={selectedGroup ? `${selectedGroup.items.length} logo` : ""}
+      hueControl={<LibraryHueControl value={hue} onChange={setHue} />}
       filters={[ALL_GROUP_KEY, ...groups.map((group) => group.group)].map((group) => (
         <LibraryFilterButton
           key={group}
@@ -97,16 +101,11 @@ export default function BrandLibraryPage({ items = BRAND_OPTIONS, isTeam = false
                 className="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-[18px] border border-foreground/8 p-8"
                 style={{ backgroundColor: "#000000" }}
               >
-                <div className="relative h-[62%] w-[78%]">
-                  <Image
-                    src={item.logoPath}
-                    alt={item.labels?.[locale] || item.label}
-                    fill
-                    unoptimized
-                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                    className="object-contain"
-                  />
-                </div>
+                <BrandOverlay
+                  color={isTeam
+                    ? withTeamHex({ teamId: item.id, h: hue })
+                    : withBrandHex({ brandId: item.id, h: hue })}
+                />
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 px-1">
                 <h2 className="truncate text-base font-semibold text-foreground">

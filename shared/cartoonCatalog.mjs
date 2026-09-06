@@ -1,3 +1,5 @@
+import { CARTOON_PAINT } from "./cartoonPaintCatalog.mjs";
+
 const BEN10_ASSET_ROOT = "public/game-modes/cartoon/ben-10/assets";
 const BEN10_MASK_ROOT = "public/game-modes/cartoon/ben-10/masks";
 const ADVENTURE_TIME_ASSET_ROOT = "public/game-modes/cartoon/adventure-time/assets";
@@ -2633,4 +2635,13 @@ const REGULAR_SHOW_ITEMS = [
   },
 ];
 
-export const CARTOON_ITEMS = [...BEN10_ITEMS, ...ADVENTURE_TIME_ITEMS, ...REGULAR_SHOW_ITEMS];
+export const CARTOON_SOURCE_ITEMS = [
+  ...BEN10_ITEMS,
+  ...ADVENTURE_TIME_ITEMS,
+  ...REGULAR_SHOW_ITEMS,
+];
+
+export const CARTOON_ITEMS = CARTOON_SOURCE_ITEMS.map((item) => ({
+  ...item,
+  paint: CARTOON_PAINT[item.id] || item.paint,
+}));

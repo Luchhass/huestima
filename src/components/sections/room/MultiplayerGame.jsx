@@ -29,6 +29,7 @@ import LeaderboardCard from "./LeaderboardCard";
 import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
 
 const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
+const SPOT_GUESS_EXIT_DURATION_MS = 980;
 const SHOWCASE_RESULT_CENTER_DELAY_MS = 560;
 const SHOWCASE_RESULT_EXPAND_DELAY_MS = 560;
 const SHOWCASE_RESULT_REVEAL_DELAY_MS =
@@ -250,6 +251,26 @@ export default function MultiplayerGame({
 
     if (
       renderedPhase === GAME_PHASES.GUESS &&
+      game.phase === GAME_PHASES.RESULT &&
+      game.isSpotMode
+    ) {
+      const exitStartId = window.setTimeout(() => {
+        setIsShowcaseWidgetExiting(true);
+      }, 0);
+
+      const phaseTimeoutId = window.setTimeout(() => {
+        setRenderedPhase(game.phase);
+        setIsShowcaseWidgetExiting(false);
+      }, SPOT_GUESS_EXIT_DURATION_MS);
+
+      return () => {
+        window.clearTimeout(exitStartId);
+        window.clearTimeout(phaseTimeoutId);
+      };
+    }
+
+    if (
+      renderedPhase === GAME_PHASES.GUESS &&
       usesShowcaseTransition &&
       !sprintExpired
     ) {
@@ -279,6 +300,7 @@ export default function MultiplayerGame({
   }, [
     game.isSprintMode,
     game.phase,
+    game.isSpotMode,
     game.sprintRemainingMs,
     isCartoonMode,
     renderedPhase,
@@ -452,8 +474,12 @@ export default function MultiplayerGame({
       : renderedPhase === GAME_PHASES.MEMORIZE
         ? game.targetColor
         : renderedPhase === GAME_PHASES.GUESS
-          ? game.guessColor
-          : null;
+          ? game.isSpotMode
+            ? game.targetColor
+            : game.guessColor
+          : renderedPhase === GAME_PHASES.RESULT && game.isSpotMode
+            ? game.latestResult?.target
+            : null;
   if (!game.hasRestoredSession || renderedPhase === null) {
     return (
       <main className="game-stage app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
@@ -587,6 +613,7 @@ export default function MultiplayerGame({
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}
+              isSpotMode={game.isSpotMode}
             />
           )}
 
@@ -607,6 +634,7 @@ export default function MultiplayerGame({
                   : 0
               }
               resumeInstantly={resumePhase === GAME_PHASES.RESULT}
+              isSpotMode={game.isSpotMode}
               brandGuessControlOffset={
                 isLogoFamily(cleanGameFamily)
                   ? (game.difficulty?.controls?.length || 1) * 50

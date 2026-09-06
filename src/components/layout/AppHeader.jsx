@@ -565,6 +565,7 @@ export default function AppHeader() {
               </div>
               <span
                 aria-hidden="true"
+                data-mobile-menu-control
                 className="mx-2 h-6 w-[2px] shrink-0 bg-zinc-950/32 dark:bg-white/34"
               />
               <div data-sound-kind="switch" className="flex items-center gap-1">

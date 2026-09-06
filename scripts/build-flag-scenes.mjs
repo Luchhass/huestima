@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { representativePaint } from "./lib/visual-scene-pipeline.mjs";
+import { dominantPaint } from "./lib/visual-scene-pipeline.mjs";
 
 const WIDTH = 1920;
 const HEIGHT = 1280;
@@ -268,7 +268,7 @@ function buildLayers(raw) {
     neutral,
     maskData,
     layerData,
-    paint: representativePaint(raw.data, 4),
+    paint: dominantPaint(raw.data, 4),
   };
 }
 

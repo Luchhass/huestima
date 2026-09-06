@@ -37,7 +37,7 @@ export default function FlagPoolPicker({ value = [], onChange, onDone }) {
         </div>
       </div>
       <div data-screen-reveal className="mt-3">
-        <button type="button" onClick={onDone} disabled={!selected.size} className="card-action-height w-full rounded-full bg-white text-base font-semibold text-zinc-950 disabled:opacity-40">{t("pools.done")}</button>
+        <button type="button" onClick={onDone} disabled={!selected.size} className="rgb-hover-button card-action-height w-full rounded-full bg-white text-base font-semibold text-zinc-950 disabled:opacity-40">{t("pools.done")}</button>
       </div>
     </div>
   );

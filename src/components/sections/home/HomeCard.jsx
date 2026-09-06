@@ -874,7 +874,7 @@ export default function HomeCard({
             data-game-mode-shock-target
             onClick={() => changeView("home")}
             label={t("common.backHome")}
-            className="absolute right-4 top-4 sm:right-8 sm:top-8"
+            className="absolute right-6 top-6 sm:right-8 sm:top-8"
           />
         )}
 

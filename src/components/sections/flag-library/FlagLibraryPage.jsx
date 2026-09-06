@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { FLAG_OPTIONS } from "@/lib/flags";
@@ -11,6 +10,9 @@ import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import LibraryPageShell, {
   LibraryFilterButton,
 } from "@/components/sections/library/LibraryPageShell";
+import LibraryHueControl from "@/components/sections/library/LibraryHueControl";
+import FlagOverlay from "@/components/ui/game/FlagOverlay";
+import { withFlagHex } from "@/lib/color";
 
 const ALL_GROUP_KEY = "all";
 
@@ -25,6 +27,7 @@ export default function FlagLibraryPage() {
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
   const [activeGroup, setActiveGroup] = useState(ALL_GROUP_KEY);
+  const [hue, setHue] = useState(0);
   const leavePage = useFooterPageTransition(mainRef);
   const from = searchParams.get("from");
   const testLabPath = from ? `/test?from=${from}` : "/test";
@@ -53,6 +56,7 @@ export default function FlagLibraryPage() {
       backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={locale === "tr" ? "Bayraklar" : "Flags"}
       count={selectedGroup ? `${selectedGroup.items.length} ${locale === "tr" ? "bayrak" : "flags"}` : ""}
+      hueControl={<LibraryHueControl value={hue} onChange={setHue} />}
       filters={[ALL_GROUP_KEY, ...FLAG_GROUPS.map((group) => group.group)].map((group) => (
         <LibraryFilterButton
           key={group}
@@ -70,13 +74,9 @@ export default function FlagLibraryPage() {
           {selectedGroup.items.map((item, index) => (
             <article key={item.id}>
               <div className="relative aspect-[50/39] w-full overflow-hidden rounded-[18px] border border-foreground/8 bg-white">
-                <Image
-                  src={item.originalScenePath || item.scenePath}
-                  alt={item.label}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  className="object-cover"
-                  style={{ objectPosition: item.sceneObjectPosition }}
+                <FlagOverlay
+                  color={withFlagHex({ flagId: item.id, h: hue })}
+                  minRenderWidth={360}
                 />
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 px-1">

@@ -73,7 +73,7 @@ export default function UnifiedModal({
         <CardCloseButton
           onClick={onClose}
           label={closeLabel}
-          className="absolute right-4 top-4 sm:right-6 sm:top-6"
+          className="absolute right-7 top-8 sm:right-8 sm:top-8"
         />
 
         <div className="max-w-[20rem] pr-10">
@@ -92,7 +92,7 @@ export default function UnifiedModal({
             <button
               type="button"
               onClick={onClose}
-              className="app-secondary-action card-action-height inline-flex items-center justify-center rounded-full bg-white/8 px-5 text-sm font-semibold text-white hover:bg-white/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
+              className="app-secondary-action card-action-height inline-flex items-center justify-center rounded-full bg-transparent px-5 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-base"
             >
               {cancelLabel}
             </button>

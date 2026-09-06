@@ -69,6 +69,77 @@ export function representativePaint(data, channels = 4) {
   };
 }
 
+function hueDistance(left, right) {
+  const difference = Math.abs(left - right) % 360;
+  return Math.min(difference, 360 - difference);
+}
+
+export function dominantPaint(data, channels = 4) {
+  const hueWeights = new Float64Array(360);
+
+  for (let offset = 0; offset < data.length; offset += channels) {
+    const alpha = channels >= 4 ? data[offset + 3] / 255 : 1;
+    if (alpha <= 0.01) continue;
+
+    const hsv = rgbToHsv(data[offset], data[offset + 1], data[offset + 2]);
+    const chromaWeight = alpha * (hsv.s / 100) * Math.max(0.12, hsv.v / 100);
+    if (chromaWeight <= 0.001) continue;
+    hueWeights[Math.round(hsv.h) % 360] += chromaWeight;
+  }
+
+  let dominantHue = 0;
+  let dominantWeight = 0;
+  const searchRadius = 12;
+
+  for (let hue = 0; hue < 360; hue += 1) {
+    let weight = 0;
+    for (let delta = -searchRadius; delta <= searchRadius; delta += 1) {
+      weight += hueWeights[(hue + delta + 360) % 360];
+    }
+    if (weight > dominantWeight) {
+      dominantWeight = weight;
+      dominantHue = hue;
+    }
+  }
+
+  if (dominantWeight <= 0) return representativePaint(data, channels);
+
+  let hueX = 0;
+  let hueY = 0;
+  let saturation = 0;
+  let value = 0;
+  let colorWeight = 0;
+  const clusterRadius = 18;
+
+  for (let offset = 0; offset < data.length; offset += channels) {
+    const alpha = channels >= 4 ? data[offset + 3] / 255 : 1;
+    if (alpha <= 0.01) continue;
+
+    const hsv = rgbToHsv(data[offset], data[offset + 1], data[offset + 2]);
+    if (hueDistance(hsv.h, dominantHue) > clusterRadius) continue;
+
+    const weight = alpha * (hsv.s / 100) * Math.max(0.12, hsv.v / 100);
+    if (weight <= 0.001) continue;
+    const radians = (hsv.h * Math.PI) / 180;
+    hueX += Math.cos(radians) * weight;
+    hueY += Math.sin(radians) * weight;
+    saturation += hsv.s * weight;
+    value += hsv.v * weight;
+    colorWeight += weight;
+  }
+
+  if (colorWeight <= 0) return representativePaint(data, channels);
+
+  let hue = (Math.atan2(hueY, hueX) * 180) / Math.PI;
+  if (hue < 0) hue += 360;
+
+  return {
+    h: Math.round(hue) % 360,
+    s: Math.round(clamp(saturation / colorWeight, 0, 100)),
+    v: Math.round(clamp(value / colorWeight, 0, 100)),
+  };
+}
+
 export async function normalizeTransparentArtwork(
   sourcePath,
   {
@@ -124,7 +195,7 @@ export async function buildTransparentArtworkLayers(sourcePath, options) {
     mask,
     scene,
     raw: { width: info.width, height: info.height, channels: 4 },
-    paint: representativePaint(data, 4),
+    paint: dominantPaint(data, 4),
   };
 }
 

@@ -406,6 +406,25 @@ input {
       border-color 0.22s ease;
   }
 
+  /* All full-size actions share the same two visual families:
+     primary (rgb-hover-button) and secondary (app-secondary-action). */
+  .rgb-hover-button:not(.card-action-size),
+  .app-secondary-action:not(.card-action-size),
+  .app-icon-action:not(.card-action-size) {
+    box-sizing: border-box;
+    min-height: 58px;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  .app-secondary-action:not(.card-action-size) {
+    border-width: 2px;
+    border-style: solid;
+    border-color: rgb(255 255 255 / 0.95);
+    background: transparent;
+    color: #fff;
+  }
+
   .app-secondary-action:not(:disabled):hover,
   .app-secondary-action:not(:disabled):focus-visible,
   .app-icon-action:not(:disabled):hover,
@@ -907,10 +926,6 @@ input {
     .app-gradient:has(.admin-operations-layout),
     .app-gradient:has(.admin-configuration-card) {
       padding-inline: 1.5rem !important;
-    }
-
-    .game-card-shell:has([data-route-transition-scope]) {
-      transition-property: transform;
     }
 
     .admin-operations-layout {

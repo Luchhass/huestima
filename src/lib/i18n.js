@@ -175,29 +175,29 @@ export const DICTIONARIES = {
         color: {
           title: "Color",
           paragraphs: [
-            "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
-            "Recreate it from memory with hue, saturation, and brightness controls. Play one, three, five, or ten levels to test your eye.",
+            "A color appears briefly. Memorize its shade, then rebuild it from memory after it disappears.",
+            "Recreate the color with your own estimate and see how closely you can match the original.",
           ],
         },
         flag: {
           title: "Flag",
           paragraphs: [
-            "A flag color appears behind a fixed emblem. Read the layout, memorize the shade, and keep the flag in your head.",
-            "Rebuild the hidden color with the same controls. The flag shape stays steady while your color memory gets tested.",
+            "A flag appears with its emblem held in place. Memorize the color behind it before the image disappears.",
+            "Rebuild the hidden background color while the flag stays fixed, then compare your memory with the original.",
           ],
         },
         cartoon: {
           title: "Cartoon",
           paragraphs: [
-            "A cartoon scene appears with one adjustable painted area. Study the character, the scene, and the target color before it disappears.",
-            "Recreate the color from memory with the same hue controls. The mask keeps the scene in place while your guess changes the painted layer.",
+            "A cartoon scene appears with one painted area to remember. Study the character and its color before it disappears.",
+            "Recreate the hidden character color while the scene stays unchanged, then see how close your guess is.",
           ],
         },
         brand: {
           title: "Brand",
           paragraphs: [
-            "A familiar logo appears over its signature color. Keep the brand and its backdrop in your memory before it disappears.",
-            "Rebuild the hidden shade with the same controls. Play classic, endless, or timed rounds solo or with friends.",
+            "A familiar logo appears over its signature color. Memorize the logo and the color beneath it before they disappear.",
+            "Rebuild the hidden background color without changing the logo, then compare your guess with the original.",
           ],
         },
         team: {
@@ -391,6 +391,7 @@ export const DICTIONARIES = {
       hintsDisabled: "Hints disabled",
       createLobby: "Create a lobby",
       createLobbyAction: "Create lobby",
+      createLobbyShort: "Create",
       creating: "Creating",
       lobbyCreated: "Lobby created.",
       lobbyJoined: "Joined lobby.",
@@ -405,6 +406,7 @@ export const DICTIONARIES = {
       chooseMultiplayerAction: "Join a lobby or create your own room.",
       joinLobbyAction: "Join lobby",
       browseLobbyAction: "Browse lobby",
+      browseLobbyShort: "Join",
       publicLobby: "Public",
       privateLobby: "Private",
       lobbyNameAria: "Lobby name",
@@ -770,29 +772,36 @@ export const DICTIONARIES = {
         color: {
           title: "Renk",
           paragraphs: [
-            "Bir rengi kısa süre görürsün. Tonunu aklında tut, kaybolunca hafızandan yeniden kurarsın.",
-            "Zorluğa göre hue, saturation ve brightness kontrolleri açılır. 1, 3, 5 veya 10 seviyelik serilerle gözünü test et.",
+            "Bir rengi kısa süre görürsün. Tonunu aklında tutar, kaybolduğunda hafızandan yeniden kurarsın.",
+            "Rengi kendi tahmininle yeniden oluşturur, aslına ne kadar yaklaşabildiğini görürsün.",
           ],
         },
         flag: {
           title: "Bayrak",
           paragraphs: [
-            "Bayrağın renk düzenini kısa süre görürsün. Şekil sabit kalır, asıl iş gördüğün rengi hafızadan yakalamaktır.",
-            "Kolayda sadece hue ayarlanır; Normal ve Zor seviyelerde diğer kontroller de açılır. Kapalı kanallar hedefe otomatik sabitlenir.",
+            "Amblemi sabit kalan bir bayrak görürsün. Görsel kaybolmadan önce arkasındaki rengi aklında tutarsın.",
+            "Bayrak yerinde kalırken gizlenen zemin rengini yeniden kurar, hafızandaki tahminini aslıyla karşılaştırırsın.",
           ],
         },
         cartoon: {
           title: "Çizgi Film",
           paragraphs: [
-            "Çizgi film sahnesindeki boyanabilir karakter alanını görürsün. Sahne aynı kalır, sen karakter rengini aklında tutarsın.",
-            "Tahminde hue, saturation ve brightness zorluğa göre açılır. Maske sahneyi korur, renk hesabı karakter katmanında yapılır.",
+            "Çizgi film sahnesinde hatırlaman gereken boyanabilir bir karakter alanı görürsün.",
+            "Sahne sabit kalırken kaybolan karakter rengini yeniden kurar, tahmininin aslına yakınlığını görürsün.",
           ],
         },
         brand: {
           title: "Marka",
           paragraphs: [
-            "Tanıdık bir logo imza renginin üzerinde görünür. Kaybolmadan önce markayı ve zemindeki tonu hafızanda tut.",
-            "Gizlenen rengi aynı kontrollerle yeniden kur. Klasik, Sonsuz veya Süreli turları tek başına ya da arkadaşlarınla oyna.",
+            "Tanıdık bir logo kendi imza rengi üzerinde görünür. Logo ve altındaki tonu kaybolmadan önce aklında tutarsın.",
+            "Logo değişmeden gizlenen zemin rengini yeniden kurar, tahminini orijinal renkle karşılaştırırsın.",
+          ],
+        },
+        team: {
+          title: "Takımlar",
+          paragraphs: [
+            "Bir takım logosu kendi renkleri üzerinde görünür. Logoyu ve renk paletini kaybolmadan önce aklında tutarsın.",
+            "Logo sabit kalırken gizlenen takım rengini yeniden kurar, tahmininin aslına ne kadar yaklaştığını görürsün.",
           ],
         },
       },
@@ -979,6 +988,7 @@ export const DICTIONARIES = {
       hintsDisabled: "İpuçları kapalı",
       createLobby: "Lobi oluştur",
       createLobbyAction: "Lobi oluştur",
+      createLobbyShort: "Oluştur",
       creating: "Oluşturuluyor",
       lobbyCreated: "Lobi oluşturuldu.",
       lobbyJoined: "Lobiye katıldın.",
@@ -993,6 +1003,7 @@ export const DICTIONARIES = {
       chooseMultiplayerAction: "Bir lobiye katıl ya da kendi odanı oluştur.",
       joinLobbyAction: "Lobiye katıl",
       browseLobbyAction: "Lobilere bak",
+      browseLobbyShort: "Katıl",
       publicLobby: "Açık",
       privateLobby: "Özel",
       lobbyNameAria: "Lobi adı",

@@ -221,7 +221,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
     if (!response.ok) {
       setError(getMultiplayerErrorMessage(response, t, "room.couldNotStart"));
-      return;
+      return response;
     }
 
     trackEvent("multiplayer_game_start", {
@@ -233,6 +233,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     });
 
     setView("game");
+    return response;
   };
 
   const handleKickPlayer = async (targetPlayerId) => {

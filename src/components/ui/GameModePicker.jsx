@@ -103,7 +103,6 @@ export default function GameModePicker({ value, onChange, ariaLabel, disabled = 
 
   const handleWheel = (event) => {
     if (disabled || options.length < 2) return;
-    event.preventDefault();
     const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
     if (Math.abs(delta) >= 12) select(currentIndex + (delta > 0 ? 1 : -1));
   };
@@ -122,7 +121,7 @@ export default function GameModePicker({ value, onChange, ariaLabel, disabled = 
       aria-label={ariaLabel || t("gameMode.label")}
       aria-disabled={disabled}
       data-dragging={dragging ? "true" : "false"}
-      className={`game-mode-picker card-control-frame card-action-height relative min-w-0 cursor-grab overflow-hidden select-none outline-none active:cursor-grabbing ${className}`}
+      className={`game-mode-picker card-control-frame card-action-height relative min-w-0 cursor-grab overscroll-contain overflow-hidden select-none outline-none active:cursor-grabbing ${className}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -153,7 +152,7 @@ export default function GameModePicker({ value, onChange, ariaLabel, disabled = 
               <Icon className="size-[1.15rem] sm:size-5" strokeWidth={2} />
             </span>
             <span className="ml-2.5 flex min-w-0 flex-1 items-center pr-0 sm:ml-3 sm:pr-10">
-              <span className="block truncate text-base font-semibold leading-none sm:text-[1.05rem]">
+              <span className="block min-w-0 max-w-full whitespace-normal break-words text-base font-semibold leading-[1.08] sm:text-[1.05rem]">
                 {label}
               </span>
             </span>

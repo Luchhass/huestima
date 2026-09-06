@@ -423,11 +423,13 @@ export default function FinalSummary({
   return (
     <div
       ref={scopeRef}
-      className={`final-summary relative flex h-full min-h-0 flex-col overflow-hidden bg-black p-6 text-white transition-opacity duration-200 sm:p-8 ${
-        isLeavingHome ? "opacity-0" : "opacity-100"
+      className={`final-summary relative flex h-full min-h-0 flex-col overflow-hidden bg-black p-6 text-white sm:p-8 ${
+        isLeavingHome
+          ? "opacity-0 transition-opacity duration-200"
+          : "opacity-100"
       }`}
     >
-      <CardCloseButton ref={closeRef} onClick={handleBackHome} label={t("common.backHome")} className="absolute right-4 top-4 sm:right-8 sm:top-8" />
+      <CardCloseButton ref={closeRef} onClick={handleBackHome} label={t("common.backHome")} className="absolute right-6 top-6 sm:right-8 sm:top-8" />
 
       <div data-screen-reveal className="max-w-100 pr-10">
         <div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { CARTOON_OPTIONS } from "@/lib/cartoons";
@@ -10,6 +9,9 @@ import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import LibraryPageShell, {
   LibraryFilterButton,
 } from "@/components/sections/library/LibraryPageShell";
+import LibraryHueControl from "@/components/sections/library/LibraryHueControl";
+import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
+import { withCartoonHex } from "@/lib/color";
 
 function groupCartoonsBySeries(cartoons) {
   const groups = new Map();
@@ -42,6 +44,7 @@ export default function CartoonLibraryPage() {
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
   const [activeSeries, setActiveSeries] = useState(ALL_SERIES_KEY);
+  const [hue, setHue] = useState(0);
   const leavePage = useFooterPageTransition(mainRef);
   const from = searchParams.get("from");
   const testLabPath = from ? `/test?from=${from}` : "/test";
@@ -81,6 +84,7 @@ export default function CartoonLibraryPage() {
       backLabel={locale === "tr" ? "Test Page'e dön" : "Back to Test Page"}
       title={t("cartoonLibrary.title")}
       count={activeGroup ? t("cartoonLibrary.imageCount", { count: activeGroup.items.length }) : ""}
+      hueControl={<LibraryHueControl value={hue} onChange={setHue} />}
       filters={[ALL_SERIES_KEY, ...CARTOON_GROUPS.map((group) => group.series)].map((series) => (
         <LibraryFilterButton
           key={series}
@@ -96,13 +100,9 @@ export default function CartoonLibraryPage() {
           {activeGroup.items.map((item) => (
             <article key={item.id}>
               <div className="relative aspect-[50/39] w-full overflow-hidden rounded-[18px] bg-foreground/6">
-                <Image
-                  src={item.originalScenePath || item.scenePath}
-                  alt={item.labels?.[locale] || item.labels?.tr || item.label}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  className="object-cover"
-                  style={{ objectPosition: item.sceneObjectPosition }}
+                <CartoonOverlay
+                  color={withCartoonHex({ cartoonId: item.id, h: hue })}
+                  minRenderWidth={360}
                 />
               </div>
               <div className="mt-3 flex items-baseline justify-between gap-4 px-1">
