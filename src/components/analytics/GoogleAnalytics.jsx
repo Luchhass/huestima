@@ -1,20 +1,25 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { GA_MEASUREMENT_ID, trackPageView } from "@/lib/analytics";
+import WebVitals from "./WebVitals";
 
 function GoogleAnalyticsPageView() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const lastLocation = useRef("");
 
   useEffect(() => {
-    if (!GA_MEASUREMENT_ID) return;
+    if (!GA_MEASUREMENT_ID || pathname.startsWith("/admin")) return;
 
     const queryString = searchParams.toString();
     const pagePath = queryString ? `${pathname}?${queryString}` : pathname;
 
+    // React Strict Mode must not count the same navigation twice.
+    if (lastLocation.current === pagePath) return;
+    lastLocation.current = pagePath;
     trackPageView({
       pagePath,
       pageLocation: window.location.href,
@@ -50,6 +55,7 @@ export default function GoogleAnalytics() {
       <Suspense fallback={null}>
         <GoogleAnalyticsPageView />
       </Suspense>
+      <WebVitals />
     </>
   );
 }

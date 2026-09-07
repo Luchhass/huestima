@@ -7,16 +7,13 @@ import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import GlobalPushNotifications from "@/components/ui/GlobalPushNotifications";
 import StructuredData from "@/components/seo/StructuredData";
 import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
+import RouteLanguageSync from "@/components/layout/RouteLanguageSync";
 import { AdminModeProvider } from "@/hooks/useAdminMode";
 import { SiteOperationsProvider } from "@/hooks/useSiteOperations";
 import { APP_NAME } from "@/lib/constants";
 import {
   ROUTE_SEO,
-  SEO_KEYWORDS,
   SITE_DESCRIPTION,
-  SITE_IMAGE_HEIGHT,
-  SITE_IMAGE_URL,
-  SITE_IMAGE_WIDTH,
   SITE_URL,
 } from "@/lib/seo";
 import "./globals.css";
@@ -41,7 +38,6 @@ export const metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  keywords: SEO_KEYWORDS,
   authors: [{ name: "furkancosar", url: "https://furkancosar.com" }],
   creator: "furkancosar",
   publisher: "furkancosar",
@@ -53,9 +49,6 @@ export const metadata = {
     email: false,
     address: false,
     telephone: false,
-  },
-  alternates: {
-    canonical: `${SITE_URL}/color`,
   },
   icons: {
     icon: [
@@ -74,15 +67,6 @@ export const metadata = {
     description: SITE_DESCRIPTION,
     url: "/color",
     siteName: APP_NAME,
-    images: [
-      {
-        url: SITE_IMAGE_URL,
-        width: SITE_IMAGE_WIDTH,
-        height: SITE_IMAGE_HEIGHT,
-        alt: `${APP_NAME} free online color memory game preview`,
-        type: "image/png",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
@@ -90,12 +74,6 @@ export const metadata = {
     card: "summary_large_image",
     title: ROUTE_SEO.home.title,
     description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: SITE_IMAGE_URL,
-        alt: `${APP_NAME} free online color memory game preview`,
-      },
-    ],
     creator: "@furkancosar",
   },
   ...(googleSiteVerification
@@ -152,6 +130,7 @@ export default function RootLayout({ children }) {
         className="h-full overflow-hidden bg-background text-foreground"
       >
         <GoogleAnalytics />
+        <RouteLanguageSync />
         <StructuredData />
         <InteractionAudio />
         <AdminModeProvider>

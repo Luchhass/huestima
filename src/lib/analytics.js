@@ -22,13 +22,20 @@ export function initializeAnalytics() {
 export function trackEvent(eventName, params = {}) {
   if (!initializeAnalytics()) return;
 
-  window.gtag("event", eventName, params);
+  if (window.location.pathname.startsWith("/admin")) return;
+  const family = /^\/(?:tr\/)?(color|flag|cartoon|brand|team)(?:\/|$)/.exec(window.location.pathname)?.[1];
+  window.gtag("event", eventName, {
+    ...(family ? { game_family: family } : {}),
+    content_language: document.documentElement.lang || "en",
+    ...params,
+  });
 }
 
 export function trackPageView({ pagePath, pageLocation, pageTitle }) {
   if (!initializeAnalytics()) return;
 
-  window.gtag("config", GA_MEASUREMENT_ID, {
+  // Configuration disables automatic pageviews; navigation sends an explicit event.
+  trackEvent("page_view", {
     page_path: pagePath,
     page_location: pageLocation,
     page_title: pageTitle,

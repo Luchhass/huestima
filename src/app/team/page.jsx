@@ -1,9 +1,8 @@
-import HomeCard from "@/components/sections/home/HomeCard";
-import PageIntro from "@/components/layout/PageIntro";
+import GameLandingPage from "@/components/seo/GameLandingPage";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata("team");
 
-export default function TeamPage() {
-  return <><PageIntro /><HomeCard gameFamily="team" /></>;
+export default function Page() {
+  return <GameLandingPage family="team" />;
 }

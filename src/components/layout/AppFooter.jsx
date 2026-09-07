@@ -17,7 +17,7 @@ import { requestActiveGameExit } from "@/lib/gameNavigation";
 
 export default function AppFooter() {
   const { locale, t } = useTranslation();
-  const pathname = usePathname();
+  const pathname = usePathname()?.replace(/^\/tr(?=\/)/, "");
   const [familyFromQuery] = useState(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("from");
@@ -33,7 +33,7 @@ export default function AppFooter() {
     pathname === "/flag-library" ||
     pathname === "/brand-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
-  const isHowItWorksRoute = pathname === "/how-it-works";
+  const isHowItWorksRoute = pathname === "/how-it-works" || pathname === "/game-guide";
   const isTestRoute = pathname === "/test";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
@@ -52,6 +52,7 @@ export default function AppFooter() {
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
 
   const handleFooterNavigation = async (event, href) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     if (isTransitioningRef.current) return;
     isTransitioningRef.current = true;
@@ -73,7 +74,7 @@ export default function AppFooter() {
     const renderedSourceCardKind = getRenderedCardKind(card, pathname);
     markCardRouteTransition(href, renderedSourceCardKind);
 
-    if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
+    if (["/how-it-works", "/game-guide", "/privacy-policy", "/credits"].includes(targetPath)) {
       await playHomeToFooterExit(card, content, { scaleCard: false, hideChrome: true });
     } else if (
       !["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath) &&
@@ -139,6 +140,7 @@ export default function AppFooter() {
       <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
         {[
           [
+            [`/game-guide?from=${family}`, locale === "tr" ? "oyun rehberi" : "game guide"],
             ...(isCartoonHomeRoute
               ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
               : []),

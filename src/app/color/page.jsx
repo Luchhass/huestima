@@ -1,14 +1,8 @@
-import HomeCard from "@/components/sections/home/HomeCard";
-import PageIntro from "@/components/layout/PageIntro";
+import GameLandingPage from "@/components/seo/GameLandingPage";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata("color");
 
-export default function ColorPage() {
-  return (
-    <>
-      <PageIntro />
-      <HomeCard gameFamily="color" />
-    </>
-  );
+export default function Page() {
+  return <GameLandingPage family="color" />;
 }

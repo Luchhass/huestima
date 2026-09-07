@@ -34,11 +34,16 @@ function isInviteRoomPath(pathname) {
   );
 }
 
+function normalizeLandingPath(pathname) {
+  return pathname.replace(/^\/tr(?=\/)/, "");
+}
+
 function shouldPlayEntryIntro(pathname) {
-  const segments = pathname.split("/").filter(Boolean);
+  const normalizedPathname = normalizeLandingPath(pathname);
+  const segments = normalizedPathname.split("/").filter(Boolean);
 
   return (
-    pathname === "/" ||
+    normalizedPathname === "/" ||
     (segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0])) ||
     isInviteRoomPath(pathname)
   );
@@ -70,7 +75,8 @@ function shouldRunIntroForCurrentLoad(pathname) {
   } catch {
     // Continue with the in-memory marker when storage is unavailable.
   }
-  const segments = pathname.split("/").filter(Boolean);
+  const normalizedPathname = normalizeLandingPath(pathname);
+  const segments = normalizedPathname.split("/").filter(Boolean);
   const isHomeEntry = segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
   const isReload =
     !window.__huestimaReloadIntroConsumed &&

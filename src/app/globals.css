@@ -2,6 +2,26 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Playable landing pages keep the card above a visible, server-rendered guide. */
+.game-landing { height: 100dvh; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+.game-landing-play { position: relative; min-height: 100dvh; }
+.game-landing-more { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 500; letter-spacing: .025em; text-transform: lowercase; text-align: center; color: var(--color-zinc-500); text-decoration: none; }
+.game-landing-more:hover { color: var(--foreground); }
+.game-guide { user-select: text; }
+.game-guide-body h3 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.game-guide-body p, .game-guide-body li { font-size: .98rem; line-height: 1.75rem; color: rgb(255 255 255 / .68); }
+.game-guide ol { list-style: decimal; padding-left: 24px; }
+.game-guide li + li { margin-top: 12px; }
+.game-guide-questions details { border-bottom: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent); padding: 18px 0; }
+.game-guide-questions summary { cursor: pointer; font-size: 16px; font-weight: 600; }
+.game-guide-questions p { margin-top: 12px; }
+.game-guide-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.game-guide-links a, .game-guide-bottom a { text-decoration: underline; text-underline-offset: 5px; }
+.game-guide-bottom { display: flex; justify-content: space-between; margin-top: 40px; }
+.game-guide a:focus-visible, .game-landing-more:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+@media (max-width: 640px) { .game-landing-more { bottom: 70px; } .game-guide-links { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .game-landing { scroll-behavior: auto; } }
+
 @keyframes toast-timer {
   from {
     transform: scaleX(1);

@@ -41,7 +41,7 @@ export default function manifest() {
     ],
     screenshots: [
       {
-        src: "/og-image.png",
+        src: "/og-color.png",
         sizes: `${SITE_IMAGE_WIDTH}x${SITE_IMAGE_HEIGHT}`,
         type: "image/png",
         form_factor: "wide",

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
+import { localizeLandingHref } from "../../../shared/landingRoutes.mjs";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
 import {
   playCardToCardExit,
@@ -31,7 +32,7 @@ export default function AppHeader() {
   const { locale, t } = useTranslation();
   const { unreadAnnouncementCount } = useSiteOperations();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname()?.replace(/^\/tr(?=\/)/, "");
   const [historyFamily] = useState(() => {
     if (typeof window === "undefined") return "color";
     const family = new URLSearchParams(window.location.search).get("from");
@@ -68,7 +69,7 @@ export default function AppHeader() {
     pathname === "/brand-library";
   const isTeamLibraryRoute = pathname === "/team-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
-  const isHowItWorksRoute = pathname === "/how-it-works";
+  const isHowItWorksRoute = pathname === "/how-it-works" || pathname === "/game-guide";
   const isTestRoute = pathname === "/test";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
@@ -508,11 +509,11 @@ export default function AppHeader() {
                     className="-mb-[0.12em] overflow-hidden pb-[0.12em]"
                   >
                     <Link
-                      href={option.href}
+                      href={localizeLandingHref(option.href, locale)}
                       aria-current={active ? "page" : undefined}
                       data-mobile-menu-nav-item
                       onClick={(event) =>
-                        handleFamilyNavigation(event, option.href, active)
+                        handleFamilyNavigation(event, localizeLandingHref(option.href, locale), active)
                       }
                       className={`block transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                         active
@@ -597,7 +598,7 @@ export default function AppHeader() {
 
       <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-6">
         <Link
-          href={familyHomeHref}
+          href={localizeLandingHref(familyHomeHref, locale)}
           aria-label={t("app.homeAria")}
           data-sound="off"
           className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-base font-semibold uppercase leading-none tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-[17px]"
@@ -627,11 +628,11 @@ export default function AppHeader() {
                   if (node) familyLinkRefs.current.set(option.href, node);
                   else familyLinkRefs.current.delete(option.href);
                 }}
-                href={option.href}
+                href={localizeLandingHref(option.href, locale)}
                 aria-current={active ? "page" : undefined}
                 onMouseEnter={() => setHoveredFamily(option.href)}
                 onClick={(event) =>
-                  handleFamilyNavigation(event, option.href, active)
+                  handleFamilyNavigation(event, localizeLandingHref(option.href, locale), active)
                 }
                 className={`relative top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                   highlighted

@@ -29,6 +29,8 @@ export function FooterPageHeader({
   meta,
   metaPlacement = "side",
   title,
+  headingAs: Heading = "h1",
+  titleId,
 }) {
   return (
     <header className="border-b border-foreground/10 pb-7 sm:pb-9">
@@ -40,9 +42,9 @@ export function FooterPageHeader({
       <div
         className={`${kicker ? "mt-3" : ""} flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between`}
       >
-        <h1 className="text-4xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
+        <Heading id={titleId} className="text-4xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
           {title}
-        </h1>
+        </Heading>
         {meta && metaPlacement === "side" ? (
           <p className="shrink-0 text-sm font-medium text-foreground/42">
             {meta}

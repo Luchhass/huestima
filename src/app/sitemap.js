@@ -1,80 +1,15 @@
 import { absoluteUrl, SITE_LAST_MODIFIED } from "@/lib/seo";
+import { LANDING_FAMILIES, landingHref } from "../../shared/landingRoutes.mjs";
 
 export default function sitemap() {
-  const lastModified = new Date(SITE_LAST_MODIFIED);
-
-  return [
-    {
-      url: absoluteUrl("/color"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: absoluteUrl("/flag"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.92,
-    },
-    {
-      url: absoluteUrl("/cartoon"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.92,
-    },
-    {
-      url: absoluteUrl("/brand"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: absoluteUrl("/color/singleplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: absoluteUrl("/flag/singleplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.86,
-    },
-    {
-      url: absoluteUrl("/cartoon/singleplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.86,
-    },
-    {
-      url: absoluteUrl("/brand/singleplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.86,
-    },
-    {
-      url: absoluteUrl("/color/multiplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.82,
-    },
-    {
-      url: absoluteUrl("/flag/multiplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: absoluteUrl("/cartoon/multiplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: absoluteUrl("/brand/multiplayer"),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-  ];
+  return LANDING_FAMILIES.flatMap((family) => ["en", "tr"].map((locale) => ({
+    url: absoluteUrl(landingHref(family, locale)),
+    lastModified: new Date(SITE_LAST_MODIFIED),
+    alternates: { languages: {
+      en: absoluteUrl(landingHref(family, "en")),
+      tr: absoluteUrl(landingHref(family, "tr")),
+      "x-default": absoluteUrl(landingHref(family, "en")),
+    } },
+    images: [absoluteUrl(`/og-${family}.png`)],
+  })));
 }

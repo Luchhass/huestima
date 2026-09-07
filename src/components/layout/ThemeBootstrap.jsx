@@ -5,7 +5,7 @@ import {
   THEME_STORAGE_KEY,
 } from "@/lib/constants";
 
-const bootstrapScript = `
+const bootstrapScript = String.raw`
 (() => {
   try {
     const storedTheme = window.localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
@@ -22,7 +22,11 @@ const bootstrapScript = `
     document.documentElement.style.colorScheme = theme;
 
     const language =
-      window.localStorage.getItem(${JSON.stringify(LANGUAGE_STORAGE_KEY)}) === "tr"
+      /^\/tr\/(color|flag|cartoon|brand|team)\/?$/.test(window.location.pathname)
+        ? "tr"
+        : /^\/(color|flag|cartoon|brand|team)\/?$/.test(window.location.pathname)
+          ? "en"
+          : window.localStorage.getItem(${JSON.stringify(LANGUAGE_STORAGE_KEY)}) === "tr"
         ? "tr"
         : "en";
     document.documentElement.lang = language;
@@ -38,10 +42,12 @@ const bootstrapScript = `
       pathSegments.length === 2 &&
       isGameFamilyPath &&
       /^\d{6}$/.test(pathSegments[1]);
-    const isEntryPath =
+    const isLandingEntryPath =
       window.location.pathname === "/" ||
-      (pathSegments.length === 1 && isGameFamilyPath) ||
-      isInviteRoomPath;
+      /^\/(?:tr\/)?(color|flag|cartoon|brand|team)\/?$/.test(
+        window.location.pathname,
+      );
+    const isEntryPath = isLandingEntryPath || isInviteRoomPath;
     const hasSeenIntro =
       window.sessionStorage.getItem("huestima-page-intro-seen") === "true";
     const hasPendingFooterReturn =
@@ -49,8 +55,7 @@ const bootstrapScript = `
     const navigationType = window.performance?.getEntriesByType("navigation")[0]?.type;
     const isReloadHomeEntry =
       navigationType === "reload" &&
-      pathSegments.length === 1 &&
-      isGameFamilyPath;
+      isLandingEntryPath;
     const shouldPlayIntro =
       isEntryPath &&
       !hasPendingFooterReturn &&

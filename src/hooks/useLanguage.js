@@ -3,13 +3,18 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { LANGUAGE_STORAGE_KEY } from "@/lib/constants";
 import { DEFAULT_LOCALE, normalizeLocale, translate } from "@/lib/i18n";
+import { usePathname } from "next/navigation";
+import { getLandingRoute } from "../../shared/landingRoutes.mjs";
 
 export const LANGUAGE_CHANGE_EVENT = "huestima-language-change";
 
 function readStoredLanguage() {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
 
-  return normalizeLocale(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+  const route = getLandingRoute(window.location.pathname);
+  if (route) return route.locale;
+  try { return normalizeLocale(window.localStorage.getItem(LANGUAGE_STORAGE_KEY)); }
+  catch { return DEFAULT_LOCALE; }
 }
 
 function applyLanguage(locale) {
@@ -52,11 +57,14 @@ function subscribeToLanguage(callback) {
 }
 
 export function useLanguage() {
-  const locale = useSyncExternalStore(
+  const pathname = usePathname();
+  const routeLocale = getLandingRoute(pathname)?.locale;
+  const storedLocale = useSyncExternalStore(
     subscribeToLanguage,
     getLanguageSnapshot,
-    () => DEFAULT_LOCALE,
+    () => routeLocale || DEFAULT_LOCALE,
   );
+  const locale = routeLocale || storedLocale;
 
   const setLanguage = useCallback((nextLocale) => {
     const cleanLocale = normalizeLocale(nextLocale);
@@ -64,7 +72,7 @@ export function useLanguage() {
 
     if (cleanLocale === currentLocale) return;
 
-    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, cleanLocale);
+    try { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, cleanLocale); } catch { /* Keep language switching available without storage. */ }
     applyLanguage(cleanLocale);
     window.dispatchEvent(new Event(LANGUAGE_CHANGE_EVENT));
   }, []);

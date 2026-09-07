@@ -74,6 +74,7 @@ export function getRouteCardKind(pathname = "") {
   if ([
     "/how-it-works",
     "/privacy-policy",
+    "/game-guide",
     "/credits",
     "/flag-library",
     "/cartoon-library",

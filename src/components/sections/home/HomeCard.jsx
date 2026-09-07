@@ -55,6 +55,7 @@ import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
 import { CARTOON_PACKS } from "@/lib/cartoons";
 import { TEAM_OPTIONS } from "@/lib/teams";
 import { playSoundFile, preloadSoundFile } from "@/lib/sound";
+import { trackEvent } from "@/lib/analytics";
 import {
   getLevelCountImpactPreset,
   playLevelCountRecoil,
@@ -258,23 +259,36 @@ export default function HomeCard({
     operations.gameConfiguration,
   );
   const [view, setView] = useState(initialView);
-  const [difficulty, setDifficulty] = useState(initialDifficulty || defaultDifficulty);
-  const [gameMode, setGameMode] = useState(initialGameMode || defaultGameMode);
-  const [roundCount, setRoundCount] = useState(initialRoundCount || DEFAULT_ROUND_COUNT);
-  const [flagDifficulty, setFlagDifficulty] = useState(initialFlagDifficulty || "starter");
+  const [difficulty, setDifficulty] = useState(
+    initialDifficulty || defaultDifficulty,
+  );
+  const [gameMode, setGameMode] = useState(
+    initialGameMode || defaultGameMode,
+  );
+  const [roundCount, setRoundCount] = useState(
+    initialRoundCount || DEFAULT_ROUND_COUNT,
+  );
+  const [flagDifficulty, setFlagDifficulty] = useState(
+    initialFlagDifficulty || "starter",
+  );
   const [flagDifficulties, setFlagDifficulties] = useState(
-    initialFlagDifficulties ?? (initialFlagDifficulty
-      ? [initialFlagDifficulty]
-      : ["starter"]),
+    initialFlagDifficulties ||
+      (initialFlagDifficulty ? [initialFlagDifficulty] : ["starter"]),
   );
   const [cartoonIds, setCartoonIds] = useState(
-    initialCartoonIds ?? CARTOON_PACKS.flatMap(({ itemIds }) => itemIds),
+    initialCartoonIds ||
+      CARTOON_PACKS.flatMap(({ itemIds }) => itemIds),
   );
   const [teamIds, setTeamIds] = useState(
-    initialTeamIds ?? TEAM_OPTIONS.map(({ id }) => id),
+    initialTeamIds ||
+      TEAM_OPTIONS.map(({ id }) => id),
   );
-  const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState("singleplayer");
-  const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(false);
+  const [cartoonPoolReturnView, setCartoonPoolReturnView] = useState(
+    "singleplayer",
+  );
+  const [isMultiplayerTallStep, setIsMultiplayerTallStep] = useState(
+    false,
+  );
   const [difficultyBursts, setDifficultyBursts] = useState([]);
   const [levelCountImpacts, setLevelCountImpacts] = useState([]);
   const [cartoonCharacterIndex, setCartoonCharacterIndex] = useState(0);
@@ -293,6 +307,7 @@ export default function HomeCard({
   const cartoonTransformTimersRef = useRef([]);
   const cartoonCharacterRef = useRef(null);
   const isChangingViewRef = useRef(false);
+
 
   const isSingleplayer = view === "singleplayer";
   const isMultiplayer = view === "multiplayer";
@@ -318,7 +333,7 @@ export default function HomeCard({
 
   useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool || isTeamPool);
   useCartoonAssetPreload(
-    cleanGameFamily === GAME_FAMILY_IDS.CARTOON,
+    cleanGameFamily === GAME_FAMILY_IDS.CARTOON && view !== "home",
     undefined,
     "scene",
   );
@@ -338,21 +353,6 @@ export default function HomeCard({
     if (cleanGameFamily !== GAME_FAMILY_IDS.CARTOON) return;
     preloadSoundFile(CARTOON_TRANSFORM_SOUND);
     preloadSoundFile(CARTOON_RETURN_SOUND);
-  }, [cleanGameFamily]);
-
-  useEffect(() => {
-    if (cleanGameFamily !== GAME_FAMILY_IDS.CARTOON || typeof window === "undefined") {
-      return;
-    }
-
-    CARTOON_EASTER_EGG_CHARACTERS.forEach((character) => {
-      const image = new window.Image();
-      image.decoding = "async";
-      image.fetchPriority = "high";
-      image.src = character.src;
-      const decodePromise = image.decode?.();
-      if (decodePromise) void decodePromise.catch(() => {});
-    });
   }, [cleanGameFamily]);
 
   useScreenReveal(
@@ -566,6 +566,10 @@ export default function HomeCard({
 
   const changeView = useCallback(async (nextView) => {
     if (nextView === view || isChangingViewRef.current) return;
+
+    if (view === "home" && ["singleplayer", "multiplayer"].includes(nextView)) {
+      trackEvent("select_content", { content_type: "game_setup", item_id: nextView });
+    }
 
     isChangingViewRef.current = true;
     await playScreenFadeOut(contentRef);
@@ -1167,19 +1171,6 @@ export default function HomeCard({
                   onKeyDown={handleCartoonCharacterKeyDown}
                   priority
                 />
-                <div className="cartoon-home-character-preload" aria-hidden="true">
-                  {CARTOON_EASTER_EGG_CHARACTERS.map((character) => (
-                    <Image
-                      key={character.id}
-                      src={character.src}
-                      alt=""
-                      width={1}
-                      height={1}
-                      sizes="1px"
-                      loading="eager"
-                    />
-                  ))}
-                </div>
               </>
             ) : (
               <>

@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "build:og": "node scripts/build-og-images.mjs",
     "build:cartoons": "node scripts/build-cartoon-scenes.mjs",
     "build:cartoon-theme": "node scripts/inspect-midi.mjs public/music/cartoon/ben-10-theme-pep-band-arrangement.mid src/lib/cartoonTheme.generated.js 5760 CARTOON_THEME",
     "build:cartoon-menu-theme": "node scripts/inspect-midi.mjs public/music/cartoon/adventure-time-island-song.mid src/lib/cartoonMenuTheme.generated.js 0 CARTOON_MENU_THEME",

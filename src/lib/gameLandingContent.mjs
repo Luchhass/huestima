@@ -1,0 +1,105 @@
+// Editorial content, shared by server-rendered pages and their metadata.
+// Update this date only after a substantive change to the landing content.
+export const LANDING_UPDATED = "2026-09-07";
+export const GAME_LANDING_CONTENT = {
+  color: {
+    en: {
+      name: "Color game", title: "Color Game — Free Color Memory Challenge | Huestima",
+      description: "Play a free color memory game online. Remember a shade, recreate it with color sliders, and compare your score. Play solo or challenge friends in multiplayer.",
+      heading: "A color game that tests your memory for shades",
+      intro: "How accurately can you remember a color after it disappears? Huestima turns that question into a playable challenge. Study the target, rebuild its hue from memory, then compare your guess with the original. You can play in your browser on a phone or computer without installing an app.",
+      steps: ["Choose solo or multiplayer and set the difficulty before starting.", "Look at the target color and remember its hue, intensity and brightness.", "Use the available sliders to rebuild the color, confirm your guess and inspect the result."],
+      tip: "Start with the hue: is the shade closer to orange or pink, cyan or blue? On higher difficulties, adjust saturation before brightness. A pale blue and a vivid blue may share a hue but still look very different.",
+      faq: [["Is this a color matching or a color memory game?", "The main challenge is memory: the target is shown before you make your guess. After confirming, you can compare the two colors and see how close you were."], ["Which color game modes can I try?", "Color includes Normal, Endless, Flash, Sequence, Timed, Gradient, Sprint, Duel and Spot modes. Available choices depend on solo or multiplayer play; Endless is a solo mode."], ["Can I play with friends?", "Yes. Choose multiplayer, create a lobby and share its invite link. Your friends can join in their browsers."]],
+    },
+    tr: {
+      name: "Renk oyunu", title: "Renk Oyunu — Ücretsiz Renk Hafıza Oyunu | Huestima",
+      description: "Ücretsiz renk oyununda gördüğün tonu aklında tut, renk çubuklarıyla yeniden oluştur ve puanını gör. Tarayıcıdan tek başına veya arkadaşlarınla oyna.",
+      heading: "Renkleri ne kadar iyi hatırladığını keşfet",
+      intro: "Bir renk kaybolduktan sonra onu ne kadar doğru hatırlayabilirsin? Huestima renk oyununda önce hedef tonu inceler, ardından hafızandan yeniden oluşturursun. Tahminini onayladığında asıl renkle karşılaştırır, ne kadar yaklaştığını görürsün. Telefon veya bilgisayar tarayıcısından, uygulama indirmeden oynayabilirsin.",
+      steps: ["Tek oyunculu veya çok oyunculu oyunu seç, başlamadan önce zorluğu ayarla.", "Gösterilen rengin tonunu, canlılığını ve parlaklığını aklında tut.", "Açık renk çubuklarını kullanarak tahminini oluştur, onayla ve sonucunu incele."],
+      tip: "Önce tona odaklan: renk turuncuya mı pembeye mi, turkuaza mı maviye mi daha yakın? Yüksek zorluklarda önce doygunluğu, ardından parlaklığı ayarla. Açık mavi ile canlı mavi aynı tona sahip olsa da farklı görünebilir.",
+      faq: [["Bu bir renk eşleştirme oyunu mu?", "Temel amaç renk hafızanı denemektir. Hedef renk tahmininden önce gösterilir. Tahminini onayladıktan sonra iki rengi karşılaştırabilirsin."], ["Hangi renk oyunu modları var?", "Normal, Sonsuz, Flaş, Sıralı, Zamana Karşı, Gradyan, Sprint, Düello ve Spot seçenekleri bulunur. Kullanılabilen seçenekler tek oyunculu ve çok oyunculu oyuna göre değişir; Sonsuz mod tek oyunculudur."], ["Arkadaşlarımla oynayabilir miyim?", "Evet. Çok oyunculu oyunu seçip bir lobi oluştur ve davet bağlantısını paylaş. Arkadaşların tarayıcılarından katılabilir."]],
+    },
+  },
+  flag: {
+    en: {
+      name: "Flag game", title: "Flag Game — Guess Flag Colors from Memory | Huestima",
+      description: "Try a free flag color game. Memorize a flag's colors, rebuild its main shade and compare your guess. Play online alone or with friends, with no download.",
+      heading: "Remember the colors in a flag, then rebuild them",
+      intro: "Recognizing a flag is one thing; remembering its exact shade is another. This flag game asks you to reconstruct a flag's main color while its other paintable colors follow their original relationships. Fixed details stay in place, so you can concentrate on the color instead of drawing the flag.",
+      steps: ["Choose Flag and select the available flag pool and game settings.", "Study the flag's target colors during the viewing phase.", "Recreate the main shade with the sliders and confirm to compare your answer with the original."],
+      tip: "Use the main color as your anchor. When you move hue, related colors move with it; they are not independent guesses. Remember whether the main shade was warm or cool before fine-tuning its intensity.",
+      faq: [["Do I guess the country name?", "No. Huestima focuses on remembering flag colors rather than typing country names or locating countries on a map."], ["Why do multiple flag colors change together?", "The main color is your reference. Other paintable colors keep their relationship to it, so finding the correct main color brings the palette back into alignment."], ["Can beginners play?", "Yes. Easy difficulty exposes only the hue slider. Normal adds saturation, and Hard also adds brightness."]],
+    },
+    tr: {
+      name: "Bayrak oyunu", title: "Bayrak Oyunu — Bayrak Renklerini Hatırla | Huestima",
+      description: "Ücretsiz bayrak oyununda bayrağın renklerini hatırla, ana tonunu yeniden oluştur ve tahminini karşılaştır. İndirmeden tek başına veya arkadaşlarınla oyna.",
+      heading: "Bayrağı tanımak kolay; peki rengini hatırlamak?",
+      intro: "Bu bayrak oyunu, ülke adından çok renk hafızana odaklanır. Önce bayrağın renklerini inceler, ardından ana tonunu yeniden oluşturursun. Diğer boyanabilir renkler ana renkle aralarındaki ilişkiyi koruyarak hareket eder. Sabit ayrıntılar yerinde kaldığı için bayrağı çizmek yerine doğru tonu bulmaya odaklanırsın.",
+      steps: ["Bayrak oyununu aç, bayrak havuzunu ve oyun ayarlarını seç.", "Gösterim aşamasında bayrağın hedef renklerini dikkatle incele.", "Renk çubuklarıyla ana tonu yeniden oluştur ve tahminini onaylayarak aslıyla karşılaştır."],
+      tip: "Ana rengi referans al. Tonu değiştirince ona bağlı renkler de hareket eder; her biri ayrı bir tahmin değildir. İnce ayardan önce hedef tonun sıcak mı soğuk mu olduğunu hatırlamaya çalış.",
+      faq: [["Ülkenin adını mı tahmin ediyorum?", "Hayır. Huestima'da amaç ülke adı yazmak veya haritada yer bulmak değil, bayrağın renklerini hafızadan yeniden oluşturmaktır."], ["Neden birden fazla bayrak rengi birlikte değişiyor?", "Ana renk kontrol ettiğin referanstır. Diğer boyanabilir renkler bu renkle ilişkilerini korur; ana rengi bulduğunda palet de doğru yerine gelir."], ["Yeni başlayanlar için uygun mu?", "Evet. Kolayda yalnızca ton çubuğu açıktır. Normalde doygunluk, zorda parlaklık da eklenir."]],
+    },
+  },
+  cartoon: {
+    en: {
+      name: "Cartoon game", title: "Cartoon Game — Remember Character Colors | Huestima",
+      description: "Play a free cartoon color memory game with Ben 10, Adventure Time and Regular Show scenes. Rebuild character colors solo or challenge friends online.",
+      heading: "A cartoon game built around character colors",
+      intro: "You might recognize a character immediately, but can you recreate the exact color of their outfit or body? Huestima uses cartoon scenes from Ben 10, Adventure Time and Regular Show. The scene stays in place while you rebuild the paintable character colors from memory.",
+      steps: ["Choose the cartoon packs you know and select solo or multiplayer.", "Study the character's main color before the guessing phase begins.", "Move the sliders to rebuild the character's palette, then confirm your guess."],
+      tip: "Pay attention to the character's main color, not every small detail at once. Other paintable colors follow the main shade while preserving their differences, so matching the anchor color helps the whole character look right.",
+      faq: [["Does the entire scene change color?", "No. The prepared character area is recolored while the rest of the scene stays in place. The paintable area depends on the scene."], ["Why do the eyes or clothing change too?", "Different paintable parts retain their original color relationships. They move together around one main color instead of turning into one flat fill."], ["Can I choose which cartoons appear?", "Yes. Use the cartoon pool selector to choose the available packs you recognize before playing."]],
+    },
+    tr: {
+      name: "Çizgi film oyunu", title: "Çizgi Film Oyunu — Karakter Renklerini Hatırla | Huestima",
+      description: "Ben 10, Adventure Time ve Regular Show sahnelerinde karakter renklerini hatırla. Ücretsiz çizgi film oyununu tek başına veya arkadaşlarınla tarayıcıdan oyna.",
+      heading: "Sevdiğin çizgi film karakterlerini renklerinden hatırla",
+      intro: "Bir karakteri hemen tanıyabilirsin; peki kıyafetinin veya gövdesinin tam tonunu yeniden oluşturabilir misin? Huestima çizgi film oyununda Ben 10, Adventure Time ve Regular Show sahneleriyle renk hafızanı denersin. Sahne yerinde kalır, sen karakterin boyanabilir renklerini hafızandan yeniden kurarsın.",
+      steps: ["Bildiğin çizgi film paketlerini ve tek oyunculu ya da çok oyunculu oyunu seç.", "Tahmin aşaması başlamadan önce karakterin ana rengini incele.", "Çubuklarla karakterin renklerini yeniden oluştur, ardından tahminini onayla."],
+      tip: "Bütün küçük ayrıntıları aynı anda ezberlemek yerine karakterin ana rengine odaklan. Diğer boyanabilir renkler aralarındaki farkı koruyarak ana tonu takip eder. Referans rengi bulduğunda karakterin bütünü de doğru görünmeye başlar.",
+      faq: [["Sahnenin tamamı mı boyanıyor?", "Hayır. Hazırlanan karakter alanı yeniden renklendirilir, sahnenin geri kalanı yerinde kalır. Boyanabilir alan kullanılan sahneye göre değişir."], ["Gözler veya kıyafet neden birlikte değişiyor?", "Boyanabilir bölgelerin özgün renk ilişkileri korunur. Hepsi tek renge dönüşmek yerine bir ana rengin çevresinde birlikte hareket eder."], ["Hangi çizgi filmlerin çıkacağını seçebilir miyim?", "Evet. Oyuna başlamadan çizgi film havuzundan tanıdığın paketleri seçebilirsin."]],
+    },
+  },
+  brand: {
+    en: {
+      name: "Brand game", title: "Brand Game — Guess Logo Colors Online | Huestima",
+      description: "How well do you remember brand colors? Play Huestima's free logo color game, recreate familiar shades and compare your score alone or with friends.",
+      heading: "Test your memory for familiar brand colors",
+      intro: "A familiar logo can be easy to recognize and surprisingly hard to color from memory. In this brand game, study the logo and its signature color, then rebuild the main shade. Depending on the asset, the paintable area may include the background or parts of the logo.",
+      steps: ["Open Brand and choose your difficulty and number of rounds.", "Look carefully at the logo's target color before making your guess.", "Rebuild the shade, confirm and compare it with the original brand color."],
+      tip: "Do not rely only on a color name such as red or green. Notice whether a red leans toward orange or pink, and whether the shade is muted or vivid. Familiarity with the logo does not always mean remembering its exact color.",
+      faq: [["Is this a logo-name quiz?", "No. You recreate colors rather than type brand names. Recognizing the logo gives context, but the challenge is remembering the shade."], ["Does every logo recolor in the same way?", "Each asset has a prepared paintable area. Some use a background color and others include logo colors, with secondary colors following the main reference."], ["Do I need to download anything?", "No. You can play this brand color game directly in a modern phone or desktop browser."]],
+    },
+    tr: {
+      name: "Marka oyunu", title: "Marka Oyunu — Logo Renklerini Tahmin Et | Huestima",
+      description: "Markaların renklerini ne kadar iyi hatırlıyorsun? Ücretsiz logo renk oyununda tanıdık tonları yeniden oluştur, tek başına veya arkadaşlarınla puanını karşılaştır.",
+      heading: "Tanıdık logoların renklerini hafızandan bul",
+      intro: "Bir logoyu tanımak kolay olabilir; rengini hafızadan oluşturmak daha dikkatli bakmayı gerektirir. Bu marka oyununda logoyu ve imza rengini inceler, ardından ana tonu yeniden kurarsın. Görsele bağlı olarak boyanabilir alan arka planı veya logonun bazı renklerini kapsayabilir.",
+      steps: ["Marka oyununu aç, zorluğu ve seviye sayısını seç.", "Tahmin aşamasından önce logonun hedef rengini dikkatle incele.", "Tonu yeniden oluştur, tahminini onayla ve orijinal marka rengiyle karşılaştır."],
+      tip: "Yalnızca kırmızı veya yeşil gibi bir renk adı hatırlamakla yetinme. Kırmızının turuncuya mı pembeye mi yakın olduğunu, tonun soluk mu canlı mı göründüğünü incele. Logoyu iyi tanımak her zaman tam rengini hatırlamak anlamına gelmez.",
+      faq: [["Bu bir logo adı bulma oyunu mu?", "Hayır. Marka adı yazmak yerine renkleri yeniden oluşturursun. Logoyu tanımak bağlam sağlar; asıl görev tonu hatırlamaktır."], ["Her logo aynı şekilde mi boyanıyor?", "Her görselin hazırlanmış bir boyanabilir alanı vardır. Bazılarında arka plan, bazılarında logo renkleri kullanılır; ikincil renkler ana referansı takip eder."], ["Bir şey indirmem gerekiyor mu?", "Hayır. Marka renk oyununu güncel bir telefon veya bilgisayar tarayıcısında doğrudan oynayabilirsin."]],
+    },
+  },
+  team: {
+    en: {
+      name: "Team game", title: "Team Game — Guess Football Club Colors | Huestima",
+      description: "Play a free football team color game. Remember club colors, rebuild their shades and compare your guess. Choose your team pool and play solo or multiplayer.",
+      heading: "How well do you know your football team's colors?",
+      intro: "Knowing a club's badge does not make every shade easy to remember. Huestima's team game uses football club logos and colors as a memory challenge. Select a team pool, study the target palette and recreate its main color while the related paintable colors follow it.",
+      steps: ["Choose Teams, open the team pool and select the clubs you want to play with.", "Study the club's target color during the viewing phase.", "Adjust your guess, confirm and compare the result with the original."],
+      tip: "Remember the main shade separately from the white, black and small details in the crest. If you are choosing between two similar reds or blues, think about warmth first, then saturation and brightness on higher difficulties.",
+      faq: [["Is this a football match simulation?", "No. This is a color memory game using football club logos, not a match simulator or a club-name quiz."], ["Can I select the teams?", "Yes. Use the team pool selector in the game setup to choose from the available clubs."], ["Can friends compete in the same lobby?", "Yes. Create a multiplayer lobby, share its invitation link and play together in your browsers."]],
+    },
+    tr: {
+      name: "Takım oyunu", title: "Takım Oyunu — Futbol Takımı Renklerini Bul | Huestima",
+      description: "Ücretsiz futbol takımı renk oyununda kulüp renklerini hatırla, tonları yeniden oluştur ve sonucunu gör. Takım havuzunu seç, tek başına veya arkadaşlarınla oyna.",
+      heading: "Tuttuğun takımın renklerini ne kadar iyi hatırlıyorsun?",
+      intro: "Bir kulübün armasını tanımak, her tonunu kolayca hatırlayacağın anlamına gelmez. Huestima takım oyununda futbol kulüplerinin logoları ve renkleriyle hafızanı denersin. Takım havuzunu seç, hedef paleti incele ve ana rengi yeniden oluştur; ona bağlı boyanabilir renkler de birlikte hareket eder.",
+      steps: ["Takımlar oyununu seç, takım havuzunu aç ve oynamak istediğin kulüpleri belirle.", "Gösterim aşamasında kulübün hedef rengini incele.", "Tahminini ayarla, onayla ve sonucu orijinal renkle karşılaştır."],
+      tip: "Ana tonu armadaki beyaz, siyah ve küçük ayrıntılardan ayrı düşün. Birbirine yakın iki kırmızı veya mavi arasında kalırsan önce sıcaklığına odaklan; yüksek zorluklarda doygunluk ve parlaklığı da ayarla.",
+      faq: [["Bu bir futbol maçı oyunu mu?", "Hayır. Futbol kulüplerinin logolarını kullanan bir renk hafıza oyunudur; maç simülasyonu veya takım adı bulma testi değildir."], ["Takımları ben seçebilir miyim?", "Evet. Oyun ayarlarındaki takım havuzundan mevcut kulüpler arasından seçim yapabilirsin."], ["Arkadaşlarımla aynı lobide yarışabilir miyim?", "Evet. Çok oyunculu lobi oluşturup davet bağlantısını paylaşarak tarayıcılarınızdan birlikte oynayabilirsiniz."]],
+    },
+  },
+};

@@ -1,17 +1,19 @@
 import { APP_NAME } from "./constants";
+import { GAME_LANDING_CONTENT, LANDING_UPDATED } from "./gameLandingContent.mjs";
+import { LANDING_FAMILIES, landingHref } from "../../shared/landingRoutes.mjs";
 
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
   "https://www.huestima.com";
 
-export const SITE_IMAGE_PATH = "/og-image.png";
+export const SITE_IMAGE_PATH = "/og-color.png";
 export const SITE_IMAGE_URL = absoluteUrl(SITE_IMAGE_PATH);
-export const SITE_IMAGE_WIDTH = 1730;
-export const SITE_IMAGE_HEIGHT = 909;
-export const SITE_LAST_MODIFIED = "2026-06-03T00:00:00.000Z";
+export const SITE_IMAGE_WIDTH = 1732;
+export const SITE_IMAGE_HEIGHT = 908;
+export const SITE_LAST_MODIFIED = LANDING_UPDATED;
 
 export const SITE_DESCRIPTION =
-  "Huestima is a free online hue estimate and color guessing game. Memorize a shade, rebuild it with hue, saturation, and brightness controls, then score your eye across custom levels.";
+  "Play free color memory games with colors, flags, cartoon characters, brands and football teams. Rebuild shades from memory, alone or with friends.";
 
 export const SEO_KEYWORDS = [
   "Huestima",
@@ -185,52 +187,104 @@ export const ROUTE_SEO = {
   },
 };
 
+const ROUTE_IMAGE_PATHS = {
+  home: SITE_IMAGE_PATH,
+  color: SITE_IMAGE_PATH,
+  flag: "/og-flag.png",
+  cartoon: "/og-cartoon.png",
+  brand: "/og-brand.png",
+  team: "/og-team.png",
+};
+
 export function absoluteUrl(path = "/") {
   return new URL(path, SITE_URL).toString();
 }
 
 export function createPageMetadata(route, options = {}) {
-  const seo = ROUTE_SEO[route];
+  const locale = options.locale === "tr" ? "tr" : "en";
+  const isLanding = LANDING_FAMILIES.includes(route);
+  const seo = isLanding
+    ? { ...GAME_LANDING_CONTENT[route][locale], path: landingHref(route, locale) }
+    : ROUTE_SEO[route];
   const url = absoluteUrl(seo.path);
-  const images = [
-    {
-      url: SITE_IMAGE_URL,
-      width: SITE_IMAGE_WIDTH,
-      height: SITE_IMAGE_HEIGHT,
-      alt: `${APP_NAME} free online color memory game preview`,
-      type: "image/png",
-    },
-  ];
+  const imagePath = ROUTE_IMAGE_PATHS[route];
+  const images = imagePath
+    ? [
+        {
+          url: absoluteUrl(imagePath),
+          width: SITE_IMAGE_WIDTH,
+          height: SITE_IMAGE_HEIGHT,
+          alt: `${seo.title} game preview`,
+          type: "image/png",
+        },
+      ]
+    : [];
 
   return {
     title: {
       absolute: seo.title,
     },
     description: seo.description,
-    keywords: SEO_KEYWORDS,
     alternates: {
       canonical: url,
+      ...(isLanding ? { languages: {
+        en: absoluteUrl(landingHref(route, "en")),
+        tr: absoluteUrl(landingHref(route, "tr")),
+        "x-default": absoluteUrl(landingHref(route, "en")),
+      } } : {}),
     },
     openGraph: {
       title: seo.title,
       description: seo.description,
       url,
       siteName: APP_NAME,
-      images,
-      locale: "en_US",
+      ...(images.length ? { images } : {}),
+      locale: locale === "tr" ? "tr_TR" : "en_US",
+      ...(isLanding ? { alternateLocale: [locale === "tr" ? "en_US" : "tr_TR"] } : {}),
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: seo.title,
       description: seo.description,
-      images,
+      ...(images.length ? { images } : {}),
     },
-    robots: options.robots,
+    robots: options.robots || (isLanding
+      ? { index: true, follow: true, "max-image-preview": "large" }
+      : /Library$|Singleplayer$|Multiplayer$|^(testLab|singleplayer|multiplayer|download)$/.test(route)
+        ? { index: false, follow: true }
+        : { index: true, follow: true }),
   };
 }
 
-export function createJsonLd() {
+export function createJsonLd(family, locale = "en") {
+  if (family && LANDING_FAMILIES.includes(family)) {
+    const content = GAME_LANDING_CONTENT[family][locale];
+    const url = absoluteUrl(landingHref(family, locale));
+    return {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage", "@id": `${url}#webpage`, url,
+          name: content.title, description: content.description, inLanguage: locale,
+          isPartOf: { "@id": `${SITE_URL}/#website` },
+          mainEntity: { "@id": `${url}#game` }, dateModified: LANDING_UPDATED,
+        },
+        {
+          "@type": ["VideoGame", "WebApplication"], "@id": `${url}#game`,
+          name: `Huestima ${content.name}`, url, description: content.intro,
+          image: absoluteUrl(ROUTE_IMAGE_PATHS[family]), inLanguage: locale,
+          applicationCategory: "GameApplication", operatingSystem: "Web browser",
+          gamePlatform: "Web browser", genre: ["Memory game", "Color guessing game"],
+          playMode: ["https://schema.org/SinglePlayer", "https://schema.org/MultiPlayer"],
+          isAccessibleForFree: true,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          creator: { "@id": `${SITE_URL}/#creator` },
+          mainEntityOfPage: { "@id": `${url}#webpage` },
+        },
+      ],
+    };
+  }
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -245,7 +299,7 @@ export function createJsonLd() {
         ],
         url: absoluteUrl("/color"),
         description: SITE_DESCRIPTION,
-        inLanguage: "en",
+        inLanguage: ["en", "tr"],
         publisher: {
           "@id": `${SITE_URL}/#creator`,
         },
@@ -256,43 +310,7 @@ export function createJsonLd() {
         name: "furkancosar",
         url: "https://furkancosar.com",
       },
-      {
-        "@type": ["SoftwareApplication", "VideoGame"],
-        "@id": `${SITE_URL}/#game`,
-        name: APP_NAME,
-        alternateName: [
-          "Huestima Color Memory Game",
-          "Huestima Hue Estimate Game",
-          "Huestima Color Guessing Game",
-        ],
-        url: absoluteUrl("/color"),
-        image: SITE_IMAGE_URL,
-        description: SITE_DESCRIPTION,
-        applicationCategory: "GameApplication",
-        operatingSystem: "Web browser",
-        gamePlatform: "Web browser",
-        genre: ["Color game", "Memory game", "Guessing game"],
-        playMode: ["SinglePlayer", "MultiPlayer"],
-        browserRequirements: "Requires JavaScript and a modern web browser.",
-        isAccessibleForFree: true,
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "USD",
-        },
-        creator: {
-          "@id": `${SITE_URL}/#creator`,
-        },
-        keywords: SEO_KEYWORDS.join(", "),
-        featureList: [
-          "Singleplayer color memory rounds",
-          "Private multiplayer lobbies",
-          "Hue, saturation, and brightness controls",
-          "Easy, Normal, and Hard difficulty",
-          "Normal, Flash, and Sequence game modes",
-          "Cartoon main color guessing mode",
-        ],
-      },
+
     ],
   };
 }
