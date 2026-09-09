@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
+import { ROUND_COUNT } from "@/lib/constants";
 import {
   isCartoonFamily,
   isLogoFamily,
@@ -38,21 +38,17 @@ const LEADERBOARD_HOME_FADE_DURATION_MS = 240;
 const SHOWCASE_WIDGET_REVEAL_DELAY_MS = 32;
 
 function buildProgressItems(room, currentPlayerId) {
-  const isDuelMode = room?.gameMode === GAME_MODE_IDS.DUEL;
   const totalRounds = room?.game?.roundCount || ROUND_COUNT;
-  const currentDuelRound = (room?.game?.currentRoundIndex ?? 0) + 1;
 
   return (room?.players || [])
-    .filter((player) => !isDuelMode || !player.eliminated)
     .map((player, index) => {
       const progress = player.progress || {};
       const completedRounds = progress.completedRounds ?? player.completedRounds ?? 0;
       const currentRound =
         progress.currentRound ??
         player.currentRound ??
-        (isDuelMode ? currentDuelRound : Math.min(completedRounds + 1, totalRounds));
-      const roundsTotal =
-        progress.totalRounds || player.totalRounds || (isDuelMode ? null : totalRounds);
+        Math.min(completedRounds + 1, totalRounds);
+      const roundsTotal = progress.totalRounds || player.totalRounds || totalRounds;
 
       return {
         id: player.id,
@@ -60,13 +56,9 @@ function buildProgressItems(room, currentPlayerId) {
         joinedAt: player.joinedAt || index,
         isCurrent: player.id === currentPlayerId,
         completedRounds,
-        currentRound: isDuelMode
-          ? Math.max(0, currentRound)
-          : Math.max(0, Math.min(currentRound, roundsTotal)),
+        currentRound: Math.max(0, Math.min(currentRound, roundsTotal)),
         totalRounds: roundsTotal,
-        label: isDuelMode
-          ? `R${Math.max(1, currentRound)}`
-          : `${Math.max(0, Math.min(currentRound, roundsTotal))}/${roundsTotal}`,
+        label: `${Math.max(0, Math.min(currentRound, roundsTotal))}/${roundsTotal}`,
       };
     })
     .sort((first, second) => {
@@ -113,9 +105,7 @@ export default function MultiplayerGame({
   });
   const { abandonSession } = game;
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
-  const currentRoundLabel = game.isDuelMode
-    ? `R${game.roundIndex + 1}/${game.roundCount}`
-    : game.isEndlessMode || game.isSprintMode
+  const currentRoundLabel = game.isEndlessMode || game.isSprintMode
       ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
       : `${game.roundIndex + 1}/${game.roundCount}`;
   const progressItems = useMemo(
@@ -406,7 +396,7 @@ export default function MultiplayerGame({
       difficulty: game.difficulty.id,
       rounds: game.leaderboard.totalRounds || game.roundCount,
       roundCount: game.roundCount,
-      isEndlessMode: game.isEndlessMode || game.isDuelMode,
+      isEndlessMode: game.isEndlessMode,
       totalScore: currentRow?.totalScore || 0,
       averageScore:
         game.leaderboard.totalRounds
@@ -421,7 +411,6 @@ export default function MultiplayerGame({
     game.difficulty.id,
     game.gameMode.id,
     game.historyMatchId,
-    game.isDuelMode,
     game.isEndlessMode,
     game.leaderboard,
     game.roundCount,
@@ -622,11 +611,7 @@ export default function MultiplayerGame({
               key={`result-${game.roundIndex}`}
               result={game.latestResult}
               roundLabel={currentRoundLabel}
-              hasNextRound={
-                game.isDuelMode
-                  ? !game.leaderboard && !game.isCurrentPlayerEliminated
-                  : game.roundIndex + 1 < game.roundCount
-              }
+              hasNextRound={game.roundIndex + 1 < game.roundCount}
               onContinue={game.continueFromResult}
               visualIntroDelayMs={
                 cleanGameFamily !== "color" && isRenderedShowcaseResultPhase
@@ -645,12 +630,7 @@ export default function MultiplayerGame({
 
           {renderedPhase === "waiting" && (
             <WaitingCard
-              message={
-                game.error ||
-                (game.isCurrentPlayerEliminated
-                  ? t("room.eliminatedWaiting")
-                  : t("room.automaticResults"))
-              }
+              message={game.error || t("room.automaticResults")}
             />
           )}
 

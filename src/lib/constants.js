@@ -8,7 +8,6 @@ export const HOME_PARAGRAPHS = [
 export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10, 20];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
-export const DUEL_MAX_ROUNDS = 64;
 export const MEMORIZE_DURATION_MS = 5000;
 export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
@@ -65,7 +64,6 @@ export const GAME_MODE_IDS = {
   FLAG: "flag",
   SPRINT: "sprint",
   CARTOON: "cartoon",
-  DUEL: "duel",
   SPOT: "spot",
 };
 
@@ -135,14 +133,6 @@ export const GAME_MODE_OPTIONS = [
     isSprint: true,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
-  {
-    id: GAME_MODE_IDS.DUEL,
-    label: "Duel",
-    description: "Endless PvP survival. Weak rounds eliminate only when the gap opens.",
-    revealDurationMs: MEMORIZE_DURATION_MS,
-    multiplayerOnly: true,
-    isElimination: true,
-  },
 ];
 
 export const GAME_MODE_CARD_COPY = {
@@ -163,8 +153,6 @@ export const GAME_MODE_CARD_COPY = {
       "Read the flag shape, then tune the background color behind its fixed emblem.",
     [GAME_MODE_IDS.SPRINT]:
       "Complete as many levels as possible during thirty seconds of active play.",
-    [GAME_MODE_IDS.DUEL]:
-      "Duel is a multiplayer-only survival mode. Create a lobby to play it.",
   },
   multiplayer: {
     [GAME_MODE_IDS.NORMAL]:
@@ -183,8 +171,6 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
     [GAME_MODE_IDS.SPRINT]:
       "Everyone completes as many levels as possible during thirty seconds of active play.",
-    [GAME_MODE_IDS.DUEL]:
-      "Endless PvP rounds. The last player is eliminated only when the score gap is wide enough.",
   },
 };
 

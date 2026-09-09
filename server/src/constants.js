@@ -17,7 +17,6 @@ export const GAME_MODES = {
   FLAG: "flag",
   SPRINT: "sprint",
   CARTOON: "cartoon",
-  DUEL: "duel",
   SPOT: "spot",
 };
 
@@ -40,7 +39,6 @@ export const DIFFICULTIES = {
 export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10, 20];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
-export const DUEL_MAX_ROUNDS = 64;
 export const SPRINT_MAX_ROUNDS = 64;
 export const SPRINT_DURATION_MS = 30000;
 export const PLAYER_NAME_MIN_LENGTH = 2;
@@ -87,11 +85,6 @@ export const GAME_MODE_CONFIG = {
     sprintDurationMs: SPRINT_DURATION_MS,
     roundCount: SPRINT_MAX_ROUNDS,
     lockedDifficulty: DIFFICULTIES.EASY,
-  },
-  [GAME_MODES.DUEL]: {
-    revealDurationMs: 5000,
-    roundCount: DUEL_MAX_ROUNDS,
-    elimination: true,
   },
 };
 

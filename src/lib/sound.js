@@ -1267,19 +1267,6 @@ export function playGameModeSelect(gameModeId = "normal", index = 0) {
       noise: 3200,
       echo: true,
     },
-    duel: {
-      start: 980,
-      end: 280,
-      body: 92,
-      bodyEnd: 148,
-      duration: 0.13,
-      gain: 0.074,
-      bodyGain: 0.045,
-      noiseGain: 0.046,
-      type: "sawtooth",
-      noise: 3800,
-      echo: true,
-    },
   };
 
   const preset = presets[gameModeId] || presets.normal;

@@ -177,7 +177,6 @@ export function useMultiplayerGame({
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
-  const isDuelMode = gameMode.id === GAME_MODE_IDS.DUEL;
   const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const shouldMemorizeRound = shouldMemorizeMultiplayerRound(
@@ -264,12 +263,6 @@ export function useMultiplayerGame({
   const snapshotRef = useRef(null);
   const sprintExpiredRef = useRef(false);
   const sprintSubmitRef = useRef(null);
-  const currentRoomPlayer = useMemo(
-    () => room?.players?.find((player) => player.id === playerId) || null,
-    [playerId, room?.players],
-  );
-  const isCurrentPlayerEliminated = Boolean(currentRoomPlayer?.eliminated);
-  const serverRoundIndex = room?.game?.currentRoundIndex ?? gamePayload?.currentRoundIndex ?? 0;
   const currentSeed = gamePayload?.seed || room?.game?.seed || null;
 
   const transitionToPhase = useCallback((nextPhase) => {
@@ -728,11 +721,6 @@ export function useMultiplayerGame({
 
     continuedRoundRef.current = roundIndex;
 
-    if (isDuelMode) {
-      transitionToPhase("waiting");
-      return;
-    }
-
     if (!isEndlessMode && roundIndex + 1 >= roundCount) {
       transitionToPhase("waiting");
       return;
@@ -759,7 +747,6 @@ export function useMultiplayerGame({
     effectiveDifficulty,
     gameMode,
     isEndlessMode,
-    isDuelMode,
     isSequenceMode,
     phase,
     roundCount,
@@ -776,34 +763,6 @@ export function useMultiplayerGame({
     clearGameSession(gameSessionKey);
   }, [gameSessionKey]);
 
-  useEffect(() => {
-    if (!isDuelMode || phase !== "waiting") return undefined;
-    if (incomingLeaderboard || room?.status === "completed") return undefined;
-    if (isCurrentPlayerEliminated) return undefined;
-    if (serverRoundIndex <= roundIndex) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      setRoundIndex(serverRoundIndex);
-      setTargetColor(null);
-      setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
-      transitionToPhase(GAME_PHASES.INTRO);
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [
-    cleanGameFamily,
-    effectiveDifficulty,
-    gameMode,
-    incomingLeaderboard,
-    isCurrentPlayerEliminated,
-    isDuelMode,
-    phase,
-    room?.status,
-    roundIndex,
-    serverRoundIndex,
-    transitionToPhase,
-  ]);
-
   return {
     difficulty: effectiveDifficulty,
     gameMode,
@@ -813,9 +772,7 @@ export function useMultiplayerGame({
     isSequenceMode,
     isGradientMode,
     isSpotMode,
-    isDuelMode,
     isCartoonMode,
-    isCurrentPlayerEliminated,
     roundCount,
     hintsEnabled,
     unlimitedHints,

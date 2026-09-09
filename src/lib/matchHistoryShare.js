@@ -25,7 +25,6 @@ const MODE_CODES = {
   timed: "t",
   gradient: "g",
   flag: "F",
-  duel: "d",
 };
 const MODE_BY_CODE = Object.fromEntries(
   Object.entries(MODE_CODES).map(([mode, code]) => [code, mode]),

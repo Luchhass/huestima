@@ -42,25 +42,6 @@ function roundScore(value) {
   return Math.round(value * 100) / 100;
 }
 
-const DUEL_ELIMINATION = {
-  initialGap: 1.25,
-  shrinkPerRound: 0.095,
-  minimumGap: 0.08,
-};
-
-function isDuelRoom(room) {
-  return room?.game?.mode === GAME_MODES.DUEL;
-}
-
-function duelGapThreshold(roundIndex) {
-  return roundScore(
-    Math.max(
-      DUEL_ELIMINATION.minimumGap,
-      DUEL_ELIMINATION.initialGap - roundIndex * DUEL_ELIMINATION.shrinkPerRound,
-    ),
-  );
-}
-
 function calculateMatchScore(targetColor, guessColor) {
   if (isGradientColor(targetColor) && isGradientColor(guessColor)) {
     return (
@@ -214,11 +195,6 @@ export function buildGamePayload(room) {
     roundCount: room.game.roundCount,
     hintsEnabled: room.game.hintsEnabled !== false,
     currentRoundIndex: room.game.currentRoundIndex || 0,
-    isElimination: Boolean(room.game.isElimination),
-    eliminationGapThreshold: room.game.isElimination
-      ? duelGapThreshold(room.game.currentRoundIndex || 0)
-      : null,
-    lastElimination: room.game.lastElimination || null,
     revealDurationMs: room.game.revealDurationMs,
     guessDurationMs: room.game.guessDurationMs || null,
     sprintDurationMs: room.game.sprintDurationMs || null,
@@ -232,7 +208,6 @@ export function startGameForRoom(room) {
   const modeConfig = GAME_MODE_CONFIG[room.gameMode] || GAME_MODE_CONFIG.normal;
   const difficulty = modeConfig.lockedDifficulty || room.difficulty;
   const roundCount = modeConfig.roundCount || room.roundCount || DEFAULT_ROUND_COUNT;
-  const isElimination = Boolean(modeConfig.elimination);
 
   room.status = ROOM_STATUSES.IN_GAME;
   room.seed = seed;
@@ -244,8 +219,6 @@ export function startGameForRoom(room) {
     roundCount,
     hintsEnabled: room.hintsEnabled !== false,
     currentRoundIndex: 0,
-    isElimination,
-    lastElimination: null,
     revealDurationMs: modeConfig.revealDurationMs,
     guessDurationMs: modeConfig.guessDurationMs || null,
     sprintDurationMs: modeConfig.sprintDurationMs || null,
@@ -277,9 +250,6 @@ export function startGameForRoom(room) {
     player.submitted = false;
     player.inactive = false;
     player.returnedToLobby = false;
-    player.eliminated = false;
-    player.eliminatedRound = null;
-    player.elimination = null;
     player.results = [];
     player.totalScore = 0;
   }
@@ -303,19 +273,6 @@ export function markPlayerInactiveForGame(room, playerId) {
 
   player.inactive = true;
   player.connected = false;
-  if (isDuelRoom(room)) {
-    player.eliminated = true;
-    player.eliminatedRound = (room.game.currentRoundIndex || 0) + 1;
-    player.elimination = {
-      round: player.eliminatedRound,
-      roundIndex: room.game.currentRoundIndex || 0,
-      score: 0,
-      gap: null,
-      threshold: duelGapThreshold(room.game.currentRoundIndex || 0),
-      disconnected: true,
-    };
-    room.game.activePlayerIds.delete(player.id);
-  }
   player.lastSeenAt = now();
   room.updatedAt = now();
   return maybeFinishRoom(room);
@@ -333,17 +290,11 @@ export function submitRoundGuess(room, payload) {
   const player = room.players.get(playerIdResult.data.playerId);
   if (!player || player.kicked) return fail("Player is not in this lobby.");
   if (player.inactive) return fail("This player is no longer active in the game.");
-  if (isDuelRoom(room) && player.eliminated) {
-    return fail("You were eliminated from this duel.");
-  }
 
   const roundResult = validateRoundIndex(payload.roundIndex, room.game.roundCount);
   if (!roundResult.ok) return roundResult;
 
   const { roundIndex } = roundResult.data;
-  if (isDuelRoom(room) && roundIndex !== room.game.currentRoundIndex) {
-    return fail("This duel round is no longer active.");
-  }
 
   const existing = player.results[roundIndex];
   if (existing) {
@@ -408,13 +359,6 @@ export function submitRoundGuess(room, payload) {
     playerResults: player.results.filter(Boolean),
     playerTotalScoreSoFar: player.totalScore,
     leaderboard,
-    duel: isDuelRoom(room)
-      ? {
-          currentRoundIndex: room.game.currentRoundIndex,
-          lastElimination: room.game.lastElimination,
-          playerEliminated: Boolean(player.eliminated),
-        }
-      : null,
   });
 }
 
@@ -477,94 +421,12 @@ function getGameParticipantPlayers(room) {
     .filter((player) => player && !player.kicked);
 }
 
-function getDuelRoundRows(room, roundIndex) {
-  return getActivePlayers(room)
-    .map((player) => ({
-      player,
-      result: player.results[roundIndex] || null,
-    }))
-    .filter((row) => row.result);
-}
-
-function evaluateDuelRound(room) {
-  const roundIndex = room.game.currentRoundIndex || 0;
-  const activePlayers = getActivePlayers(room);
-
-  if (activePlayers.length <= 1) {
-    return { finished: true, eliminatedPlayer: null };
-  }
-
-  const allSubmitted = activePlayers.every((player) => player.results[roundIndex]);
-  if (!allSubmitted) return { finished: false, eliminatedPlayer: null };
-
-  const rows = getDuelRoundRows(room, roundIndex).sort((first, second) => {
-    if (first.result.score !== second.result.score) {
-      return first.result.score - second.result.score;
-    }
-
-    return first.player.joinedAt - second.player.joinedAt;
-  });
-
-  const worst = rows[0];
-  const protectedPlayer = rows[1];
-  const gap = roundScore((protectedPlayer?.result.score || 0) - worst.result.score);
-  const threshold = duelGapThreshold(roundIndex);
-  const maxRoundReached = roundIndex + 1 >= room.game.roundCount;
-  const shouldEliminate = maxRoundReached || gap >= threshold;
-
-  room.game.lastElimination = {
-    round: roundIndex + 1,
-    roundIndex,
-    threshold,
-    gap,
-    eliminatedPlayerId: null,
-    eliminatedPlayerName: null,
-    protected: !shouldEliminate,
-  };
-
-  if (shouldEliminate) {
-    const eliminatedPlayer = worst.player;
-
-    eliminatedPlayer.eliminated = true;
-    eliminatedPlayer.eliminatedRound = roundIndex + 1;
-    eliminatedPlayer.elimination = {
-      round: roundIndex + 1,
-      roundIndex,
-      score: worst.result.score,
-      gap,
-      threshold,
-    };
-    room.game.activePlayerIds.delete(eliminatedPlayer.id);
-    room.game.lastElimination = {
-      ...room.game.lastElimination,
-      eliminatedPlayerId: eliminatedPlayer.id,
-      eliminatedPlayerName: eliminatedPlayer.name,
-      protected: false,
-    };
-  }
-
-  const remainingPlayers = getActivePlayers(room);
-  const finished = remainingPlayers.length <= 1 || maxRoundReached;
-
-  if (!finished) {
-    room.game.currentRoundIndex = roundIndex + 1;
-  }
-
-  return {
-    finished,
-    eliminatedPlayer: shouldEliminate ? worst.player : null,
-  };
-}
-
 export function buildLeaderboard(room) {
-  const isDuel = isDuelRoom(room);
   const players = getGameParticipantPlayers(room);
   const isSprint = room.game.mode === GAME_MODES.SPRINT;
-  const totalRounds = isDuel
-    ? Math.min((room.game.currentRoundIndex || 0) + 1, room.game.roundCount)
-    : isSprint
-      ? Math.max(1, ...players.map((player) => player.results.filter(Boolean).length))
-      : room.game.roundCount;
+  const totalRounds = isSprint
+    ? Math.max(1, ...players.map((player) => player.results.filter(Boolean).length))
+    : room.game.roundCount;
   const maxTotalScore = totalRounds * MAX_ROUND_SCORE;
 
   const ranked = players
@@ -595,29 +457,12 @@ export function buildLeaderboard(room) {
         playerName: player.name,
         connected: player.connected,
         submitted: player.submitted,
-        eliminated: Boolean(player.eliminated),
-        eliminatedRound: player.eliminatedRound,
-        elimination: player.elimination,
         totalScore,
         maxTotalScore,
         roundResults,
       };
     })
-    .sort((first, second) => {
-      if (isDuel) {
-        if (first.eliminated !== second.eliminated) {
-          return first.eliminated ? 1 : -1;
-        }
-
-        if (first.eliminated && second.eliminated) {
-          if (second.eliminatedRound !== first.eliminatedRound) {
-            return second.eliminatedRound - first.eliminatedRound;
-          }
-        }
-      }
-
-      return second.totalScore - first.totalScore;
-    });
+    .sort((first, second) => second.totalScore - first.totalScore);
 
   return {
     roomCode: room.code,
@@ -639,21 +484,6 @@ export function buildLeaderboard(room) {
 
 export function maybeFinishRoom(room) {
   if (!room.game || room.status !== ROOM_STATUSES.IN_GAME) return room.leaderboard;
-
-  if (isDuelRoom(room)) {
-    const duelResult = evaluateDuelRound(room);
-
-    if (!duelResult.finished) {
-      room.updatedAt = now();
-      return null;
-    }
-
-    room.status = ROOM_STATUSES.COMPLETED;
-    room.leaderboard = buildLeaderboard(room);
-    room.updatedAt = now();
-    recordGameActivity(room, "completed");
-    return room.leaderboard;
-  }
 
   const activePlayers = getActivePlayers(room);
   const allFinished =

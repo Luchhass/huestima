@@ -7,7 +7,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { trackEvent } from "@/lib/analytics";
-import { GAME_MODE_IDS, GAME_MODE_OPTIONS } from "@/lib/constants";
+import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import {
   GAME_FAMILY_IDS,
   getGameFamilyHref,
@@ -310,9 +310,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
   const currentRoomPlayer = findRoomPlayer(room, player?.playerId);
   const isWaitingForLobbyReturn = room?.status === "completed";
-  const duelNeedsPlayers =
-    room?.gameMode === GAME_MODE_IDS.DUEL && (room?.players?.length || 0) < 2;
-  const canStartGame = room?.status === "lobby" && !duelNeedsPlayers;
+  const canStartGame = room?.status === "lobby";
 
   const handleBackHome = async () => {
     if (isLeavingHome) return;
@@ -493,11 +491,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
           isStarting={isStarting}
           canStartGame={canStartGame}
           startDisabledLabel={
-            isWaitingForLobbyReturn
-              ? t("room.waitingLobbyReturn")
-              : duelNeedsPlayers
-                ? t("room.duelNeedsPlayers")
-                : ""
+            isWaitingForLobbyReturn ? t("room.waitingLobbyReturn") : ""
           }
           isUpdatingSettings={isUpdatingSettings}
           isLeavingHome={isRenderedCardLeaving}

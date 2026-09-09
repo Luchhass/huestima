@@ -357,7 +357,6 @@ export const DICTIONARIES = {
       sprint: "Sprint",
       gradient: "Gradient",
       flag: "Classic",
-      duel: "Duel",
       spot: "Spot",
     },
     gameFamily: {
@@ -378,7 +377,6 @@ export const DICTIONARIES = {
       gradient: "Match the left and right hue of a two-color blend.",
       flag: "Match the background color behind a fixed flag emblem.",
       brand: "Match the colors inside familiar brand logos.",
-      duel: "Endless PvP survival with round-by-round eliminations.",
       spot: "Keep the target visible and match it with the center circle.",
     },
     setup: {
@@ -472,7 +470,6 @@ export const DICTIONARIES = {
         gradient: "Gradient mode asks you to match both ends of a two-color blend across {roundCount} levels.",
         flag: "Flag mode keeps the emblem fixed while you rebuild the background color across {roundCount} levels.",
         brand: "Brand mode shows a familiar logo over a color field; rebuild the background color across {roundCount} levels.",
-        duel: "Duel is multiplayer-only. Create a lobby to play it.",
       },
       multiCopy: {
         normal: "Everyone sees the same classic five-second color, and the closest guess climbs the room.",
@@ -484,7 +481,6 @@ export const DICTIONARIES = {
         gradient: "Everyone gets the same two-color gradient, and left/right hue accuracy wins.",
         flag: "Everyone sees the same flag, and background accuracy decides the room.",
         brand: "Everyone sees the same brand logo, and background color accuracy decides the room.",
-        duel: "Endless PvP rounds. Close scores survive; wide misses get eliminated.",
       },
       difficultyCopy: {
         easy: "Easy keeps saturation and brightness fixed, so you only tune hue.",
@@ -515,7 +511,6 @@ export const DICTIONARIES = {
       startGame: "Start game",
       starting: "Starting",
       waitingLobbyReturn: "Waiting for everyone",
-      duelNeedsPlayers: "Need at least 2 players",
       waitingForHost: "Waiting for the host to start.",
       findingLobby: "Finding your private lobby.",
       lobbyNotFound: "Lobby not found or expired.",
@@ -541,7 +536,6 @@ export const DICTIONARIES = {
       closedMessage: "This lobby has closed.",
       kickPlayer: "Remove {name}",
       automaticResults: "Results will appear here automatically.",
-      eliminatedWaiting: "You were eliminated. Waiting for the duel to finish.",
       backLobby: "Back to lobby",
       returningLobby: "Returning",
       editSettings: "Edit lobby settings",
@@ -954,7 +948,6 @@ export const DICTIONARIES = {
       sprint: "Depar",
       gradient: "Geçiş",
       flag: "Klasik",
-      duel: "Düello",
       spot: "Nokta",
     },
     gameFamily: {
@@ -975,7 +968,6 @@ export const DICTIONARIES = {
       gradient: "İki renkli geçişin sol ve sağ tonunu eşleştir.",
       flag: "Sabit bayrak sembolünün arkasındaki rengi eşleştir.",
       brand: "Tanıdık marka logolarının içindeki renkleri eşleştir.",
-      duel: "Tur tur eleme yapan sonsuz karşılaşma modu.",
       spot: "Hedef görünür kalırken ortadaki dairenin rengini eşleştir.",
     },
     setup: {
@@ -1069,7 +1061,6 @@ export const DICTIONARIES = {
         gradient: "Geçiş modunda iki renkli geçişin iki ucunu {roundCount} seviye boyunca eşleştirirsin.",
         flag: "Bayrak modunda sembol sabit kalır; arka plan rengini {roundCount} seviye boyunca yeniden kurarsın.",
         brand: "Marka modunda tanıdık logo renkli zeminde görünür; arka plan rengini {roundCount} seviye boyunca yeniden kurarsın.",
-        duel: "Düello sadece çok oyunculu moddur. Oynamak için lobi oluştur.",
       },
       multiCopy: {
         normal: "Herkes aynı klasik beş saniyelik rengi görür; en yakın tahmin öne çıkar.",
@@ -1081,7 +1072,6 @@ export const DICTIONARIES = {
         gradient: "Herkes aynı iki renkli geçişi görür; sol ve sağ ton doğruluğu belirler.",
         flag: "Herkes aynı bayrağı görür; arka plan doğruluğu sonucu belirler.",
         brand: "Herkes aynı marka logosunu görür; arka plan rengi doğruluğu sonucu belirler.",
-        duel: "Sonsuz karşılaşma turları; yakın skorlar kalır, açık ara sonuncular elenir.",
       },
       difficultyCopy: {
         easy: "Kolayda doygunluk ve parlaklık sabit kalır; sadece ton ayarlanır.",
@@ -1112,7 +1102,6 @@ export const DICTIONARIES = {
       startGame: "Oyunu başlat",
       starting: "Başlatılıyor",
       waitingLobbyReturn: "Herkesin lobiye dönmesi bekleniyor",
-      duelNeedsPlayers: "En az 2 oyuncu gerekli",
       waitingForHost: "Hostun oyunu başlatması bekleniyor.",
       findingLobby: "Özel lobin aranıyor.",
       lobbyNotFound: "Lobi bulunamadı ya da süresi doldu.",
@@ -1137,7 +1126,6 @@ export const DICTIONARIES = {
       closedMessage: "Bu lobi kapandı.",
       kickPlayer: "{name} oyuncusunu çıkar",
       automaticResults: "Sonuçlar burada otomatik görünecek.",
-      eliminatedWaiting: "Elendin. Düello bitene kadar bekleniyor.",
       backLobby: "Lobiye dön",
       returningLobby: "Dönülüyor",
       editSettings: "Lobi ayarlarını düzenle",

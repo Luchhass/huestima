@@ -53,7 +53,7 @@ export const ROUTE_SEO = {
   color: {
     title: "Huestima Color",
     description:
-      "Play Huestima Color, the classic hue estimate game with normal, flash, sequence, timed, gradient, endless, and duel modes.",
+      "Play Huestima Color, the classic hue estimate game with normal, flash, sequence, timed, gradient, and endless modes.",
     path: "/color",
   },
   flag: {

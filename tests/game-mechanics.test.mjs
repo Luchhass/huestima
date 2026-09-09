@@ -13,7 +13,6 @@ import {
   GAME_MODES,
   GAME_MODE_CONFIG,
   DIFFICULTIES,
-  DUEL_MAX_ROUNDS,
   SPRINT_MAX_ROUNDS,
   ROUND_COUNT_OPTIONS,
 } from "../server/src/constants.js";
@@ -21,7 +20,6 @@ import { generateTargetColors } from "../server/src/game/colorGenerator.js";
 import { dominantPaint } from "../scripts/lib/visual-scene-pipeline.mjs";
 import {
   createRoom,
-  joinRoom,
   startRoomGame,
   updateRoomSettings,
 } from "../server/src/rooms/roomService.js";
@@ -83,7 +81,7 @@ test("multiplayer accepts every level count shown by the client", () => {
 });
 
 test("multiplayer follows the same memorize rules as singleplayer", () => {
-  for (const mode of ["normal", "flash", "sequence", "timed", "gradient", "sprint", "duel"]) {
+  for (const mode of ["normal", "flash", "sequence", "timed", "gradient", "sprint"]) {
     assert.equal(shouldMemorizeMultiplayerRound(mode, "color"), true, mode);
   }
 
@@ -97,9 +95,7 @@ test("locked multiplayer modes have matching backend rules", () => {
   assert.equal(GAME_MODE_CONFIG.spot.lockedDifficulty, DIFFICULTIES.HARD);
   assert.equal(GAME_MODE_CONFIG.spot.revealDurationMs, 0);
   assert.equal(GAME_MODE_CONFIG.sprint.roundCount, SPRINT_MAX_ROUNDS);
-  assert.equal(GAME_MODE_CONFIG.duel.roundCount, DUEL_MAX_ROUNDS);
   assert.equal(isFixedMultiplayerRoundMode("sprint"), true);
-  assert.equal(isFixedMultiplayerRoundMode("duel"), true);
   assert.equal(isFixedMultiplayerRoundMode("normal"), false);
 });
 
@@ -188,15 +184,6 @@ test("every multiplayer family and mode starts with a valid game payload", () =>
       });
       assert.equal(created.ok, true, `${gameFamily}/${gameMode} create`);
 
-      if (gameMode === GAME_MODES.DUEL) {
-        const joined = joinRoom({
-          roomCode: created.data.room.code,
-          playerId: `runtime-guest-${roomIndex}`,
-          playerName: `Guest ${roomIndex}`,
-        });
-        assert.equal(joined.ok, true, `${gameFamily}/${gameMode} join`);
-      }
-
       const started = startRoomGame({
         roomCode: created.data.room.code,
         playerId,
@@ -228,7 +215,6 @@ test("every multiplayer family has a room route", () => {
 test("the server rejects cross-family modes", () => {
   assert.equal(validateGameModeForFamily("endless", GAME_FAMILIES.COLOR).ok, false);
   assert.equal(validateGameModeForFamily(GAME_MODES.GRADIENT, GAME_FAMILIES.FLAG).ok, false);
-  assert.equal(validateGameModeForFamily(GAME_MODES.DUEL, GAME_FAMILIES.TEAM).ok, false);
   assert.equal(validateGameModeForFamily(GAME_MODES.SEQUENCE, GAME_FAMILIES.BRAND).ok, false);
 });
 
