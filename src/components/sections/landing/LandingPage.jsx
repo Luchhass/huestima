@@ -23,6 +23,8 @@ import {
   readDefaultCardBox,
   requestLandingExit,
 } from "@/hooks/useFooterPageTransition";
+import { FULLSCREEN_CHANGE_EVENT } from "@/hooks/useFullscreenMode";
+import { FULLSCREEN_STORAGE_KEY } from "@/lib/constants";
 
 const LANDING_CARDS = [
   {
@@ -70,6 +72,12 @@ export default function LandingPage() {
   const transitionCoverRef = useRef(null);
   const exitInProgressRef = useRef(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  useLayoutEffect(() => {
+    window.localStorage.setItem(FULLSCREEN_STORAGE_KEY, "off");
+    document.documentElement.dataset.fullscreenMode = "off";
+    window.dispatchEvent(new Event(FULLSCREEN_CHANGE_EVENT));
+  }, []);
 
   useLayoutEffect(() => {
     const url = new URL(window.location.href);

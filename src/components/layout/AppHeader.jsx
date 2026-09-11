@@ -21,6 +21,7 @@ import {
 } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 import FullscreenToggle from "./FullscreenToggle";
+import LandingHeroLockToggle from "./LandingHeroLockToggle";
 import LanguageToggle from "./LanguageToggle";
 import MusicToggle from "./MusicToggle";
 import SoundToggle from "./SoundToggle";
@@ -761,12 +762,16 @@ export default function AppHeader() {
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
-          <FullscreenToggle />
+          <FullscreenToggle disabled={pathname === "/"} />
+          {pathname === "/" && <LandingHeroLockToggle />}
           </div>
         </div>
 
         <div className="md:hidden">
-          <FullscreenToggle />
+          <div data-sound-kind="switch" className="inline-flex items-center gap-1">
+            <FullscreenToggle disabled={pathname === "/"} />
+            {pathname === "/" && <LandingHeroLockToggle />}
+          </div>
         </div>
 
         <button
