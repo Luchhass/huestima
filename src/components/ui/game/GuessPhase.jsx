@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Check, Crown, KeyRound } from "lucide-react";
+import { Check, Crown, KeyRound, LockKeyhole } from "lucide-react";
 import HSVColorPicker from "@/components/ui/color-picker/HSVColorPicker";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
 import SaturationSlider from "@/components/ui/color-picker/SaturationSlider";
@@ -13,6 +13,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
   isCartoonColor,
+  isBlendColor,
   isFlagColor,
   isGradientColor,
 } from "@/lib/color";
@@ -23,6 +24,8 @@ import {
   startMemorizeMechanism,
 } from "@/lib/sound";
 import CountdownReel, { RushClock } from "./CountdownReel";
+import BlendComposition from "./BlendComposition";
+import BlendSourceSlider from "./BlendSourceSlider";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
 function getTargetHintColor(targetColor, guessColor) {
@@ -65,6 +68,8 @@ export default function GuessPhase({
   hintsEnabled = true,
   onUseHint,
   isSpotMode = false,
+  isBlindMode = false,
+  isBlendMode = false,
 }) {
   const { t } = useTranslation();
   const { enabled: isAdminModeEnabled } = useAdminMode();
@@ -98,6 +103,7 @@ export default function GuessPhase({
   const [timerRunning, setTimerRunning] = useState(false);
 
   const isGradientGuess = isGradientColor(guessColor);
+  const isBlendGuess = isBlendMode && isBlendColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
   const isCartoonGuess = isCartoonColor(guessColor);
   const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
@@ -114,10 +120,13 @@ export default function GuessPhase({
   const sidePickerWidth = 50;
   const embeddedPickerWidth = isGradientGuess
     ? sidePickerWidth
-    : difficulty.controls.length * sidePickerWidth;
+    : isBlendGuess
+      ? sidePickerWidth * 3
+      : difficulty.controls.length * sidePickerWidth;
   const pickerWidth = usesExternalControlWidget ? 0 : embeddedPickerWidth;
   const rightPickerWidth =
     usesExternalControlWidget ? 0 : isGradientGuess ? sidePickerWidth : 0;
+  const blindPanelLeft = `${pickerWidth}px`;
   const contentLeft = pickerWidth + 24;
   const contentLeftSm = pickerWidth + 32;
   const contentRight = rightPickerWidth + 24;
@@ -250,6 +259,18 @@ export default function GuessPhase({
           ...guessColor[side],
           h,
         },
+      });
+    },
+    [guessColor, onGuessChange],
+  );
+
+  const handleBlendAmountChange = useCallback(
+    (sourceIndex, v) => {
+      onGuessChange({
+        ...guessColor,
+        sources: guessColor.sources.map((source, index) =>
+          index === sourceIndex ? { ...source, v } : source,
+        ),
       });
     },
     [guessColor, onGuessChange],
@@ -1241,6 +1262,26 @@ export default function GuessPhase({
                   hintColor={targetColor?.left?.hex}
                 />
               </div>
+            ) : isBlendGuess ? (
+              <div
+                className="flex h-full items-stretch gap-0"
+                aria-label={t("colorPicker.blendControls")}
+              >
+                {[0, 1, 2].map((sourceIndex) => (
+                  <BlendSourceSlider
+                    key={`blend-source-${sourceIndex}`}
+                    sourceIndex={sourceIndex}
+                    value={guessColor.sources[sourceIndex].v}
+                    onChange={(v) => handleBlendAmountChange(sourceIndex, v)}
+                    trackClassName={`${edgeTrackClassName} ${sourceIndex === 0 ? "rounded-l-[26px]" : ""}`}
+                    handleClassName={edgeHandleClassName}
+                    showLabel={false}
+                    hintValue={targetColor?.sources?.[sourceIndex]?.v}
+                    showHint={hintActive}
+                    hintColor={targetColor?.sources?.[sourceIndex]?.hex}
+                  />
+                ))}
+              </div>
             ) : (
               <HSVColorPicker
                 value={guessColor}
@@ -1275,6 +1316,27 @@ export default function GuessPhase({
         </>
       )}
 
+      {isBlendGuess && (
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-[2] flex items-center justify-center"
+          style={{ left: `${pickerWidth}px` }}
+          aria-hidden="true"
+        >
+          <BlendComposition color={guessColor} />
+        </div>
+      )}
+
+      {isBlindMode && !isGradientGuess && !usesExternalControlWidget && (
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-[4] flex items-center justify-center bg-zinc-700"
+          style={{ left: blindPanelLeft }}
+          aria-label={t("game.blindPreviewHidden")}
+          aria-hidden="true"
+        >
+          <LockKeyhole className="size-16 text-zinc-300/80 sm:size-20" strokeWidth={1.7} />
+        </div>
+      )}
+
       {isSpotMode && (
         <div
           ref={spotRef}
@@ -1290,7 +1352,7 @@ export default function GuessPhase({
       )}
 
       <div
-        className="absolute left-(--round-left) top-6 overflow-hidden sm:left-(--round-left-sm) sm:top-8"
+        className="absolute left-(--round-left) top-6 z-[6] overflow-hidden sm:left-(--round-left-sm) sm:top-8"
         style={{
           "--round-left": `${contentLeft}px`,
           "--round-left-sm": `${contentLeftSm}px`,
@@ -1309,7 +1371,7 @@ export default function GuessPhase({
       </div>
 
       <div
-        className="absolute right-(--guess-right) top-6 overflow-hidden text-right sm:right-(--guess-right-sm) sm:top-8"
+        className="absolute right-(--guess-right) top-6 z-[6] overflow-hidden text-right sm:right-(--guess-right-sm) sm:top-8"
         style={{
           "--guess-right": `${contentRight}px`,
           "--guess-right-sm": `${contentRightSm}px`,

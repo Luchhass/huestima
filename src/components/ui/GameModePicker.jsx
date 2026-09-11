@@ -4,12 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Blend,
   Eye,
+  EyeOff,
   Flag,
   Infinity,
   Layers,
   Palette,
   Circle,
+  Dices,
   Timer,
+  Target,
+  Waves,
   Zap,
   ShieldX,
 } from "lucide-react";
@@ -17,7 +21,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import { playGameModeSelect } from "@/lib/sound";
 
-const ICONS = { normal: Eye, endless: Infinity, flash: Zap, sequence: Layers, timed: Timer, rush: Zap, elimination: ShieldX, gradient: Blend, flag: Flag, cartoon: Palette, spot: Circle };
+const ICONS = { normal: Target, endless: Infinity, flash: Eye, blind: EyeOff, sequence: Layers, timed: Timer, gradient: Waves, blend: Blend, decoy: Dices, rush: Zap, elimination: ShieldX, flag: Flag, cartoon: Palette, spot: Circle };
 const SNAP_THRESHOLD = 0.28;
 
 function wrap(index, length) {
@@ -152,7 +156,13 @@ export default function GameModePicker({ value, onChange, ariaLabel, disabled = 
               <Icon className="size-[1.15rem] sm:size-5" strokeWidth={2} />
             </span>
             <span className="ml-2.5 flex min-w-0 flex-1 items-center pr-0 sm:ml-3 sm:pr-10">
-              <span className="block min-w-0 max-w-full whitespace-normal break-words text-base font-semibold leading-[1.08] sm:text-[1.05rem]">
+              <span
+                className={`block min-w-0 max-w-full whitespace-nowrap font-semibold leading-[1.08] ${
+                  option.id === "elimination"
+                    ? "text-[0.9rem] sm:text-[1.05rem]"
+                    : "text-base sm:text-[1.05rem]"
+                }`}
+              >
                 {label}
               </span>
             </span>

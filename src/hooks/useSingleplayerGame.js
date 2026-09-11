@@ -12,10 +12,12 @@ import {
   createDefaultCartoonGuess,
   createDefaultBrandGuess,
   createDefaultGradientGuess,
+  createDefaultBlendGuess,
   createDefaultFlagGuess,
   isCartoonColor,
   isBrandColor,
   isGradientColor,
+  isBlendColor,
   isFlagColor,
   randomCartoonTargetColors,
   randomBrandTargetColors,
@@ -28,6 +30,7 @@ import {
   withTeamDifficultyHex,
   withFlagDifficultyHex,
   withGradientHex,
+  withBlendDifficultyHex,
   withHex,
 } from "@/lib/color";
 import {
@@ -117,6 +120,10 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultGradientGuess();
   }
 
+  if (gameMode?.id === GAME_MODE_IDS.BLEND) {
+    return createDefaultBlendGuess();
+  }
+
   if (isFlagFamily(gameFamily)) {
     return createDefaultFlagGuess(targetColor, difficulty);
   }
@@ -143,6 +150,10 @@ function constrainGuessColor(
 ) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
+  }
+
+  if (gameMode.id === GAME_MODE_IDS.BLEND || isBlendColor(guessColor)) {
+    return withBlendDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   if (isFlagFamily(gameFamily) || isFlagColor(guessColor)) {
@@ -235,9 +246,11 @@ export function useSingleplayerGame(
   );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isBlendMode = gameMode.id === GAME_MODE_IDS.BLEND;
   const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isEliminationMode = gameMode.id === GAME_MODE_IDS.ELIMINATION;
+  const isBlindMode = gameMode.id === GAME_MODE_IDS.BLIND;
   const unlimitedHints = isEndlessMode;
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isRushMode = gameMode.id === GAME_MODE_IDS.RUSH;
@@ -452,6 +465,7 @@ export function useSingleplayerGame(
     isFlagMode,
     isEndlessMode,
     isEliminationMode,
+    isBlindMode,
     isSpotMode,
     isRushMode,
     roundCount,
@@ -1017,9 +1031,11 @@ export function useSingleplayerGame(
     gameMode,
     isSequenceMode,
     isGradientMode,
+    isBlendMode,
     isSpotMode,
     isEndlessMode,
     isEliminationMode,
+    isBlindMode,
     isRushMode,
     isCartoonMode,
     gameFamily: cleanGameFamily,

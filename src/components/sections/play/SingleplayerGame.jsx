@@ -426,7 +426,15 @@ export default function SingleplayerGame({
     >
       <GameCardShell
         data-intro-card-target
-        backgroundOverride={(isBrandMode || isTeamMode) ? "#000000" : null}
+        backgroundOverride={
+          renderedPhase === GAME_PHASES.GUESS && game.isBlindMode
+            ? "#3f3f46"
+            : renderedPhase === GAME_PHASES.GUESS && game.isBlendMode
+              ? "#000000"
+              : isBrandMode || isTeamMode
+                ? "#000000"
+                : null
+        }
         hideVisualLabel={game.isRushMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
@@ -500,6 +508,7 @@ export default function SingleplayerGame({
                 onComplete={game.finishMemorize}
                 resumeElapsedMs={resumeElapsedMs}
                 resumeInstantly={resumePhase === GAME_PHASES.MEMORIZE}
+                targetColor={game.targetColor}
               />
             )
           )}
@@ -529,6 +538,8 @@ export default function SingleplayerGame({
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}
               isSpotMode={game.isSpotMode}
+              isBlindMode={game.isBlindMode}
+              isBlendMode={game.isBlendMode}
             />
           )}
 

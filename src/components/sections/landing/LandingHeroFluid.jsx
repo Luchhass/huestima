@@ -200,8 +200,12 @@ function createCanvasFallback(canvas, surface) {
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let index = particles.length - 1; index >= 0; index -= 1) {
       const particle = particles[index];
-      particle.life -= 0.012;
-      particle.radius += 1.15;
+      particle.life -= particle.decay ?? 0.012;
+      particle.x += particle.vx ?? 0;
+      particle.y += particle.vy ?? 0;
+      particle.vx *= 0.965;
+      particle.vy *= 0.965;
+      particle.radius += particle.growth ?? 1.15;
       if (particle.life <= 0) {
         particles.splice(index, 1);
         continue;
@@ -240,17 +244,63 @@ function createCanvasFallback(canvas, surface) {
         (performance.now() * 0.000055 + event.clientX / rect.width * 0.48) % 1,
       ),
       life: 1,
+      vx: 0,
+      vy: 0,
     });
     if (particles.length > 70) particles.shift();
+    if (!frame) frame = requestAnimationFrame(draw);
+  };
+  const burst = (event) => {
+    if (event.button !== 0) return;
+    const rect = surface.getBoundingClientRect();
+    if (
+      event.clientX < rect.left || event.clientX > rect.right
+      || event.clientY < rect.top || event.clientY > rect.bottom
+    ) return;
+    const ratio = canvas.width / rect.width;
+    const originX = (event.clientX - rect.left) * ratio;
+    const originY = (event.clientY - rect.top) * ratio;
+    const basePhase = (performance.now() * 0.00009 + originX / canvas.width * 0.4) % 1;
+    const count = 38;
+
+    for (let index = 0; index < count; index += 1) {
+      const angle = (index / count) * Math.PI * 2 + Math.sin(index * 4.17) * 0.08;
+      const speed = (4.5 + (index % 7) * 0.72) * ratio;
+      particles.push({
+        x: originX + Math.cos(angle) * 4 * ratio,
+        y: originY + Math.sin(angle) * 4 * ratio,
+        radius: (8 + (index % 4) * 2) * ratio,
+        color: pastelRgbAt((basePhase + index / count * 0.72) % 1),
+        life: 1,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        decay: 0.014 + (index % 5) * 0.001,
+        growth: (0.75 + (index % 3) * 0.22) * ratio,
+      });
+    }
+    particles.push({
+      x: originX,
+      y: originY,
+      radius: 12 * ratio,
+      color: pastelRgbAt(basePhase),
+      life: 1,
+      vx: 0,
+      vy: 0,
+      decay: 0.018,
+      growth: 3.2 * ratio,
+    });
+    if (particles.length > 260) particles.splice(0, particles.length - 260);
     if (!frame) frame = requestAnimationFrame(draw);
   };
   resize();
   const observer = new ResizeObserver(resize);
   observer.observe(surface);
   window.addEventListener("pointermove", move, { passive: true });
+  surface.addEventListener("pointerdown", burst, { passive: true });
   return () => {
     observer.disconnect();
     window.removeEventListener("pointermove", move);
+    surface.removeEventListener("pointerdown", burst);
     if (frame) cancelAnimationFrame(frame);
   };
 }
@@ -412,14 +462,14 @@ function createFluid(canvas, surface) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   };
 
-  const applySplat = ({ x, y, dx, dy, color }) => {
+  const applySplat = ({ x, y, dx, dy, color, velocityRadius = 0.00075, dyeRadius = 0.0014 }) => {
     const entry = programs.splat;
     bindProgram(entry, velocity.read.width, velocity.read.height);
     bindTexture(entry, "target", velocity.read.texture, 0);
     gl.uniform1f(entry.uniforms.aspectRatio, canvas.width / canvas.height);
     gl.uniform2f(entry.uniforms.point, x, y);
     gl.uniform3f(entry.uniforms.color, dx, dy, 0);
-    gl.uniform1f(entry.uniforms.radius, 0.00075);
+    gl.uniform1f(entry.uniforms.radius, velocityRadius);
     drawTo(velocity.write);
     velocity.swap();
 
@@ -429,7 +479,7 @@ function createFluid(canvas, surface) {
     gl.uniform1f(dyeEntry.uniforms.aspectRatio, canvas.width / canvas.height);
     gl.uniform2f(dyeEntry.uniforms.point, x, y);
     gl.uniform3f(dyeEntry.uniforms.color, color[0], color[1], color[2]);
-    gl.uniform1f(dyeEntry.uniforms.radius, 0.0014);
+    gl.uniform1f(dyeEntry.uniforms.radius, dyeRadius);
     drawTo(dye.write);
     dye.swap();
   };
@@ -508,7 +558,15 @@ function createFluid(canvas, surface) {
     if (!visible) return;
     const dt = Math.min(Math.max((time - lastFrameTime) / 1000, 0.001), 0.033);
     lastFrameTime = time;
-    queue.splice(0, 18).forEach(applySplat);
+    const readySplats = [];
+    for (let index = 0; index < queue.length && readySplats.length < 28;) {
+      if (!queue[index].releaseAt || queue[index].releaseAt <= time) {
+        readySplats.push(queue.splice(index, 1)[0]);
+      } else {
+        index += 1;
+      }
+    }
+    readySplats.forEach(applySplat);
     step(dt);
     display();
     if (queue.length || time - lastInputTime < 6200) {
@@ -567,6 +625,59 @@ function createFluid(canvas, surface) {
     start();
   };
 
+  const pointerBurst = (event) => {
+    if (event.button !== 0) return;
+    const rect = surface.getBoundingClientRect();
+    if (
+      event.clientX < rect.left || event.clientX > rect.right
+      || event.clientY < rect.top || event.clientY > rect.bottom
+    ) return;
+
+    const originX = (event.clientX - rect.left) / rect.width;
+    const originY = 1 - (event.clientY - rect.top) / rect.height;
+    const aspect = rect.width / rect.height;
+    const burstStartedAt = performance.now();
+    const basePhase = (burstStartedAt * 0.00009 + originX * 0.41 + originY * 0.19) % 1;
+    const ringCount = window.innerWidth < 768 ? 5 : 6;
+    const count = window.innerWidth < 768 ? 30 : 48;
+
+    queue.push({
+      x: originX,
+      y: originY,
+      dx: 0,
+      dy: 0,
+      color: pastelRgbAt(basePhase),
+      velocityRadius: 0.00042,
+      dyeRadius: 0.00055,
+      releaseAt: burstStartedAt,
+    });
+
+    for (let index = 0; index < count; index += 1) {
+      const angle = (index / count) * Math.PI * 2 + Math.sin(index * 3.71) * 0.045;
+      const ring = index % ringCount;
+      const distance = 0.003 + ring * 0.0062;
+      const speed = 500 + ring * 72 + (index % 5) * 20;
+      const radialX = Math.cos(angle);
+      const radialY = Math.sin(angle);
+      const curlBias = (index % 2 === 0 ? 1 : -1) * 0.055;
+
+      queue.push({
+        x: Math.min(0.995, Math.max(0.005, originX + radialX * distance / aspect)),
+        y: Math.min(0.995, Math.max(0.005, originY + radialY * distance)),
+        dx: radialX * speed - radialY * speed * curlBias,
+        dy: radialY * speed + radialX * speed * curlBias,
+        color: pastelRgbAt((basePhase + index / count * 0.82 + ring * 0.07) % 1),
+        velocityRadius: 0.00055 + ring * 0.00011,
+        dyeRadius: 0.0007 + ring * 0.00015,
+        releaseAt: burstStartedAt + ring * 27 + (index % 3) * 4,
+      });
+    }
+
+    if (queue.length > 560) queue.splice(0, queue.length - 560);
+    lastPoint = { x: originX, y: originY };
+    start();
+  };
+
   const pointerEnd = () => { lastPoint = null; };
   const resizeObserver = new ResizeObserver(resize);
   const intersectionObserver = new IntersectionObserver(([entry]) => {
@@ -582,14 +693,14 @@ function createFluid(canvas, surface) {
   resize();
   resizeObserver.observe(surface);
   intersectionObserver.observe(surface);
-  surface.addEventListener("pointerdown", pointerMove, { passive: true });
+  surface.addEventListener("pointerdown", pointerBurst, { passive: true });
   window.addEventListener("pointermove", pointerMove, { passive: true });
   window.addEventListener("pointerup", pointerEnd, { passive: true });
   window.addEventListener("pointercancel", pointerEnd, { passive: true });
   return () => {
     resizeObserver.disconnect();
     intersectionObserver.disconnect();
-    surface.removeEventListener("pointerdown", pointerMove);
+    surface.removeEventListener("pointerdown", pointerBurst);
     window.removeEventListener("pointermove", pointerMove);
     window.removeEventListener("pointerup", pointerEnd);
     window.removeEventListener("pointercancel", pointerEnd);

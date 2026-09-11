@@ -1,6 +1,7 @@
 import {
   hexToRgb,
   isBrandColor,
+  isBlendColor,
   isCartoonColor,
   isFlagColor,
   isGradientColor,
@@ -181,6 +182,10 @@ function averageFlagSlotScore(target, guess, scoreFn) {
 }
 
 export function calculateColorMatchScore(target, guess) {
+  if (isBlendColor(target) && isBlendColor(guess)) {
+    return calculateColorScore(target.hex, guess.hex);
+  }
+
   if (isGradientColor(target) && isGradientColor(guess)) {
     return (
       calculateColorScore(target.left.hex, guess.left.hex) +
@@ -204,6 +209,10 @@ export function calculateColorMatchScore(target, guess) {
 }
 
 export function calculateColorMatchDistance(target, guess) {
+  if (isBlendColor(target) && isBlendColor(guess)) {
+    return ciede2000Distance(target.hex, guess.hex);
+  }
+
   if (isGradientColor(target) && isGradientColor(guess)) {
     return (
       ciede2000Distance(target.left.hex, guess.left.hex) +

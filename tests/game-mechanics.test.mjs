@@ -9,6 +9,14 @@ import {
   MULTIPLAYER_GAME_FAMILY_MODE_IDS,
 } from "../shared/gameFamilyModes.mjs";
 import {
+  BLEND_SOURCE_HUES,
+  blendSourcesToHex,
+} from "../shared/blendMechanics.mjs";
+import {
+  DECOY_MIN_HUE_DISTANCE,
+  DECOY_POSITIONS,
+} from "../shared/decoyMechanics.mjs";
+import {
   GAME_FAMILIES,
   GAME_MODES,
   GAME_MODE_CONFIG,
@@ -16,7 +24,11 @@ import {
   RUSH_MAX_ROUNDS,
   ROUND_COUNT_OPTIONS,
 } from "../server/src/constants.js";
-import { generateTargetColors } from "../server/src/game/colorGenerator.js";
+import {
+  generateTargetColors,
+  withBlendHex,
+} from "../server/src/game/colorGenerator.js";
+import { calculateColorScore } from "../server/src/game/scoring.js";
 import { dominantPaint } from "../scripts/lib/visual-scene-pipeline.mjs";
 import {
   createRoom,
@@ -88,11 +100,17 @@ test("multiplayer accepts every level count shown by the client", () => {
 });
 
 test("multiplayer follows the same memorize rules as singleplayer", () => {
-  for (const mode of ["normal", "flash", "sequence", "timed", "gradient", "rush"]) {
+  for (const mode of ["normal", "flash", "sequence", "timed", "gradient", "blind", "blend", "decoy", "rush"]) {
     assert.equal(shouldMemorizeMultiplayerRound(mode, "color"), true, mode);
   }
 
   assert.equal(shouldMemorizeMultiplayerRound("spot", "color"), false);
+  assert.equal(validateGameModeForFamily("blind", "color").ok, true);
+  assert.equal(validateGameModeForFamily("blind", "flag").ok, false);
+  assert.equal(validateGameModeForFamily("blend", "color").ok, true);
+  assert.equal(validateGameModeForFamily("blend", "flag").ok, false);
+  assert.equal(validateGameModeForFamily("decoy", "color").ok, true);
+  assert.equal(validateGameModeForFamily("decoy", "flag").ok, false);
   for (const family of ["flag", "cartoon", "brand", "team"]) {
     assert.equal(shouldMemorizeMultiplayerRound("normal", family), false, family);
   }
@@ -105,6 +123,161 @@ test("locked multiplayer modes have matching backend rules", () => {
   assert.equal(isFixedMultiplayerRoundMode("rush"), true);
   assert.equal(isFixedMultiplayerRoundMode("elimination"), true);
   assert.equal(isFixedMultiplayerRoundMode("normal"), false);
+});
+
+test("blend is Easy-only and every generated target is exactly reproducible with RGB bars", () => {
+  assert.equal(GAME_MODE_CONFIG.blend.lockedDifficulty, DIFFICULTIES.EASY);
+  assert.deepEqual(BLEND_SOURCE_HUES, [0, 120, 240]);
+  assert.equal(GAME_FAMILY_MODE_IDS.color.includes("blend"), true);
+  assert.equal(MULTIPLAYER_GAME_FAMILY_MODE_IDS.color.includes("blend"), true);
+
+  for (const family of ["flag", "cartoon", "brand", "team"]) {
+    assert.equal(GAME_FAMILY_MODE_IDS[family].includes("blend"), false, family);
+    assert.equal(MULTIPLAYER_GAME_FAMILY_MODE_IDS[family].includes("blend"), false, family);
+  }
+
+  const channelCheck = withBlendHex({
+    sources: [
+      { h: 42, s: 15, v: 0 },
+      { h: 42, s: 15, v: 50 },
+      { h: 42, s: 15, v: 100 },
+    ],
+  });
+  assert.deepEqual(channelCheck.sources.map(({ h }) => h), [0, 120, 240]);
+  assert.deepEqual(channelCheck.sources.map(({ s }) => s), [100, 100, 100]);
+  assert.deepEqual(channelCheck.sources.map(({ v }) => v), [0, 50, 100]);
+  assert.equal(channelCheck.hex, "#0080ff");
+
+  const targets = generateTargetColors({
+    seed: "blend-rgb-audit",
+    difficulty: DIFFICULTIES.HARD,
+    roundCount: 64,
+    gameMode: GAME_MODES.BLEND,
+    gameFamily: GAME_FAMILIES.COLOR,
+  });
+
+  for (const target of targets) {
+    assert.equal(target.sources.length, 3);
+    assert.deepEqual(target.sources.map(({ h }) => h), [0, 120, 240]);
+    assert.deepEqual(target.sources.map(({ s }) => s), [100, 100, 100]);
+    assert.equal(target.sources.every(({ v }) => Number.isInteger(v) && v >= 0 && v <= 100), true);
+    assert.equal(Math.max(...target.sources.map(({ v }) => v)) >= 30, true);
+    assert.equal(target.hex, blendSourcesToHex(target.sources));
+
+    const reconstructed = withBlendHex({
+      sources: target.sources.map(({ v }) => ({ h: 999, s: 0, v })),
+    });
+    assert.equal(reconstructed.hex, target.hex);
+    assert.equal(calculateColorScore(target.hex, reconstructed.hex), 10);
+  }
+
+  const playerId = `blend-audit-${Date.now()}`;
+  const created = createRoom({
+    playerId,
+    playerName: "Blend Tester",
+    roomName: "Blend RGB audit",
+    visibility: "public",
+    gameMode: GAME_MODES.BLEND,
+    gameFamily: GAME_FAMILIES.COLOR,
+    difficulty: DIFFICULTIES.HARD,
+    roundCount: 1,
+  });
+  assert.equal(created.ok, true);
+
+  const roomCode = created.data.room.code;
+  const started = startRoomGame({ roomCode, playerId });
+  assert.equal(started.ok, true);
+
+  const room = getRoom(roomCode);
+  assert.equal(room.difficulty, DIFFICULTIES.EASY);
+  assert.equal(room.game.difficulty, DIFFICULTIES.EASY);
+
+  const perfectSubmission = submitRoundGuess(room, {
+    playerId,
+    roundIndex: 0,
+    guessColor: room.game.targetColors[0],
+  });
+  assert.equal(perfectSubmission.ok, true);
+  assert.equal(perfectSubmission.data.result.score, 10);
+});
+
+test("decoy keeps Classic controls while hiding one real target among two distinct colors", () => {
+  assert.equal(GAME_MODE_CONFIG.decoy.lockedDifficulty, undefined);
+  assert.equal(GAME_FAMILY_MODE_IDS.color.includes("decoy"), true);
+  assert.equal(MULTIPLAYER_GAME_FAMILY_MODE_IDS.color.includes("decoy"), true);
+
+  for (const family of ["flag", "cartoon", "brand", "team"]) {
+    assert.equal(GAME_FAMILY_MODE_IDS[family].includes("decoy"), false, family);
+    assert.equal(MULTIPLAYER_GAME_FAMILY_MODE_IDS[family].includes("decoy"), false, family);
+  }
+
+  for (const difficulty of Object.values(DIFFICULTIES)) {
+    const targets = generateTargetColors({
+      seed: `decoy-${difficulty}-audit`,
+      difficulty,
+      roundCount: 32,
+      gameMode: GAME_MODES.DECOY,
+      gameFamily: GAME_FAMILIES.COLOR,
+    });
+
+    for (const target of targets) {
+      assert.equal(target.type, GAME_MODES.DECOY);
+      assert.equal(Boolean(target.decoy?.hex), true);
+      assert.equal(DECOY_POSITIONS.includes(target.targetPosition), true);
+
+      const hueDifference = Math.abs(target.h - target.decoy.h);
+      const circularHueDistance = Math.min(hueDifference, 360 - hueDifference);
+      assert.equal(circularHueDistance >= DECOY_MIN_HUE_DISTANCE, true);
+      assert.equal(calculateColorScore(target.hex, target.hex), 10);
+      assert.equal(calculateColorScore(target.hex, target.decoy.hex) < 10, true);
+    }
+
+    if (difficulty === DIFFICULTIES.EASY) {
+      assert.equal(targets.every((target) => target.s === 82 && target.v === 78), true);
+      assert.equal(targets.every((target) => target.decoy.s === 82 && target.decoy.v === 78), true);
+    }
+  }
+
+  const createDecoyRoom = (suffix) => {
+    const playerId = `decoy-${suffix}-${Date.now()}`;
+    const created = createRoom({
+      playerId,
+      playerName: "Decoy Tester",
+      roomName: `Decoy ${suffix}`,
+      visibility: "public",
+      gameMode: GAME_MODES.DECOY,
+      gameFamily: GAME_FAMILIES.COLOR,
+      difficulty: DIFFICULTIES.HARD,
+      roundCount: 1,
+    });
+    assert.equal(created.ok, true);
+    assert.equal(startRoomGame({ roomCode: created.data.room.code, playerId }).ok, true);
+
+    return {
+      playerId,
+      room: getRoom(created.data.room.code),
+    };
+  };
+
+  const perfectGame = createDecoyRoom("real");
+  const perfectTarget = perfectGame.room.game.targetColors[0];
+  const perfectSubmission = submitRoundGuess(perfectGame.room, {
+    playerId: perfectGame.playerId,
+    roundIndex: 0,
+    guessColor: perfectTarget,
+  });
+  assert.equal(perfectSubmission.ok, true);
+  assert.equal(perfectSubmission.data.result.score, 10);
+
+  const fooledGame = createDecoyRoom("fake");
+  const fooledTarget = fooledGame.room.game.targetColors[0];
+  const fooledSubmission = submitRoundGuess(fooledGame.room, {
+    playerId: fooledGame.playerId,
+    roundIndex: 0,
+    guessColor: fooledTarget.decoy,
+  });
+  assert.equal(fooledSubmission.ok, true);
+  assert.equal(fooledSubmission.data.result.score < 10, true);
 });
 
 test("elimination threshold rises smoothly and still allows a perfect endless run", () => {
@@ -180,10 +353,16 @@ test("eliminated multiplayer players wait while the remaining player continues",
   assert.equal(startRoomGame({ roomCode, playerId: hostId }).ok, true);
 
   const room = getRoom(roomCode);
+  const target = room.game.targetColors[0];
+  const deliberateMiss = {
+    h: (target.h + 180) % 360,
+    s: 100,
+    v: 100,
+  };
   const hostMiss = submitRoundGuess(room, {
     playerId: hostId,
     roundIndex: 0,
-    guessColor: { h: 0, s: 0, v: 0 },
+    guessColor: deliberateMiss,
   });
   assert.equal(hostMiss.ok, true);
   assert.equal(hostMiss.data.leaderboard, null);
@@ -194,7 +373,7 @@ test("eliminated multiplayer players wait while the remaining player continues",
   const guestMiss = submitRoundGuess(room, {
     playerId: guestId,
     roundIndex: 0,
-    guessColor: { h: 0, s: 0, v: 0 },
+    guessColor: deliberateMiss,
   });
   assert.equal(guestMiss.ok, true);
   assert.ok(guestMiss.data.leaderboard);

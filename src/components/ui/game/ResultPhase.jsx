@@ -15,7 +15,10 @@ import {
   isGradientColor,
   readableOverlayTone,
 } from "@/lib/color";
-import { getResultLineKey } from "@/lib/i18n";
+import {
+  getEliminationResultLineKey,
+  getResultLineKey,
+} from "@/lib/i18n";
 import { formatScore } from "@/lib/scoring";
 import {
   playScoreResolve,
@@ -160,6 +163,7 @@ export default function ResultPhase({
   const splitBrandSceneRef = useRef(null);
   const guessOverlayTones = useVisualOverlayTones(result?.guess);
   const targetOverlayTones = useVisualOverlayTones(result?.target);
+  const isEliminationResult = Number.isFinite(result?.eliminationThreshold);
 
   const handleContinueClick = useCallback(() => {
     if (isContinuingRef.current) return;
@@ -828,7 +832,10 @@ export default function ResultPhase({
     ? "#000000"
     : gradientBackground(result.target);
   const splitOverlayLabel = getVisualLabel(result.guess, locale);
-  const resultLine = t(`game.resultLine.${getResultLineKey(result.score)}`);
+  const resultLineKey = isEliminationResult
+    ? getEliminationResultLineKey(result.score, result.eliminationThreshold)
+    : getResultLineKey(result.score);
+  const resultLine = t(`game.resultLine.${resultLineKey}`);
   const guessTopLeftStyle = {
     ...(isBrandGuessResult
       ? brandResultTextStyle
@@ -990,11 +997,19 @@ export default function ResultPhase({
         <div className="absolute top-6 right-6 z-20 max-w-[calc(100%-3rem)] text-right sm:top-8 sm:right-8 sm:max-w-72">
           <div className="overflow-hidden pb-[0.08em]">
             <p
-              ref={scoreRef}
-              className="whitespace-nowrap text-[clamp(4rem,18vw,4.5rem)] leading-[0.82] font-semibold tracking-normal tabular-nums sm:text-[6.3rem]"
+              className={`flex flex-nowrap items-baseline justify-end whitespace-nowrap leading-[0.82] font-semibold tracking-normal tabular-nums ${
+                isEliminationResult
+                  ? "text-[clamp(3.2rem,14vw,4rem)] sm:text-[5.7rem]"
+                  : "text-[clamp(4rem,18vw,4.5rem)] sm:text-[6.3rem]"
+              }`}
               style={activeGuessTopRightStyle}
             >
-              {formatScore(0)}
+              <span ref={scoreRef}>{formatScore(0)}</span>
+              {isEliminationResult && (
+                <span className="ml-1 inline-block shrink-0 align-[0.12em] text-[clamp(1.15rem,5vw,1.8rem)] font-semibold tracking-normal sm:ml-2 sm:text-[2.1rem]">
+                  / {formatScore(result.eliminationThreshold)}
+                </span>
+              )}
             </p>
           </div>
 
@@ -1008,16 +1023,6 @@ export default function ResultPhase({
             }}
           >
             {renderAnimatedResultLine(resultLine)}
-            {Number.isFinite(result.eliminationThreshold) && (
-              <span className="mt-2 block text-sm font-bold tracking-wide uppercase">
-                {t(
-                  result.eliminationPassed
-                    ? "game.eliminationPassed"
-                    : "game.eliminationFailed",
-                  { threshold: formatScore(result.eliminationThreshold) },
-                )}
-              </span>
-            )}
           </p>
         </div>
       </section>

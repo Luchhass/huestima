@@ -12,6 +12,7 @@ import {
   generateTargetColors,
   isCartoonColor,
   isBrandColor,
+  isBlendColor,
   isFlagColor,
   isGradientColor,
   withCartoonHex,
@@ -20,6 +21,7 @@ import {
   withFlagHex,
   withHex,
   withGradientHex,
+  withBlendHex,
 } from "./colorGenerator.js";
 import { resolveGuessChannels } from "../../../shared/colorMechanics.mjs";
 import {
@@ -47,6 +49,10 @@ function roundScore(value) {
 }
 
 function calculateMatchScore(targetColor, guessColor) {
+  if (isBlendColor(targetColor) && isBlendColor(guessColor)) {
+    return calculateColorScore(targetColor.hex, guessColor.hex);
+  }
+
   if (isGradientColor(targetColor) && isGradientColor(guessColor)) {
     return (
       calculateColorScore(targetColor.left.hex, guessColor.left.hex) +
@@ -70,6 +76,10 @@ function calculateMatchScore(targetColor, guessColor) {
 }
 
 function calculateMatchDistance(targetColor, guessColor) {
+  if (isBlendColor(targetColor) && isBlendColor(guessColor)) {
+    return ciede2000Distance(targetColor.hex, guessColor.hex);
+  }
+
   if (isGradientColor(targetColor) && isGradientColor(guessColor)) {
     return (
       ciede2000Distance(targetColor.left.hex, guessColor.left.hex) +
@@ -116,6 +126,29 @@ function completeHsvForDifficulty(targetColor, guessColor, difficulty) {
 }
 
 function validateGuessColorPayload(targetColor, guessColor, difficulty) {
+  if (isBlendColor(targetColor)) {
+    const sources = [];
+    const guessSources = Array.isArray(guessColor?.sources)
+      ? guessColor.sources.slice(0, 3)
+      : [];
+    for (const source of guessSources) {
+      const validatedSource = validateHsvColor(source);
+      if (!validatedSource.ok) return validatedSource;
+      sources.push(validatedSource.data.color);
+    }
+
+    if (sources.length !== 3) {
+      return { ok: false, error: "Blend guesses require three source colors." };
+    }
+
+    return {
+      ok: true,
+      data: {
+        color: withBlendHex({ sources }),
+      },
+    };
+  }
+
   if (isGradientColor(targetColor)) {
     const left = validateHsvColor(guessColor?.left);
     if (!left.ok) return left;
@@ -352,20 +385,22 @@ export function submitRoundGuess(room, payload) {
   );
   if (!colorResult.ok) return colorResult;
 
-  const guessColor = isGradientColor(targetColor)
-    ? withGradientHex(colorResult.data.color)
-    : isFlagColor(targetColor)
-      ? withFlagHex(colorResult.data.color)
-      : isCartoonColor(targetColor)
-        ? withCartoonHex(colorResult.data.color)
-        : isBrandColor(targetColor)
-          ? targetColor.teamId
-            ? withTeamHex({ ...colorResult.data.color, teamId: targetColor.teamId })
-            : withBrandHex({
-                ...colorResult.data.color,
-                brandId: targetColor.brandId,
-              })
-        : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
+  const guessColor = isBlendColor(targetColor)
+    ? withBlendHex(colorResult.data.color)
+    : isGradientColor(targetColor)
+      ? withGradientHex(colorResult.data.color)
+      : isFlagColor(targetColor)
+        ? withFlagHex(colorResult.data.color)
+        : isCartoonColor(targetColor)
+          ? withCartoonHex(colorResult.data.color)
+          : isBrandColor(targetColor)
+            ? targetColor.teamId
+              ? withTeamHex({ ...colorResult.data.color, teamId: targetColor.teamId })
+              : withBrandHex({
+                  ...colorResult.data.color,
+                  brandId: targetColor.brandId,
+                })
+            : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
   const eliminationThreshold = isElimination
     ? getEliminationThreshold(roundIndex)

@@ -61,9 +61,12 @@ export const GAME_MODE_IDS = {
   SEQUENCE: "sequence",
   TIMED: "timed",
   GRADIENT: "gradient",
+  BLEND: "blend",
+  DECOY: "decoy",
   FLAG: "flag",
   RUSH: "rush",
   ELIMINATION: "elimination",
+  BLIND: "blind",
   CARTOON: "cartoon",
   SPOT: "spot",
 };
@@ -120,6 +123,19 @@ export const GAME_MODE_OPTIONS = [
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
   },
   {
+    id: GAME_MODE_IDS.BLEND,
+    label: "Blend",
+    description: "Mix three source colors to rebuild the target shade.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+    lockedDifficultyId: DIFFICULTY_IDS.EASY,
+  },
+  {
+    id: GAME_MODE_IDS.DECOY,
+    label: "Decoy",
+    description: "Memorize two colors and gamble on which one is real.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+  },
+  {
     id: GAME_MODE_IDS.FLAG,
     label: "Classic",
     description: "Keep the emblem fixed and match the flag background color.",
@@ -141,6 +157,12 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
     isElimination: true,
   },
+  {
+    id: GAME_MODE_IDS.BLIND,
+    label: "Blind",
+    description: "Classic memory rounds without a visible live color preview.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+  },
 ];
 
 export const GAME_MODE_CARD_COPY = {
@@ -157,12 +179,18 @@ export const GAME_MODE_CARD_COPY = {
       "Memorize each color for three seconds, then lock your guess in three seconds.",
     [GAME_MODE_IDS.GRADIENT]:
       "Match both sides of a two-color gradient using the left and right hue bars.",
+    [GAME_MODE_IDS.BLEND]:
+      "Balance red, green, and blue intensity bars to rebuild the target shade.",
+    [GAME_MODE_IDS.DECOY]:
+      "Choose one of two memorized colors and hope you followed the real target.",
     [GAME_MODE_IDS.FLAG]:
       "Read the flag shape, then tune the background color behind its fixed emblem.",
     [GAME_MODE_IDS.RUSH]:
       "Complete as many levels as possible during thirty seconds of active play.",
     [GAME_MODE_IDS.ELIMINATION]:
       "Clear a rising accuracy threshold each round and survive for as long as you can.",
+    [GAME_MODE_IDS.BLIND]:
+      "Memorize each color for five seconds, then rebuild it using the bars without a live preview.",
   },
   multiplayer: {
     [GAME_MODE_IDS.NORMAL]:
@@ -177,12 +205,18 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone gets three seconds to memorize and three seconds to choose.",
     [GAME_MODE_IDS.GRADIENT]:
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
+    [GAME_MODE_IDS.BLEND]:
+      "Everyone rebuilds the same target using red, green, and blue intensity bars.",
+    [GAME_MODE_IDS.DECOY]:
+      "Everyone sees the same two colors, but only one secretly counts as the target.",
     [GAME_MODE_IDS.FLAG]:
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
     [GAME_MODE_IDS.RUSH]:
       "Everyone completes as many levels as possible during thirty seconds of active play.",
     [GAME_MODE_IDS.ELIMINATION]:
       "Clear the rising accuracy threshold each round. Eliminated players watch until the last survivor falls.",
+    [GAME_MODE_IDS.BLIND]:
+      "Everyone memorizes the same five-second color, then rebuilds it using the bars without a live preview.",
   },
 };
 

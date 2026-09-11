@@ -5,6 +5,11 @@ import gsap from "gsap";
 import { APP_NAME, MEMORIZE_DURATION_MS } from "@/lib/constants";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useTranslation } from "@/hooks/useLanguage";
+import { isDecoyColor, relativeLuminance } from "@/lib/color";
+import {
+  overlayTextColor,
+  overlayTextShadow,
+} from "@/hooks/useVisualOverlayTones";
 import {
   playMemorizeSecondTick,
   startMemorizeMechanism,
@@ -21,6 +26,7 @@ export default function MemorizePhase({
   gameFamily = "color",
   resumeElapsedMs = 0,
   resumeInstantly = false,
+  targetColor = null,
 }) {
   const { t } = useTranslation();
   const scopeRef = useRef(null);
@@ -28,6 +34,35 @@ export default function MemorizePhase({
   const brandRef = useRef(null);
   const progressRef = useRef(null);
   const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
+  const isDecoyTarget = isDecoyColor(targetColor);
+  const topColor = isDecoyTarget && targetColor.targetPosition === "bottom"
+    ? targetColor.decoy
+    : targetColor;
+  const bottomColor = isDecoyTarget && targetColor.targetPosition === "bottom"
+    ? targetColor
+    : targetColor?.decoy;
+  const textStyleForColor = (color) => {
+    const tone = relativeLuminance(color?.hex || "#000000") > 0.179
+      ? "dark"
+      : "light";
+
+    return {
+      color: overlayTextColor(tone),
+      textShadow: overlayTextShadow(tone),
+    };
+  };
+  const topTextStyle = isDecoyTarget
+    ? textStyleForColor(topColor)
+    : {
+        color: "var(--game-fg-top-left)",
+        textShadow: "var(--game-fg-top-left-shadow)",
+      };
+  const bottomTextStyle = isDecoyTarget
+    ? textStyleForColor(bottomColor)
+    : {
+        color: "var(--game-fg-bottom-right)",
+        textShadow: "var(--game-fg-bottom-right-shadow)",
+      };
 
   const { centiseconds } = useCountdown({
     durationMs,
@@ -118,14 +153,21 @@ export default function MemorizePhase({
       data-fullscreen-surface-transition
       className="relative h-full p-6 sm:p-8"
     >
+      {isDecoyTarget && (
+        <div
+          className="pointer-events-none absolute inset-0 grid grid-rows-2"
+          aria-hidden="true"
+        >
+          <span style={{ background: topColor.hex }} />
+          <span style={{ background: bottomColor.hex }} />
+        </div>
+      )}
+
       <div className="absolute top-6 left-6 overflow-hidden sm:top-8 sm:left-8">
         <p
           ref={roundRef}
           className="text-base font-semibold"
-          style={{
-            color: "var(--game-fg-top-left)",
-            textShadow: "var(--game-fg-top-left-shadow)",
-          }}
+          style={topTextStyle}
         >
           {roundLabel}
         </p>
@@ -133,10 +175,7 @@ export default function MemorizePhase({
 
       <div
         className="absolute top-6 right-6 text-right sm:top-8 sm:right-8"
-        style={{
-          color: "var(--game-fg-top-right)",
-          textShadow: "var(--game-fg-top-right-shadow)",
-        }}
+        style={topTextStyle}
       >
         <CountdownReel
           durationMs={durationMs}
@@ -153,10 +192,7 @@ export default function MemorizePhase({
         <p
           ref={brandRef}
           className="text-lg font-semibold"
-          style={{
-            color: "var(--game-fg-bottom-right)",
-            textShadow: "var(--game-fg-bottom-right-shadow)",
-          }}
+          style={bottomTextStyle}
         >
           {APP_NAME}
         </p>
@@ -170,7 +206,7 @@ export default function MemorizePhase({
               ? "top-1/2 -translate-y-1/2"
               : "bottom-6 sm:bottom-8"
           }`}
-          style={{
+          style={isDecoyTarget ? bottomTextStyle : {
             color: "var(--game-fg-bottom-left)",
             textShadow: "var(--game-fg-bottom-left-shadow)",
           }}

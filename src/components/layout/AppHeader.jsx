@@ -555,7 +555,11 @@ export default function AppHeader() {
                       aria-current={active ? "page" : undefined}
                       data-mobile-menu-nav-item
                       onClick={(event) =>
-                        handleFamilyNavigation(event, localizeLandingHref(option.href, locale), active)
+                        handleFamilyNavigation(
+                          event,
+                          localizeLandingHref(option.href, locale),
+                          pathname === option.href,
+                        )
                       }
                       className={`block transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                         active
@@ -675,7 +679,11 @@ export default function AppHeader() {
                 aria-current={active ? "page" : undefined}
                 onMouseEnter={() => setHoveredFamily(option.href)}
                 onClick={(event) =>
-                  handleFamilyNavigation(event, localizeLandingHref(option.href, locale), active)
+                  handleFamilyNavigation(
+                    event,
+                    localizeLandingHref(option.href, locale),
+                    pathname === option.href,
+                  )
                 }
                 className={`relative top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                   highlighted

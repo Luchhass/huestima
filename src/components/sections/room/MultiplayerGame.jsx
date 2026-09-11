@@ -493,7 +493,15 @@ export default function MultiplayerGame({
     >
       <GameCardShell
         data-intro-card-target
-        backgroundOverride={isLogoFamily(cleanGameFamily) ? "#000000" : null}
+        backgroundOverride={
+          renderedPhase === GAME_PHASES.GUESS && game.isBlindMode
+            ? "#3f3f46"
+            : renderedPhase === GAME_PHASES.GUESS && game.isBlendMode
+              ? "#000000"
+              : isLogoFamily(cleanGameFamily)
+                ? "#000000"
+                : null
+        }
         hideVisualLabel={game.isRushMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
@@ -573,6 +581,7 @@ export default function MultiplayerGame({
                 gameFamily={cleanGameFamily}
                 resumeElapsedMs={resumeElapsedMs}
                 resumeInstantly={resumePhase === GAME_PHASES.MEMORIZE}
+                targetColor={game.targetColor}
               />
             )
           )}
@@ -603,6 +612,8 @@ export default function MultiplayerGame({
               hintsEnabled={game.hintsEnabled}
               onUseHint={game.useHint}
               isSpotMode={game.isSpotMode}
+              isBlindMode={game.isBlindMode}
+              isBlendMode={game.isBlendMode}
             />
           )}
 

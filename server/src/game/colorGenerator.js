@@ -3,6 +3,16 @@ import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoon
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
 import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams.js";
+import {
+  BLEND_SOURCE_HUES,
+  blendSourcesToHex,
+  createBlendTargetIntensities,
+  normalizeBlendIntensity,
+} from "../../../shared/blendMechanics.mjs";
+import {
+  createDecoyHue,
+  createDecoyTargetPosition,
+} from "../../../shared/decoyMechanics.mjs";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -105,6 +115,14 @@ export function isGradientColor(color) {
   return Boolean(color?.left && color?.right);
 }
 
+export function isBlendColor(color) {
+  return color?.type === GAME_MODES.BLEND && Array.isArray(color?.sources) && color.sources.length >= 3;
+}
+
+export function isDecoyColor(color) {
+  return color?.type === GAME_MODES.DECOY && Boolean(color?.decoy?.hex);
+}
+
 export function isFlagColor(color) {
   return color?.type === GAME_MODES.FLAG && Boolean(color?.flagId);
 }
@@ -146,6 +164,39 @@ export function withGradientHex(color) {
     gradient: `linear-gradient(90deg, ${left.hex}, ${right.hex})`,
     toneHex: averageRgbHex(left.hex, right.hex),
   };
+}
+
+export function withBlendHex(color) {
+  const inputSources = Array.isArray(color?.sources)
+    ? color.sources
+    : [color?.first, color?.second, color?.third];
+  const sources = [0, 1, 2].map((index) =>
+    withHex({
+      ...(inputSources[index] || {}),
+      h: BLEND_SOURCE_HUES[index],
+      s: 100,
+      v: normalizeBlendIntensity(inputSources[index]?.v),
+    }),
+  );
+  const mixedHex = blendSourcesToHex(sources);
+
+  return {
+    type: GAME_MODES.BLEND,
+    sources,
+    hex: mixedHex,
+    toneHex: mixedHex,
+  };
+}
+
+export function randomBlendTargetColor(random = Math.random) {
+  const intensities = createBlendTargetIntensities(random);
+
+  return withBlendHex({
+    sources: BLEND_SOURCE_HUES.map((baseHue, index) => ({
+      h: baseHue,
+      v: intensities[index],
+    })),
+  });
 }
 
 export function withFlagHex(color) {
@@ -427,6 +478,34 @@ export function createSeededRandom(seed) {
   return mulberry32(hashSeed(seed));
 }
 
+function randomClassicTargetColor(difficultyConfig, random, hue = null) {
+  return withHex({
+    h: Number.isFinite(hue) ? hue : Math.floor(random() * 360),
+    s: difficultyConfig.controls.includes("s")
+      ? Math.floor(54 + random() * 38)
+      : difficultyConfig.fixed.s,
+    v: difficultyConfig.controls.includes("v")
+      ? Math.floor(46 + random() * 42)
+      : difficultyConfig.fixed.v,
+  });
+}
+
+export function randomDecoyTargetColor(difficultyConfig, random = Math.random) {
+  const target = randomClassicTargetColor(difficultyConfig, random);
+  const decoy = randomClassicTargetColor(
+    difficultyConfig,
+    random,
+    createDecoyHue(target.h, random),
+  );
+
+  return {
+    ...target,
+    type: GAME_MODES.DECOY,
+    decoy,
+    targetPosition: createDecoyTargetPosition(random),
+  };
+}
+
 export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily, flagDifficulty, flagDifficulties, cartoonIds, teamIds }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
@@ -437,6 +516,16 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
         left: { h: Math.floor(random() * 360) },
         right: { h: Math.floor(random() * 360) },
       }),
+    );
+  }
+
+  if (gameMode === GAME_MODES.BLEND) {
+    return Array.from({ length: roundCount }, () => randomBlendTargetColor(random));
+  }
+
+  if (gameMode === GAME_MODES.DECOY) {
+    return Array.from({ length: roundCount }, () =>
+      randomDecoyTargetColor(difficultyConfig, random),
     );
   }
 
@@ -457,14 +546,6 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
   }
 
   return Array.from({ length: roundCount }, () =>
-    withHex({
-      h: Math.floor(random() * 360),
-      s: difficultyConfig.controls.includes("s")
-        ? Math.floor(54 + random() * 38)
-        : difficultyConfig.fixed.s,
-      v: difficultyConfig.controls.includes("v")
-        ? Math.floor(46 + random() * 42)
-        : difficultyConfig.fixed.v,
-    }),
+    randomClassicTargetColor(difficultyConfig, random),
   );
 }

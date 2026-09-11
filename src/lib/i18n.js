@@ -354,6 +354,9 @@ export const DICTIONARIES = {
       flash: "Flash",
       sequence: "Sequence",
       timed: "Timed",
+      blind: "Blind",
+      blend: "Blend",
+      decoy: "Decoy",
       rush: "Rush",
       elimination: "Elimination",
       gradient: "Gradient",
@@ -374,6 +377,9 @@ export const DICTIONARIES = {
       flash: "One second to catch each color.",
       sequence: "Colors appear back-to-back, three seconds each.",
       timed: "Timed mode gives you three seconds to memorize and three seconds to choose.",
+      blind: "Classic memory rounds without a visible live color preview.",
+      blend: "Balance red, green, and blue intensity bars to create the target shade.",
+      decoy: "Memorize two colors and gamble on which one is the real target.",
       rush: "Complete as many levels as possible during thirty seconds of active play.",
       elimination: "Clear a rising accuracy threshold each round or be eliminated.",
       gradient: "Match the left and right hue of a two-color blend.",
@@ -435,6 +441,9 @@ export const DICTIONARIES = {
         flash: "Flash mode exposes the target for just one second, so the first impression matters more than careful study.",
         sequence: "Sequence mode presents colors back-to-back for three seconds each; you then reconstruct the full order one color at a time.",
         timed: "Timed mode gives you three seconds to memorize the target and another three seconds to lock in the guess.",
+        blind: "Blind keeps the classic memory round but hides your live color preview, so only the bars guide your guess.",
+        blend: "Blend shows a flat target made from three source colors, then asks you to recreate it with separate red, green, and blue intensity bars.",
+        decoy: "Decoy shows two colors during the memory phase. Pick one in your head and hope it is the hidden real target.",
         gradient: "Gradient mode shows a two-color blend for five seconds, then asks you to match the hue at both ends.",
         rush: "Rush keeps new targets coming quickly and rewards the number of accurate levels you can finish under pressure.",
         elimination: "Elimination follows the classic cycle, but every round has a rising minimum accuracy score.",
@@ -449,11 +458,14 @@ export const DICTIONARIES = {
         normal: "Normal activates two color bars: hue and saturation. Brightness remains fixed.",
         hard: "Hard activates all three color bars—hue, saturation, and brightness—so every part of the color is yours to judge.",
         gradient: "Gradient uses two independent hue bars, one for each end of the blend; saturation and brightness remain fixed.",
+        blend: "Blend is locked to Easy and uses only three RGB intensity bars. There are no saturation or brightness controls.",
       },
       runDetail: {
         fixed: "The run contains {roundCount} {roundUnit}, and there is no countdown while you adjust your answer.",
         endless: "There is no level limit and no countdown while you adjust an answer; the run ends only when you choose to leave.",
         timed: "The run contains {roundCount} {roundUnit}, and every answer must be confirmed within its three-second window.",
+        blind: "The classic five-second memory round stays intact, but the live preview remains hidden while you adjust.",
+        blend: "The run contains {roundCount} {roundUnit}; each answer is rebuilt by balancing three RGB intensity bars.",
         rush: "You have 30 seconds of active adjustment time; the opening countdown, reveals, and transitions do not consume that clock.",
         elimination: "There is no level limit. Clear each rising accuracy threshold to continue; one failed round ends your run.",
       },
@@ -467,6 +479,9 @@ export const DICTIONARIES = {
         flash: "Flash mode gives you one second per color, then you rebuild the result across {roundCount} levels.",
         sequence: "Sequence mode shows a color chain, then asks you to rebuild it across {roundCount} levels.",
         timed: "Timed mode gives you three seconds to memorize and three seconds to choose across {roundCount} levels.",
+        blind: "Blind mode shows each color for five seconds, then you rebuild it across {roundCount} levels using only the bars.",
+        blend: "Blend asks you to recreate a flat target by mixing three source colors across {roundCount} levels.",
+        decoy: "Decoy shows two colors per round across {roundCount} levels, but only one secretly counts.",
         rush: "Complete as many levels as possible during thirty seconds of active play. Ready, Set, Go and memory phases do not use your time.",
         elimination: "Clear the rising minimum accuracy score every round. Your run ends with the first threshold you miss.",
         visualNormal: "Each level starts directly with the visual and its color controls across {roundCount} levels.",
@@ -484,6 +499,9 @@ export const DICTIONARIES = {
         flash: "Everyone gets the same one-second flash, so speed decides it.",
         sequence: "Everyone studies the same color chain, then rebuilds it in order.",
         timed: "Timed mode gives everyone three seconds to memorize and three seconds to choose.",
+        blind: "Everyone memorizes the same five-second color, then rebuilds it using only the bars without a live preview.",
+        blend: "Everyone sees the same flat target, then balances red, green, and blue intensity bars to recreate it.",
+        decoy: "Everyone sees the same two colors, but only one secretly counts as the real target.",
         rush: "Everyone completes as many levels as possible during thirty seconds of active play.",
         elimination: "Everyone faces the same rising accuracy threshold. Eliminated players wait while the survivors continue.",
         gradient: "Everyone gets the same two-color gradient, and left/right hue accuracy wins.",
@@ -566,6 +584,7 @@ export const DICTIONARIES = {
       secondsToChoose: "Seconds to choose",
       memorizingSequenceColor: "Memorizing sequence color {index}: {color}",
       submitColorGuess: "Submit color guess",
+      blindPreviewHidden: "Live color preview hidden",
       useHint: "Use hint",
       hintUnavailable: "No hints available",
       level: "level",
@@ -577,8 +596,6 @@ export const DICTIONARIES = {
       playAgain: "Play again",
       waitingError: "Could not load the next color.",
       submitError: "Could not submit this guess.",
-      eliminationPassed: "Qualified · minimum {threshold}",
-      eliminationFailed: "Eliminated · minimum {threshold}",
       resultLine: {
         perfect: "Perfect. Your eye barely blinked.",
         excellent: "Excellent. That memory held strong.",
@@ -586,6 +603,11 @@ export const DICTIONARIES = {
         solid: "A solid 'meh'. And 'meh' isn't a compliment.",
         off: "Not quite. The color slipped away.",
         wayOff: "Way off. That shade escaped cleanly.",
+        eliminationComfortable: "Nice. You cleared this bar with room to spare.",
+        eliminationPass: "Good save. You cleared the bar, but the next one is closer.",
+        eliminationClosePass: "Well done. You almost got eliminated that round.",
+        eliminationCloseFail: "So close. The bar was just out of reach.",
+        eliminationFail: "Eliminated. This round fell below the bar.",
       },
       assessment: {
         rare: "A rare eye for subtle color. That was sharp.",
@@ -597,6 +619,9 @@ export const DICTIONARIES = {
     },
     colorPicker: {
       controls: "HSV color controls",
+      blendControls: "Blend source color controls",
+      blendSource: "Blend source {number}",
+      blendSourceValue: "{value}%",
       hue: "Hue",
       saturation: "Sat",
       brightness: "Value",
@@ -955,6 +980,9 @@ export const DICTIONARIES = {
       flash: "Anlık",
       sequence: "Dizi",
       timed: "Süreli",
+      blind: "Blind",
+      blend: "Blend",
+      decoy: "Decoy",
       rush: "Rush",
       elimination: "Elimination",
       gradient: "Geçiş",
@@ -975,6 +1003,9 @@ export const DICTIONARIES = {
       flash: "Her rengi yakalamak için bir saniye.",
       sequence: "Renkler arka arkaya, her biri üç saniye görünür.",
       timed: "Süreli modda üç saniye ezberler, üç saniyede seçersin.",
+      blind: "Klasik hafıza turlarında canlı renk önizlemesi görünmez.",
+      blend: "Hedef rengi kırmızı, yeşil ve mavi yoğunluk çubuklarını dengeleyerek oluşturursun.",
+      decoy: "İki rengi ezberle ve gerçek hedefin hangisi olduğuna dair şansını dene.",
       rush: "Yalnızca aktif oyun sırasında işleyen 30 saniyede olabildiğince çok seviye tamamla.",
       elimination: "Her tur yükselen doğruluk barajını geç; altında kalırsan elenirsin.",
       gradient: "İki renkli geçişin sol ve sağ tonunu eşleştir.",
@@ -1036,6 +1067,9 @@ export const DICTIONARIES = {
         flash: "Anlık mod hedef rengi yalnızca bir saniye gösterir; uzun incelemeden çok ilk izlenimine güvenmen gerekir.",
         sequence: "Dizi modu renkleri üçer saniye boyunca arka arkaya gösterir; ardından sıranın tamamını renk renk yeniden kurarsın.",
         timed: "Süreli modda hedefi ezberlemek için üç, tahminini kilitlemek için üç saniyen vardır.",
+        blind: "Kör mod klasik hafıza turunu korur; tahmin sırasında canlı renk önizlemesini gizler ve yalnızca çubukları kullanmanı ister.",
+        blend: "Blend hedefi düz bir renk olarak gösterir; ardından kırmızı, yeşil ve mavi yoğunluk çubuklarıyla yeniden kurarsın.",
+        decoy: "Decoy hafıza aşamasında iki renk gösterir. Aklından birini seç ve gizli gerçek hedef olmasını um.",
         gradient: "Geçiş modu iki renkli bir karışımı beş saniye gösterir; ardından iki ucun tonunu ayrı ayrı eşleştirmeni ister.",
         rush: "Rush modu yeni hedefleri hızla getirir ve baskı altında tamamladığın doğru seviye sayısını ödüllendirir.",
         elimination: "Elimination klasik tur akışını kullanır; ancak her tur yükselen bir minimum doğruluk puanı vardır.",
@@ -1050,11 +1084,14 @@ export const DICTIONARIES = {
         normal: "Normalde iki renk barı açıktır: ton ve doygunluk. Parlaklık sabit kalır.",
         hard: "Zorda ton, doygunluk ve parlaklık olmak üzere üç renk barının tamamı açılır; rengin her bileşenini sen belirlersin.",
         gradient: "Geçiş modunda karışımın iki ucu için iki bağımsız ton barı kullanılır; doygunluk ve parlaklık sabit kalır.",
+        blend: "Blend Easy seviyesine kilitlidir ve yalnızca üç RGB yoğunluk barı kullanır. Doygunluk veya parlaklık kontrolü yoktur.",
       },
       runDetail: {
         fixed: "Seri {roundCount} {roundUnit} sürer ve tahminini ayarlarken geri sayım işlemez.",
         endless: "Seviye sınırı yoktur ve tahminini ayarlarken geri sayım işlemez; seri ancak sen ayrıldığında sona erer.",
         timed: "Seri {roundCount} {roundUnit} sürer ve her tahmini üç saniyelik süre dolmadan onaylaman gerekir.",
+        blind: "Klasik beş saniyelik hafıza turu devam eder; ancak tahminini ayarlarken canlı önizleme gizli kalır.",
+        blend: "Seri {roundCount} {roundUnit} sürer; her tahmin üç RGB yoğunluk çubuğunu dengeleyerek oluşturulur.",
         rush: "Yalnızca aktif ayarlama sırasında işleyen 30 saniyen vardır; başlangıç sayacı, gösterimler ve geçişler bu süreyi tüketmez.",
         elimination: "Seviye sınırı yoktur. Devam etmek için yükselen doğruluk barajını geç; ilk başarısız tur seriyi bitirir.",
       },
@@ -1068,6 +1105,9 @@ export const DICTIONARIES = {
         flash: "Anlık modda her renk bir saniye görünür; sonra {roundCount} seviye boyunca ilk bakışına güvenirsin.",
         sequence: "Dizi modunda renk sırasını görür, sonra {roundCount} seviye boyunca yeniden kurarsın.",
         timed: "Süreli modda üç saniye ezberler, üç saniye seçersin; seri {roundCount} seviye sürer.",
+        blind: "Kör modda her renk beş saniye görünür; sonra {roundCount} seviye boyunca yalnızca çubuklarla yeniden kurarsın.",
+        blend: "Blend modunda düz hedef rengi {roundCount} seviye boyunca üç RGB yoğunluk çubuğunu karıştırarak yeniden oluşturursun.",
+        decoy: "Decoy her tur iki renk gösterir; {roundCount} seviye boyunca yalnızca biri gizlice gerçek hedef sayılır.",
         rush: "Yalnızca aktif oyun sırasında işleyen 30 saniyede olabildiğince çok seviye tamamla. Hazır, Başla ve ezber fazlarında süre durur.",
         elimination: "Her tur yükselen minimum doğruluk puanını geç. Barajın altında kaldığın ilk turda seri biter.",
         visualNormal: "Her seviye görsel ve renk kontrolleriyle doğrudan başlar; seri {roundCount} seviye sürer.",
@@ -1085,6 +1125,9 @@ export const DICTIONARIES = {
         flash: "Herkes aynı bir saniyelik parlamayı görür; hız belirleyici olur.",
         sequence: "Herkes aynı renk dizisini görür, sonra sırayla yeniden kurar.",
         timed: "Süreli modda herkes üç saniye ezberler ve üç saniyede seçer.",
+        blind: "Herkes aynı beş saniyelik rengi ezberler; ardından canlı önizleme olmadan yalnızca çubuklarla yeniden kurar.",
+        blend: "Herkes aynı düz hedef rengi görür; ardından kırmızı, yeşil ve mavi yoğunluk çubuklarını dengeleyerek yeniden oluşturur.",
+        decoy: "Herkes aynı iki rengi görür; ancak yalnızca biri gizlice gerçek hedef olarak puanlanır.",
         rush: "Herkes yalnızca aktif oyun sırasında işleyen 30 saniyede olabildiğince çok seviye tamamlamaya çalışır.",
         elimination: "Herkes aynı yükselen doğruluk barajıyla oynar. Elenen oyuncular, hayatta kalanlar devam ederken bekler.",
         gradient: "Herkes aynı iki renkli geçişi görür; sol ve sağ ton doğruluğu belirler.",
@@ -1166,6 +1209,7 @@ export const DICTIONARIES = {
       secondsToChoose: "Seçmek için saniye",
       memorizingSequenceColor: "Dizi rengi ezberleniyor {index}: {color}",
       submitColorGuess: "Renk tahminini gönder",
+      blindPreviewHidden: "Canlı renk önizlemesi gizli",
       useHint: "İpucu kullan",
       hintUnavailable: "İpucu hakkı yok",
       level: "seviye",
@@ -1177,8 +1221,6 @@ export const DICTIONARIES = {
       playAgain: "Tekrar oyna",
       waitingError: "Sonraki renk yüklenemedi.",
       submitError: "Bu tahmin gönderilemedi.",
-      eliminationPassed: "Baraj geçildi · minimum {threshold}",
-      eliminationFailed: "Elendin · minimum {threshold}",
       resultLine: {
         perfect: "Mükemmel. Gözün neredeyse hiç kırpmadı.",
         excellent: "Harika. Hafıza çok sağlam tuttu.",
@@ -1186,6 +1228,11 @@ export const DICTIONARIES = {
         solid: "Fena değil. Ama övgü sayılmaz.",
         off: "Pek olmadı. Renk biraz kayıp gitti.",
         wayOff: "Epey uzak. O ton temizce kaçmış.",
+        eliminationComfortable: "Aferin. Bu barajı rahatça geçtin.",
+        eliminationPass: "İyi kurtardın. Barajı geçtin ama sıradaki daha yakın.",
+        eliminationClosePass: "Aferin, geçtin. Az kalsın eleniyordun.",
+        eliminationCloseFail: "Çok yakındı. Baraj ucundan kaçtı.",
+        eliminationFail: "Elendin. Bu tur barajın altında kaldın.",
       },
       assessment: {
         rare: "İnce renkler için nadir bir göz. Keskin oynadın.",
@@ -1197,6 +1244,9 @@ export const DICTIONARIES = {
     },
     colorPicker: {
       controls: "Renk kontrolleri",
+      blendControls: "Blend kaynak renk kontrolleri",
+      blendSource: "Blend kaynağı {number}",
+      blendSourceValue: "%{value}",
       hue: "Ton",
       saturation: "Doygunluk",
       brightness: "Parlaklık",
@@ -1240,6 +1290,19 @@ export function getResultLineKey(score) {
   if (score >= 5) return "solid";
   if (score >= 2.5) return "off";
   return "wayOff";
+}
+
+export function getEliminationResultLineKey(score, threshold) {
+  const normalizedScore = Number(score) || 0;
+  const normalizedThreshold = Number(threshold) || 0;
+  const margin = normalizedScore - normalizedThreshold;
+
+  if (margin < 0) return normalizedScore >= normalizedThreshold - 1
+    ? "eliminationCloseFail"
+    : "eliminationFail";
+  if (margin < 0.75) return "eliminationClosePass";
+  if (margin < 2.5) return "eliminationPass";
+  return "eliminationComfortable";
 }
 
 export function getFinalAssessmentKey(averageScore) {

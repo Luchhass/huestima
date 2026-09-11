@@ -63,13 +63,21 @@ export default function SingleplayerCard({
   const mechanicsKey = isVisualFamily && visualModeKeys.includes(selectedMode)
     ? `visual${selectedMode[0].toUpperCase()}${selectedMode.slice(1)}`
     : selectedMode;
-  const difficultyKey = selectedMode === "gradient" ? "gradient" : selectedDifficulty;
+  const difficultyKey = selectedMode === "gradient"
+    ? "gradient"
+    : selectedMode === "blend"
+      ? "blend"
+      : selectedDifficulty;
   const runKey = selectedMode === "endless"
     ? "endless"
     : selectedMode === "rush"
       ? "rush"
       : selectedMode === "elimination"
         ? "elimination"
+      : selectedMode === "blind"
+        ? "blind"
+      : selectedMode === "blend"
+        ? "blend"
       : selectedMode === "timed"
         ? "timed"
         : "fixed";

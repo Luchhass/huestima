@@ -14,9 +14,12 @@ export const GAME_MODES = {
   SEQUENCE: "sequence",
   TIMED: "timed",
   GRADIENT: "gradient",
+  BLEND: "blend",
+  DECOY: "decoy",
   FLAG: "flag",
   RUSH: "rush",
   ELIMINATION: "elimination",
+  BLIND: "blind",
   CARTOON: "cartoon",
   SPOT: "spot",
 };
@@ -75,6 +78,13 @@ export const GAME_MODE_CONFIG = {
     revealDurationMs: 5000,
     lockedDifficulty: DIFFICULTIES.EASY,
   },
+  [GAME_MODES.BLEND]: {
+    revealDurationMs: 5000,
+    lockedDifficulty: DIFFICULTIES.EASY,
+  },
+  [GAME_MODES.DECOY]: {
+    revealDurationMs: 5000,
+  },
   [GAME_MODES.SPOT]: {
     revealDurationMs: 0,
     lockedDifficulty: DIFFICULTIES.HARD,
@@ -91,6 +101,9 @@ export const GAME_MODE_CONFIG = {
   [GAME_MODES.ELIMINATION]: {
     revealDurationMs: 5000,
     roundCount: ELIMINATION_INITIAL_ROUNDS,
+  },
+  [GAME_MODES.BLIND]: {
+    revealDurationMs: 5000,
   },
 };
 

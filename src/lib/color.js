@@ -9,6 +9,17 @@ import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
 import { DEFAULT_TEAM_ID, getTeamOption, TEAM_OPTIONS } from "./teams";
 import { resolveChannelValue } from "../../shared/colorMechanics.mjs";
+import {
+  BLEND_DEFAULT_INTENSITY,
+  BLEND_SOURCE_HUES,
+  blendSourcesToHex,
+  createBlendTargetIntensities,
+  normalizeBlendIntensity,
+} from "../../shared/blendMechanics.mjs";
+import {
+  createDecoyHue,
+  createDecoyTargetPosition,
+} from "../../shared/decoyMechanics.mjs";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -112,6 +123,14 @@ export function isGradientColor(color) {
   return Boolean(color?.left && color?.right);
 }
 
+export function isBlendColor(color) {
+  return color?.type === GAME_MODE_IDS.BLEND && Array.isArray(color?.sources) && color.sources.length >= 3;
+}
+
+export function isDecoyColor(color) {
+  return color?.type === GAME_MODE_IDS.DECOY && Boolean(color?.decoy?.hex);
+}
+
 export function isFlagColor(color) {
   return color?.type === GAME_MODE_IDS.FLAG && Boolean(color?.flagId);
 }
@@ -209,6 +228,88 @@ export function randomGradientTargetColor(random = Math.random) {
     left: { h: Math.floor(random() * 360) },
     right: { h: Math.floor(random() * 360) },
   });
+}
+
+export function withBlendHex(color) {
+  const inputSources = Array.isArray(color?.sources)
+    ? color.sources
+    : [color?.first, color?.second, color?.third];
+  const sources = [0, 1, 2].map((index) =>
+    withHex({
+      ...(inputSources[index] || {}),
+      h: BLEND_SOURCE_HUES[index],
+      s: 100,
+      v: normalizeBlendIntensity(inputSources[index]?.v),
+    }),
+  );
+  const mixedHex = blendSourcesToHex(sources);
+
+  return {
+    type: GAME_MODE_IDS.BLEND,
+    sources,
+    hex: mixedHex,
+    toneHex: mixedHex,
+  };
+}
+
+export function createDefaultBlendGuess() {
+  return withBlendHex({
+    sources: BLEND_SOURCE_HUES.map((h) => ({ h, v: BLEND_DEFAULT_INTENSITY })),
+  });
+}
+
+export function randomBlendTargetColor(random = Math.random) {
+  const intensities = createBlendTargetIntensities(random);
+
+  return withBlendHex({
+    sources: BLEND_SOURCE_HUES.map((baseHue, index) => ({
+      h: baseHue,
+      v: intensities[index],
+    })),
+  });
+}
+
+function randomClassicTargetColor(difficulty, random = Math.random, hue = null) {
+  return withHex({
+    h: Number.isFinite(hue) ? hue : Math.floor(random() * 360),
+    s: hasDifficultyControl(difficulty, "s")
+      ? Math.floor(54 + random() * 38)
+      : difficulty.fixed.s,
+    v: hasDifficultyControl(difficulty, "v")
+      ? Math.floor(46 + random() * 42)
+      : difficulty.fixed.v,
+  });
+}
+
+export function randomDecoyTargetColor(difficultyId, random = Math.random) {
+  const difficulty = getDifficultyOption(difficultyId);
+  const target = randomClassicTargetColor(difficulty, random);
+  const decoy = randomClassicTargetColor(
+    difficulty,
+    random,
+    createDecoyHue(target.h, random),
+  );
+
+  return {
+    ...target,
+    type: GAME_MODE_IDS.DECOY,
+    decoy,
+    targetPosition: createDecoyTargetPosition(random),
+  };
+}
+
+export function withBlendDifficultyHex(guessColor, targetColor, difficulty) {
+  const targetSources = targetColor?.sources || [];
+  const guessSources = guessColor?.sources || [];
+  const sources = [0, 1, 2].map((index) =>
+    withHex({
+      h: BLEND_SOURCE_HUES[index],
+      s: 100,
+      v: guessSources[index]?.v ?? targetSources[index]?.v ?? BLEND_DEFAULT_INTENSITY,
+    }),
+  );
+
+  return withBlendHex({ sources });
 }
 
 export function withFlagHex(color) {
@@ -640,21 +741,20 @@ export function randomTargetColor(difficultyId, gameModeId = GAME_MODE_IDS.NORMA
     return randomGradientTargetColor();
   }
 
+  if (gameModeId === GAME_MODE_IDS.BLEND) {
+    return randomBlendTargetColor();
+  }
+
+  if (gameModeId === GAME_MODE_IDS.DECOY) {
+    return randomDecoyTargetColor(difficultyId);
+  }
+
   if (gameModeId === GAME_MODE_IDS.FLAG) {
     return randomFlagTargetColor();
   }
 
   const difficulty = getDifficultyOption(difficultyId);
-
-  return withHex({
-    h: Math.floor(Math.random() * 360),
-    s: hasDifficultyControl(difficulty, "s")
-      ? Math.floor(54 + Math.random() * 38)
-      : difficulty.fixed.s,
-    v: hasDifficultyControl(difficulty, "v")
-      ? Math.floor(46 + Math.random() * 42)
-      : difficulty.fixed.v,
-  });
+  return randomClassicTargetColor(difficulty);
 }
 
 export function relativeLuminance(hex) {

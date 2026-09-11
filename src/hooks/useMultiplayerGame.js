@@ -35,16 +35,19 @@ import {
   createDefaultBrandGuess,
   createDefaultFlagGuess,
   createDefaultGradientGuess,
+  createDefaultBlendGuess,
   isCartoonColor,
   isBrandColor,
   isFlagColor,
   isGradientColor,
+  isBlendColor,
   withCartoonDifficultyHex,
   withBrandDifficultyHex,
   createDefaultTeamGuess,
   withTeamDifficultyHex,
   withFlagDifficultyHex,
   withGradientHex,
+  withBlendDifficultyHex,
   withHex,
 } from "@/lib/color";
 import { emitWithAck } from "@/lib/socket";
@@ -59,6 +62,10 @@ function responseData(response) {
 function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null) {
   if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
     return createDefaultGradientGuess();
+  }
+
+  if (gameMode?.id === GAME_MODE_IDS.BLEND) {
+    return createDefaultBlendGuess();
   }
 
   if (isFlagFamily(gameFamily)) {
@@ -87,6 +94,10 @@ function constrainGuessColor(
 ) {
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
+  }
+
+  if (gameMode.id === GAME_MODE_IDS.BLEND || isBlendColor(guessColor)) {
+    return withBlendDifficultyHex(guessColor, targetColor, difficulty);
   }
 
   if (isFlagFamily(gameFamily) || isFlagColor(guessColor)) {
@@ -178,10 +189,12 @@ export function useMultiplayerGame({
   );
   const isSequenceMode = gameMode.id === GAME_MODE_IDS.SEQUENCE;
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
+  const isBlendMode = gameMode.id === GAME_MODE_IDS.BLEND;
   const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
   const isRushMode = gameMode.id === GAME_MODE_IDS.RUSH;
   const isEliminationMode = gameMode.id === GAME_MODE_IDS.ELIMINATION;
+  const isBlindMode = gameMode.id === GAME_MODE_IDS.BLIND;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const shouldMemorizeRound = shouldMemorizeMultiplayerRound(
     gameMode.id,
@@ -357,6 +370,7 @@ export function useMultiplayerGame({
     hintsEnabled,
     initialGameSession,
     isEliminationMode,
+    isBlindMode,
     roundCount,
     serverTargetColors,
   ]);
@@ -795,9 +809,11 @@ export function useMultiplayerGame({
     gameFamily: cleanGameFamily,
     isEndlessMode,
     isEliminationMode,
+    isBlindMode,
     isRushMode,
     isSequenceMode,
     isGradientMode,
+    isBlendMode,
     isSpotMode,
     isCartoonMode,
     roundCount,
