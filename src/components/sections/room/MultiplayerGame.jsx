@@ -105,7 +105,7 @@ export default function MultiplayerGame({
   });
   const { abandonSession } = game;
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
-  const currentRoundLabel = game.isEndlessMode || game.isSprintMode
+  const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode
       ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
       : `${game.roundIndex + 1}/${game.roundCount}`;
   const progressItems = useMemo(
@@ -136,9 +136,9 @@ export default function MultiplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
-    game.isSprintMode && (isFlagMode || isCartoonMode);
+    game.isRushMode && (isFlagMode || isCartoonMode);
   const usesShowcaseTransition =
-    cleanGameFamily !== "color" && !game.isSprintMode;
+    cleanGameFamily !== "color" && !game.isRushMode;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
@@ -237,7 +237,7 @@ export default function MultiplayerGame({
     if (renderedPhase === null) return undefined;
     if (game.phase === renderedPhase) return undefined;
 
-    const sprintExpired = game.isSprintMode && game.sprintRemainingMs <= 0;
+    const rushExpired = game.isRushMode && game.rushRemainingMs <= 0;
 
     if (
       renderedPhase === GAME_PHASES.GUESS &&
@@ -262,7 +262,7 @@ export default function MultiplayerGame({
     if (
       renderedPhase === GAME_PHASES.GUESS &&
       usesShowcaseTransition &&
-      !sprintExpired
+      !rushExpired
     ) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
@@ -288,10 +288,10 @@ export default function MultiplayerGame({
 
     return () => window.clearTimeout(timeoutId);
   }, [
-    game.isSprintMode,
+    game.isRushMode,
     game.phase,
     game.isSpotMode,
-    game.sprintRemainingMs,
+    game.rushRemainingMs,
     isCartoonMode,
     renderedPhase,
     usesShowcaseTransition,
@@ -494,7 +494,7 @@ export default function MultiplayerGame({
       <GameCardShell
         data-intro-card-target
         backgroundOverride={isLogoFamily(cleanGameFamily) ? "#000000" : null}
-        hideVisualLabel={game.isSprintMode || game.guessDurationMs > 0}
+        hideVisualLabel={game.isRushMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -588,8 +588,8 @@ export default function MultiplayerGame({
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
-              sprintDurationMs={game.sprintDurationMs}
-              sprintRemainingMs={game.sprintRemainingMs}
+              rushDurationMs={game.rushDurationMs}
+              rushRemainingMs={game.rushRemainingMs}
               progressItems={progressItems}
               gameFamily={cleanGameFamily}
               showcaseLayoutEnabled={usesShowcaseGuessChrome}
@@ -611,7 +611,11 @@ export default function MultiplayerGame({
               key={`result-${game.roundIndex}`}
               result={game.latestResult}
               roundLabel={currentRoundLabel}
-              hasNextRound={game.roundIndex + 1 < game.roundCount}
+              hasNextRound={
+                game.isEliminationMode
+                  ? Boolean(game.latestResult?.eliminationPassed)
+                  : game.roundIndex + 1 < game.roundCount
+              }
               onContinue={game.continueFromResult}
               visualIntroDelayMs={
                 cleanGameFamily !== "color" && isRenderedShowcaseResultPhase

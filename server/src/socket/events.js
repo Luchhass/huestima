@@ -14,7 +14,7 @@ import {
   updateRoomSettings,
 } from "../rooms/roomService.js";
 import { getRoom } from "../rooms/roomStore.js";
-import { finishSprintForPlayer, submitFullResults, submitRoundGuess } from "../game/gameService.js";
+import { finishRushForPlayer, submitFullResults, submitRoundGuess } from "../game/gameService.js";
 import { validateRoomCode } from "../rooms/roomValidation.js";
 import { createEmitters } from "./emitters.js";
 import { logger } from "../utils/logger.js";
@@ -297,14 +297,14 @@ export function registerSocketEvents(io) {
     socket.on("round:submitGuess", handleSubmitGuess);
 
     socket.on(
-      "game:finishSprint",
+      "game:finishRush",
       safeEvent((payload, ack) => {
         const roomResult = getRoomFromPayload(payload);
         if (!roomResult.ok) return ackFail(ack, roomResult.error);
         const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
         if (!auth.ok) return ackFail(ack, auth.error);
 
-        const result = finishSprintForPlayer(roomResult.data.room, payload);
+        const result = finishRushForPlayer(roomResult.data.room, payload);
         if (!result.ok) return ackFail(ack, result.error);
 
         ackOk(ack, result.data);

@@ -1008,6 +1008,16 @@ export default function ResultPhase({
             }}
           >
             {renderAnimatedResultLine(resultLine)}
+            {Number.isFinite(result.eliminationThreshold) && (
+              <span className="mt-2 block text-sm font-bold tracking-wide uppercase">
+                {t(
+                  result.eliminationPassed
+                    ? "game.eliminationPassed"
+                    : "game.eliminationFailed",
+                  { threshold: formatScore(result.eliminationThreshold) },
+                )}
+              </span>
+            )}
           </p>
         </div>
       </section>

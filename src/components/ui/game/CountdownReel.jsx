@@ -25,7 +25,7 @@ const REEL_CONFIG = [
   },
 ];
 
-export function SprintClock({ remainingMs, className = "" }) {
+export function RushClock({ remainingMs, className = "" }) {
   const totalCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
   const seconds = Math.floor(totalCentiseconds / 100);
   const centiseconds = totalCentiseconds % 100;

@@ -3,5 +3,5 @@ export function shouldMemorizeMultiplayerRound(gameMode, gameFamily) {
 }
 
 export function isFixedMultiplayerRoundMode(gameMode) {
-  return gameMode === "sprint";
+  return gameMode === "rush" || gameMode === "elimination";
 }

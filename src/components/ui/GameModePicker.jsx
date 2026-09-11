@@ -11,12 +11,13 @@ import {
   Circle,
   Timer,
   Zap,
+  ShieldX,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import { playGameModeSelect } from "@/lib/sound";
 
-const ICONS = { normal: Eye, endless: Infinity, flash: Zap, sequence: Layers, timed: Timer, sprint: Zap, gradient: Blend, flag: Flag, cartoon: Palette, spot: Circle };
+const ICONS = { normal: Eye, endless: Infinity, flash: Zap, sequence: Layers, timed: Timer, rush: Zap, elimination: ShieldX, gradient: Blend, flag: Flag, cartoon: Palette, spot: Circle };
 const SNAP_THRESHOLD = 0.28;
 
 function wrap(index, length) {

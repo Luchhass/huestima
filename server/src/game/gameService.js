@@ -23,6 +23,10 @@ import {
 } from "./colorGenerator.js";
 import { resolveGuessChannels } from "../../../shared/colorMechanics.mjs";
 import {
+  getEliminationThreshold,
+  passesEliminationThreshold,
+} from "../../../shared/elimination.mjs";
+import {
   calculateColorScore,
   ciede2000Distance,
   getGradeLabel,
@@ -197,7 +201,7 @@ export function buildGamePayload(room) {
     currentRoundIndex: room.game.currentRoundIndex || 0,
     revealDurationMs: room.game.revealDurationMs,
     guessDurationMs: room.game.guessDurationMs || null,
-    sprintDurationMs: room.game.sprintDurationMs || null,
+    rushDurationMs: room.game.rushDurationMs || null,
     targetColors: room.game.targetColors,
     startedAt: room.game.startedAt,
   };
@@ -221,7 +225,7 @@ export function startGameForRoom(room) {
     currentRoundIndex: 0,
     revealDurationMs: modeConfig.revealDurationMs,
     guessDurationMs: modeConfig.guessDurationMs || null,
-    sprintDurationMs: modeConfig.sprintDurationMs || null,
+    rushDurationMs: modeConfig.rushDurationMs || null,
     targetColors: generateTargetColors({
       seed,
       difficulty,
@@ -248,6 +252,7 @@ export function startGameForRoom(room) {
 
   for (const player of room.players.values()) {
     player.submitted = false;
+    player.eliminated = false;
     player.inactive = false;
     player.returnedToLobby = false;
     player.results = [];
@@ -264,7 +269,28 @@ function getActivePlayers(room) {
 
   return Array.from(room.game.activePlayerIds)
     .map((playerId) => room.players.get(playerId))
-    .filter((player) => player && !player.inactive && !player.kicked);
+    .filter(
+      (player) => player && !player.inactive && !player.kicked && !player.eliminated,
+    );
+}
+
+function ensureEliminationTarget(room, roundIndex) {
+  if (room.game.targetColors[roundIndex]) return room.game.targetColors[roundIndex];
+
+  const requiredRoundCount = roundIndex + 1;
+  room.game.targetColors = generateTargetColors({
+    seed: room.game.seed,
+    difficulty: room.game.difficulty,
+    roundCount: requiredRoundCount,
+    gameMode: room.game.mode,
+    gameFamily: room.gameFamily,
+    flagDifficulty: room.flagDifficulty,
+    flagDifficulties: room.flagDifficulties,
+    cartoonIds: room.cartoonIds,
+    teamIds: room.teamIds,
+  });
+  room.game.roundCount = room.game.targetColors.length;
+  return room.game.targetColors[roundIndex];
 }
 
 export function markPlayerInactiveForGame(room, playerId) {
@@ -290,11 +316,22 @@ export function submitRoundGuess(room, payload) {
   const player = room.players.get(playerIdResult.data.playerId);
   if (!player || player.kicked) return fail("Player is not in this lobby.");
   if (player.inactive) return fail("This player is no longer active in the game.");
+  if (player.eliminated) return fail("This player has been eliminated.");
 
-  const roundResult = validateRoundIndex(payload.roundIndex, room.game.roundCount);
-  if (!roundResult.ok) return roundResult;
-
-  const { roundIndex } = roundResult.data;
+  const isElimination = room.game.mode === GAME_MODES.ELIMINATION;
+  let roundIndex;
+  if (isElimination) {
+    roundIndex = Number(payload.roundIndex);
+    const expectedRoundIndex = player.results.filter(Boolean).length;
+    if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex !== expectedRoundIndex) {
+      return fail("Invalid elimination round.");
+    }
+    ensureEliminationTarget(room, roundIndex);
+  } else {
+    const roundResult = validateRoundIndex(payload.roundIndex, room.game.roundCount);
+    if (!roundResult.ok) return roundResult;
+    roundIndex = roundResult.data.roundIndex;
+  }
 
   const existing = player.results[roundIndex];
   if (existing) {
@@ -330,6 +367,12 @@ export function submitRoundGuess(room, payload) {
               })
         : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
   const score = roundScore(calculateMatchScore(targetColor, guessColor));
+  const eliminationThreshold = isElimination
+    ? getEliminationThreshold(roundIndex)
+    : null;
+  const eliminationPassed = isElimination
+    ? passesEliminationThreshold(score, roundIndex)
+    : null;
   const result = {
     round: roundIndex + 1,
     roundIndex,
@@ -342,13 +385,30 @@ export function submitRoundGuess(room, payload) {
     difference: {
       deltaE2000: roundScore(calculateMatchDistance(targetColor, guessColor)),
     },
+    ...(isElimination
+      ? {
+          eliminationThreshold,
+          eliminationPassed,
+          eliminated: !eliminationPassed,
+        }
+      : {}),
   };
 
   player.results[roundIndex] = result;
   player.totalScore = roundScore(
     player.results.filter(Boolean).reduce((sum, item) => sum + item.score, 0),
   );
-  player.submitted = player.results.filter(Boolean).length >= room.game.roundCount;
+  if (isElimination) {
+    player.eliminated = !eliminationPassed;
+    player.submitted = !eliminationPassed;
+    if (!eliminationPassed) {
+      room.game.activePlayerIds.delete(player.id);
+    } else {
+      ensureEliminationTarget(room, roundIndex + 1);
+    }
+  } else {
+    player.submitted = player.results.filter(Boolean).length >= room.game.roundCount;
+  }
   player.lastSeenAt = now();
   room.updatedAt = now();
 
@@ -358,6 +418,10 @@ export function submitRoundGuess(room, payload) {
     result,
     playerResults: player.results.filter(Boolean),
     playerTotalScoreSoFar: player.totalScore,
+    nextTargetColor: isElimination && eliminationPassed
+      ? room.game.targetColors[roundIndex + 1]
+      : null,
+    nextRoundIndex: isElimination && eliminationPassed ? roundIndex + 1 : null,
     leaderboard,
   });
 }
@@ -389,12 +453,12 @@ export function submitFullResults(room, payload) {
   return ok(lastResult || {});
 }
 
-export function finishSprintForPlayer(room, payload) {
+export function finishRushForPlayer(room, payload) {
   if (!room) return fail("Lobby not found or expired.");
   if (room.status !== ROOM_STATUSES.IN_GAME || !room.game) {
     return fail("Game has not started.");
   }
-  if (room.game.mode !== GAME_MODES.SPRINT) return fail("This game is not a sprint.");
+  if (room.game.mode !== GAME_MODES.RUSH) return fail("This game is not a rush.");
 
   const playerIdResult = validatePlayerId(payload.playerId);
   if (!playerIdResult.ok) return playerIdResult;
@@ -423,8 +487,9 @@ function getGameParticipantPlayers(room) {
 
 export function buildLeaderboard(room) {
   const players = getGameParticipantPlayers(room);
-  const isSprint = room.game.mode === GAME_MODES.SPRINT;
-  const totalRounds = isSprint
+  const isRush = room.game.mode === GAME_MODES.RUSH;
+  const isElimination = room.game.mode === GAME_MODES.ELIMINATION;
+  const totalRounds = isRush || isElimination
     ? Math.max(1, ...players.map((player) => player.results.filter(Boolean).length))
     : room.game.roundCount;
   const maxTotalScore = totalRounds * MAX_ROUND_SCORE;
@@ -457,6 +522,7 @@ export function buildLeaderboard(room) {
         playerName: player.name,
         connected: player.connected,
         submitted: player.submitted,
+        eliminated: Boolean(player.eliminated),
         totalScore,
         maxTotalScore,
         roundResults,
@@ -486,9 +552,9 @@ export function maybeFinishRoom(room) {
   if (!room.game || room.status !== ROOM_STATUSES.IN_GAME) return room.leaderboard;
 
   const activePlayers = getActivePlayers(room);
-  const allFinished =
-    activePlayers.length > 0 &&
-    activePlayers.every((player) => player.submitted);
+  const allFinished = room.game.mode === GAME_MODES.ELIMINATION
+    ? activePlayers.length === 0
+    : activePlayers.length > 0 && activePlayers.every((player) => player.submitted);
 
   if (!allFinished) return null;
 

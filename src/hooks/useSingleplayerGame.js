@@ -6,7 +6,7 @@ import {
   DEFAULT_GAME_MODE_ID,
   GAME_MODE_IDS,
   MAX_ROUND_SCORE,
-  SPRINT_DURATION_MS,
+  RUSH_DURATION_MS,
 } from "@/lib/constants";
 import {
   createDefaultCartoonGuess,
@@ -40,6 +40,10 @@ import {
   normalizeHintsEnabled,
 } from "@/lib/hints";
 import { normalizeRoundCount } from "@/lib/roundCount";
+import {
+  getEliminationThreshold,
+  passesEliminationThreshold,
+} from "../../shared/elimination.mjs";
 import {
   isCartoonFamily,
   isBrandFamily,
@@ -233,9 +237,10 @@ export function useSingleplayerGame(
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
   const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
+  const isEliminationMode = gameMode.id === GAME_MODE_IDS.ELIMINATION;
   const unlimitedHints = isEndlessMode;
   const isFlagMode = isFlagFamily(cleanGameFamily);
-  const isSprintMode = gameMode.id === GAME_MODE_IDS.SPRINT;
+  const isRushMode = gameMode.id === GAME_MODE_IDS.RUSH;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isBrandMode = isLogoFamily(cleanGameFamily);
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
@@ -281,7 +286,7 @@ export function useSingleplayerGame(
       Number(initialGameSession?.roundIndex) || 0,
       0,
     );
-    const targetCount = isSprintMode || isEndlessMode
+    const targetCount = isRushMode || isEndlessMode || isEliminationMode
       ? restoredRoundIndex + 2
       : roundCount;
 
@@ -309,8 +314,8 @@ export function useSingleplayerGame(
     hintsEnabled ? getInitialHintCount(roundCount) : 0,
   );
   const [hintActive, setHintActive] = useState(false);
-  const [sprintRemainingMs, setSprintRemainingMs] = useState(
-    () => gameMode.sprintDurationMs || SPRINT_DURATION_MS,
+  const [rushRemainingMs, setRushRemainingMs] = useState(
+    () => gameMode.rushDurationMs || RUSH_DURATION_MS,
   );
   const [resumeSavedAt, setResumeSavedAt] = useState(null);
   const [historyMatchId, setHistoryMatchId] = useState(() =>
@@ -323,8 +328,8 @@ export function useSingleplayerGame(
   const completedIntroRoundRef = useRef(null);
   const completedMemorizeRoundRef = useRef(null);
   const hintActionRef = useRef(false);
-  const sprintExpiredRef = useRef(false);
-  const sprintSubmitRef = useRef(null);
+  const rushExpiredRef = useRef(false);
+  const rushSubmitRef = useRef(null);
 
   const transitionToPhase = useCallback((nextPhase) => {
     setPhaseStartedAt(Date.now());
@@ -341,7 +346,7 @@ export function useSingleplayerGame(
           cleanGameFamily !== "color" && storedPhase === GAME_PHASES.MEMORIZE
             ? GAME_PHASES.GUESS
             : storedPhase;
-        const restoredRoundIndex = isSprintMode
+        const restoredRoundIndex = isRushMode || isEndlessMode || isEliminationMode
           ? Math.max(Number(initialGameSession.roundIndex) || 0, 0)
           : Math.min(
               Math.max(Number(initialGameSession.roundIndex) || 0, 0),
@@ -356,7 +361,7 @@ export function useSingleplayerGame(
         );
         setRoundIndex(restoredRoundIndex);
         const isVisualMode = isFlagMode || isCartoonMode || isBrandMode;
-        const restoredTargetCount = isSprintMode || isEndlessMode
+        const restoredTargetCount = isRushMode || isEndlessMode || isEliminationMode
           ? restoredRoundIndex + 2
           : roundCount;
         const restoredTargetColors = isVisualMode
@@ -413,10 +418,10 @@ export function useSingleplayerGame(
         );
         setHintActive(Boolean(initialGameSession.hintActive));
         hintActionRef.current = Boolean(initialGameSession.hintActive);
-        setSprintRemainingMs(
-          Number.isFinite(initialGameSession.sprintRemainingMs)
-            ? Math.max(0, initialGameSession.sprintRemainingMs)
-            : gameMode.sprintDurationMs || SPRINT_DURATION_MS,
+        setRushRemainingMs(
+          Number.isFinite(initialGameSession.rushRemainingMs)
+            ? Math.max(0, initialGameSession.rushRemainingMs)
+            : gameMode.rushDurationMs || RUSH_DURATION_MS,
         );
         setResumeSavedAt(
           Number.isFinite(initialGameSession.savedAt)
@@ -446,8 +451,9 @@ export function useSingleplayerGame(
     isCartoonMode,
     isFlagMode,
     isEndlessMode,
+    isEliminationMode,
     isSpotMode,
-    isSprintMode,
+    isRushMode,
     roundCount,
     cartoonIds,
     flagDifficulty,
@@ -468,7 +474,7 @@ export function useSingleplayerGame(
       results,
       hintCount,
       hintActive,
-      sprintRemainingMs,
+      rushRemainingMs,
     });
   }, [
     gameSessionKey,
@@ -483,7 +489,7 @@ export function useSingleplayerGame(
     roundIndex,
     targetColor,
     targetColors,
-    sprintRemainingMs,
+    rushRemainingMs,
   ]);
 
   useEffect(() => {
@@ -498,7 +504,7 @@ export function useSingleplayerGame(
       results,
       hintCount,
       hintActive,
-      sprintRemainingMs,
+      rushRemainingMs,
     };
   }, [
     guessColor,
@@ -511,7 +517,7 @@ export function useSingleplayerGame(
     roundIndex,
     targetColor,
     targetColors,
-    sprintRemainingMs,
+    rushRemainingMs,
   ]);
 
   useEffect(() => {
@@ -561,13 +567,13 @@ export function useSingleplayerGame(
     }
 
     if (isFlagMode) {
-      if (isSprintMode || isEndlessMode) {
-        const sprintTargets = [...targetColors];
-        while (sprintTargets.length <= nextRoundIndex + 1) {
-          sprintTargets.push(randomFlagTargetColors(1, Math.random, flagDifficulty)[0]);
+      if (isRushMode || isEndlessMode || isEliminationMode) {
+        const rushTargets = [...targetColors];
+        while (rushTargets.length <= nextRoundIndex + 1) {
+          rushTargets.push(randomFlagTargetColors(1, Math.random, flagDifficulty)[0]);
         }
-        const nextTargetColor = sprintTargets[nextRoundIndex];
-        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
+        const nextTargetColor = rushTargets[nextRoundIndex];
+        if (rushTargets.length !== targetColors.length) setTargetColors(rushTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
@@ -596,13 +602,13 @@ export function useSingleplayerGame(
     }
 
     if (isCartoonMode) {
-      if (isSprintMode || isEndlessMode) {
-        const sprintTargets = [...targetColors];
-        while (sprintTargets.length <= nextRoundIndex + 1) {
-          sprintTargets.push(randomCartoonTargetColors(1, Math.random, cartoonIds)[0]);
+      if (isRushMode || isEndlessMode || isEliminationMode) {
+        const rushTargets = [...targetColors];
+        while (rushTargets.length <= nextRoundIndex + 1) {
+          rushTargets.push(randomCartoonTargetColors(1, Math.random, cartoonIds)[0]);
         }
-        const nextTargetColor = sprintTargets[nextRoundIndex];
-        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
+        const nextTargetColor = rushTargets[nextRoundIndex];
+        if (rushTargets.length !== targetColors.length) setTargetColors(rushTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
@@ -631,17 +637,17 @@ export function useSingleplayerGame(
     }
 
     if (isBrandMode) {
-      if (isSprintMode || isEndlessMode) {
-        const sprintTargets = [...targetColors];
-        while (sprintTargets.length <= nextRoundIndex + 1) {
-          sprintTargets.push(
+      if (isRushMode || isEndlessMode || isEliminationMode) {
+        const rushTargets = [...targetColors];
+        while (rushTargets.length <= nextRoundIndex + 1) {
+          rushTargets.push(
             isTeamFamily(cleanGameFamily)
               ? randomTeamTargetColors(1, Math.random, teamIds)[0]
               : randomBrandTargetColors(1)[0],
           );
         }
-        const nextTargetColor = sprintTargets[nextRoundIndex];
-        if (sprintTargets.length !== targetColors.length) setTargetColors(sprintTargets);
+        const nextTargetColor = rushTargets[nextRoundIndex];
+        if (rushTargets.length !== targetColors.length) setTargetColors(rushTargets);
         setTargetColor(nextTargetColor);
         setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily, nextTargetColor));
         transitionToPhase(GAME_PHASES.GUESS);
@@ -691,8 +697,9 @@ export function useSingleplayerGame(
     isCartoonMode,
     isBrandMode,
     isEndlessMode,
+    isEliminationMode,
     isSpotMode,
-    isSprintMode,
+    isRushMode,
     flagDifficulty,
     cartoonIds,
     teamIds,
@@ -792,6 +799,12 @@ export function useSingleplayerGame(
       activeTarget,
     );
     const score = roundScore(calculateColorMatchScore(activeTarget, finalGuess));
+    const eliminationThreshold = isEliminationMode
+      ? getEliminationThreshold(roundIndex)
+      : null;
+    const eliminationPassed = isEliminationMode
+      ? passesEliminationThreshold(score, roundIndex)
+      : null;
     const result = {
       round: roundIndex + 1,
       target: activeTarget,
@@ -803,14 +816,21 @@ export function useSingleplayerGame(
       },
       difficulty: effectiveDifficulty.id,
       gameMode: gameMode.id,
+      ...(isEliminationMode
+        ? {
+            eliminationThreshold,
+            eliminationPassed,
+            eliminated: !eliminationPassed,
+          }
+        : {}),
     };
 
     setResults((currentResults) =>
       normalizeRoundResults([...currentResults, result]),
     );
-    if (isSprintMode) {
+    if (isRushMode) {
       const nextRoundIndex = roundIndex + 1;
-      if (options.finishSprint) {
+      if (options.finishRush) {
         transitionToPhase(GAME_PHASES.FINAL);
       } else {
         setRoundIndex(nextRoundIndex);
@@ -824,8 +844,9 @@ export function useSingleplayerGame(
     effectiveDifficulty,
     gameMode,
     guessColor,
+    isEliminationMode,
     isSequenceMode,
-    isSprintMode,
+    isRushMode,
     phase,
     roundIndex,
     targetColor,
@@ -834,11 +855,11 @@ export function useSingleplayerGame(
   ]);
 
   useEffect(() => {
-    sprintSubmitRef.current = submitGuess;
+    rushSubmitRef.current = submitGuess;
   }, [submitGuess]);
 
   useEffect(() => {
-    if (!isSprintMode || phase !== GAME_PHASES.GUESS) {
+    if (!isRushMode || phase !== GAME_PHASES.GUESS) {
       return undefined;
     }
 
@@ -848,12 +869,12 @@ export function useSingleplayerGame(
       const elapsed = currentTick - previousTick;
       previousTick = currentTick;
 
-      setSprintRemainingMs((currentRemaining) => {
+      setRushRemainingMs((currentRemaining) => {
         const nextRemaining = Math.max(0, currentRemaining - elapsed);
-        if (nextRemaining === 0 && !sprintExpiredRef.current) {
-          sprintExpiredRef.current = true;
+        if (nextRemaining === 0 && !rushExpiredRef.current) {
+          rushExpiredRef.current = true;
           window.queueMicrotask(() =>
-            sprintSubmitRef.current?.({ finishSprint: true }),
+            rushSubmitRef.current?.({ finishRush: true }),
           );
         }
         return nextRemaining;
@@ -861,7 +882,7 @@ export function useSingleplayerGame(
     }, 25);
 
     return () => window.clearInterval(intervalId);
-  }, [isSprintMode, phase]);
+  }, [isRushMode, phase]);
 
   const continueFromResult = useCallback(() => {
     if (phase !== GAME_PHASES.RESULT || continuedRoundRef.current === roundIndex) {
@@ -870,7 +891,13 @@ export function useSingleplayerGame(
 
     continuedRoundRef.current = roundIndex;
 
-    if (!isEndlessMode && roundIndex + 1 >= roundCount) {
+    const latestResult = results[results.length - 1];
+    if (isEliminationMode && !latestResult?.eliminationPassed) {
+      transitionToPhase(GAME_PHASES.FINAL);
+      return;
+    }
+
+    if (!isEndlessMode && !isEliminationMode && roundIndex + 1 >= roundCount) {
       transitionToPhase(GAME_PHASES.FINAL);
       return;
     }
@@ -893,11 +920,13 @@ export function useSingleplayerGame(
     cleanGameFamily,
     effectiveDifficulty,
     gameMode,
+    isEliminationMode,
     isEndlessMode,
     isSequenceMode,
     phase,
     roundCount,
     roundIndex,
+    results,
     targetColors,
     transitionToPhase,
   ]);
@@ -924,7 +953,7 @@ export function useSingleplayerGame(
             effectiveDifficulty.id,
             gameMode.id,
             cleanGameFamily,
-            isSprintMode || isEndlessMode ? 2 : roundCount,
+            isRushMode || isEndlessMode || isEliminationMode ? 2 : roundCount,
             flagDifficulty,
             cartoonIds,
             teamIds,
@@ -934,8 +963,8 @@ export function useSingleplayerGame(
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
     setHintCount(hintsEnabled ? getInitialHintCount(roundCount) : 0);
     setHintActive(false);
-    setSprintRemainingMs(gameMode.sprintDurationMs || SPRINT_DURATION_MS);
-    sprintExpiredRef.current = false;
+    setRushRemainingMs(gameMode.rushDurationMs || RUSH_DURATION_MS);
+    rushExpiredRef.current = false;
     setPhaseStartedAt(Date.now());
     setPhase(GAME_PHASES.INTRO);
     setResumeSavedAt(null);
@@ -948,9 +977,10 @@ export function useSingleplayerGame(
     hintsEnabled,
     isBrandMode,
     isCartoonMode,
+    isEliminationMode,
     isEndlessMode,
     isFlagMode,
-    isSprintMode,
+    isRushMode,
     roundCount,
     cartoonIds,
     flagDifficulty,
@@ -970,7 +1000,9 @@ export function useSingleplayerGame(
       ? roundScore(totalScore / normalizedResults.length)
       : 0;
     const maxScore =
-      (isEndlessMode || isSprintMode ? Math.max(normalizedResults.length, 1) : roundCount) *
+      (isEndlessMode || isRushMode || isEliminationMode
+        ? Math.max(normalizedResults.length, 1)
+        : roundCount) *
       MAX_ROUND_SCORE;
 
     return {
@@ -978,7 +1010,7 @@ export function useSingleplayerGame(
       averageScore,
       maxScore,
     };
-  }, [isEndlessMode, isSprintMode, results, roundCount]);
+  }, [isEliminationMode, isEndlessMode, isRushMode, results, roundCount]);
 
   return {
     difficulty: effectiveDifficulty,
@@ -987,7 +1019,8 @@ export function useSingleplayerGame(
     isGradientMode,
     isSpotMode,
     isEndlessMode,
-    isSprintMode,
+    isEliminationMode,
+    isRushMode,
     isCartoonMode,
     gameFamily: cleanGameFamily,
     roundCount,
@@ -1001,9 +1034,9 @@ export function useSingleplayerGame(
     targetColor,
     targetColors,
     revealDurationMs: gameMode.revealDurationMs,
-    guessDurationMs: isSprintMode ? null : gameMode.guessDurationMs || null,
-    sprintDurationMs: gameMode.sprintDurationMs || null,
-    sprintRemainingMs,
+    guessDurationMs: isRushMode ? null : gameMode.guessDurationMs || null,
+    rushDurationMs: gameMode.rushDurationMs || null,
+    rushRemainingMs,
     hasRestoredSession,
     restoredFromSession,
     resumeSavedAt,

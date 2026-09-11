@@ -13,7 +13,7 @@ export const FLASH_MEMORIZE_DURATION_MS = 1000;
 export const SEQUENCE_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_MEMORIZE_DURATION_MS = 3000;
 export const TIMED_GUESS_DURATION_MS = 3000;
-export const SPRINT_DURATION_MS = 30000;
+export const RUSH_DURATION_MS = 30000;
 export const MAX_ROUND_SCORE = 10;
 
 export const DEFAULT_GUESS_HSV = {
@@ -62,7 +62,8 @@ export const GAME_MODE_IDS = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
-  SPRINT: "sprint",
+  RUSH: "rush",
+  ELIMINATION: "elimination",
   CARTOON: "cartoon",
   SPOT: "spot",
 };
@@ -105,7 +106,7 @@ export const GAME_MODE_OPTIONS = [
   },
   {
     id: GAME_MODE_IDS.TIMED,
-    label: "Time Attack",
+    label: "Timed",
     description: "Beat the clock: three seconds to memorize, three seconds to choose.",
     revealDurationMs: TIMED_MEMORIZE_DURATION_MS,
     guessDurationMs: TIMED_GUESS_DURATION_MS,
@@ -125,13 +126,20 @@ export const GAME_MODE_OPTIONS = [
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
   {
-    id: GAME_MODE_IDS.SPRINT,
-    label: "Sprint",
+    id: GAME_MODE_IDS.RUSH,
+    label: "Rush",
     description: "Race through rapid-fire rounds before the clock runs out.",
     revealDurationMs: MEMORIZE_DURATION_MS,
-    sprintDurationMs: SPRINT_DURATION_MS,
-    isSprint: true,
+    rushDurationMs: RUSH_DURATION_MS,
+    isRush: true,
     lockedDifficultyId: DIFFICULTY_IDS.EASY,
+  },
+  {
+    id: GAME_MODE_IDS.ELIMINATION,
+    label: "Elimination",
+    description: "Clear a rising accuracy threshold or be eliminated.",
+    revealDurationMs: MEMORIZE_DURATION_MS,
+    isElimination: true,
   },
 ];
 
@@ -151,8 +159,10 @@ export const GAME_MODE_CARD_COPY = {
       "Match both sides of a two-color gradient using the left and right hue bars.",
     [GAME_MODE_IDS.FLAG]:
       "Read the flag shape, then tune the background color behind its fixed emblem.",
-    [GAME_MODE_IDS.SPRINT]:
+    [GAME_MODE_IDS.RUSH]:
       "Complete as many levels as possible during thirty seconds of active play.",
+    [GAME_MODE_IDS.ELIMINATION]:
+      "Clear a rising accuracy threshold each round and survive for as long as you can.",
   },
   multiplayer: {
     [GAME_MODE_IDS.NORMAL]:
@@ -169,8 +179,10 @@ export const GAME_MODE_CARD_COPY = {
       "Everyone gets the same two-color gradient. Left and right hue accuracy decide the room.",
     [GAME_MODE_IDS.FLAG]:
       "Everyone sees the same flag. The fixed emblem stays put while background accuracy wins.",
-    [GAME_MODE_IDS.SPRINT]:
+    [GAME_MODE_IDS.RUSH]:
       "Everyone completes as many levels as possible during thirty seconds of active play.",
+    [GAME_MODE_IDS.ELIMINATION]:
+      "Clear the rising accuracy threshold each round. Eliminated players watch until the last survivor falls.",
   },
 };
 

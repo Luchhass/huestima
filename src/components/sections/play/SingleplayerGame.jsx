@@ -66,12 +66,12 @@ export default function SingleplayerGame({
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
   const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
-  const currentRoundLabel = game.isEndlessMode || game.isSprintMode
+  const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode
     ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
     : `${game.roundIndex + 1}/${game.roundCount}`;
   const latestResultRoundLabel =
     latestResult
-      ? game.isEndlessMode || game.isSprintMode
+      ? game.isEndlessMode || game.isRushMode || game.isEliminationMode
         ? `${latestResult.round}/${latestResult.round}`
         : `${latestResult.round}/${game.roundCount}`
       : undefined;
@@ -94,9 +94,9 @@ export default function SingleplayerGame({
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
-    game.isSprintMode && (isFlagMode || isCartoonMode);
+    game.isRushMode && (isFlagMode || isCartoonMode);
   const usesShowcaseTransition =
-    cleanGameFamily !== "color" && !game.isSprintMode;
+    cleanGameFamily !== "color" && !game.isRushMode;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
@@ -205,7 +205,7 @@ export default function SingleplayerGame({
     if (renderedPhase === null) return undefined;
     if (game.phase === renderedPhase) return undefined;
 
-    const sprintExpired = game.isSprintMode && game.sprintRemainingMs <= 0;
+    const rushExpired = game.isRushMode && game.rushRemainingMs <= 0;
 
     if (
       renderedPhase === GAME_PHASES.GUESS &&
@@ -230,7 +230,7 @@ export default function SingleplayerGame({
     if (
       renderedPhase === GAME_PHASES.GUESS &&
       usesShowcaseTransition &&
-      !sprintExpired
+      !rushExpired
     ) {
       const exitStartId = window.setTimeout(() => {
         setIsShowcaseWidgetExiting(true);
@@ -256,10 +256,10 @@ export default function SingleplayerGame({
 
     return () => window.clearTimeout(timeoutId);
   }, [
-    game.isSprintMode,
+    game.isRushMode,
     game.phase,
     game.isSpotMode,
-    game.sprintRemainingMs,
+    game.rushRemainingMs,
     isCartoonMode,
     renderedPhase,
     usesShowcaseTransition,
@@ -427,7 +427,7 @@ export default function SingleplayerGame({
       <GameCardShell
         data-intro-card-target
         backgroundOverride={(isBrandMode || isTeamMode) ? "#000000" : null}
-        hideVisualLabel={game.isSprintMode || game.guessDurationMs > 0}
+        hideVisualLabel={game.isRushMode || game.guessDurationMs > 0}
         color={shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
@@ -515,8 +515,8 @@ export default function SingleplayerGame({
               onGuessChange={game.updateGuess}
               onSubmit={game.submitGuess}
               guessDurationMs={game.guessDurationMs}
-              sprintDurationMs={game.sprintDurationMs}
-              sprintRemainingMs={game.sprintRemainingMs}
+              rushDurationMs={game.rushDurationMs}
+              rushRemainingMs={game.rushRemainingMs}
               showcaseLayoutEnabled={usesShowcaseGuessChrome}
               resumeElapsedMs={resumeElapsedMs}
               resumeInstantly={resumePhase === GAME_PHASES.GUESS}
@@ -537,7 +537,11 @@ export default function SingleplayerGame({
               key={`result-${game.roundIndex}`}
               result={latestResult}
               roundLabel={latestResultRoundLabel}
-              hasNextRound={game.isEndlessMode || game.roundIndex + 1 < game.roundCount}
+              hasNextRound={
+                game.isEliminationMode
+                  ? Boolean(latestResult?.eliminationPassed)
+                  : game.isEndlessMode || game.roundIndex + 1 < game.roundCount
+              }
               canFinishRun={game.isEndlessMode}
               onFinishRun={game.finishRun}
               onContinue={game.continueFromResult}

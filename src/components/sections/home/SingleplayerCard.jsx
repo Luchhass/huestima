@@ -53,19 +53,23 @@ export default function SingleplayerCard({
   const isNavigatingRef = useRef(false);
   const gameModeOption = getGameModeOption(gameMode, gameModeOptions);
   const difficultyLocked = Boolean(gameModeOption?.lockedDifficultyId);
-  const roundCountLocked = Boolean(gameModeOption?.isEndless || gameModeOption?.isSprint);
+  const roundCountLocked = Boolean(
+    gameModeOption?.isEndless || gameModeOption?.isRush || gameModeOption?.isElimination,
+  );
   const selectedMode = gameMode || DEFAULT_GAME_MODE_ID;
   const selectedDifficulty = difficulty || DEFAULT_DIFFICULTY_ID;
   const isVisualFamily = gameFamily !== GAME_FAMILY_IDS.COLOR;
-  const visualModeKeys = ["normal", "endless", "timed", "sprint"];
+  const visualModeKeys = ["normal", "endless", "timed", "rush", "elimination"];
   const mechanicsKey = isVisualFamily && visualModeKeys.includes(selectedMode)
     ? `visual${selectedMode[0].toUpperCase()}${selectedMode.slice(1)}`
     : selectedMode;
   const difficultyKey = selectedMode === "gradient" ? "gradient" : selectedDifficulty;
   const runKey = selectedMode === "endless"
     ? "endless"
-    : selectedMode === "sprint"
-      ? "sprint"
+    : selectedMode === "rush"
+      ? "rush"
+      : selectedMode === "elimination"
+        ? "elimination"
       : selectedMode === "timed"
         ? "timed"
         : "fixed";

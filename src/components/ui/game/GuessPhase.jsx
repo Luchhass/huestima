@@ -22,7 +22,7 @@ import {
   playMemorizeSecondTick,
   startMemorizeMechanism,
 } from "@/lib/sound";
-import CountdownReel, { SprintClock } from "./CountdownReel";
+import CountdownReel, { RushClock } from "./CountdownReel";
 import MultiplayerProgressList from "./MultiplayerProgressList";
 
 function getTargetHintColor(targetColor, guessColor) {
@@ -49,8 +49,8 @@ export default function GuessPhase({
   onGuessChange,
   onSubmit,
   guessDurationMs = null,
-  sprintDurationMs = null,
-  sprintRemainingMs = null,
+  rushDurationMs = null,
+  rushRemainingMs = null,
   progressItems = [],
   gameFamily = "color",
   isShowcaseWidgetEntering = true,
@@ -74,10 +74,10 @@ export default function GuessPhase({
   const brandRef = useRef(null);
   const progressRef = useRef(null);
   const timedSubmitRef = useRef(false);
-  const sprintSoundDurationRef = useRef(sprintRemainingMs);
-  const previousSprintSecondRef = useRef(
-    Number.isFinite(sprintRemainingMs)
-      ? Math.ceil(Math.max(0, sprintRemainingMs) / 1000)
+  const rushSoundDurationRef = useRef(rushRemainingMs);
+  const previousRushSecondRef = useRef(
+    Number.isFinite(rushRemainingMs)
+      ? Math.ceil(Math.max(0, rushRemainingMs) / 1000)
       : null,
   );
   const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
@@ -132,11 +132,11 @@ export default function GuessPhase({
   const timedGuessDurationMs =
     Number.isFinite(guessDurationMs) && guessDurationMs > 0 ? guessDurationMs : 0;
   const isTimedGuess = timedGuessDurationMs > 0;
-  const isSprintGuess =
-    Number.isFinite(sprintDurationMs) &&
-    sprintDurationMs > 0 &&
-    Number.isFinite(sprintRemainingMs);
-  const showGuessTimer = isTimedGuess || isSprintGuess;
+  const isRushGuess =
+    Number.isFinite(rushDurationMs) &&
+    rushDurationMs > 0 &&
+    Number.isFinite(rushRemainingMs);
+  const showGuessTimer = isTimedGuess || isRushGuess;
   const hintLockedForRound = showHintButton && hintActive;
   const hintButtonDisabled = !canUseHint;
   const hintButtonLabel = canUseHint
@@ -180,40 +180,40 @@ export default function GuessPhase({
     onComplete: handleTimedSubmit,
     initialElapsedMs: resumeElapsedMs,
   });
-  const displayedCentiseconds = isSprintGuess
-    ? Math.max(0, Math.ceil(sprintRemainingMs / 10))
+  const displayedCentiseconds = isRushGuess
+    ? Math.max(0, Math.ceil(rushRemainingMs / 10))
     : centiseconds;
-  const displayedDurationMs = isSprintGuess ? sprintDurationMs : timedGuessDurationMs;
-  const displayedTimerRunning = isSprintGuess || timerRunning;
+  const displayedDurationMs = isRushGuess ? rushDurationMs : timedGuessDurationMs;
+  const displayedTimerRunning = isRushGuess || timerRunning;
 
   useEffect(() => {
     const timedCountdownRunning = isTimedGuess && timerRunning;
-    if (!timedCountdownRunning && !isSprintGuess) return undefined;
+    if (!timedCountdownRunning && !isRushGuess) return undefined;
 
-    const remainingMs = isSprintGuess
-      ? Math.max(1, sprintSoundDurationRef.current)
+    const remainingMs = isRushGuess
+      ? Math.max(1, rushSoundDurationRef.current)
       : Math.max(1, timedGuessDurationMs - resumeElapsedMs);
 
     return startMemorizeMechanism(remainingMs);
-  }, [isSprintGuess, isTimedGuess, timerRunning, timedGuessDurationMs, resumeElapsedMs]);
+  }, [isRushGuess, isTimedGuess, timerRunning, timedGuessDurationMs, resumeElapsedMs]);
 
-  const sprintSecond = isSprintGuess
-    ? Math.ceil(Math.max(0, sprintRemainingMs) / 1000)
+  const rushSecond = isRushGuess
+    ? Math.ceil(Math.max(0, rushRemainingMs) / 1000)
     : null;
 
   useEffect(() => {
-    if (!isSprintGuess || sprintSecond === null) return;
+    if (!isRushGuess || rushSecond === null) return;
 
-    const previousSecond = previousSprintSecondRef.current;
-    previousSprintSecondRef.current = sprintSecond;
+    const previousSecond = previousRushSecondRef.current;
+    previousRushSecondRef.current = rushSecond;
 
-    if (previousSecond === null || sprintSecond >= previousSecond) return;
+    if (previousSecond === null || rushSecond >= previousSecond) return;
 
-    const progress = sprintDurationMs
-      ? 1 - sprintRemainingMs / sprintDurationMs
+    const progress = rushDurationMs
+      ? 1 - rushRemainingMs / rushDurationMs
       : 0;
     playMemorizeSecondTick(progress);
-  }, [isSprintGuess, sprintDurationMs, sprintRemainingMs, sprintSecond]);
+  }, [isRushGuess, rushDurationMs, rushRemainingMs, rushSecond]);
   const pulseProgress = displayedDurationMs
     ? displayedCentiseconds / (displayedDurationMs / 10)
     : 1;
@@ -1080,7 +1080,7 @@ export default function GuessPhase({
               textShadow: "var(--game-fg-bottom-left-shadow)",
             }}
           >
-            {isSprintGuess ? <SprintClock remainingMs={sprintRemainingMs} /> : (
+            {isRushGuess ? <RushClock remainingMs={rushRemainingMs} /> : (
               <CountdownReel
                 key={`guess-countdown-${timedGuessDurationMs}`}
                 durationMs={displayedDurationMs}
@@ -1340,8 +1340,8 @@ export default function GuessPhase({
           style={{
             left: `${contentLeft}px`,
             maxWidth: `calc(100% - ${contentLeft}px - ${contentRight}px - ${actionReserveWidth}px)`,
-            color: isSprintGuess ? "var(--game-fg-top-right)" : "var(--game-fg-bottom-left)",
-            textShadow: isSprintGuess ? "var(--game-fg-top-right-shadow)" : "var(--game-fg-bottom-left-shadow)",
+            color: isRushGuess ? "var(--game-fg-top-right)" : "var(--game-fg-bottom-left)",
+            textShadow: isRushGuess ? "var(--game-fg-top-right-shadow)" : "var(--game-fg-bottom-left-shadow)",
           }}
         >
           <MultiplayerProgressList items={progressItems} />
@@ -1361,7 +1361,7 @@ export default function GuessPhase({
             textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
-          {isSprintGuess ? <SprintClock remainingMs={sprintRemainingMs} /> : (
+          {isRushGuess ? <RushClock remainingMs={rushRemainingMs} /> : (
             <CountdownReel
               key={`guess-countdown-${timedGuessDurationMs}`}
               durationMs={displayedDurationMs}

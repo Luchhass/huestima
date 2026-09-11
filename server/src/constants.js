@@ -15,7 +15,8 @@ export const GAME_MODES = {
   TIMED: "timed",
   GRADIENT: "gradient",
   FLAG: "flag",
-  SPRINT: "sprint",
+  RUSH: "rush",
+  ELIMINATION: "elimination",
   CARTOON: "cartoon",
   SPOT: "spot",
 };
@@ -39,8 +40,9 @@ export const DIFFICULTIES = {
 export const ROUND_COUNT_OPTIONS = [1, 3, 5, 10, 20];
 export const DEFAULT_ROUND_COUNT = 5;
 export const ROUND_COUNT = DEFAULT_ROUND_COUNT;
-export const SPRINT_MAX_ROUNDS = 64;
-export const SPRINT_DURATION_MS = 30000;
+export const RUSH_MAX_ROUNDS = 64;
+export const ELIMINATION_INITIAL_ROUNDS = 16;
+export const RUSH_DURATION_MS = 30000;
 export const PLAYER_NAME_MIN_LENGTH = 2;
 export const PLAYER_NAME_MAX_LENGTH = 18;
 export const ROOM_NAME_MIN_LENGTH = 2;
@@ -80,11 +82,15 @@ export const GAME_MODE_CONFIG = {
   [GAME_MODES.FLAG]: {
     revealDurationMs: 5000,
   },
-  [GAME_MODES.SPRINT]: {
+  [GAME_MODES.RUSH]: {
     revealDurationMs: 5000,
-    sprintDurationMs: SPRINT_DURATION_MS,
-    roundCount: SPRINT_MAX_ROUNDS,
+    rushDurationMs: RUSH_DURATION_MS,
+    roundCount: RUSH_MAX_ROUNDS,
     lockedDifficulty: DIFFICULTIES.EASY,
+  },
+  [GAME_MODES.ELIMINATION]: {
+    revealDurationMs: 5000,
+    roundCount: ELIMINATION_INITIAL_ROUNDS,
   },
 };
 
