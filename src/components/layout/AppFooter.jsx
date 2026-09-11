@@ -64,6 +64,18 @@ export default function AppFooter() {
       : "color";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
+  const footerRows = [
+    [
+      ...(isCartoonHomeRoute
+        ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
+        : []),
+      [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
+    ],
+    [
+      [`/privacy-policy?from=${family}`, locale === "tr" ? "gizlilik politikası" : "privacy policy"],
+      [`/credits?from=${family}`, locale === "tr" ? "emeği geçenler" : "credits"],
+    ],
+  ];
 
   const handleFooterNavigation = async (event, href) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -159,19 +171,8 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} data-landing-chrome={pathname === "/" ? "true" : undefined} data-landing-theme={pathname === "/" ? landingFooterTheme : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
-        {[
-          [
-            ...(isCartoonHomeRoute
-              ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
-              : []),
-            [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
-          ],
-          [
-            [`/privacy-policy?from=${family}`, locale === "tr" ? "gizlilik politikası" : "privacy policy"],
-            [`/credits?from=${family}`, locale === "tr" ? "emeği geçenler" : "credits"],
-          ],
-        ].map((row, rowIndex) => (
+      <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} data-landing-chrome={pathname === "/" ? "true" : undefined} data-landing-theme={pathname === "/" ? landingFooterTheme : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 hidden text-right sm:right-8 sm:bottom-8 sm:flex">
+        {footerRows.map((row, rowIndex) => (
           <div key={rowIndex} className="route-transition-footer-row">
             {row.map(([href, label], index) => (
               <span key={href} className="route-transition-footer-item">
@@ -191,6 +192,38 @@ export default function AppFooter() {
           <span className="route-transition-footer__adaptive-text">huestima.com</span>
         </span>
         <span className="route-transition-footer__adaptive-text">© 2026 Huestima All rights reserved</span>
+      </div>
+
+      <div
+        data-landing-chrome={pathname === "/" ? "true" : undefined}
+        data-landing-theme={pathname === "/" ? landingFooterTheme : undefined}
+        className="app-mobile-footer pointer-events-none fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-40 flex flex-col gap-2 text-[10px] font-medium tracking-[0.025em] text-zinc-500 sm:hidden"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="pointer-events-auto inline-flex shrink-0 items-center gap-2">
+            <BrandLogoMark className="size-4" centerClassName="size-[42%]" />
+            <span>huestima.com</span>
+          </span>
+          <span className="text-right">© 2026 Huestima All rights reserved</span>
+        </div>
+        <nav
+          data-sound-kind="navigation"
+          className="pointer-events-auto flex flex-wrap items-center justify-end gap-x-2 gap-y-1"
+          aria-label={locale === "tr" ? "Alt bağlantılar" : "Footer links"}
+        >
+          {footerRows.flat().map(([href, label], index) => (
+            <span key={href} className="inline-flex items-center gap-2">
+              {index > 0 && <span aria-hidden="true">·</span>}
+              <Link
+                href={href}
+                onClick={(event) => void handleFooterNavigation(event, href)}
+                className="text-inherit no-underline"
+              >
+                {label}
+              </Link>
+            </span>
+          ))}
+        </nav>
       </div>
 
     </>
