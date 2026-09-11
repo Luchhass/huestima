@@ -2,7 +2,6 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { useTranslation } from "@/hooks/useLanguage";
 import CardCloseButton from "@/components/ui/CardCloseButton";
@@ -141,7 +140,6 @@ export default function FinalSummary({
   const scopeRef = useRef(null);
   const [isBackHomeLocked, setIsBackHomeLocked] = useState(false);
 
-  useAppChromeHidden(true);
   useScreenReveal(scopeRef, [results.length], {
     delay: EXPANDED_REVEAL_DELAY,
   });

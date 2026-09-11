@@ -1,6 +1,5 @@
 import Script from "next/script";
 import {
-  FULLSCREEN_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from "@/lib/constants";
@@ -31,10 +30,6 @@ const bootstrapScript = String.raw`
         : "en";
     document.documentElement.lang = language;
     document.documentElement.dataset.locale = language;
-
-    const fullscreen = window.localStorage.getItem(${JSON.stringify(FULLSCREEN_STORAGE_KEY)});
-    document.documentElement.dataset.fullscreenMode =
-      fullscreen === "on" || fullscreen === "true" ? "on" : "off";
 
     const pathSegments = window.location.pathname.split("/").filter(Boolean);
     const isGameFamilyPath = ["color", "flag", "cartoon", "brand", "team"].includes(pathSegments[0]);

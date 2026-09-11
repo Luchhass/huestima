@@ -68,12 +68,6 @@ export const ROUTE_SEO = {
       "Play Huestima Cartoon, a cartoon scene color guessing game with adjustable character masks.",
     path: "/cartoon",
   },
-  cartoonLibrary: {
-    title: "Huestima Cartoon Library",
-    description:
-      "Browse the Huestima Cartoon Library and preview every cartoon scene used in the game.",
-    path: "/cartoon-library",
-  },
   brand: {
     title: "Huestima Brand",
     description:
@@ -85,23 +79,6 @@ export const ROUTE_SEO = {
     description: "Play Huestima Teams, a team logo color memory game.",
     path: "/team",
   },
-  brandLibrary: {
-    title: "Huestima Brand Library",
-    description:
-      "Browse the Huestima Brand Library and preview every logo included in Huestima Brand.",
-    path: "/brand-library",
-  },
-  teamLibrary: {
-    title: "Huestima Team Library",
-    description: "Browse every team logo included in Huestima Teams.",
-    path: "/team-library",
-  },
-  flagLibrary: {
-    title: "Huestima Flag Library",
-    description:
-      "Browse the Huestima Flag Library and preview every flag scene included in the game.",
-    path: "/flag-library",
-  },
   privacyPolicy: {
     title: "Huestima Privacy Policy",
     description: "How Huestima handles browser storage, multiplayer data, match sharing, analytics, and privacy choices.",
@@ -111,11 +88,6 @@ export const ROUTE_SEO = {
     title: "Huestima Mobile Download",
     description: "Download the upcoming Huestima mobile game from the App Store or Google Play.",
     path: "/download",
-  },
-  testLab: {
-    title: "Huestima Test Page",
-    description: "Quick access to Huestima material libraries, mode screens, and development test surfaces.",
-    path: "/test",
   },
   brandSingleplayer: {
     title: "Huestima Brand Singleplayer",
@@ -251,7 +223,7 @@ export function createPageMetadata(route, options = {}) {
     },
     robots: options.robots || (isLanding
       ? { index: true, follow: true, "max-image-preview": "large" }
-      : /Library$|Singleplayer$|Multiplayer$|^(testLab|singleplayer|multiplayer|download)$/.test(route)
+      : /Singleplayer$|Multiplayer$|^(singleplayer|multiplayer|download)$/.test(route)
         ? { index: false, follow: true }
         : { index: true, follow: true }),
   };

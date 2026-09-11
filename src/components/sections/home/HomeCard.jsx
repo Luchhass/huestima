@@ -10,9 +10,7 @@ import SingleplayerCard from "./SingleplayerCard";
 import CartoonPoolPicker from "@/components/ui/CartoonPoolPicker";
 import FlagPoolPicker from "@/components/ui/FlagPoolPicker";
 import TeamPoolPicker from "@/components/ui/TeamPoolPicker";
-import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
-import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { useTranslation } from "@/hooks/useLanguage";
@@ -331,17 +329,10 @@ export default function HomeCard({
     ? homeSection.paragraphs
     : t("home.paragraphs");
 
-  useAppChromeHidden(isSingleplayer || isMultiplayer || isCartoonPool || isFlagPool || isTeamPool);
   useCartoonAssetPreload(
     cleanGameFamily === GAME_FAMILY_IDS.CARTOON && view !== "home",
     undefined,
     "scene",
-  );
-  useFlagFullscreenLock(
-    cleanGameFamily === GAME_FAMILY_IDS.FLAG ||
-      cleanGameFamily === GAME_FAMILY_IDS.CARTOON ||
-      gameMode === GAME_MODE_IDS.FLAG ||
-      gameMode === GAME_MODE_IDS.CARTOON,
   );
   useMusicScene(
     cleanGameFamily === GAME_FAMILY_IDS.CARTOON

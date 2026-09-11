@@ -91,7 +91,7 @@ export default function FooterPageShell({
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight;
-    // Read the server-rendered normal card; do not resize a fullscreen first paint.
+    // Read the server-rendered normal card before expanding the page surface.
     const rect = card.getBoundingClientRect();
     const { width, height } = rect;
     const normal = {
@@ -116,10 +116,10 @@ export default function FooterPageShell({
         window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
       });
     };
-    gsap.set(card, transition?.from === "fullscreen" ? cover : normal);
+    gsap.set(card, transition?.from === "expanded" ? cover : normal);
     card.style.overflow = "hidden";
     animation = gsap.to(card, {
-      ...cover, duration: reduced || transition?.from === "fullscreen" ? 0 : 0.72,
+      ...cover, duration: reduced || transition?.from === "expanded" ? 0 : 0.72,
       ease: "expo.inOut", onComplete: reveal,
     });
     card.footerCollapse = () => new Promise((resolve) => {

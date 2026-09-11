@@ -150,7 +150,6 @@ export default function MemorizePhase({
   return (
     <div
       ref={scopeRef}
-      data-fullscreen-surface-transition
       className="relative h-full p-6 sm:p-8"
     >
       {isDecoyTarget && (

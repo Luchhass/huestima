@@ -11,7 +11,6 @@ export const DOWNLOAD_RETURN_KEY = "huestima-download-return";
 export const CARD_ROUTE_TRANSITION_KEY = "huestima-card-route-transition";
 export const LANDING_RETURN_TRANSITION_KEY = "huestima-landing-return-transition";
 export const LANDING_EXIT_REQUEST_EVENT = "huestima-landing-exit-request";
-export const FOOTER_FULLSCREEN_COLLAPSE_EVENT = "huestima-footer-fullscreen-collapse";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
 export const SCREEN_FADE_DURATION = 0.24;
@@ -23,18 +22,32 @@ export const SCREEN_REVEAL_AFTER_RESIZE_MS = 780;
 export const SCREEN_REVEAL_DIRECT_MS = 80;
 const SCREEN_FADE_REVERSE_EASE = "power2.in";
 const CARD_SCALE_EASE = "power3.inOut";
+const APP_CHROME_FADE_PATHS = new Set([
+  "/admin",
+  "/admin/login",
+  "/privacy-policy",
+  "/credits",
+]);
+
+export function shouldFadeAppChrome(pathname = "") {
+  const cleanPath = String(pathname)
+    .split("?")[0]
+    .replace(/^\/tr(?=\/)/, "");
+  return APP_CHROME_FADE_PATHS.has(cleanPath);
+}
 
 // Each persistent chrome component restores itself before paint on route changes.
 export function useFooterChromeReturn(pathname, selector) {
   const previousPath = useRef(pathname);
   useLayoutEffect(() => {
-    const returning = getRouteCardKind(previousPath.current) === "fullscreen" &&
-      getRouteCardKind(pathname) !== "fullscreen";
+    const returning =
+      shouldFadeAppChrome(previousPath.current) &&
+      !shouldFadeAppChrome(pathname);
     previousPath.current = pathname;
     const elements = Array.from(document.querySelectorAll(selector));
     if (!elements.length) return;
     gsap.killTweensOf(elements);
-    if (document.documentElement.dataset.landingReturnTransition === "true") {
+    if (document.documentElement.dataset.landingReturnTransition === "fade-chrome") {
       gsap.set(elements, { autoAlpha: 0, transition: "none" });
       return;
     }
@@ -109,16 +122,9 @@ export function getRouteCardKind(pathname = "") {
   if ([
     "/how-it-works",
     "/privacy-policy",
-    "/game-guide",
     "/credits",
-    "/flag-library",
-    "/cartoon-library",
-    "/brand-library",
-    "/team-library",
-    "/test",
-    "/test-lab",
   ].includes(cleanPath)) {
-    return "fullscreen";
+    return "expanded";
   }
   if (cleanPath === "/download") return "download";
   if (cleanPath === "/history" || cleanPath === "/notifications") return "large";
@@ -158,7 +164,9 @@ export function markLandingReturnTransition(cardRef) {
 
   const rect = card.getBoundingClientRect();
   const styles = window.getComputedStyle(card);
-  document.documentElement.dataset.landingReturnTransition = "true";
+  const fadeChrome = shouldFadeAppChrome(window.location.pathname);
+  document.documentElement.dataset.landingReturnTransition =
+    fadeChrome ? "fade-chrome" : "keep-chrome";
   window.sessionStorage.setItem(LANDING_RETURN_TRANSITION_KEY, JSON.stringify({
     left: rect.left,
     top: rect.top,
@@ -166,6 +174,7 @@ export function markLandingReturnTransition(cardRef) {
     height: rect.height,
     borderRadius: Number.parseFloat(styles.borderRadius) || 26,
     boxShadow: styles.boxShadow,
+    fadeChrome,
     createdAt: Date.now(),
   }));
 }
@@ -285,7 +294,7 @@ export function playCardToCardExit(
         autoAlpha: 0,
         duration: SCREEN_FADE_DURATION,
         ease: SCREEN_FADE_EASE,
-      });
+      }, "<");
     }
 
     if (resizeCard) {
@@ -544,14 +553,19 @@ export function useFooterPageTransition(scopeRef) {
     const sourceCardKind = getRouteCardKind(window.location.pathname);
     const targetCardKind = getRouteCardKind(href);
     const shouldCollapseCard =
-      sourceCardKind === "fullscreen" && targetCardKind !== "fullscreen";
+      sourceCardKind === "expanded" && targetCardKind !== "expanded";
 
-    // The fullscreen card collapses on the source page before routing. The
+    // Expanded page collapses on the source page before routing. The
     // destination must therefore reveal directly instead of shrinking again.
     if (returnToHome && targetCardKind === "default") markDownloadReturn();
     const scope = asElement(scopeRef);
     const content = scope?.querySelector("[data-footer-page-content]") || scope;
-    const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+    const fadeChrome =
+      shouldFadeAppChrome(window.location.pathname) ||
+      shouldFadeAppChrome(href);
+    const chrome = fadeChrome
+      ? Array.from(document.querySelectorAll(APP_CHROME_SELECTOR))
+      : [];
     await Promise.all([
       playScreenFadeOut(content),
       chrome.length ? playPageFade(chrome, false) : Promise.resolve(),

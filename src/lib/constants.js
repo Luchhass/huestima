@@ -223,5 +223,4 @@ export const GAME_MODE_CARD_COPY = {
 export const THEME_STORAGE_KEY = "huestima-theme";
 export const SOUND_STORAGE_KEY = "huestima-sound";
 export const MUSIC_STORAGE_KEY = "huestima-music";
-export const FULLSCREEN_STORAGE_KEY = "huestima-fullscreen-mode";
 export const LANGUAGE_STORAGE_KEY = "huestima-language";

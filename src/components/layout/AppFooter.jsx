@@ -11,6 +11,7 @@ import {
   playCardToCardExit,
   markCardRouteTransition,
   requestLandingExit,
+  shouldFadeAppChrome,
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
@@ -34,13 +35,8 @@ export default function AppFooter() {
   useEffect(() => {
     isTransitioningRef.current = false;
   }, [pathname]);
-  const isLibraryRoute =
-    pathname === "/cartoon-library" ||
-    pathname === "/flag-library" ||
-    pathname === "/brand-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
-  const isHowItWorksRoute = pathname === "/how-it-works" || pathname === "/game-guide";
-  const isTestRoute = pathname === "/test";
+  const isHowItWorksRoute = pathname === "/how-it-works";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
   const isCartoonHomeRoute = pathname === "/cartoon";
@@ -83,6 +79,7 @@ export default function AppFooter() {
     if (isTransitioningRef.current) return;
     isTransitioningRef.current = true;
     const targetPath = href.split("?")[0];
+    const fadeChrome = shouldFadeAppChrome(targetPath);
     markCardRouteTransition(href);
 
     if (pathname === "/") {
@@ -108,16 +105,20 @@ export default function AppFooter() {
     const renderedSourceCardKind = getRenderedCardKind(card, pathname);
     markCardRouteTransition(href, renderedSourceCardKind);
 
-    if (["/how-it-works", "/game-guide", "/privacy-policy", "/credits"].includes(targetPath)) {
-      await playHomeToFooterExit(card, content, { scaleCard: false, hideChrome: true });
+    if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
+      await playHomeToFooterExit(card, content, {
+        scaleCard: false,
+        hideChrome: fadeChrome,
+      });
     } else if (
       !["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath) &&
       (renderedSourceCardKind === "large" || sourceCardKind === "download") &&
-      targetCardKind === "fullscreen"
+      targetCardKind === "expanded"
     ) {
       await playCardToCardExit(card, content, {
         targetExpanded: false,
-        hideChrome: true,
+        hideChrome: fadeChrome,
+        chromeFirst: fadeChrome,
       });
     } else if (pathname === "/notifications") {
       const notificationCard = document.querySelector("[data-notification-card]");
@@ -131,7 +132,7 @@ export default function AppFooter() {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
         expandCard: true,
-        hideChrome: true,
+        hideChrome: fadeChrome,
       });
     } else if (href.startsWith("/download")) {
       await playHomeToFooterExit(card, content, {
@@ -148,14 +149,14 @@ export default function AppFooter() {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
         expandCard: false,
-        hideChrome: true,
+        hideChrome: false,
       });
     }
 
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isLibraryRoute || pathname === "/team-library" || isPrivacyRoute || isHowItWorksRoute || isTestRoute || isCreditsRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isPrivacyRoute || isHowItWorksRoute || isCreditsRoute) return null;
 
   return (
     <>

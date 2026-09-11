@@ -4,7 +4,6 @@ export default function FooterCardSurface({ children, cardRef, className = "", .
     <article
       {...props}
       ref={cardRef}
-      data-footer-fullscreen-card
       className={`footer-card-surface footer-page-dark fixed overflow-hidden bg-black text-white ${className}`}
     >
       {children}

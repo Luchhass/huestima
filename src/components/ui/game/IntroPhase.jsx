@@ -166,7 +166,6 @@ export default function IntroPhase({
     return (
       <div
         ref={scopeRef}
-        data-fullscreen-surface-transition
         className="relative h-full bg-black p-6 text-white sm:p-8"
       >
         <div className="pointer-events-none absolute top-6 right-6 text-7xl leading-none font-semibold tracking-normal lowercase sm:top-8 sm:right-8 sm:text-[7rem]">
@@ -181,7 +180,6 @@ export default function IntroPhase({
   return (
     <div
       ref={scopeRef}
-      data-fullscreen-surface-transition
       className="relative h-full bg-black p-6 text-white sm:p-8"
     >
       <div className="pointer-events-none absolute top-6 right-6 text-7xl leading-none font-semibold tracking-normal lowercase sm:top-8 sm:right-8 sm:text-[7rem]">

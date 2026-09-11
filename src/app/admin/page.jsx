@@ -9,7 +9,6 @@ import UnifiedModal from "@/components/ui/UnifiedModal";
 import { adminRequest } from "@/lib/adminApi";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import RoomCardShell from "@/components/sections/room/RoomCardShell";
-import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useAdminMode } from "@/hooks/useAdminMode";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
@@ -388,7 +387,6 @@ function createDefaultGameConfiguration() {
 }
 
 export default function AdminPage() {
-  useAppChromeHidden(true);
   const router = useRouter();
   const { locale, t } = useTranslation();
   const {

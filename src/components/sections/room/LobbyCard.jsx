@@ -5,7 +5,6 @@ import { Check, Clipboard, Settings, UserMinus } from "lucide-react";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
-import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
 import { playScreenFadeOut, useScreenReveal } from "@/hooks/useScreenReveal";
 import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
@@ -213,9 +212,6 @@ export default function LobbyCard({
     isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
     isFlagFamily(cleanGameFamily) ? FLAG_OPTIONS : undefined,
     "scene",
-  );
-  useFlagFullscreenLock(
-    isFlagFamily(cleanGameFamily) || isCartoonFamily(cleanGameFamily),
   );
   useScreenReveal(scopeRef, [room?.code, isSettingsOpen, settingsPool], {
     delay: revealDelayMs,

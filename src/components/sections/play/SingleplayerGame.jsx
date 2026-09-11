@@ -12,8 +12,6 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { useVisualAssetPreload } from "@/hooks/useCartoonAssetPreload";
-import { useGameChrome } from "@/hooks/useGameChrome";
-import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES, useSingleplayerGame } from "@/hooks/useSingleplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
@@ -65,7 +63,6 @@ export default function SingleplayerGame({
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
-  const isImmersivePhase = game.phase !== GAME_PHASES.FINAL;
   const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode
     ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
     : `${game.roundIndex + 1}/${game.roundCount}`;
@@ -116,12 +113,10 @@ export default function SingleplayerGame({
       ? initialResumeElapsedMs
       : 0;
 
-  useGameChrome(isImmersivePhase);
   const visualPreload = useVisualAssetPreload(
     isFlagMode || isCartoonMode || isBrandMode || isTeamMode,
     visualPreloadTargets,
   );
-  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode || isTeamMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"

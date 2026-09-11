@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAppChromeHidden } from "@/hooks/useAppChromeHidden";
 import { useTranslation } from "@/hooks/useLanguage";
 import CardCloseButton from "@/components/ui/CardCloseButton";
 import { useScreenReveal } from "@/hooks/useScreenReveal";
@@ -75,7 +74,6 @@ export default function LeaderboardCard({
   const scopeRef = useRef(null);
   const [hiddenActionError, setHiddenActionError] = useState("");
 
-  useAppChromeHidden(true);
   useScreenReveal(scopeRef, [leaderboard?.completedAt], {
     delay: CARD_RESIZE_DURATION_MS,
   });

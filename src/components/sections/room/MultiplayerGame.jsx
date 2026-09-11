@@ -9,8 +9,6 @@ import {
   normalizeGameFamily,
 } from "@/lib/gameFamily";
 import { useVisualAssetPreload } from "@/hooks/useCartoonAssetPreload";
-import { useFlagFullscreenLock } from "@/hooks/useFlagFullscreenLock";
-import { useGameChrome } from "@/hooks/useGameChrome";
 import { useTranslation } from "@/hooks/useLanguage";
 import { MUSIC_SCENES, useMusicScene } from "@/hooks/useMusicScene";
 import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
@@ -112,12 +110,6 @@ export default function MultiplayerGame({
     () => buildProgressItems(room, playerId),
     [playerId, room],
   );
-  const isImmersivePhase =
-    phase === GAME_PHASES.INTRO ||
-    phase === GAME_PHASES.MEMORIZE ||
-    phase === GAME_PHASES.GUESS ||
-    phase === GAME_PHASES.RESULT ||
-    phase === "waiting";
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isBrandMode = isLogoFamily(cleanGameFamily);
@@ -157,12 +149,10 @@ export default function MultiplayerGame({
       ? initialResumeElapsedMs
       : 0;
 
-  useGameChrome(isImmersivePhase);
   const visualPreload = useVisualAssetPreload(
     isFlagMode || isCartoonMode || isBrandMode,
     visualPreloadTargets,
   );
-  useFlagFullscreenLock(isFlagMode || isCartoonMode || isBrandMode);
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"

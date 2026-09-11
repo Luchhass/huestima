@@ -133,16 +133,6 @@ export const DICTIONARIES = {
       backToList: "Back to list",
       detailMultiplayer: "Full lobby leaderboard, round by round.",
     },
-    cartoonLibrary: {
-      title: "Cartoons",
-      imageCount: "{count} images",
-      series: {
-        all: "All",
-        adventureTime: "Adventure Time",
-        ben10: "Ben 10",
-        regularShow: "Regular Show",
-      },
-    },
     pools: {
       flagTitle: "Flag pools",
       flagSubtitle: "Choose the flag difficulties you know.",
@@ -164,11 +154,6 @@ export const DICTIONARIES = {
       themeLight: "Switch to light mode",
       themeDark: "Switch to dark mode",
       themeToggle: "Toggle theme",
-      fullscreenEnter: "Enter fullscreen layout",
-      fullscreenUnavailable: "Fullscreen is unavailable on this page",
-      fullscreenExit: "Exit fullscreen layout",
-      fullscreenLocked: "Fullscreen is disabled in this mode",
-      fullscreenToggle: "Toggle fullscreen",
     },
     home: {
       sections: {
@@ -759,16 +744,6 @@ export const DICTIONARIES = {
       backToList: "Listeye dön",
       detailMultiplayer: "Lobinin tam leaderboard görünümü, tur tur burada.",
     },
-    cartoonLibrary: {
-      title: "Çizgi filmler",
-      imageCount: "{count} görsel",
-      series: {
-        all: "Tümü",
-        adventureTime: "Adventure Time",
-        ben10: "Ben 10",
-        regularShow: "Regular Show",
-      },
-    },
     pools: {
       flagTitle: "Bayrak havuzları",
       flagSubtitle: "Bildiğin bayrak zorluklarını seç.",
@@ -790,11 +765,6 @@ export const DICTIONARIES = {
       themeLight: "Açık moda geç",
       themeDark: "Koyu moda geç",
       themeToggle: "Temayı değiştir",
-      fullscreenEnter: "Tam ekran tasarıma geç",
-      fullscreenUnavailable: "Bu sayfada tam ekran kullanılamaz",
-      fullscreenExit: "Tam ekran tasarımdan çık",
-      fullscreenLocked: "Bu modda tam ekran kapalı",
-      fullscreenToggle: "Tam ekran tasarımı değiştir",
     },
     home: {
       sections: {

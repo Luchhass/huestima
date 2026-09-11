@@ -22,9 +22,8 @@ import {
   markCardRouteTransition,
   readDefaultCardBox,
   requestLandingExit,
+  shouldFadeAppChrome,
 } from "@/hooks/useFooterPageTransition";
-import { FULLSCREEN_CHANGE_EVENT } from "@/hooks/useFullscreenMode";
-import { FULLSCREEN_STORAGE_KEY } from "@/lib/constants";
 
 const LANDING_CARDS = [
   {
@@ -74,12 +73,6 @@ export default function LandingPage() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useLayoutEffect(() => {
-    window.localStorage.setItem(FULLSCREEN_STORAGE_KEY, "off");
-    document.documentElement.dataset.fullscreenMode = "off";
-    window.dispatchEvent(new Event(FULLSCREEN_CHANGE_EVENT));
-  }, []);
-
-  useLayoutEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("entry") !== "logo") return;
 
@@ -108,7 +101,9 @@ export default function LandingPage() {
     if (!hero || !cover) return undefined;
 
     const fluid = hero.querySelector(".landing-hero-fluid");
-    const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+    const chrome = landingEntryTransition.fadeChrome
+      ? Array.from(document.querySelectorAll(APP_CHROME_SELECTOR))
+      : [];
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight;
@@ -116,7 +111,17 @@ export default function LandingPage() {
     gsap.killTweensOf([hero, cover, fluid, ...chrome]);
     gsap.set(hero, { visibility: "hidden" });
     if (fluid) gsap.set(fluid, { opacity: 0 });
-    gsap.set(chrome, { autoAlpha: 0, transition: "none" });
+    if (chrome.length) {
+      gsap.set(chrome, { autoAlpha: 0, transition: "none" });
+    }
+    const fallbackCardShadow = window.getComputedStyle(document.documentElement)
+      .getPropertyValue("--app-card-shadow")
+      .trim();
+    const cardShadow =
+      landingEntryTransition.boxShadow &&
+      landingEntryTransition.boxShadow !== "none"
+        ? landingEntryTransition.boxShadow
+        : fallbackCardShadow;
     gsap.set(cover, {
       autoAlpha: 1,
       left: landingEntryTransition.left,
@@ -124,7 +129,7 @@ export default function LandingPage() {
       width: landingEntryTransition.width,
       height: landingEntryTransition.height,
       borderRadius: landingEntryTransition.borderRadius,
-      boxShadow: landingEntryTransition.boxShadow,
+      boxShadow: cardShadow,
     });
 
     const finishEntry = () => {
@@ -149,23 +154,25 @@ export default function LandingPage() {
         width: viewportWidth,
         height: viewportHeight,
         borderRadius: 0,
-        boxShadow: "none",
+        boxShadow: cardShadow,
         duration: 0.72,
         ease: "expo.inOut",
       })
-      .call(finishEntry)
-      .to(chrome, {
-        autoAlpha: 1,
-        duration: 0.24,
-        ease: "power2.in",
-        clearProps: "opacity,visibility,transition",
-      })
-      .to(fluid, {
+      .call(finishEntry);
+    if (chrome.length) {
+      timeline.to(chrome, {
+          autoAlpha: 1,
+          duration: 0.24,
+          ease: "power2.in",
+          clearProps: "opacity,visibility,transition",
+        });
+    }
+    timeline.to(fluid, {
         opacity: 1,
         duration: 0.34,
         ease: "power2.out",
         clearProps: "opacity",
-      }, "<");
+      }, chrome.length ? "<" : undefined);
 
     return () => {
       timeline.kill();
@@ -209,7 +216,10 @@ export default function LandingPage() {
         hero.querySelector(".landing-page__intro"),
         hero.querySelector(".landing-hero-fluid"),
       ].filter(Boolean);
-      const chrome = Array.from(document.querySelectorAll(APP_CHROME_SELECTOR));
+      const fadeChrome = shouldFadeAppChrome(event.detail.href);
+      const chrome = fadeChrome
+        ? Array.from(document.querySelectorAll(APP_CHROME_SELECTOR))
+        : [];
 
       gsap.set(page, { pointerEvents: "none" });
 
@@ -251,7 +261,7 @@ export default function LandingPage() {
         width: viewportWidth,
         height: viewportHeight,
         borderRadius: 0,
-        boxShadow: "none",
+        boxShadow: cardShadow,
       });
       gsap.set(hero, { visibility: "hidden" });
 
@@ -321,7 +331,7 @@ export default function LandingPage() {
     >
       <div
         ref={transitionCoverRef}
-        className="pointer-events-none fixed z-[45] invisible bg-black opacity-0"
+        className="pointer-events-none fixed z-[35] invisible bg-black opacity-0"
         aria-hidden="true"
       />
       <div className="landing-page__inner">

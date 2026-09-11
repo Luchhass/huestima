@@ -20,7 +20,6 @@ import {
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
-import FullscreenToggle from "./FullscreenToggle";
 import LandingHeroLockToggle from "./LandingHeroLockToggle";
 import LanguageToggle from "./LanguageToggle";
 import MusicToggle from "./MusicToggle";
@@ -68,14 +67,8 @@ export default function AppHeader() {
     )?.id || historyFamily;
   const historyHref = `/history?from=${encodeURIComponent(historyReturnFamily)}`;
   const router = useRouter();
-  const isLibraryRoute =
-    pathname === "/cartoon-library" ||
-    pathname === "/flag-library" ||
-    pathname === "/brand-library";
-  const isTeamLibraryRoute = pathname === "/team-library";
   const isPrivacyRoute = pathname === "/privacy-policy";
-  const isHowItWorksRoute = pathname === "/how-it-works" || pathname === "/game-guide";
-  const isTestRoute = pathname === "/test";
+  const isHowItWorksRoute = pathname === "/how-it-works";
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
   const isNotificationsRoute = pathname === "/notifications";
@@ -322,7 +315,7 @@ export default function AppHeader() {
         await playHomeToFooterExit(card, content, {
           scaleCard: false,
           expandCard: false,
-          hideChrome: true,
+          hideChrome: false,
         });
         router.push(href);
         return;
@@ -341,7 +334,7 @@ export default function AppHeader() {
           hideChrome: false,
           resizeCard:
             sourceCardKind === "large" &&
-            (targetCardKind === "default" || targetCardKind === "fullscreen"),
+            (targetCardKind === "default" || targetCardKind === "expanded"),
         });
         router.push(href);
         return;
@@ -356,7 +349,7 @@ export default function AppHeader() {
         await playCardToCardExit(card, content, {
           targetExpanded: false,
           hideChrome: false,
-          resizeCard: targetCardKind === "default" || targetCardKind === "fullscreen",
+          resizeCard: targetCardKind === "default" || targetCardKind === "expanded",
         });
         router.push(href);
         return;
@@ -371,7 +364,7 @@ export default function AppHeader() {
         await playCardToCardExit(card, content, {
           targetExpanded: false,
           hideChrome: false,
-          resizeCard: targetCardKind === "default" || targetCardKind === "fullscreen",
+          resizeCard: targetCardKind === "default" || targetCardKind === "expanded",
         });
         router.push(href);
         return;
@@ -430,7 +423,7 @@ export default function AppHeader() {
         hideChrome: false,
         resizeCard:
           sourceCardKind === "large" &&
-          (targetCardKind === "default" || targetCardKind === "fullscreen"),
+          (targetCardKind === "default" || targetCardKind === "expanded"),
       });
       router.push(href);
       return;
@@ -492,10 +485,8 @@ export default function AppHeader() {
 
   if (
     pathname === "/admin/login" ||
-    isLibraryRoute ||
     isPrivacyRoute ||
     isHowItWorksRoute ||
-    isTestRoute ||
     isCreditsRoute
   ) {
     return null;
@@ -511,7 +502,7 @@ export default function AppHeader() {
     setIsNavRendered(true);
   };
 
-  if (isTeamLibraryRoute || pathname === "/admin" || pathname === "/admin/login") return null;
+  if (pathname === "/admin" || pathname === "/admin/login") return null;
 
   return (
     <header
@@ -762,14 +753,12 @@ export default function AppHeader() {
           <SoundToggle />
           <MusicToggle />
           <ThemeToggle />
-          <FullscreenToggle disabled={pathname === "/"} />
           {pathname === "/" && <LandingHeroLockToggle />}
           </div>
         </div>
 
         <div className="md:hidden">
           <div data-sound-kind="switch" className="inline-flex items-center gap-1">
-            <FullscreenToggle disabled={pathname === "/"} />
             {pathname === "/" && <LandingHeroLockToggle />}
           </div>
         </div>

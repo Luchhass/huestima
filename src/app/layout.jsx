@@ -3,7 +3,6 @@ import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import InteractionAudio from "@/components/layout/InteractionAudio";
 import AppFooter from "@/components/layout/AppFooter";
 import AppHeader from "@/components/layout/AppHeader";
-import FullscreenEscapeButton from "@/components/layout/FullscreenEscapeButton";
 import GlobalPushNotifications from "@/components/ui/GlobalPushNotifications";
 import StructuredData from "@/components/seo/StructuredData";
 import ThemeBootstrap from "@/components/layout/ThemeBootstrap";
@@ -136,7 +135,6 @@ export default function RootLayout({ children }) {
         <AdminModeProvider>
           <SiteOperationsProvider>
             <AppHeader />
-            <FullscreenEscapeButton />
             {children}
             <AppFooter />
             <GlobalPushNotifications />
