@@ -61,6 +61,13 @@ function shouldRunIntroForCurrentLoad(pathname) {
   const bootstrapPending =
     document.documentElement.dataset.pageIntroPending === "true";
 
+  // A centered app card returning to the landing page owns the entry motion:
+  // it expands to the viewport before the landing content reveals.
+  if (document.documentElement.dataset.landingReturnTransition === "true") {
+    delete document.documentElement.dataset.pageIntroPending;
+    return false;
+  }
+
   // Footer guide-page returns use the card transition instead of the full
   // page intro. Running both would hide the card after the route changes.
   try {
@@ -167,6 +174,8 @@ export default function PageIntro() {
 
   useLayoutEffect(() => {
     if (!shouldRender) return undefined;
+
+    const isLandingRoot = normalizeLandingPath(pathname) === "/";
 
     // Signal the content reveal before sibling layout effects decide whether
     // they should wait for the page intro.
@@ -413,26 +422,36 @@ export default function PageIntro() {
           },
           "<",
         )
-        .to({}, { duration: 0.72 })
-        .to(brandStage, {
+        .to({}, { duration: 0.72 });
+
+      if (isLandingRoot) {
+        timeline.to([brandStage, blackLayer], {
           autoAlpha: 0,
-          scale: stageScale * 0.985,
           duration: 0.46,
           ease: "power2.inOut",
-        })
-        .call(() => {
-          targetSnapshot = readTargetSnapshot();
-        })
-        .to(blackLayer, {
-          top: () => targetSnapshot?.top || 0,
-          left: () => targetSnapshot?.left || 0,
-          width: () => targetSnapshot?.width || 0,
-          height: () => targetSnapshot?.height || 0,
-          borderRadius: () => targetSnapshot?.borderRadius || "24px",
-          boxShadow: () => targetSnapshot?.boxShadow || "none",
-          duration: 1.16,
-          ease: "expo.inOut",
         });
+      } else {
+        timeline
+          .to(brandStage, {
+            autoAlpha: 0,
+            scale: stageScale * 0.985,
+            duration: 0.46,
+            ease: "power2.inOut",
+          })
+          .call(() => {
+            targetSnapshot = readTargetSnapshot();
+          })
+          .to(blackLayer, {
+            top: () => targetSnapshot?.top || 0,
+            left: () => targetSnapshot?.left || 0,
+            width: () => targetSnapshot?.width || 0,
+            height: () => targetSnapshot?.height || 0,
+            borderRadius: () => targetSnapshot?.borderRadius || "24px",
+            boxShadow: () => targetSnapshot?.boxShadow || "none",
+            duration: 1.16,
+            ease: "expo.inOut",
+          });
+      }
     };
 
     const buildTimelineOnce = () => {
@@ -463,7 +482,9 @@ export default function PageIntro() {
         targetTimeoutId = null;
       }
 
-      gsap.set(targetCard, { autoAlpha: 0 });
+      if (!isLandingRoot) {
+        gsap.set(targetCard, { autoAlpha: 0 });
+      }
 
       if (prefersReducedMotion.matches) {
         finishIntro();

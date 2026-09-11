@@ -10,10 +10,16 @@ import {
   playHomeToFooterExit,
   playCardToCardExit,
   markCardRouteTransition,
+  requestLandingExit,
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { requestActiveGameExit } from "@/lib/gameNavigation";
+import BrandLogoMark from "./BrandLogoMark";
+import { useViewportSectionTheme } from "@/hooks/useViewportSectionTheme";
+
+const getFooterThemeSampleY = () =>
+  (window.visualViewport?.height || window.innerHeight) - 40;
 
 export default function AppFooter() {
   const { locale, t } = useTranslation();
@@ -40,6 +46,14 @@ export default function AppFooter() {
   const isCartoonHomeRoute = pathname === "/cartoon";
   const isStandaloneCardRoute =
     pathname === "/notifications" || pathname === "/history";
+  const landingFooterTheme = useViewportSectionTheme({
+    attribute: "data-footer-theme",
+    defaultTheme: "dark",
+    enabled: pathname === "/",
+    routeKey: pathname,
+    sampleY: getFooterThemeSampleY,
+    scrollSelector: ".landing-page",
+  });
 
   useFooterChromeReturn(pathname, ".route-transition-footer");
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
@@ -58,6 +72,14 @@ export default function AppFooter() {
     isTransitioningRef.current = true;
     const targetPath = href.split("?")[0];
     markCardRouteTransition(href);
+
+    if (pathname === "/") {
+      const handled = await requestLandingExit(href);
+      if (handled) {
+        router.push(href);
+        return;
+      }
+    }
 
     await requestActiveGameExit();
     clearAllGameSessions();
@@ -137,10 +159,9 @@ export default function AppFooter() {
         </a>
       </footer>
 
-      <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
+      <nav data-sound-kind="navigation" data-maintenance-chrome={pathname === "/maintenance" ? "true" : undefined} data-landing-chrome={pathname === "/" ? "true" : undefined} data-landing-theme={pathname === "/" ? landingFooterTheme : undefined} className="route-transition-footer pointer-events-auto fixed right-4 bottom-4 z-40 text-right sm:right-8 sm:bottom-8">
         {[
           [
-            [`/game-guide?from=${family}`, locale === "tr" ? "oyun rehberi" : "game guide"],
             ...(isCartoonHomeRoute
               ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
               : []),
@@ -163,6 +184,14 @@ export default function AppFooter() {
           </div>
         ))}
       </nav>
+
+      <div data-landing-chrome={pathname === "/" ? "true" : undefined} data-landing-theme={pathname === "/" ? landingFooterTheme : undefined} className="route-transition-footer route-transition-footer__brand-groups pointer-events-none fixed bottom-4 left-4 z-40 hidden items-center text-[11px] font-medium text-zinc-500 sm:flex sm:bottom-8 sm:left-8">
+        <span className="pointer-events-auto inline-flex items-center gap-2">
+          <BrandLogoMark className="size-4" centerClassName="size-[42%]" />
+          <span className="route-transition-footer__adaptive-text">huestima.com</span>
+        </span>
+        <span className="route-transition-footer__adaptive-text">© 2026 Huestima All rights reserved</span>
+      </div>
 
     </>
   );

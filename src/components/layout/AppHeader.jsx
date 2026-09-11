@@ -13,7 +13,10 @@ import {
   playCardToCardExit,
   getRouteCardKind,
   getRenderedCardKind,
+  markLandingReturnTransition,
   markCardRouteTransition,
+  playHomeToFooterExit,
+  requestLandingExit,
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
@@ -24,6 +27,7 @@ import SoundToggle from "./SoundToggle";
 import ThemeToggle from "./ThemeToggle";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useSiteOperations } from "@/hooks/useSiteOperations";
+import { useViewportSectionTheme } from "@/hooks/useViewportSectionTheme";
 
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
@@ -79,6 +83,14 @@ export default function AppHeader() {
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [familyUnderline, setFamilyUnderline] = useState(null);
+  const landingHeaderTheme = useViewportSectionTheme({
+    attribute: "data-header-theme",
+    defaultTheme: "dark",
+    enabled: pathname === "/",
+    routeKey: pathname,
+    sampleY: 56,
+    scrollSelector: ".landing-page",
+  });
   const hasFamilyHighlight = Boolean(
     hoveredFamily ||
     GAME_FAMILY_OPTIONS.some(
@@ -290,6 +302,31 @@ export default function AppHeader() {
   const playRouteTransition = async (href) => {
     markCardRouteTransition(href);
     const targetCardKind = getRouteCardKind(href);
+    const targetPath = href.split("?")[0];
+    if (pathname === "/" && targetPath !== "/") {
+      const handled = await requestLandingExit(href);
+      if (handled) {
+        router.push(href);
+        return;
+      }
+    }
+    if (targetPath === "/" && pathname !== "/") {
+      const card = document.querySelector("[data-intro-card-target]");
+      const content = document.querySelector("[data-route-transition-scope]");
+
+      if (card && content) {
+        const sourceCardKind = getRenderedCardKind(card, pathname);
+        markCardRouteTransition(href, sourceCardKind);
+        markLandingReturnTransition(card);
+        await playHomeToFooterExit(card, content, {
+          scaleCard: false,
+          expandCard: false,
+          hideChrome: true,
+        });
+        router.push(href);
+        return;
+      }
+    }
     const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team)$/.test(pathname || "");
     if (isSetupHomeRoute) {
       const card = document.querySelector("[data-intro-card-target]");
@@ -479,6 +516,10 @@ export default function AppHeader() {
       key="application-header"
       className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8"
       data-nav-open={isNavOpen ? "true" : undefined}
+      data-landing-chrome={pathname === "/" ? "true" : undefined}
+      data-landing-theme={
+        pathname === "/" ? (isNavRendered ? "light" : landingHeaderTheme) : undefined
+      }
     >
       {isNavRendered && (
         <div
@@ -598,13 +639,14 @@ export default function AppHeader() {
 
       <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-6">
         <Link
-          href={localizeLandingHref(familyHomeHref, locale)}
+          href="/"
           aria-label={t("app.homeAria")}
           data-sound="off"
+          onClick={(event) => handleFamilyNavigation(event, "/", pathname === "/")}
           className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-base font-semibold uppercase leading-none tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-[17px]"
         >
           <BrandLogoMark interactive />
-          <span>{APP_NAME}</span>
+          <span className="app-header__brand-label">{APP_NAME}</span>
         </Link>
 
         <nav
@@ -612,7 +654,7 @@ export default function AppHeader() {
           aria-label={t("gameFamily.label")}
           data-sound-kind="navigation"
           onMouseLeave={() => setHoveredFamily(null)}
-          className="relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
+          className="app-header__family-nav relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
         >
           {GAME_FAMILY_OPTIONS.map((option) => {
             const active =

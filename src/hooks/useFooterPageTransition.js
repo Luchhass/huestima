@@ -9,6 +9,8 @@ export const FOOTER_RETURN_KEY = "huestima-card-enter";
 export const ADMIN_HOME_RETURN_KEY = "huestima-admin-home-return";
 export const DOWNLOAD_RETURN_KEY = "huestima-download-return";
 export const CARD_ROUTE_TRANSITION_KEY = "huestima-card-route-transition";
+export const LANDING_RETURN_TRANSITION_KEY = "huestima-landing-return-transition";
+export const LANDING_EXIT_REQUEST_EVENT = "huestima-landing-exit-request";
 export const FOOTER_FULLSCREEN_COLLAPSE_EVENT = "huestima-footer-fullscreen-collapse";
 export const APP_CHROME_SELECTOR =
   ".app-header, .creator-tag, .route-transition-footer";
@@ -32,6 +34,10 @@ export function useFooterChromeReturn(pathname, selector) {
     const elements = Array.from(document.querySelectorAll(selector));
     if (!elements.length) return;
     gsap.killTweensOf(elements);
+    if (document.documentElement.dataset.landingReturnTransition === "true") {
+      gsap.set(elements, { autoAlpha: 0, transition: "none" });
+      return;
+    }
     if (!returning || prefersReducedMotion()) {
       gsap.set(elements, { clearProps: "opacity,visibility,transition" });
       return;
@@ -59,6 +65,35 @@ function readResponsiveCardHeight(expanded) {
   const offset = expanded ? 88 : 132;
 
   return Math.max(320, Math.min(viewportHeight - offset, maxHeight));
+}
+
+export function readDefaultCardBox() {
+  const viewportWidth = document.documentElement.clientWidth;
+  const viewportHeight = window.innerHeight;
+  const horizontalSpace = viewportWidth >= 640 ? 64 : 48;
+  const width = Math.min(500, Math.max(1, viewportWidth - horizontalSpace));
+  const height = readResponsiveCardHeight(false);
+
+  return {
+    left: (viewportWidth - width) / 2,
+    top: (viewportHeight - height) / 2,
+    width,
+    height,
+    borderRadius: viewportWidth >= 640 ? 26 : 24,
+  };
+}
+
+export function requestLandingExit(href) {
+  if (typeof window === "undefined") return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    const event = new CustomEvent(LANDING_EXIT_REQUEST_EVENT, {
+      cancelable: true,
+      detail: { href, resolve },
+    });
+    const handled = !window.dispatchEvent(event);
+    if (!handled) resolve(false);
+  });
 }
 
 function prefersReducedMotion() {
@@ -112,6 +147,45 @@ export function consumeCardRouteTransition() {
   try {
     return JSON.parse(raw);
   } catch {
+    return null;
+  }
+}
+
+export function markLandingReturnTransition(cardRef) {
+  if (typeof window === "undefined") return;
+  const card = asElement(cardRef);
+  if (!card) return;
+
+  const rect = card.getBoundingClientRect();
+  const styles = window.getComputedStyle(card);
+  document.documentElement.dataset.landingReturnTransition = "true";
+  window.sessionStorage.setItem(LANDING_RETURN_TRANSITION_KEY, JSON.stringify({
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    borderRadius: Number.parseFloat(styles.borderRadius) || 26,
+    boxShadow: styles.boxShadow,
+    createdAt: Date.now(),
+  }));
+}
+
+export function consumeLandingReturnTransition() {
+  if (typeof window === "undefined") return null;
+  const raw = window.sessionStorage.getItem(LANDING_RETURN_TRANSITION_KEY);
+  window.sessionStorage.removeItem(LANDING_RETURN_TRANSITION_KEY);
+  if (!raw) {
+    delete document.documentElement.dataset.landingReturnTransition;
+    return null;
+  }
+
+  try {
+    const transition = JSON.parse(raw);
+    if (Date.now() - transition.createdAt < 5000) return transition;
+    delete document.documentElement.dataset.landingReturnTransition;
+    return null;
+  } catch {
+    delete document.documentElement.dataset.landingReturnTransition;
     return null;
   }
 }

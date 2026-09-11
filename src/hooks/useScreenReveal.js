@@ -4,6 +4,8 @@ import { useLayoutEffect } from "react";
 import gsap from "gsap";
 
 const REVEAL_SELECTOR = "[data-screen-reveal]";
+const SCROLL_REVEAL_SELECTOR = "[data-scroll-screen-reveal]";
+const SCROLL_CARD_POP_SELECTOR = "[data-scroll-card-pop]";
 export const SCREEN_REVEAL_REPLAY_EVENT = "huestima-screen-reveal-replay";
 export const SCREEN_REVEAL_PREPARE_EVENT = "huestima-screen-reveal-prepare";
 export const SCREEN_REVEAL_START_EVENT = "huestima-screen-reveal-start";
@@ -419,6 +421,220 @@ export function useScreenReveal(scopeRef, dependencies = [], options = {}) {
     return () => {
       window.removeEventListener(SCREEN_REVEAL_REPLAY_EVENT, handleReplay);
       clearActiveAnimation();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies);
+}
+
+export function useScrollScreenReveal(scopeRef, dependencies = [], options = {}) {
+  useLayoutEffect(() => {
+    const scope = scopeRef.current;
+    if (!scope) return undefined;
+
+    const items = gsap.utils.toArray(SCROLL_REVEAL_SELECTOR, scope);
+    if (!items.length) return undefined;
+
+    const groups = items.map((mask) => {
+      const children = Array.from(mask.children).filter(
+        (child) => child instanceof HTMLElement,
+      );
+      return {
+        mask,
+        children: children.length ? children : [mask],
+      };
+    });
+    const animatedItems = groups.flatMap((group) => group.children);
+    const animations = [];
+    const revealedGroups = new WeakSet();
+    let observer = null;
+    let cancelIntroWait = null;
+
+    const clearGroup = ({ mask, children }) => {
+      gsap.set(mask, { clearProps: "clipPath,willChange" });
+      gsap.set(children, {
+        clearProps: "left,position,opacity,visibility,willChange",
+      });
+    };
+
+    if (prefersReducedMotion()) {
+      groups.forEach(clearGroup);
+      return undefined;
+    }
+
+    groups.forEach((group) => {
+      const { mask, children } = group;
+      const maskRect = mask.getBoundingClientRect();
+      const childRightEdge = children.reduce((rightEdge, child) => {
+        const childRect = child.getBoundingClientRect();
+        return Math.max(rightEdge, childRect.right - maskRect.left);
+      }, maskRect.width);
+      const slideDistance = Math.ceil(Math.max(maskRect.width, childRightEdge) + 34);
+      group.slideDistance = slideDistance;
+
+      gsap.set(mask, {
+        clipPath: MASK_CLIP,
+        willChange: "clip-path",
+      });
+      gsap.set(children, {
+        position: "relative",
+        left: `${-slideDistance}px`,
+        autoAlpha: 1,
+        willChange: "left",
+      });
+    });
+
+    const beginObserving = () => {
+      observer = new IntersectionObserver((entries) => {
+        const enteringItems = entries
+          .filter(
+            (entry) =>
+              entry.isIntersecting &&
+              entry.intersectionRatio >= (options.threshold ?? 0.12) &&
+              !revealedGroups.has(entry.target),
+          )
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        enteringItems.forEach((entry, visibleIndex) => {
+          const group = groups.find(({ mask }) => mask === entry.target);
+          if (!group) return;
+
+          revealedGroups.add(group.mask);
+          const configuredDelay = Number(group.mask.dataset.scrollRevealDelay || 0);
+          const animation = gsap.to(group.children, {
+            left: FINAL_LEFT,
+            duration: options.duration ?? REVEAL_DURATION,
+            delay: configuredDelay + visibleIndex * (options.stagger ?? 0.055),
+            ease: options.ease ?? "power4.out",
+            stagger: group.children.length > 1 ? ITEM_STAGGER : 0,
+            overwrite: "auto",
+          });
+          animations.push(animation);
+        });
+
+        entries
+          .filter(
+            (entry) => !entry.isIntersecting && revealedGroups.has(entry.target),
+          )
+          .forEach((entry) => {
+            const group = groups.find(({ mask }) => mask === entry.target);
+            if (!group) return;
+
+            revealedGroups.delete(group.mask);
+            const animation = gsap.to(group.children, {
+              left: `${-group.slideDistance}px`,
+              duration: options.reverseDuration ?? 0.52,
+              ease: options.reverseEase ?? "power3.inOut",
+              stagger: group.children.length > 1
+                ? { each: ITEM_STAGGER * 0.6, from: "end" }
+                : 0,
+              overwrite: "auto",
+            });
+            animations.push(animation);
+          });
+      }, {
+        threshold: [0, options.threshold ?? 0.12],
+        rootMargin: options.rootMargin ?? "0px 0px -8% 0px",
+      });
+
+      groups.forEach(({ mask }) => observer.observe(mask));
+    };
+
+    cancelIntroWait = waitForIntro(beginObserving);
+
+    return () => {
+      cancelIntroWait?.();
+      observer?.disconnect();
+      animations.forEach((animation) => animation.kill());
+      gsap.killTweensOf(animatedItems);
+      groups.forEach(clearGroup);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, dependencies);
+}
+
+export function useScrollCardPopReveal(scopeRef, dependencies = [], options = {}) {
+  useLayoutEffect(() => {
+    const scope = scopeRef.current;
+    if (!scope) return undefined;
+
+    const cards = gsap.utils.toArray(SCROLL_CARD_POP_SELECTOR, scope);
+    if (!cards.length) return undefined;
+
+    if (prefersReducedMotion()) {
+      gsap.set(cards, { clearProps: "transform,transformOrigin,willChange" });
+      return undefined;
+    }
+
+    const animations = [];
+    const revealedCards = new WeakSet();
+    let observer = null;
+    let cancelIntroWait = null;
+
+    gsap.set(cards, {
+      scale: 0.001,
+      y: 40,
+      transformOrigin: "50% 50%",
+      willChange: "transform",
+    });
+
+    const beginObserving = () => {
+      observer = new IntersectionObserver((entries) => {
+        const enteringCards = entries
+          .filter(
+            (entry) =>
+              entry.isIntersecting &&
+              entry.intersectionRatio >= (options.threshold ?? 0.12) &&
+              !revealedCards.has(entry.target),
+          )
+          .sort((a, b) => a.boundingClientRect.left - b.boundingClientRect.left);
+
+        enteringCards.forEach((entry, visibleIndex) => {
+          const card = entry.target;
+          revealedCards.add(card);
+          const configuredDelay = Number(card.dataset.scrollRevealDelay || 0);
+          const animation = gsap.to(card, {
+            scale: 1,
+            y: 0,
+            duration: options.duration ?? 0.46,
+            delay: configuredDelay + visibleIndex * (options.stagger ?? 0.04),
+            ease: options.ease ?? "power3.inOut",
+            overwrite: "auto",
+          });
+          animations.push(animation);
+        });
+
+        entries
+          .filter(
+            (entry) => !entry.isIntersecting && revealedCards.has(entry.target),
+          )
+          .forEach((entry) => {
+            const card = entry.target;
+            revealedCards.delete(card);
+            const animation = gsap.to(card, {
+              scale: 0.001,
+              y: 40,
+              duration: options.reverseDuration ?? 0.38,
+              ease: options.reverseEase ?? "power3.inOut",
+              overwrite: "auto",
+            });
+            animations.push(animation);
+          });
+      }, {
+        threshold: [0, options.threshold ?? 0.12],
+        rootMargin: options.rootMargin ?? "0px 0px -8% 0px",
+      });
+
+      cards.forEach((card) => observer.observe(card));
+    };
+
+    cancelIntroWait = waitForIntro(beginObserving);
+
+    return () => {
+      cancelIntroWait?.();
+      observer?.disconnect();
+      animations.forEach((animation) => animation.kill());
+      gsap.killTweensOf(cards);
+      gsap.set(cards, { clearProps: "transform,transformOrigin,willChange" });
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
