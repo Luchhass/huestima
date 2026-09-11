@@ -197,30 +197,34 @@ export default function AppFooter() {
       <div
         data-landing-chrome={pathname === "/" ? "true" : undefined}
         data-landing-theme={pathname === "/" ? landingFooterTheme : undefined}
-        className="app-mobile-footer pointer-events-none fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-40 flex flex-col gap-2 text-[10px] font-medium tracking-[0.025em] text-zinc-500 sm:hidden"
+        className="app-mobile-footer pointer-events-none fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-40 flex items-end justify-between gap-3 text-[10px] font-medium tracking-[0.025em] text-zinc-500 sm:hidden"
       >
-        <div className="flex items-center justify-between gap-3">
-          <span className="pointer-events-auto inline-flex shrink-0 items-center gap-2">
+        <div className="flex max-w-[55%] min-w-0 flex-col items-start gap-1.5 text-left leading-tight">
+          <span className="pointer-events-auto inline-flex items-center gap-2 whitespace-nowrap">
             <BrandLogoMark className="size-4" centerClassName="size-[42%]" />
             <span>huestima.com</span>
           </span>
-          <span className="text-right">© 2026 Huestima All rights reserved</span>
+          <span>© 2026 All rights reserved</span>
         </div>
         <nav
           data-sound-kind="navigation"
-          className="pointer-events-auto flex flex-wrap items-center justify-end gap-x-2 gap-y-1"
+          className="pointer-events-auto flex max-w-[45%] min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 text-right"
           aria-label={locale === "tr" ? "Alt bağlantılar" : "Footer links"}
         >
-          {footerRows.flat().map(([href, label], index) => (
-            <span key={href} className="inline-flex items-center gap-2">
-              {index > 0 && <span aria-hidden="true">·</span>}
-              <Link
-                href={href}
-                onClick={(event) => void handleFooterNavigation(event, href)}
-                className="text-inherit no-underline"
-              >
-                {label}
-              </Link>
+          {footerRows.map((row, rowIndex) => (
+            <span key={rowIndex} className="flex w-full items-center justify-end gap-2">
+              {row.map(([href, label], index) => (
+                <span key={href} className="inline-flex items-center gap-2 whitespace-nowrap">
+                  {index > 0 && <span aria-hidden="true">·</span>}
+                  <Link
+                    href={href}
+                    onClick={(event) => void handleFooterNavigation(event, href)}
+                    className="text-inherit no-underline"
+                  >
+                    {label}
+                  </Link>
+                </span>
+              ))}
             </span>
           ))}
         </nav>
