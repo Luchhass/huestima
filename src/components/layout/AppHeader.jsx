@@ -447,6 +447,7 @@ export default function AppHeader() {
 
   const handleFamilyNavigation = (event, href, active) => {
     if (active) {
+      event.preventDefault();
       if (isNavRendered) {
         closeMenuRef.current();
       }
@@ -639,10 +640,10 @@ export default function AppHeader() {
 
       <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-6">
         <Link
-          href="/"
+          href="/color"
           aria-label={t("app.homeAria")}
           data-sound="off"
-          onClick={(event) => handleFamilyNavigation(event, "/", pathname === "/")}
+          onClick={(event) => handleFamilyNavigation(event, "/?entry=logo", pathname === "/")}
           className="app-header__brand inline-flex h-11 items-center gap-3 rounded-full text-base font-semibold uppercase leading-none tracking-normal text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50 sm:text-[17px]"
         >
           <BrandLogoMark interactive />

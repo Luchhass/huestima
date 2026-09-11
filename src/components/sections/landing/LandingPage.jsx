@@ -70,6 +70,15 @@ export default function LandingPage() {
   const transitionCoverRef = useRef(null);
   const exitInProgressRef = useRef(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  useLayoutEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("entry") !== "logo") return;
+
+    url.searchParams.delete("entry");
+    const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(window.history.state, "", cleanUrl);
+  }, []);
   const [landingEntryTransition] = useState(consumeLandingReturnTransition);
   const [isLandingEntryTransition, setIsLandingEntryTransition] = useState(
     Boolean(landingEntryTransition),
