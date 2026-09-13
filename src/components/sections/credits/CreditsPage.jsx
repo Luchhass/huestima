@@ -20,23 +20,6 @@ const CONTRIBUTORS = [
     contribution: "Designed and built Huestima from the ground up.",
     contributionTr: "Huestima'yı baştan sona tasarladı ve geliştirdi.",
   },
-  {
-    name: "Emre Baştürk",
-    role: "Game Design Collaborator",
-    roleTr: "Oyun Tasarım Ortağı",
-    contribution:
-      "Helped shape the game by proposing many of its modes and game formats.",
-    contributionTr:
-      "Birçok oyun modu ve oyun türü önererek oyunun şekillenmesine katkı sağladı.",
-  },
-  {
-    name: "Beyza Birdal",
-    role: "Cartoon Visual Archive",
-    roleTr: "Çizgi Film Görsel Arşivi",
-    href: "https://www.instagram.com/beyzosndl/",
-    contribution: "Contributed the cartoon visual archive that enriched the game.",
-    contributionTr: "Oyunu zenginleştiren çizgi film görsel arşivine katkı sağladı.",
-  },
 ];
 
 const CONFETTI_COLORS = ["#ff595e", "#ffca3a", "#8ac926", "#00c2ff", "#6a4c93"];
