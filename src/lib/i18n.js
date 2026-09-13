@@ -192,6 +192,13 @@ export const DICTIONARIES = {
             "Rebuild the hidden team color with the same controls. Play classic, endless, or timed rounds solo or with friends.",
           ],
         },
+        perception: {
+          title: "Perception",
+          paragraphs: [
+            "Color can look ordered even when a few pieces are quietly out of place.",
+            "Read the gradient, find the misplaced tiles and repair the pattern before the clock runs out.",
+          ],
+        },
       },
       paragraphs: [
         "A color appears for five seconds. Memorize the shade, estimate its hue, and keep the tone in your head before it disappears.",
@@ -347,6 +354,8 @@ export const DICTIONARIES = {
       gradient: "Gradient",
       flag: "Classic",
       spot: "Spot",
+      pattern: "Pattern",
+      odd: "Odd",
     },
     gameFamily: {
       label: "Game section",
@@ -355,6 +364,7 @@ export const DICTIONARIES = {
       cartoon: "Cartoon",
       brand: "Brand",
       team: "Teams",
+      perception: "Perception",
     },
     gameModeDescription: {
       normal: "Classic rounds give you five seconds to memorize each color.",
@@ -371,6 +381,8 @@ export const DICTIONARIES = {
       flag: "Match the background color behind a fixed flag emblem.",
       brand: "Match the colors inside familiar brand logos.",
       spot: "Keep the target visible and match it with the center circle.",
+      pattern: "Repair the misplaced tiles before the pattern clock runs out.",
+      odd: "Find the one tile whose tone is subtly different.",
     },
     setup: {
       singleplayer: "singleplayer",
@@ -418,6 +430,7 @@ export const DICTIONARIES = {
         cartoon: "Use the scene to match the featured character’s color.",
         brand: "Read the signature color of a familiar brand logo and reproduce that color without changing the logo itself.",
         team: "Study the defining color of the team crest and recreate it while the crest’s shape and details remain fixed.",
+        perception: "Read the visual order in a field of colors and repair the pieces that break it.",
       },
       modeMechanics: {
         spot: "Spot mode keeps the target color visible beside the playable color field; match it directly on hard difficulty.",
@@ -437,6 +450,8 @@ export const DICTIONARIES = {
         visualTimed: "Timed mode opens each visual directly and gives you three seconds to lock in its color.",
         visualRush: "Rush sends visuals one after another and rewards the number of accurate matches you complete under pressure.",
         visualElimination: "Elimination opens each visual directly; clear the rising accuracy threshold to reach the next round.",
+        pattern: "Pattern creates a smooth color field with only two or three tiles out of place. Swap tiles to restore it before time expires.",
+        odd: "Odd shows six nearly identical tiles. Find the single different tone; every correct answer makes the next difference smaller.",
       },
       difficultyDetail: {
         easy: "Easy activates one color bar: hue. Saturation and brightness remain fixed.",
@@ -444,6 +459,8 @@ export const DICTIONARIES = {
         hard: "Hard activates all three color bars—hue, saturation, and brightness—so every part of the color is yours to judge.",
         gradient: "Gradient uses two independent hue bars, one for each end of the blend; saturation and brightness remain fixed.",
         blend: "Blend is locked to Easy and uses only three RGB intensity bars. There are no saturation or brightness controls.",
+        pattern: "Pattern is a visual puzzle; higher difficulties increase the number of tiles while keeping the same timed repair rules.",
+        odd: "Difficulty controls the starting tone difference. The gap keeps shrinking as your level rises.",
       },
       runDetail: {
         fixed: "The run contains {roundCount} {roundUnit}, and there is no countdown while you adjust your answer.",
@@ -453,6 +470,8 @@ export const DICTIONARIES = {
         blend: "The run contains {roundCount} {roundUnit}; each answer is rebuilt by balancing three RGB intensity bars.",
         rush: "You have 30 seconds of active adjustment time; the opening countdown, reveals, and transitions do not consume that clock.",
         elimination: "There is no level limit. Clear each rising accuracy threshold to continue; one failed round ends your run.",
+        pattern: "The run contains {roundCount} {roundUnit}; every pattern must be repaired within ten seconds.",
+        odd: "There is no time limit or final level. Every correct choice continues the run; one mistake ends it.",
       },
       roundUnit: {
         single: "level",
@@ -562,6 +581,27 @@ export const DICTIONARIES = {
     },
     game: {
       ready: "ready",
+      pattern: {
+        submit: "Submit pattern",
+        outOfPlace: "out of place",
+        tiles: "{count} tiles",
+        timeLeft: "time left",
+        solved: "Pattern restored.",
+        timeout: "Time ran out. The pattern is still broken.",
+        swaps: "{count} swaps",
+        score: "{score} points",
+        finalTitle: "pattern complete",
+        finalCopy: "You restored {solved} of {total} patterns.",
+      },
+      odd: {
+        correct: "Sharp eye. Keep going.",
+        wrong: "That was not the odd tile.",
+        level: "Level {level}",
+        finalTitle: "odd run complete",
+        finalCopy: "You found {level} odd tiles in a row.",
+        score: "points",
+        levels: "levels",
+      },
       set: "set",
       go: "go",
       secondsToRemember: "Seconds to remember",
@@ -803,6 +843,13 @@ export const DICTIONARIES = {
             "Logo sabit kalırken gizlenen takım rengini yeniden kurar, tahmininin aslına ne kadar yaklaştığını görürsün.",
           ],
         },
+        perception: {
+          title: "Algı",
+          paragraphs: [
+            "Birkaç parça sessizce yer değiştirse bile renkler ilk bakışta düzenli görünebilir.",
+            "Geçişi oku, yanlış duran kareleri bul ve süre dolmadan deseni onar.",
+          ],
+        },
       },
       paragraphs: [
         "Bir renk beş saniye görünür. Kaybolmadan önce tonu ezberle, hue değerini tahmin et ve aklında tut.",
@@ -958,6 +1005,8 @@ export const DICTIONARIES = {
       gradient: "Geçiş",
       flag: "Klasik",
       spot: "Nokta",
+      pattern: "Desen",
+      odd: "Farklı",
     },
     gameFamily: {
       label: "Oyun bölümü",
@@ -966,6 +1015,7 @@ export const DICTIONARIES = {
       cartoon: "Çizgi Film",
       brand: "Marka",
       team: "Takım",
+      perception: "Algı",
     },
     gameModeDescription: {
       normal: "Klasik turlar her rengi ezberlemek için beş saniye verir.",
@@ -982,6 +1032,8 @@ export const DICTIONARIES = {
       flag: "Sabit bayrak sembolünün arkasındaki rengi eşleştir.",
       brand: "Tanıdık marka logolarının içindeki renkleri eşleştir.",
       spot: "Hedef görünür kalırken ortadaki dairenin rengini eşleştir.",
+      pattern: "Süre dolmadan yanlış konumdaki kareleri bul ve renk desenini onar.",
+      odd: "Ton farkı çok küçük olan tek kutuyu bul.",
     },
     setup: {
       singleplayer: "singleplayer",
@@ -1029,6 +1081,7 @@ export const DICTIONARIES = {
         cartoon: "Sahneyi kullan ve öne çıkan karakterin rengini eşleştir.",
         brand: "Tanıdık bir marka logosunun karakteristik rengini incele ve logonun kendisini değiştirmeden bu rengi yeniden üret.",
         team: "Takım armasını tanımlayan rengi incele; armanın biçimi ve ayrıntıları sabitken bu rengi yeniden oluştur.",
+        perception: "Renk alanındaki görsel düzeni oku ve akışı bozan parçaları doğru yerine taşı.",
       },
       modeMechanics: {
         spot: "Nokta modu hedef rengi oynanabilir renk alanının yanında görünür tutar; zorda doğrudan eşleştirirsin.",
@@ -1048,6 +1101,8 @@ export const DICTIONARIES = {
         visualTimed: "Süreli mod her görseli doğrudan açar ve rengini kilitlemen için üç saniye verir.",
         visualRush: "Rush modu görselleri art arda getirir ve baskı altında tamamladığın doğru eşleşme sayısını ödüllendirir.",
         visualElimination: "Elimination her görseli doğrudan açar; sonraki tura geçmek için yükselen doğruluk barajını aşman gerekir.",
+        pattern: "Desen modu, yalnızca iki veya üç karesi yanlış yerde olan yumuşak bir renk geçişi kurar. Süre dolmadan kareleri değiştirerek düzeni onar.",
+        odd: "Odd birbirine çok yakın tonda altı kutu gösterir. Farklı olanı bul; her doğru cevapta sonraki ton farkı biraz daha küçülür.",
       },
       difficultyDetail: {
         easy: "Kolayda tek renk barı açıktır: ton. Doygunluk ve parlaklık sabit kalır.",
@@ -1055,6 +1110,8 @@ export const DICTIONARIES = {
         hard: "Zorda ton, doygunluk ve parlaklık olmak üzere üç renk barının tamamı açılır; rengin her bileşenini sen belirlersin.",
         gradient: "Geçiş modunda karışımın iki ucu için iki bağımsız ton barı kullanılır; doygunluk ve parlaklık sabit kalır.",
         blend: "Blend Easy seviyesine kilitlidir ve yalnızca üç RGB yoğunluk barı kullanır. Doygunluk veya parlaklık kontrolü yoktur.",
+        pattern: "Desen görsel bir bulmacadır; zorluk yükseldikçe kare sayısı artar, süreli onarım kuralları aynı kalır.",
+        odd: "Zorluk başlangıçtaki ton farkını belirler. Seviye yükseldikçe fark giderek küçülür.",
       },
       runDetail: {
         fixed: "Seri {roundCount} {roundUnit} sürer ve tahminini ayarlarken geri sayım işlemez.",
@@ -1064,6 +1121,8 @@ export const DICTIONARIES = {
         blend: "Seri {roundCount} {roundUnit} sürer; her tahmin üç RGB yoğunluk çubuğunu dengeleyerek oluşturulur.",
         rush: "Yalnızca aktif ayarlama sırasında işleyen 30 saniyen vardır; başlangıç sayacı, gösterimler ve geçişler bu süreyi tüketmez.",
         elimination: "Seviye sınırı yoktur. Devam etmek için yükselen doğruluk barajını geç; ilk başarısız tur seriyi bitirir.",
+        pattern: "Seri {roundCount} {roundUnit} sürer; her deseni onarmak için on saniyen vardır.",
+        odd: "Süre ve son seviye yoktur. Her doğru seçim seriyi sürdürür; ilk yanlış seçim seriyi bitirir.",
       },
       roundUnit: {
         single: "seviye",
@@ -1172,6 +1231,27 @@ export const DICTIONARIES = {
     },
     game: {
       ready: "hazır",
+      pattern: {
+        submit: "Deseni onayla",
+        outOfPlace: "yanlış yerde",
+        tiles: "{count} kare",
+        timeLeft: "kalan süre",
+        solved: "Desen onarıldı.",
+        timeout: "Süre doldu. Desen hâlâ bozuk.",
+        swaps: "{count} hamle",
+        score: "{score} puan",
+        finalTitle: "desen tamamlandı",
+        finalCopy: "{total} desenin {solved} tanesini onardın.",
+      },
+      odd: {
+        correct: "İyi gördün. Devam et.",
+        wrong: "Farklı kutu bu değildi.",
+        level: "Seviye {level}",
+        finalTitle: "odd serisi bitti",
+        finalCopy: "Üst üste {level} farklı kutu buldun.",
+        score: "puan",
+        levels: "seviye",
+      },
       set: "dikkat",
       go: "başla",
       secondsToRemember: "Hatırlamak için saniye",

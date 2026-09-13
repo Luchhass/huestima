@@ -13,7 +13,7 @@ export const SITE_IMAGE_HEIGHT = 908;
 export const SITE_LAST_MODIFIED = LANDING_UPDATED;
 
 export const SITE_DESCRIPTION =
-  "Play free color memory games with colors, flags, cartoon characters, brands and football teams. Rebuild shades from memory, alone or with friends.";
+  "Play free color memory and perception games with colors, flags, cartoon characters, brands, teams and visual patterns.";
 
 export const SEO_KEYWORDS = [
   "Huestima",
@@ -78,6 +78,16 @@ export const ROUTE_SEO = {
     title: "Huestima Teams",
     description: "Play Huestima Teams, a team logo color memory game.",
     path: "/team",
+  },
+  perceptionSingleplayer: {
+    title: "Huestima Perception Singleplayer",
+    description: "Play Pattern and Odd visual perception modes in Huestima singleplayer.",
+    path: "/perception/singleplayer",
+  },
+  perceptionMultiplayer: {
+    title: "Huestima Perception Multiplayer",
+    description: "Play Pattern and Odd visual perception modes with friends in a shared Huestima lobby.",
+    path: "/perception/multiplayer",
   },
   privacyPolicy: {
     title: "Huestima Privacy Policy",
@@ -166,6 +176,7 @@ const ROUTE_IMAGE_PATHS = {
   cartoon: "/og-cartoon.png",
   brand: "/og-brand.png",
   team: "/og-team.png",
+  perception: SITE_IMAGE_PATH,
 };
 
 export function absoluteUrl(path = "/") {
@@ -247,7 +258,7 @@ export function createJsonLd(family, locale = "en") {
           name: `Huestima ${content.name}`, url, description: content.intro,
           image: absoluteUrl(ROUTE_IMAGE_PATHS[family]), inLanguage: locale,
           applicationCategory: "GameApplication", operatingSystem: "Web browser",
-          gamePlatform: "Web browser", genre: ["Memory game", "Color guessing game"],
+          gamePlatform: "Web browser", genre: family === "perception" ? ["Puzzle game", "Color perception game"] : ["Memory game", "Color guessing game"],
           playMode: ["https://schema.org/SinglePlayer", "https://schema.org/MultiPlayer"],
           isAccessibleForFree: true,
           offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },

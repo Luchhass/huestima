@@ -70,6 +70,12 @@ export default function GuessPhase({
   isSpotMode = false,
   isBlindMode = false,
   isBlendMode = false,
+  customContent = null,
+  customContentAnimated = true,
+  customContentReceivesPointerEvents = false,
+  timedTimerDisplay = "reel",
+  submitLabel = null,
+  hideSubmitButton = false,
 }) {
   const { t } = useTranslation();
   const { enabled: isAdminModeEnabled } = useAdminMode();
@@ -100,6 +106,8 @@ export default function GuessPhase({
   const hintButtonRingRef = useRef(null);
   const hintIconRef = useRef(null);
   const spotRef = useRef(null);
+  const customContentRef = useRef(null);
+  const remainingCentisecondsRef = useRef(0);
   const [timerRunning, setTimerRunning] = useState(false);
 
   const isGradientGuess = isGradientColor(guessColor);
@@ -118,7 +126,9 @@ export default function GuessPhase({
     textShadow: "var(--game-fg-top-right-shadow)",
   };
   const sidePickerWidth = 50;
-  const embeddedPickerWidth = isGradientGuess
+  const letCustomContentReceiveClicks =
+    Boolean(customContent) && customContentReceivesPointerEvents;
+  const embeddedPickerWidth = customContent ? 0 : isGradientGuess
     ? sidePickerWidth
     : isBlendGuess
       ? sidePickerWidth * 3
@@ -154,11 +164,14 @@ export default function GuessPhase({
       ? `${t("game.useHint")} • ${roundLabel}`
       : t("game.hintUnavailable");
 
-  const handleTimedSubmit = useCallback(() => {
+  const handleTimedSubmit = useCallback((timedOut = false) => {
     if (timedSubmitRef.current) return;
 
     timedSubmitRef.current = true;
-    onSubmit();
+    onSubmit({
+      timedOut,
+      remainingMs: timedOut ? 0 : remainingCentisecondsRef.current * 10,
+    });
   }, [onSubmit]);
 
   const handleSubmitClick = useCallback(() => {
@@ -167,7 +180,7 @@ export default function GuessPhase({
       return;
     }
 
-    handleTimedSubmit();
+    handleTimedSubmit(false);
   }, [handleTimedSubmit, isTimedGuess, onSubmit]);
 
   const handleAdminPerfectGuess = useCallback(() => {
@@ -186,7 +199,7 @@ export default function GuessPhase({
   const { centiseconds } = useCountdown({
     durationMs: timedGuessDurationMs,
     isRunning: isTimedGuess && timerRunning,
-    onComplete: handleTimedSubmit,
+    onComplete: () => handleTimedSubmit(true),
     initialElapsedMs: resumeElapsedMs,
   });
   const displayedCentiseconds = isRushGuess
@@ -194,6 +207,10 @@ export default function GuessPhase({
     : centiseconds;
   const displayedDurationMs = isRushGuess ? rushDurationMs : timedGuessDurationMs;
   const displayedTimerRunning = isRushGuess || timerRunning;
+
+  useEffect(() => {
+    remainingCentisecondsRef.current = displayedCentiseconds;
+  }, [displayedCentiseconds]);
 
   useEffect(() => {
     const timedCountdownRunning = isTimedGuess && timerRunning;
@@ -328,6 +345,9 @@ export default function GuessPhase({
       );
       const rightPickerTracks = gsap.utils.toArray(".guess-picker-track--right");
       const pickerThumbs = gsap.utils.toArray(".guess-picker-thumb");
+      const customItems = customContentRef.current
+        ? gsap.utils.toArray("[data-custom-guess-item]", customContentRef.current)
+        : [];
       const checkPath = submitIconRef.current?.querySelector("path");
       const usesStackedControlReveal =
         usesShowcaseGuessLayout &&
@@ -411,6 +431,17 @@ export default function GuessPhase({
         transformOrigin: "center center",
         force3D: true,
       });
+
+      if (customContentRef.current && customContentAnimated) {
+        gsap.set(customContentRef.current, { autoAlpha: 1 });
+        gsap.set(customItems, {
+          y: 14,
+          scale: 0.94,
+          autoAlpha: 0,
+          transformOrigin: "center center",
+          force3D: true,
+        });
+      }
 
       // Fancy submit button initial state
       if (hintButtonRef.current) {
@@ -527,27 +558,18 @@ export default function GuessPhase({
           0.34
         )
 
-        // Slider yuvarlakları — aynen korundu
         .to(
-          pickerThumbs,
+          customItems,
           {
-            keyframes: [
-              {
-                scale: 1.08,
-                autoAlpha: 1,
-                duration: 0.2,
-                ease: "power4.out",
-              },
-              {
-                scale: 1,
-                duration: 0.12,
-                ease: "expo.out",
-              },
-            ],
-            stagger: 0.05,
+            y: 0,
+            scale: 1,
+            autoAlpha: 1,
+            duration: 0.48,
+            ease: "power3.out",
+            stagger: 0.012,
             clearProps: "transform,opacity,visibility",
           },
-          0.46
+          0.08,
         )
 
         // Submit butonu görünür olur
@@ -637,6 +659,33 @@ export default function GuessPhase({
           },
           0.83
         );
+
+      // Pattern has no color controls. GSAP's keyframe tween must not be
+      // constructed with an empty target list, otherwise its internal timeline
+      // attempts to call render() on a non-timeline object.
+      if (pickerThumbs.length > 0) {
+        timeline.to(
+          pickerThumbs,
+          {
+            keyframes: [
+              {
+                scale: 1.08,
+                autoAlpha: 1,
+                duration: 0.2,
+                ease: "power4.out",
+              },
+              {
+                scale: 1,
+                duration: 0.12,
+                ease: "expo.out",
+              },
+            ],
+            stagger: 0.05,
+            clearProps: "transform,opacity,visibility",
+          },
+          0.46,
+        );
+      }
 
       if (progressRef.current) {
         timeline.to(
@@ -1101,7 +1150,11 @@ export default function GuessPhase({
               textShadow: "var(--game-fg-bottom-left-shadow)",
             }}
           >
-            {isRushGuess ? <RushClock remainingMs={rushRemainingMs} /> : (
+            {isRushGuess || timedTimerDisplay === "clock" ? (
+              <RushClock
+                remainingMs={isRushGuess ? rushRemainingMs : displayedCentiseconds * 10}
+              />
+            ) : (
               <CountdownReel
                 key={`guess-countdown-${timedGuessDurationMs}`}
                 durationMs={displayedDurationMs}
@@ -1207,10 +1260,10 @@ export default function GuessPhase({
           </button>
         )}
 
-        <button
+        {!hideSubmitButton && <button
           ref={submitButtonRef}
           type="button"
-          aria-label={t("game.submitColorGuess")}
+          aria-label={submitLabel || t("game.submitColorGuess")}
           onClick={handleSubmitClick}
           className="soft-icon-button card-action-size absolute right-6 bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-8 sm:bottom-8"
         >
@@ -1230,7 +1283,7 @@ export default function GuessPhase({
           >
             <Check size={30} strokeWidth={2.4} />
           </span>
-        </button>
+        </button>}
       </div>
     );
   }
@@ -1245,7 +1298,7 @@ export default function GuessPhase({
         renderExternalControlWidgets()
       ) : (
         <>
-          <div className="absolute inset-y-0 left-0 z-10">
+          {!customContent && <div className="absolute inset-y-0 left-0 z-10">
             {isGradientGuess ? (
               <div
                 className="flex h-full items-stretch gap-0"
@@ -1292,7 +1345,7 @@ export default function GuessPhase({
                 showHint={hintActive}
               />
             )}
-          </div>
+          </div>}
 
           {isGradientGuess && (
             <div className="absolute inset-y-0 right-0 z-10">
@@ -1326,6 +1379,12 @@ export default function GuessPhase({
         </div>
       )}
 
+      {customContent && (
+        <div ref={customContentRef} className="absolute inset-0 z-[5]">
+          {customContent}
+        </div>
+      )}
+
       {isBlindMode && !isGradientGuess && !usesExternalControlWidget && (
         <div
           className="pointer-events-none absolute inset-y-0 right-0 z-[4] flex items-center justify-center bg-zinc-700"
@@ -1352,7 +1411,7 @@ export default function GuessPhase({
       )}
 
       <div
-        className="absolute left-(--round-left) top-6 z-[6] overflow-hidden sm:left-(--round-left-sm) sm:top-8"
+          className={`absolute left-(--round-left) top-6 z-[6] overflow-hidden sm:left-(--round-left-sm) sm:top-8 ${letCustomContentReceiveClicks ? "pointer-events-none" : ""}`}
         style={{
           "--round-left": `${contentLeft}px`,
           "--round-left-sm": `${contentLeftSm}px`,
@@ -1371,7 +1430,7 @@ export default function GuessPhase({
       </div>
 
       <div
-        className="absolute right-(--guess-right) top-6 z-[6] overflow-hidden text-right sm:right-(--guess-right-sm) sm:top-8"
+          className={`absolute right-(--guess-right) top-6 z-[6] overflow-hidden text-right sm:right-(--guess-right-sm) sm:top-8 ${letCustomContentReceiveClicks ? "pointer-events-none" : ""}`}
         style={{
           "--guess-right": `${contentRight}px`,
           "--guess-right-sm": `${contentRightSm}px`,
@@ -1392,7 +1451,7 @@ export default function GuessPhase({
       {progressItems.length > 0 && (
         <div
           ref={progressRef}
-          className={`absolute z-20 ${
+          className={`absolute z-20 ${letCustomContentReceiveClicks ? "pointer-events-none" : ""} ${
             usesMiddleProgress
               ? "top-1/2 -translate-y-1/2"
               : showGuessTimer
@@ -1413,7 +1472,7 @@ export default function GuessPhase({
       {showGuessTimer && (
         <div
           ref={timerRef}
-          className="absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8"
+          className={`absolute left-(--round-left) bottom-6 z-20 text-left sm:left-(--round-left-sm) sm:bottom-8 ${letCustomContentReceiveClicks ? "pointer-events-none" : ""}`}
           style={{
             "--round-left": `${contentLeft}px`,
             "--round-left-sm": `${contentLeftSm}px`,
@@ -1423,7 +1482,11 @@ export default function GuessPhase({
             textShadow: "var(--game-fg-bottom-left-shadow)",
           }}
         >
-          {isRushGuess ? <RushClock remainingMs={rushRemainingMs} /> : (
+          {isRushGuess || timedTimerDisplay === "clock" ? (
+            <RushClock
+              remainingMs={isRushGuess ? rushRemainingMs : displayedCentiseconds * 10}
+            />
+          ) : (
             <CountdownReel
               key={`guess-countdown-${timedGuessDurationMs}`}
               durationMs={displayedDurationMs}
@@ -1533,10 +1596,10 @@ export default function GuessPhase({
         </button>
       )}
 
-      <button
+      {!hideSubmitButton && <button
         ref={submitButtonRef}
         type="button"
-        aria-label={t("game.submitColorGuess")}
+        aria-label={submitLabel || t("game.submitColorGuess")}
         onClick={handleSubmitClick}
         className="soft-icon-button card-action-size absolute right-(--guess-right) bottom-6 z-20 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:right-(--guess-right-sm) sm:bottom-8"
         style={{
@@ -1560,7 +1623,7 @@ export default function GuessPhase({
         >
           <Check size={30} strokeWidth={2.4} />
         </span>
-      </button>
+      </button>}
     </div>
   );
 }

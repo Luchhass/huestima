@@ -60,6 +60,11 @@ function responseData(response) {
 }
 
 function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null) {
+  if (gameMode?.id === GAME_MODE_IDS.ODD) return null;
+  if (gameMode?.id === GAME_MODE_IDS.PATTERN) {
+    return Array.isArray(targetColor?.board) ? [...targetColor.board] : [];
+  }
+
   if (gameMode?.id === GAME_MODE_IDS.GRADIENT) {
     return createDefaultGradientGuess();
   }
@@ -92,6 +97,9 @@ function constrainGuessColor(
   gameFamily,
   targetColor = null,
 ) {
+  if (gameMode.id === GAME_MODE_IDS.ODD) return null;
+  if (gameMode.id === GAME_MODE_IDS.PATTERN) return guessColor;
+
   if (gameMode.id === GAME_MODE_IDS.GRADIENT || isGradientColor(guessColor)) {
     return withGradientHex(guessColor);
   }
@@ -119,6 +127,7 @@ function constrainGuessColor(
 
 function toResultPhaseShape(serverResult) {
   return {
+    ...serverResult,
     round: serverResult.round || serverResult.roundIndex + 1,
     roundIndex: serverResult.roundIndex,
     target: serverResult.target || serverResult.targetColor,
@@ -130,6 +139,8 @@ function toResultPhaseShape(serverResult) {
     eliminationThreshold: serverResult.eliminationThreshold,
     eliminationPassed: serverResult.eliminationPassed,
     eliminated: serverResult.eliminated,
+    oddSelection: serverResult.oddSelection,
+    oddPassed: serverResult.oddPassed,
   };
 }
 
@@ -191,9 +202,10 @@ export function useMultiplayerGame({
   const isGradientMode = gameMode.id === GAME_MODE_IDS.GRADIENT;
   const isBlendMode = gameMode.id === GAME_MODE_IDS.BLEND;
   const isSpotMode = gameMode.id === GAME_MODE_IDS.SPOT;
-  const isEndlessMode = gameMode.id === GAME_MODE_IDS.ENDLESS;
+  const isEndlessMode = Boolean(gameMode.isEndless);
   const isRushMode = gameMode.id === GAME_MODE_IDS.RUSH;
   const isEliminationMode = gameMode.id === GAME_MODE_IDS.ELIMINATION;
+  const isOddMode = gameMode.id === GAME_MODE_IDS.ODD;
   const isBlindMode = gameMode.id === GAME_MODE_IDS.BLIND;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const shouldMemorizeRound = shouldMemorizeMultiplayerRound(
@@ -306,7 +318,7 @@ export function useMultiplayerGame({
           Number(initialGameSession.roundIndex) || 0,
           0,
         );
-        const restoredRoundIndex = isEliminationMode
+        const restoredRoundIndex = isEliminationMode || isOddMode
           ? rawRestoredRoundIndex
           : Math.min(rawRestoredRoundIndex, Math.max(roundCount - 1, 0));
 
@@ -370,6 +382,7 @@ export function useMultiplayerGame({
     hintsEnabled,
     initialGameSession,
     isEliminationMode,
+    isOddMode,
     isBlindMode,
     roundCount,
     serverTargetColors,
@@ -541,6 +554,10 @@ export function useMultiplayerGame({
           cleanGameFamily,
           targetColor,
         ),
+        patternBoard: options.patternBoard,
+        oddSelection: options.oddSelection,
+        remainingMs: options.remainingMs,
+        swaps: options.swaps,
       });
     } catch (submitError) {
       submittingRoundRef.current = null;
@@ -561,7 +578,7 @@ export function useMultiplayerGame({
 
     const data = responseData(response);
     const nextResult = toResultPhaseShape(data.result);
-    if (isEliminationMode && data.nextTargetColor) {
+    if ((isEliminationMode || isOddMode) && data.nextTargetColor) {
       setTargetColors((currentColors) => {
         const nextColors = [...currentColors];
         nextColors[data.nextRoundIndex] = data.nextTargetColor;
@@ -579,6 +596,21 @@ export function useMultiplayerGame({
 
     if (data.leaderboard) {
       setLocalLeaderboard(data.leaderboard);
+    }
+
+    if (isOddMode) {
+      submittingRoundRef.current = null;
+      if (nextResult.oddPassed && data.nextTargetColor) {
+        submittedRoundRef.current = null;
+        continuedRoundRef.current = null;
+        setRoundIndex(data.nextRoundIndex);
+        setTargetColor(data.nextTargetColor);
+        setGuessColor(null);
+        transitionToPhase(GAME_PHASES.GUESS);
+      } else {
+        transitionToPhase(data.leaderboard ? "leaderboard" : "waiting");
+      }
+      return nextResult;
     }
 
     if (isRushMode) {
@@ -615,6 +647,7 @@ export function useMultiplayerGame({
     guessColor,
     isSubmitting,
     isEliminationMode,
+    isOddMode,
     isRushMode,
     phase,
     playerId,
@@ -757,7 +790,12 @@ export function useMultiplayerGame({
       return;
     }
 
-    if (!isEndlessMode && !isEliminationMode && roundIndex + 1 >= roundCount) {
+    if (isOddMode && !latestResult?.oddPassed) {
+      transitionToPhase(localLeaderboard || incomingLeaderboard ? "leaderboard" : "waiting");
+      return;
+    }
+
+    if (!isEndlessMode && !isEliminationMode && !isOddMode && roundIndex + 1 >= roundCount) {
       transitionToPhase("waiting");
       return;
     }
@@ -784,6 +822,7 @@ export function useMultiplayerGame({
     gameMode,
     incomingLeaderboard,
     isEliminationMode,
+    isOddMode,
     isEndlessMode,
     isSequenceMode,
     localLeaderboard,
@@ -809,6 +848,7 @@ export function useMultiplayerGame({
     gameFamily: cleanGameFamily,
     isEndlessMode,
     isEliminationMode,
+    isOddMode,
     isBlindMode,
     isRushMode,
     isSequenceMode,
@@ -843,6 +883,11 @@ export function useMultiplayerGame({
     finishIntro,
     finishMemorize,
     updateGuess,
+    updatePatternBoard: (nextBoard) => {
+      if (gameMode.id === GAME_MODE_IDS.PATTERN && Array.isArray(nextBoard)) {
+        setGuessColor(nextBoard);
+      }
+    },
     useHint,
     submitGuess,
     continueFromResult,

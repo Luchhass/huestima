@@ -1,4 +1,5 @@
 import { DIFFICULTY_CONFIG, GAME_MODES } from "../constants.js";
+import { createOddPuzzle } from "../../../shared/oddGame.mjs";
 import { DEFAULT_CARTOON_ID, CARTOON_OPTIONS, getCartoonOption } from "./cartoons.js";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags.js";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands.js";
@@ -13,6 +14,7 @@ import {
   createDecoyHue,
   createDecoyTargetPosition,
 } from "../../../shared/decoyMechanics.mjs";
+import { createPatternPuzzle } from "../../../shared/patternGame.mjs";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -509,6 +511,16 @@ export function randomDecoyTargetColor(difficultyConfig, random = Math.random) {
 export function generateTargetColors({ seed, difficulty, roundCount, gameMode, gameFamily, flagDifficulty, flagDifficulties, cartoonIds, teamIds }) {
   const random = createSeededRandom(seed);
   const difficultyConfig = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.normal;
+
+  if (gameMode === GAME_MODES.PATTERN) {
+    return Array.from({ length: roundCount }, () => createPatternPuzzle(random, { difficulty }));
+  }
+
+  if (gameMode === GAME_MODES.ODD) {
+    return Array.from({ length: roundCount }, (_, level) =>
+      createOddPuzzle(random, { difficulty, level }),
+    );
+  }
 
   if (gameMode === GAME_MODES.GRADIENT) {
     return Array.from({ length: roundCount }, () =>

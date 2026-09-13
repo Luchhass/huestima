@@ -536,6 +536,27 @@ export function playButtonHover() {
   });
 }
 
+export function playPatternTileHover() {
+  const context = getPlayableContext();
+  if (!context || !allowSound("pattern-tile-hover", 36)) return;
+
+  scheduleNoise(context, {
+    duration: 0.012,
+    gain: 0.012,
+    filterFrequency: 860,
+    filterType: "bandpass",
+    q: 8,
+  });
+  scheduleTone(context, {
+    frequency: 116,
+    endFrequency: 94,
+    type: "sine",
+    gain: 0.035,
+    duration: 0.045,
+    attack: 0.002,
+  });
+}
+
 export function playButtonClick() {
   const context = getPlayableContext();
   if (!context || !allowSound("button-click", 34)) return;

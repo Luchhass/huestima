@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { GAME_FAMILY_IDS } from "@/lib/gameFamily";
 
 export default function HomeCardArtwork({
@@ -8,9 +9,99 @@ export default function HomeCardArtwork({
   cartoonCharacterConfig = { id: "ben", src: "/game-modes/cartoon/ben-10/ben-home-character-new.png", width: 600, height: 1400, imageClassName: "cartoon-home-character--ben" },
   cartoonBurst = null, handleCartoonCharacterKeyDown,
 }) {
+  const [perceptionHue, setPerceptionHue] = useState(198);
+  const perceptionTileRefs = useRef(new Map());
+
+  useEffect(() => {
+    setPerceptionHue(Math.floor(Math.random() * 360));
+  }, []);
+
+  useEffect(() => {
+    if (cleanGameFamily !== GAME_FAMILY_IDS.PERCEPTION || view !== "home") return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const board = Array.from({ length: 25 }, (_, index) => ({ 7: 17, 17: 7, 13: 14, 14: 13 })[index] ?? index);
+    const wrongPositions = [7, 13, 14, 17];
+    let timeoutId = null;
+    let activeAnimations = [];
+
+    const demonstratePattern = () => {
+      activeAnimations.forEach((animation) => animation.cancel());
+      activeAnimations = [];
+
+      const misplacedTiles = wrongPositions
+        .map((position) => ({ position, targetPosition: board[position], element: perceptionTileRefs.current.get(position) }))
+        .filter(({ element, targetPosition }) => element && perceptionTileRefs.current.get(targetPosition));
+      const errorPulseDuration = 720;
+      const moveDuration = 650;
+      const waveStartDelay = 120;
+      const waveStepDuration = 90;
+      const tileCompletionDuration = 840;
+      const completionEnd = 8 * waveStepDuration + tileCompletionDuration;
+      const completionStart = errorPulseDuration + moveDuration + waveStartDelay;
+      const returnStart = completionStart + completionEnd;
+      const sequenceDuration = returnStart + moveDuration;
+      const movementTimelineDuration = sequenceDuration - errorPulseDuration;
+
+      const pulseAnimations = misplacedTiles.map(({ element }) => {
+        const originalColor = element.dataset.patternColor;
+        return element.animate([
+          { backgroundColor: originalColor, offset: 0 },
+          { backgroundColor: "#fff", offset: 0.12 },
+          { backgroundColor: originalColor, offset: 0.25 },
+          { backgroundColor: "#fff", offset: 0.38 },
+          { backgroundColor: originalColor, offset: 0.51 },
+          { backgroundColor: "#fff", offset: 0.64 },
+          { backgroundColor: originalColor, offset: 0.78 },
+          { backgroundColor: originalColor, offset: 1 },
+        ], { duration: errorPulseDuration, easing: "cubic-bezier(0.4, 0, 0.2, 1)" });
+      });
+
+      const moveAnimations = misplacedTiles.map(({ position, targetPosition, element }) => {
+        const targetElement = perceptionTileRefs.current.get(targetPosition);
+        const x = targetElement.offsetLeft - element.offsetLeft;
+        const y = targetElement.offsetTop - element.offsetTop;
+        element.style.zIndex = String(position + 20);
+        const animation = element.animate([
+          { transform: "translate3d(0,0,0)", offset: 0, easing: "cubic-bezier(0.22, 0.8, 0.28, 1)" },
+          { transform: `translate3d(${x}px,${y}px,0)`, offset: moveDuration / movementTimelineDuration },
+          { transform: `translate3d(${x}px,${y}px,0)`, offset: (returnStart - errorPulseDuration) / movementTimelineDuration, easing: "cubic-bezier(0.22, 0.8, 0.28, 1)" },
+          { transform: "translate3d(0,0,0)" },
+        ], { delay: errorPulseDuration, duration: movementTimelineDuration, fill: "none" });
+        animation.onfinish = () => { element.style.zIndex = ""; };
+        animation.oncancel = () => { element.style.zIndex = ""; };
+        return animation;
+      });
+
+      const waveAnimations = board.map((tile, position) => {
+        const element = perceptionTileRefs.current.get(position);
+        if (!element) return null;
+        const correctedRow = Math.floor(tile / 5);
+        const correctedColumn = tile % 5;
+        const originalColor = element.dataset.patternColor;
+        return element.animate([
+          { backgroundColor: originalColor, offset: 0 },
+          { backgroundColor: "#fff", offset: 0.3 },
+          { backgroundColor: "#000", offset: 0.65 },
+          { backgroundColor: originalColor, offset: 1 },
+        ], { delay: completionStart + (correctedRow + correctedColumn) * waveStepDuration, duration: tileCompletionDuration });
+      }).filter(Boolean);
+
+      activeAnimations = [...pulseAnimations, ...moveAnimations, ...waveAnimations];
+      timeoutId = window.setTimeout(demonstratePattern, sequenceDuration + 3000);
+    };
+
+    timeoutId = window.setTimeout(demonstratePattern, 700);
+    return () => {
+      window.clearTimeout(timeoutId);
+      activeAnimations.forEach((animation) => animation.cancel());
+    };
+  }, [cleanGameFamily, perceptionHue, view]);
+
   return (
     <>
         {(cleanGameFamily === GAME_FAMILY_IDS.TEAM ||
+          cleanGameFamily === GAME_FAMILY_IDS.PERCEPTION ||
           cleanGameFamily === GAME_FAMILY_IDS.CARTOON ||
           cleanGameFamily === GAME_FAMILY_IDS.BRAND ||
           cleanGameFamily === GAME_FAMILY_IDS.FLAG ||
@@ -23,6 +114,8 @@ export default function HomeCardArtwork({
                 ? "-bottom-[140px] right-[-52px] w-[268px] sm:-bottom-[170px] sm:right-[-44px] sm:w-[335px]"
                 : cleanGameFamily === GAME_FAMILY_IDS.COLOR
                   ? "inset-0 h-full w-full"
+                : cleanGameFamily === GAME_FAMILY_IDS.PERCEPTION
+                  ? "-bottom-8 -right-6 w-[190px] sm:-bottom-6 sm:-right-4 sm:w-[225px]"
                 : cleanGameFamily === GAME_FAMILY_IDS.FLAG
                   ? "inset-0 h-full w-full"
                 : cleanGameFamily === GAME_FAMILY_IDS.BRAND
@@ -209,6 +302,32 @@ export default function HomeCardArtwork({
                   priority
                 />
               </>
+            ) : cleanGameFamily === GAME_FAMILY_IDS.PERCEPTION ? (
+              <div className={`home-perception-pattern grid grid-cols-5 gap-1 rounded-[18px] bg-white/8 p-2 shadow-[0_18px_38px_rgba(0,0,0,0.38)] backdrop-blur-sm sm:gap-1.5 sm:p-2.5 ${view === "home" ? "home-perception-pattern--active" : ""}`}>
+                {Array.from({ length: 25 }, (_, index) => {
+                  const swaps = { 7: 17, 17: 7, 13: 14, 14: 13 };
+                  const source = swaps[index] ?? index;
+                  const sourceRow = Math.floor(source / 5);
+                  const sourceColumn = source % 5;
+                  const hue = (perceptionHue + sourceColumn * 13 + sourceRow * 8) % 360;
+                  const isMisplaced = Object.hasOwn(swaps, index);
+                  const color = `hsl(${hue} ${72 - sourceRow}% ${76 - sourceRow * 5 - sourceColumn * 2}%)`;
+                  return (
+                    <span
+                      key={index}
+                      ref={(element) => {
+                        if (element) perceptionTileRefs.current.set(index, element);
+                        else perceptionTileRefs.current.delete(index);
+                      }}
+                      data-pattern-color={color}
+                      className={`home-perception-pattern__tile aspect-square rounded-[7px] sm:rounded-[9px] ${isMisplaced ? "home-perception-pattern__tile--misplaced" : ""}`}
+                      style={{
+                        background: color,
+                      }}
+                    />
+                  );
+                })}
+              </div>
             ) : (
               <>
                 <Image

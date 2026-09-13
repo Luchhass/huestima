@@ -1,7 +1,7 @@
-export const LANDING_FAMILIES = Object.freeze(["color", "flag", "cartoon", "brand", "team"]);
+export const LANDING_FAMILIES = Object.freeze(["color", "flag", "cartoon", "brand", "team", "perception"]);
 
 export function getLandingRoute(pathname = "") {
-  const match = /^\/(tr\/)?(color|flag|cartoon|brand|team)\/?$/.exec(pathname);
+  const match = /^\/(tr\/)?(color|flag|cartoon|brand|team|perception)\/?$/.exec(pathname);
   return match ? { locale: match[1] ? "tr" : "en", family: match[2] } : null;
 }
 

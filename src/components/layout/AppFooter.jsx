@@ -53,9 +53,9 @@ export default function AppFooter() {
 
   useFooterChromeReturn(pathname, ".route-transition-footer");
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
-  const family = ["color", "flag", "cartoon", "brand", "team"].includes(familyFromQuery)
+  const family = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(familyFromQuery)
     ? familyFromQuery
-    : ["color", "flag", "cartoon", "brand", "team"].includes(pathnameFamily)
+    : ["color", "flag", "cartoon", "brand", "team", "perception"].includes(pathnameFamily)
       ? pathnameFamily
       : "color";
   const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
@@ -124,7 +124,7 @@ export default function AppFooter() {
       const notificationCard = document.querySelector("[data-notification-card]");
       if (notificationCard) {
         await playCardToCardExit(notificationCard, content, {
-          targetExpanded: /^\/(color|flag|cartoon|brand|team)(\?|$)/.test(href) ? false : true,
+          targetExpanded: /^\/(color|flag|cartoon|brand|team|perception)(\?|$)/.test(href) ? false : true,
           hideChrome: false,
         });
       }

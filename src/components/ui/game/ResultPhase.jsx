@@ -133,6 +133,10 @@ export default function ResultPhase({
   resumeInstantly = false,
   isSpotMode = false,
   brandGuessControlOffset = 0,
+  customContent = null,
+  customResultLine = null,
+  customSelectionLabel = null,
+  hideScore = false,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -159,6 +163,7 @@ export default function ResultPhase({
   const resultLineRef = useRef(null);
   const guessSectionRef = useRef(null);
   const targetSectionRef = useRef(null);
+  const customContentRef = useRef(null);
   const splitOverlayRef = useRef(null);
   const splitBrandSceneRef = useRef(null);
   const guessOverlayTones = useVisualOverlayTones(result?.guess);
@@ -225,6 +230,7 @@ export default function ResultPhase({
           resultLineElement,
           guessSectionElement,
           targetSectionElement,
+          customContentRef.current,
         ].filter(Boolean),
         {
           clearProps: "transform,opacity,visibility",
@@ -243,6 +249,30 @@ export default function ResultPhase({
       }
 
       return undefined;
+    }
+
+    if (hideScore && customContentRef.current) {
+      const quickResultTargets = [
+        roundRef.current,
+        selectionLabelRef.current,
+        resultLineElement,
+        continueButtonRef.current,
+      ].filter(Boolean);
+      const ctx = gsap.context(() => {
+        gsap.set(scoreElement, { autoAlpha: 0 });
+        gsap.fromTo(
+          customContentRef.current,
+          { autoAlpha: 0.9, scale: 0.995 },
+          { autoAlpha: 1, scale: 1, duration: 0.14, ease: "power2.out", clearProps: "transform,opacity,visibility" },
+        );
+        gsap.fromTo(
+          quickResultTargets,
+          { autoAlpha: 0, y: 8 },
+          { autoAlpha: 1, y: 0, duration: 0.22, stagger: 0.025, ease: "power3.out", clearProps: "transform,opacity,visibility" },
+        );
+      }, scopeRef);
+
+      return () => ctx.revert();
     }
 
     // Every game family uses the same comparison reveal: keep the guess in
@@ -281,7 +311,7 @@ export default function ResultPhase({
         scale: 1,
       });
 
-      playScoreResolve(result.score);
+      if (!hideScore) playScoreResolve(result.score);
       return undefined;
     }
 
@@ -811,9 +841,71 @@ export default function ResultPhase({
       resultCharsTween?.kill();
       ctx.revert();
     };
-  }, [brandGuessControlOffset, isSpotMode, result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
+  }, [brandGuessControlOffset, hideScore, isSpotMode, result, resumeInstantly, scoreCountDuration, visualIntroDelayMs]);
 
   if (!result) return null;
+
+  if (customContent) {
+    return (
+      <div ref={scopeRef} className="relative h-full overflow-hidden bg-black text-white">
+        <div
+          ref={continueFadeRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-60 rounded-[inherit] bg-black opacity-0"
+        />
+
+        <div ref={customContentRef} className="absolute inset-0 z-10">
+          {customContent}
+        </div>
+
+        <div className="absolute left-6 top-6 z-20 overflow-hidden sm:left-8 sm:top-8">
+          <p ref={roundRef} className="text-base font-semibold text-white/78">
+            {roundLabel}
+          </p>
+        </div>
+
+        <div className="absolute right-6 top-6 z-20 max-w-[calc(100%-3rem)] text-right sm:right-8 sm:top-8 sm:max-w-72">
+          <div className={hideScore ? "hidden" : "overflow-hidden pb-[0.08em]"}>
+            <p className="flex flex-nowrap items-baseline justify-end whitespace-nowrap text-[clamp(4rem,18vw,4.5rem)] font-semibold leading-[0.82] tracking-normal tabular-nums sm:text-[6.3rem]">
+              <span ref={scoreRef}>{formatScore(0)}</span>
+            </p>
+          </div>
+          <p
+            ref={resultLineRef}
+            className={`${hideScore ? "mt-0" : "mt-3"} whitespace-normal break-normal text-xl font-semibold leading-[1.08]`}
+            style={{ opacity: 0, visibility: "hidden" }}
+          >
+            {renderAnimatedResultLine(customResultLine || "")}
+          </p>
+        </div>
+
+        <div className="absolute bottom-6 left-6 z-20 overflow-hidden sm:bottom-8 sm:left-8">
+          <p ref={selectionLabelRef} className="text-sm font-semibold text-white/90">
+            {customSelectionLabel}
+          </p>
+        </div>
+
+        <button
+          ref={continueButtonRef}
+          type="button"
+          aria-label={hasNextRound ? t("game.goNextRound") : t("game.showFinalScore")}
+          onClick={handleContinueClick}
+          className="soft-icon-button result-action-button result-next-button card-action-size group absolute bottom-6 right-6 z-30 grid place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-current/45 sm:bottom-8 sm:right-8"
+        >
+          <span ref={continueButtonRingRef} className="pointer-events-none absolute -inset-1 rounded-full border border-current/28" />
+          <span ref={continueButtonCoreRef} className="absolute inset-0 rounded-full bg-white text-zinc-950 shadow-[0_16px_34px_rgba(0,0,0,0.22)]" />
+          <span className="absolute inset-0 overflow-hidden rounded-full">
+            <span ref={continueArrowRef} className="absolute inset-0 z-10 grid place-items-center text-zinc-950 transition-transform duration-300 ease-in-out group-hover:translate-x-[150%]">
+              <ArrowRight size={31} strokeWidth={2.1} />
+            </span>
+            <span className="absolute inset-0 z-10 grid -translate-x-[150%] place-items-center text-zinc-950 transition-transform duration-300 ease-in-out group-hover:translate-x-0">
+              <ArrowRight size={31} strokeWidth={2.1} />
+            </span>
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   const guessTone = swatchToneClasses(colorToneHex(result.guess));
   const targetTone = swatchToneClasses(colorToneHex(result.target));

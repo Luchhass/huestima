@@ -73,7 +73,7 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
   const previewAnimatingRef = useRef(false);
   const previewTweenRef = useRef(null);
   const previewDragRef = useRef(null);
-  const from = ["color", "flag", "cartoon", "brand", "team"].includes(initialFrom) ? initialFrom : "color";
+  const from = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(initialFrom) ? initialFrom : "color";
   const cardHeight = useResponsiveCardHeight(isExpanded);
 
   useScreenReveal(scopeRef, [locale], { defer: true });

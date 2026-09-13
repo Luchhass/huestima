@@ -17,6 +17,7 @@ export const GAME_FAMILY_MODE_IDS = Object.freeze({
   cartoon: Object.freeze(["normal", "endless", "timed", "rush", "elimination"]),
   brand: Object.freeze(["normal", "endless", "timed", "rush", "elimination"]),
   team: Object.freeze(["normal", "endless", "timed", "rush", "elimination"]),
+  perception: Object.freeze(["pattern", "odd"]),
 });
 
 export const MULTIPLAYER_GAME_FAMILY_MODE_IDS = Object.freeze({
@@ -37,4 +38,5 @@ export const MULTIPLAYER_GAME_FAMILY_MODE_IDS = Object.freeze({
   cartoon: Object.freeze(["normal", "timed", "rush", "elimination"]),
   brand: Object.freeze(["normal", "timed", "rush", "elimination"]),
   team: Object.freeze(["normal", "timed", "rush", "elimination"]),
+  perception: Object.freeze(["pattern", "odd"]),
 });

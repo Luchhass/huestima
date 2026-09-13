@@ -13,7 +13,7 @@ import { SCREEN_REVEAL_REPLAY_EVENT } from "@/hooks/useScreenReveal";
 import { hasPendingFooterReturn } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 
-const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team"]);
+const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team", "perception"]);
 const NON_INVITE_ENTRY_PATHS = new Set([
   "how-it-works",
   "test",

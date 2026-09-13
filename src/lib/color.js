@@ -191,7 +191,10 @@ export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
   if (isBrandColor(color)) return color.backgroundHex || "#e3e3e3";
   if (isCartoonColor(color)) return color.toneHex || color.hex || "#000000";
-  if (!isGradientColor(color)) return color?.hex || color || "#000000";
+  if (!isGradientColor(color)) {
+    const tone = color?.toneHex || color?.hex || color;
+    return typeof tone === "string" ? tone : "#000000";
+  }
 
   return color.toneHex || averageRgbHex(color.left.hex, color.right.hex);
 }

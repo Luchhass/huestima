@@ -69,6 +69,8 @@ export const GAME_MODE_IDS = {
   BLIND: "blind",
   CARTOON: "cartoon",
   SPOT: "spot",
+  PATTERN: "pattern",
+  ODD: "odd",
 };
 
 export const DEFAULT_GAME_MODE_ID = GAME_MODE_IDS.NORMAL;
@@ -163,6 +165,19 @@ export const GAME_MODE_OPTIONS = [
     description: "Classic memory rounds without a visible live color preview.",
     revealDurationMs: MEMORIZE_DURATION_MS,
   },
+  {
+    id: GAME_MODE_IDS.PATTERN,
+    label: "Pattern",
+    description: "Repair the misplaced tiles before the pattern clock runs out.",
+    revealDurationMs: 0,
+  },
+  {
+    id: GAME_MODE_IDS.ODD,
+    label: "Odd",
+    description: "Find the single tile with a subtly different tone.",
+    revealDurationMs: 0,
+    isEndless: true,
+  },
 ];
 
 export const GAME_MODE_CARD_COPY = {
@@ -191,6 +206,10 @@ export const GAME_MODE_CARD_COPY = {
       "Clear a rising accuracy threshold each round and survive for as long as you can.",
     [GAME_MODE_IDS.BLIND]:
       "Memorize each color for five seconds, then rebuild it using the bars without a live preview.",
+    [GAME_MODE_IDS.PATTERN]:
+      "Find the two or three misplaced tiles and repair the color pattern before time runs out.",
+    [GAME_MODE_IDS.ODD]:
+      "Find the subtly different tile. Each correct answer makes the next difference harder to see.",
   },
   multiplayer: {
     [GAME_MODE_IDS.NORMAL]:
@@ -217,6 +236,10 @@ export const GAME_MODE_CARD_COPY = {
       "Clear the rising accuracy threshold each round. Eliminated players watch until the last survivor falls.",
     [GAME_MODE_IDS.BLIND]:
       "Everyone memorizes the same five-second color, then rebuilds it using the bars without a live preview.",
+    [GAME_MODE_IDS.PATTERN]:
+      "Everyone repairs the same misplaced tiles before the ten-second clock runs out.",
+    [GAME_MODE_IDS.ODD]:
+      "Everyone hunts the same odd tile. One mistake ends your run; the last sharp eye wins.",
   },
 };
 

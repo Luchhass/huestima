@@ -21,7 +21,7 @@ import {
 } from "@/lib/notificationInbox";
 
 const API_ROOT = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
-const FAMILY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team"]);
+const FAMILY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team", "perception"]);
 const DEFAULT_OPERATIONS = {
   maintenanceEnabled: false,
   multiplayerEnabled: true,

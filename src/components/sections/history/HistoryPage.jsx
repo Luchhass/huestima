@@ -100,7 +100,7 @@ function getScoreColor(score, maxScore) {
   return `hsl(${hue} 100% 58%)`;
 }
 
-function RoundTiles({ results = [], locale, t }) {
+function RoundTiles({ results = [], locale, t, hideScores = false }) {
   return (
     <div className="grid w-full grid-cols-5 overflow-hidden">
       {results.map((result, resultIndex) => (
@@ -146,20 +146,20 @@ function RoundTiles({ results = [], locale, t }) {
             <BrandOverlay color={result.guess} className="z-[2]" size="tile" />
           )}
 
-          <span
+          {!hideScores && <span
             className={`absolute left-1.5 top-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[clamp(0.86rem,3.15vw,1.05rem)] font-semibold leading-none tabular-nums sm:left-2 sm:top-2 sm:max-w-[calc(100%-1rem)] sm:text-[1.08rem] ${tileScoreTone(
               colorToneHex(result.target),
             )}`}
           >
             {formatScore(result.score)}
-          </span>
+          </span>}
         </div>
       ))}
     </div>
   );
 }
 
-function MultiplayerRows({ leaderboard, currentPlayerId, locale, t }) {
+function MultiplayerRows({ leaderboard, currentPlayerId, locale, t, isOddMode = false }) {
   const rows = leaderboard?.leaderboard || [];
   const maxTotalScore =
     leaderboard?.maxTotalScore || (leaderboard?.totalRounds || 0) * 10;
@@ -187,12 +187,12 @@ function MultiplayerRows({ leaderboard, currentPlayerId, locale, t }) {
               <div className="text-right">
                 <p
                   className="text-[1.85rem] font-semibold leading-none sm:text-[2.1rem]"
-                  style={{ color: getScoreColor(row.totalScore, maxTotalScore) }}
+                  style={{ color: isOddMode ? "#ffffff" : getScoreColor(row.totalScore, maxTotalScore) }}
                 >
-                  {formatScore(row.totalScore)}
+                  {isOddMode ? row.oddLevelsCleared || 0 : formatScore(row.totalScore)}
                 </p>
                 <p className="mt-2 text-sm text-white/42">
-                  / {formatScore(maxTotalScore)}
+                  {isOddMode ? t("game.odd.levels") : `/ ${formatScore(maxTotalScore)}`}
                 </p>
               </div>
             </div>
@@ -201,6 +201,7 @@ function MultiplayerRows({ leaderboard, currentPlayerId, locale, t }) {
               results={row.roundResults || []}
               locale={locale}
               t={t}
+              hideScores={isOddMode}
             />
           </article>
         );
@@ -210,6 +211,8 @@ function MultiplayerRows({ leaderboard, currentPlayerId, locale, t }) {
 }
 
 function HistoryListItem({ entry, locale, t, onOpen }) {
+  const isProgressEntry = entry.gameMode === "odd";
+  const displayValue = isProgressEntry ? entry.progressValue || 0 : entry.totalScore || 0;
   return (
     <article className="border-b border-white/10 py-4 last:border-b-0 sm:py-5">
       <button
@@ -231,12 +234,12 @@ function HistoryListItem({ entry, locale, t, onOpen }) {
         <div className="shrink-0 text-right">
           <p
             className="text-[1.65rem] font-semibold leading-none sm:text-[1.9rem]"
-            style={{ color: getScoreColor(entry.totalScore || 0, entry.maxScore || 1) }}
+            style={{ color: isProgressEntry ? "#ffffff" : getScoreColor(entry.totalScore || 0, entry.maxScore || 1) }}
           >
-            {formatScore(entry.totalScore || 0)}
+            {formatScore(displayValue)}
           </p>
           <p className="mt-2 text-sm text-white/42">
-            {entry.rounds || 0} {t("history.roundSuffix")}
+            {isProgressEntry ? t("game.odd.levels") : `${entry.rounds || 0} ${t("history.roundSuffix")}`}
           </p>
         </div>
       </button>
@@ -249,9 +252,11 @@ function HistoryEmptyState({ t }) {
 }
 
 function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
+  const isProgressEntry = entry.gameMode === "odd";
   const maxScore = entry.maxScore || 0;
   const totalScore = entry.totalScore || 0;
-  const scoreColor = getScoreColor(totalScore, maxScore);
+  const scoreColor = isProgressEntry ? "#ffffff" : getScoreColor(totalScore, maxScore);
+  const displayValue = isProgressEntry ? entry.progressValue || 0 : totalScore;
 
   return (
     <>
@@ -263,10 +268,10 @@ function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
             className="text-[clamp(3.2rem,11.5vw,4.45rem)] leading-[0.82] font-semibold tracking-normal"
             style={{ color: scoreColor }}
           >
-            {formatScore(totalScore)}
+            {formatScore(displayValue)}
           </p>
           <p className="pb-1 text-[clamp(1.15rem,4vw,1.5rem)] font-semibold leading-none text-white/35">
-            / {formatScore(maxScore)}
+            {isProgressEntry ? t("game.odd.levels") : `/ ${formatScore(maxScore)}`}
           </p>
         </div>
 
@@ -323,7 +328,7 @@ export default function HistoryPage({
   const listView = !activeEntry;
   const sharedEntry = useMemo(() => sharedMatch || null, [sharedMatch]);
   const isSharedView = Boolean(sharedEntry);
-  const from = ["color", "flag", "cartoon", "brand", "team"].includes(initialFrom)
+  const from = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(initialFrom)
     ? initialFrom
     : "color";
 
@@ -522,6 +527,7 @@ export default function HistoryPage({
                     }
                     locale={locale}
                     t={t}
+                    isOddMode={activeEntry.gameMode === "odd"}
                   />
                 ) : (
                   <div className="w-full max-w-[32rem]">
@@ -529,6 +535,7 @@ export default function HistoryPage({
                       results={activeEntry.results || []}
                       locale={locale}
                       t={t}
+                      hideScores={activeEntry.gameMode === "odd"}
                     />
                   </div>
                 )}

@@ -25,6 +25,13 @@ const REEL_CONFIG = [
   },
 ];
 
+const THOUSANDS_REEL = {
+  place: 1000,
+  toneClassName: "text-current/88",
+  duration: 0.34,
+  ease: "expo.out",
+};
+
 export function RushClock({ remainingMs, className = "" }) {
   const totalCentiseconds = Math.max(0, Math.ceil(remainingMs / 10));
   const seconds = Math.floor(totalCentiseconds / 100);
@@ -82,17 +89,18 @@ export default function CountdownReel({
 }) {
   const reelTrackRefs = useRef([]);
   const totalCentiseconds = Math.max(0, Math.round(durationMs / 10));
+  const usesThousandsReel = totalCentiseconds >= 1000;
   const timerDigits = String(
     Math.max(0, currentCentiseconds ?? totalCentiseconds),
-  ).padStart(3, "0");
+  ).padStart(usesThousandsReel ? 4 : 3, "0");
 
   const reels = useMemo(
     () =>
-      REEL_CONFIG.map((reel) => ({
+      (usesThousandsReel ? [THOUSANDS_REEL, ...REEL_CONFIG] : REEL_CONFIG).map((reel) => ({
         ...reel,
         frames: buildReelFrames(totalCentiseconds, reel.place),
       })),
-    [totalCentiseconds],
+    [totalCentiseconds, usesThousandsReel],
   );
 
   useLayoutEffect(() => {
@@ -160,7 +168,7 @@ export default function CountdownReel({
 
   return (
     <div
-      className={`inline-grid w-[2.08em] grid-cols-3 justify-end font-mono font-semibold tracking-normal tabular-nums ${sizeClassName} ${className}`}
+      className={`inline-grid ${usesThousandsReel ? "w-[2.76em] grid-cols-4" : "w-[2.08em] grid-cols-3"} justify-end font-mono font-semibold tracking-normal tabular-nums ${sizeClassName} ${className}`}
       aria-label={timerDigits}
     >
       <span className="sr-only">{timerDigits}</span>

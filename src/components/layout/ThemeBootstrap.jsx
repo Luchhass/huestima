@@ -21,9 +21,9 @@ const bootstrapScript = String.raw`
     document.documentElement.style.colorScheme = theme;
 
     const language =
-      /^\/tr\/(color|flag|cartoon|brand|team)\/?$/.test(window.location.pathname)
+      /^\/tr\/(color|flag|cartoon|brand|team|perception)\/?$/.test(window.location.pathname)
         ? "tr"
-        : /^\/(color|flag|cartoon|brand|team)\/?$/.test(window.location.pathname)
+        : /^\/(color|flag|cartoon|brand|team|perception)\/?$/.test(window.location.pathname)
           ? "en"
           : window.localStorage.getItem(${JSON.stringify(LANGUAGE_STORAGE_KEY)}) === "tr"
         ? "tr"
@@ -32,14 +32,14 @@ const bootstrapScript = String.raw`
     document.documentElement.dataset.locale = language;
 
     const pathSegments = window.location.pathname.split("/").filter(Boolean);
-    const isGameFamilyPath = ["color", "flag", "cartoon", "brand", "team"].includes(pathSegments[0]);
+    const isGameFamilyPath = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(pathSegments[0]);
     const isInviteRoomPath =
       pathSegments.length === 2 &&
       isGameFamilyPath &&
       /^\d{6}$/.test(pathSegments[1]);
     const isLandingEntryPath =
       window.location.pathname === "/" ||
-      /^\/(?:tr\/)?(color|flag|cartoon|brand|team)\/?$/.test(
+      /^\/(?:tr\/)?(color|flag|cartoon|brand|team|perception)\/?$/.test(
         window.location.pathname,
       );
     const isEntryPath = isLandingEntryPath || isInviteRoomPath;

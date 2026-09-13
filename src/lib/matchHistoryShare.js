@@ -12,7 +12,7 @@ import { normalizeGameFamily } from "@/lib/gameFamily";
 
 const SHARE_FORMAT_PREFIX = "v2.";
 
-const FAMILY_CODES = { color: "c", flag: "f", cartoon: "t", brand: "b" };
+const FAMILY_CODES = { color: "c", flag: "f", cartoon: "t", brand: "b", team: "m", perception: "p" };
 const FAMILY_BY_CODE = Object.fromEntries(
   Object.entries(FAMILY_CODES).map(([family, code]) => [code, family]),
 );
@@ -25,6 +25,14 @@ const MODE_CODES = {
   timed: "t",
   gradient: "g",
   flag: "F",
+  blend: "b",
+  decoy: "d",
+  rush: "r",
+  elimination: "E",
+  blind: "B",
+  spot: "S",
+  pattern: "p",
+  odd: "o",
 };
 const MODE_BY_CODE = Object.fromEntries(
   Object.entries(MODE_CODES).map(([mode, code]) => [code, mode]),
@@ -59,6 +67,7 @@ function compactColor(color) {
   if (isFlagColor(color)) return ["f", color.flagId, ...compactHsv(color)];
   if (isCartoonColor(color)) return ["t", color.cartoonId, ...compactHsv(color)];
   if (isBrandColor(color)) return ["b", color.brandId, ...compactHsv(color)];
+  if (color?.hex && !Number.isFinite(Number(color?.h))) return ["x", color.hex];
 
   return ["c", ...compactHsv(color)];
 }
@@ -67,6 +76,8 @@ function expandColor(value) {
   if (!Array.isArray(value)) return withHex({ h: 0, s: 0, v: 0 });
 
   const [type, idOrHue, saturationOrLeft, valueOrRight, maybeValue] = value;
+
+  if (type === "x") return { hex: idOrHue || "#000000" };
 
   if (type === "g") {
     return withGradientHex({
@@ -105,6 +116,7 @@ function compactResults(results = []) {
     compactColor(result?.target),
     compactColor(result?.guess),
     roundScore(result?.score),
+    result?.oddPassed === true ? 1 : result?.oddPassed === false ? 0 : null,
   ]);
 }
 
@@ -114,6 +126,9 @@ function expandResults(results = []) {
     target: expandColor(result?.[0]),
     guess: expandColor(result?.[1]),
     score: restoreScore(result?.[2]),
+    ...(result?.[3] === null || result?.[3] === undefined
+      ? {}
+      : { oddPassed: Boolean(result[3]) }),
   }));
 }
 
@@ -129,6 +144,7 @@ function compactLeaderboard(leaderboard) {
       Number(row.rank) || 0,
       roundScore(row.totalScore),
       compactResults(row.roundResults),
+      Number(row.oddLevelsCleared) || 0,
     ]),
   ];
 }
@@ -145,6 +161,7 @@ function expandLeaderboard(value) {
       rank: Number(row?.[2]) || 0,
       totalScore: restoreScore(row?.[3]),
       roundResults: expandResults(row?.[4]),
+      oddLevelsCleared: Number(row?.[5]) || 0,
       isCurrent: false,
     })),
   };
@@ -168,6 +185,8 @@ function compactEntry(entry, sharedBy) {
     entry?.gameType === "multiplayer"
       ? compactLeaderboard(entry?.leaderboard)
       : compactResults(entry?.results),
+    Number(entry?.progressValue) || 0,
+    entry?.progressUnit || "",
   ];
 }
 
@@ -189,6 +208,8 @@ function expandEntry(value) {
     createdAt,
     sharedBy,
     details,
+    progressValue,
+    progressUnit,
   ] = value;
 
   const entry = {
@@ -205,6 +226,8 @@ function expandEntry(value) {
     maxScore: restoreScore(maxScore),
     createdAt: (Number(createdAt) || 0) * 1000,
     sharedBy: String(sharedBy || "").trim(),
+    progressValue: Number(progressValue) || 0,
+    progressUnit: String(progressUnit || ""),
   };
 
   if (entry.gameType === "multiplayer") {

@@ -42,10 +42,19 @@ import {
 } from "../rooms/roomValidation.js";
 import { createSeed } from "../utils/ids.js";
 import { now } from "../utils/time.js";
+import { countMisplacedPatternTiles, getPatternDurationMs, isPatternSolved, scorePatternRound } from "../../../shared/patternGame.mjs";
+import { isOddSelectionCorrect } from "../../../shared/oddGame.mjs";
 
 function roundScore(value) {
   if (!Number.isFinite(value)) return 0;
   return Math.round(value * 100) / 100;
+}
+
+function validatePatternBoard(board, target) {
+  if (!Array.isArray(board) || board.length !== target.board.length) return fail("Invalid pattern board.");
+  const expected = new Set(target.board);
+  if (new Set(board).size !== expected.size || board.some((tile) => !expected.has(tile))) return fail("Invalid pattern tiles.");
+  return ok({ board: [...board] });
 }
 
 function calculateMatchScore(targetColor, guessColor) {
@@ -245,6 +254,9 @@ export function startGameForRoom(room) {
   const modeConfig = GAME_MODE_CONFIG[room.gameMode] || GAME_MODE_CONFIG.normal;
   const difficulty = modeConfig.lockedDifficulty || room.difficulty;
   const roundCount = modeConfig.roundCount || room.roundCount || DEFAULT_ROUND_COUNT;
+  const guessDurationMs = room.gameMode === GAME_MODES.PATTERN
+    ? getPatternDurationMs(difficulty)
+    : modeConfig.guessDurationMs || null;
 
   room.status = ROOM_STATUSES.IN_GAME;
   room.seed = seed;
@@ -257,7 +269,7 @@ export function startGameForRoom(room) {
     hintsEnabled: room.hintsEnabled !== false,
     currentRoundIndex: 0,
     revealDurationMs: modeConfig.revealDurationMs,
-    guessDurationMs: modeConfig.guessDurationMs || null,
+    guessDurationMs,
     rushDurationMs: modeConfig.rushDurationMs || null,
     targetColors: generateTargetColors({
       seed,
@@ -307,7 +319,7 @@ function getActivePlayers(room) {
     );
 }
 
-function ensureEliminationTarget(room, roundIndex) {
+function ensureDynamicTarget(room, roundIndex) {
   if (room.game.targetColors[roundIndex]) return room.game.targetColors[roundIndex];
 
   const requiredRoundCount = roundIndex + 1;
@@ -352,14 +364,16 @@ export function submitRoundGuess(room, payload) {
   if (player.eliminated) return fail("This player has been eliminated.");
 
   const isElimination = room.game.mode === GAME_MODES.ELIMINATION;
+  const isOdd = room.game.mode === GAME_MODES.ODD;
+  const isDynamic = isElimination || isOdd;
   let roundIndex;
-  if (isElimination) {
+  if (isDynamic) {
     roundIndex = Number(payload.roundIndex);
     const expectedRoundIndex = player.results.filter(Boolean).length;
     if (!Number.isInteger(roundIndex) || roundIndex < 0 || roundIndex !== expectedRoundIndex) {
-      return fail("Invalid elimination round.");
+      return fail("Invalid dynamic round.");
     }
-    ensureEliminationTarget(room, roundIndex);
+    ensureDynamicTarget(room, roundIndex);
   } else {
     const roundResult = validateRoundIndex(payload.roundIndex, room.game.roundCount);
     if (!roundResult.ok) return roundResult;
@@ -377,6 +391,83 @@ export function submitRoundGuess(room, payload) {
 
   const targetColor = room.game.targetColors[roundIndex];
   if (!targetColor) return fail("Target color is unavailable.");
+
+  if (room.game.mode === GAME_MODES.PATTERN) {
+    const boardResult = validatePatternBoard(payload.patternBoard, targetColor);
+    if (!boardResult.ok) return boardResult;
+    const board = boardResult.data.board;
+    const solved = isPatternSolved(board);
+    const swaps = Math.max(0, Math.floor(Number(payload.swaps) || 0));
+    const remainingMs = Math.max(0, Math.min(getPatternDurationMs(room.game.difficulty), Number(payload.remainingMs) || 0));
+    const score = scorePatternRound({
+      initialMisplaced: countMisplacedPatternTiles(targetColor.board),
+      remainingMisplaced: countMisplacedPatternTiles(board),
+    });
+    const displayIndex = Math.floor(targetColor.colors.length / 2);
+    const firstMisplacedIndex = board.find((tile, position) => tile !== position);
+    const result = {
+      round: roundIndex + 1, roundIndex,
+      target: { hex: targetColor.colors[displayIndex] }, targetColor,
+      guess: { hex: targetColor.colors[firstMisplacedIndex ?? displayIndex] },
+      guessColor: { board }, solved, swaps, score,
+      grade: solved ? getGradeLabel(score) : "Missed",
+      difference: { misplacedTiles: countMisplacedPatternTiles(board) },
+    };
+    player.results[roundIndex] = result;
+    player.totalScore = roundScore(player.results.filter(Boolean).reduce((sum, item) => sum + item.score, 0));
+    player.submitted = player.results.filter(Boolean).length >= room.game.roundCount;
+    player.lastSeenAt = now();
+    room.updatedAt = now();
+    const leaderboard = maybeFinishRoom(room);
+    return ok({ result, playerResults: player.results.filter(Boolean), playerTotalScoreSoFar: player.totalScore, leaderboard });
+  }
+
+  if (isOdd) {
+    const oddSelection = Number(payload.oddSelection);
+    if (!Number.isInteger(oddSelection) || oddSelection < 0 || oddSelection >= targetColor.colors.length) {
+      return fail("Invalid odd tile selection.");
+    }
+
+    const oddPassed = isOddSelectionCorrect(targetColor, oddSelection);
+    const score = 0;
+    const result = {
+      round: roundIndex + 1,
+      roundIndex,
+      target: { hex: targetColor.oddColor },
+      targetColor,
+      guess: { oddSelection, hex: targetColor.colors[oddSelection] },
+      guessColor: { oddSelection, hex: targetColor.colors[oddSelection] },
+      oddSelection,
+      oddPassed,
+      score,
+      grade: oddPassed ? "Perfect" : "Missed",
+      difference: { tone: targetColor.difference },
+    };
+
+    player.results[roundIndex] = result;
+    player.totalScore = roundScore(
+      player.results.filter(Boolean).reduce((sum, item) => sum + item.score, 0),
+    );
+    player.eliminated = !oddPassed;
+    player.submitted = !oddPassed;
+    if (!oddPassed) {
+      room.game.activePlayerIds.delete(player.id);
+    } else {
+      ensureDynamicTarget(room, roundIndex + 1);
+    }
+    player.lastSeenAt = now();
+    room.updatedAt = now();
+
+    const leaderboard = maybeFinishRoom(room);
+    return ok({
+      result,
+      playerResults: player.results.filter(Boolean),
+      playerTotalScoreSoFar: player.totalScore,
+      nextTargetColor: oddPassed ? room.game.targetColors[roundIndex + 1] : null,
+      nextRoundIndex: oddPassed ? roundIndex + 1 : null,
+      leaderboard,
+    });
+  }
 
   const colorResult = validateGuessColorPayload(
     targetColor,
@@ -439,7 +530,7 @@ export function submitRoundGuess(room, payload) {
     if (!eliminationPassed) {
       room.game.activePlayerIds.delete(player.id);
     } else {
-      ensureEliminationTarget(room, roundIndex + 1);
+      ensureDynamicTarget(room, roundIndex + 1);
     }
   } else {
     player.submitted = player.results.filter(Boolean).length >= room.game.roundCount;
@@ -479,6 +570,9 @@ export function submitFullResults(room, payload) {
       playerId: payload.playerId,
       roundIndex: item.roundIndex,
       guessColor: item.guessColor || item.guess,
+      patternBoard: item.patternBoard,
+      remainingMs: item.remainingMs,
+      swaps: item.swaps,
     });
 
     if (!submission.ok) return submission;
@@ -524,7 +618,8 @@ export function buildLeaderboard(room) {
   const players = getGameParticipantPlayers(room);
   const isRush = room.game.mode === GAME_MODES.RUSH;
   const isElimination = room.game.mode === GAME_MODES.ELIMINATION;
-  const totalRounds = isRush || isElimination
+  const isOdd = room.game.mode === GAME_MODES.ODD;
+  const totalRounds = isRush || isElimination || isOdd
     ? Math.max(1, ...players.map((player) => player.results.filter(Boolean).length))
     : room.game.roundCount;
   const maxTotalScore = totalRounds * MAX_ROUND_SCORE;
@@ -533,17 +628,24 @@ export function buildLeaderboard(room) {
     .map((player) => {
       const roundResults = Array.from({ length: totalRounds }, (_, index) => {
         const result = player.results[index];
+        const puzzleTarget = room.game.targetColors[index];
+        const displayTarget = room.game.mode === GAME_MODES.PATTERN
+          ? { hex: puzzleTarget?.colors?.[Math.floor((puzzleTarget?.colors?.length || 1) / 2)] || "#000000" }
+          : room.game.mode === GAME_MODES.ODD
+            ? { hex: puzzleTarget?.oddColor || "#000000" }
+            : puzzleTarget;
         return (
           result || {
             round: index + 1,
             roundIndex: index,
-            target: room.game.targetColors[index],
-            targetColor: room.game.targetColors[index],
-            guess: room.game.targetColors[index],
-            guessColor: room.game.targetColors[index],
+            target: displayTarget,
+            targetColor: puzzleTarget,
+            guess: displayTarget,
+            guessColor: puzzleTarget,
             score: 0,
             grade: "Missed",
             difference: null,
+            ...(isOdd ? { oddPassed: false } : {}),
           }
         );
       });
@@ -559,11 +661,16 @@ export function buildLeaderboard(room) {
         submitted: player.submitted,
         eliminated: Boolean(player.eliminated),
         totalScore,
+        ...(isOdd
+          ? { oddLevelsCleared: roundResults.filter((result) => result.oddPassed).length }
+          : {}),
         maxTotalScore,
         roundResults,
       };
     })
-    .sort((first, second) => second.totalScore - first.totalScore);
+    .sort((first, second) => isOdd
+      ? second.oddLevelsCleared - first.oddLevelsCleared
+      : second.totalScore - first.totalScore);
 
   return {
     roomCode: room.code,
@@ -587,7 +694,7 @@ export function maybeFinishRoom(room) {
   if (!room.game || room.status !== ROOM_STATUSES.IN_GAME) return room.leaderboard;
 
   const activePlayers = getActivePlayers(room);
-  const allFinished = room.game.mode === GAME_MODES.ELIMINATION
+  const allFinished = room.game.mode === GAME_MODES.ELIMINATION || room.game.mode === GAME_MODES.ODD
     ? activePlayers.length === 0
     : activePlayers.length > 0 && activePlayers.every((player) => player.submitted);
 

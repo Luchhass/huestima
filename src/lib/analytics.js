@@ -23,7 +23,7 @@ export function trackEvent(eventName, params = {}) {
   if (!initializeAnalytics()) return;
 
   if (window.location.pathname.startsWith("/admin")) return;
-  const family = /^\/(?:tr\/)?(color|flag|cartoon|brand|team)(?:\/|$)/.exec(window.location.pathname)?.[1];
+  const family = /^\/(?:tr\/)?(color|flag|cartoon|brand|team|perception)(?:\/|$)/.exec(window.location.pathname)?.[1];
   window.gtag("event", eventName, {
     ...(family ? { game_family: family } : {}),
     content_language: document.documentElement.lang || "en",
@@ -58,6 +58,8 @@ export function trackMatchEnd({
   totalScore,
   averageScore,
   rounds,
+  progressValue,
+  progressUnit,
 }) {
   const levelName = `${gameType}_${gameMode}_${difficulty}`;
 
@@ -69,6 +71,8 @@ export function trackMatchEnd({
     game_mode: gameMode,
     rounds,
     score_average: averageScore,
+    ...(Number.isFinite(progressValue) ? { progress_value: progressValue } : {}),
+    ...(progressUnit ? { progress_unit: progressUnit } : {}),
   });
 
   trackEvent("post_score", {
@@ -79,5 +83,7 @@ export function trackMatchEnd({
     difficulty,
     game_mode: gameMode,
     score_average: averageScore,
+    ...(Number.isFinite(progressValue) ? { progress_value: progressValue } : {}),
+    ...(progressUnit ? { progress_unit: progressUnit } : {}),
   });
 }

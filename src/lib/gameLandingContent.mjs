@@ -1,6 +1,6 @@
 // Editorial content, shared by server-rendered pages and their metadata.
 // Update this date only after a substantive change to the landing content.
-export const LANDING_UPDATED = "2026-09-11";
+export const LANDING_UPDATED = "2026-09-12";
 export const GAME_LANDING_CONTENT = {
   color: {
     en: {
@@ -100,6 +100,26 @@ export const GAME_LANDING_CONTENT = {
       steps: ["Takımlar oyununu seç, takım havuzunu aç ve oynamak istediğin kulüpleri belirle.", "Gösterim aşamasında kulübün hedef rengini incele.", "Tahminini ayarla, onayla ve sonucu orijinal renkle karşılaştır."],
       tip: "Ana tonu armadaki beyaz, siyah ve küçük ayrıntılardan ayrı düşün. Birbirine yakın iki kırmızı veya mavi arasında kalırsan önce sıcaklığına odaklan; yüksek zorluklarda doygunluk ve parlaklığı da ayarla.",
       faq: [["Bu bir futbol maçı oyunu mu?", "Hayır. Futbol kulüplerinin logolarını kullanan bir renk hafıza oyunudur; maç simülasyonu veya takım adı bulma testi değildir."], ["Takımları ben seçebilir miyim?", "Evet. Oyun ayarlarındaki takım havuzundan mevcut kulüpler arasından seçim yapabilirsin."], ["Arkadaşlarımla aynı lobide yarışabilir miyim?", "Evet. Çok oyunculu lobi oluşturup davet bağlantısını paylaşarak tarayıcılarınızdan birlikte oynayabilirsiniz."]],
+    },
+  },
+  perception: {
+    en: {
+      name: "Perception game", title: "Perception Game — Repair Color Patterns | Huestima",
+      description: "Play Huestima Perception: repair broken color patterns or find the one subtly different tone.",
+      heading: "Spot what breaks the color flow",
+      intro: "Perception turns color into a visual puzzle. Pattern builds a smooth field from many small color tiles, then quietly moves only two or three of them. Read the flow, identify the pieces that do not belong and swap them back before the timer reaches zero.",
+      steps: ["Choose Pattern to repair a color transition, or Odd to find the different tone.", "In Pattern, swap misplaced tiles before the puzzle clock expires.", "In Odd, select the different tile and keep advancing as the tone gap shrinks."],
+      tip: "Follow rows and columns instead of judging one tile in isolation. A misplaced tile usually breaks the gradient in more than one direction.",
+      faq: [["How does Pattern work?", "Only a limited number of tiles are misplaced. Swap them back before the difficulty-based timer expires."], ["How does Odd work?", "Choose the single different tone. Correct choices advance your level and gradually reduce the visible difference."], ["Can I play both modes in multiplayer?", "Yes. Pattern uses puzzle scores; Odd remains a level-based elimination game." ]],
+    },
+    tr: {
+      name: "Algı oyunu", title: "Algı Oyunu — Renk Desenini Onar | Huestima",
+      description: "Huestima Algı oyununda renk geçişindeki yanlış kareleri bul, yerlerini değiştir ve süre dolmadan deseni onar.",
+      heading: "Renk düzenini bozan parçaları bul",
+      intro: "Algı, rengi görsel bir bulmacaya dönüştürür. Desen modu çok sayıda küçük renk karesiyle yumuşak bir geçiş kurar, ardından yalnızca iki veya üç kareyi sessizce yerinden oynatır. Akışı oku, ait olmadığı yerde duran parçaları bul ve süre sıfırlanmadan yerlerine taşı.",
+      steps: ["Desen modunu seç ve serideki seviye sayısını ayarla.", "Çevresindeki renk akışını bozan kareleri satır ve sütunlarda ara.", "İki kare seçerek yerlerini değiştir ve süre dolmadan deseni tamamla."],
+      tip: "Tek bir kareye bakmak yerine satır ve sütunların akışını takip et. Yanlış yerdeki bir parça genellikle geçişi birden fazla yönde bozar.",
+      faq: [["Tahtanın tamamı mı karışıyor?", "Hayır. Her seviyede yalnızca iki veya üç kare yer değiştirir; temel renk geçişi okunabilir kalır."], ["Desen modu süreli mi?", "Evet. Her seviyede sabit on saniyen vardır."], ["Desen multiplayer oynanabilir mi?", "Evet. Bir multiplayer lobi oluşturduğunda herkes aynı desen tahtasını alır."]],
     },
   },
 };

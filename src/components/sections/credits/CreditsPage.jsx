@@ -129,7 +129,7 @@ export default function CreditsPage() {
     if (!leavingRef.current) setCelebrating(true);
   }, []);
   const searchParams = useSearchParams();
-  const family = ["color", "flag", "cartoon", "brand", "team"].includes(searchParams.get("from"))
+  const family = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(searchParams.get("from"))
     ? searchParams.get("from")
     : "color";
   const leavePage = useFooterPageTransition(mainRef);

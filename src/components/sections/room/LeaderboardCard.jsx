@@ -83,6 +83,7 @@ export default function LeaderboardCard({
   const totalRounds = leaderboard?.totalRounds || 5;
   const maxTotalScore =
     leaderboard?.maxTotalScore || totalRounds * MULTIPLAYER_MAX_ROUND_SCORE;
+  const isOddMode = leaderboard?.gameMode === "odd" || leaderboard?.mode === "odd";
   const activeActionError = error && error !== hiddenActionError ? error : "";
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export default function LeaderboardCard({
       <div className="scrollbar-hidden mt-7 min-h-0 flex-1 space-y-5 overflow-y-auto pr-0.5">
         {rows.map((row) => {
           const isLocal = row.playerId === currentPlayerId;
-          const scoreColor = getScoreColor(row.totalScore, maxTotalScore);
+          const scoreColor = isOddMode ? "#ffffff" : getScoreColor(row.totalScore, maxTotalScore);
           const roundResults = row.roundResults || [];
           const hasFlagResults = roundResults.some((result) => isFlagColor(result.target));
 
@@ -164,11 +165,11 @@ export default function LeaderboardCard({
                     className="text-[1.45rem] font-semibold leading-[0.82] tracking-normal sm:text-[1.65rem]"
                     style={{ color: scoreColor }}
                   >
-                    {formatTotal(row.totalScore)}
+                    {isOddMode ? row.oddLevelsCleared || 0 : formatTotal(row.totalScore)}
                   </p>
 
                   <p className="pb-px text-sm font-semibold leading-none text-white/35">
-                    / {maxTotalScore}
+                    {isOddMode ? t("game.odd.levels") : `/ ${maxTotalScore}`}
                   </p>
                 </div>
               </div>
@@ -216,13 +217,13 @@ export default function LeaderboardCard({
                       <BrandOverlay color={result.target} className="z-[2]" size="tile" />
                     )}
 
-                    <span
+                    {!isOddMode && <span
                       className={`absolute left-2 top-2 z-10 max-w-[calc(100%-1rem)] truncate text-[clamp(0.92rem,2.8vw,1.05rem)] font-semibold leading-none tabular-nums sm:text-[1.08rem] ${tileScoreTone(
                         colorToneHex(result.target),
                       )}`}
                     >
                       {formatRoundScore(result.score)}
-                    </span>
+                    </span>}
                   </div>
                 ))}
               </div>

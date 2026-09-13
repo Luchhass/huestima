@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ROUND_COUNT } from "@/lib/constants";
+import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import {
   isCartoonFamily,
   isLogoFamily,
@@ -22,9 +22,12 @@ import MemorizePhase from "@/components/ui/game/MemorizePhase";
 import SequenceMemorizePhase from "@/components/ui/game/SequenceMemorizePhase";
 import GuessPhase from "@/components/ui/game/GuessPhase";
 import ResultPhase from "@/components/ui/game/ResultPhase";
+import PatternBoard from "@/components/ui/game/PatternBoard";
+import OddBoard from "@/components/ui/game/OddBoard";
 import WaitingCard from "./WaitingCard";
 import LeaderboardCard from "./LeaderboardCard";
 import { CARD_RESIZE_DURATION_MS } from "@/hooks/useFooterPageTransition";
+import { swapPatternTiles } from "../../../../shared/patternGame.mjs";
 
 const SHOWCASE_WIDGET_EXIT_DURATION_MS = 540;
 const SPOT_GUESS_EXIT_DURATION_MS = 980;
@@ -103,7 +106,7 @@ export default function MultiplayerGame({
   });
   const { abandonSession } = game;
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
-  const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode
+  const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode || game.isOddMode
       ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
       : `${game.roundIndex + 1}/${game.roundCount}`;
   const progressItems = useMemo(
@@ -111,6 +114,8 @@ export default function MultiplayerGame({
     [playerId, room],
   );
   const isFlagMode = isFlagFamily(cleanGameFamily);
+  const isPatternMode = game.gameMode.id === GAME_MODE_IDS.PATTERN;
+  const isOddMode = game.gameMode.id === GAME_MODE_IDS.ODD;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
   const isBrandMode = isLogoFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
@@ -125,12 +130,16 @@ export default function MultiplayerGame({
   const [isLeavingLeaderboardHome, setIsLeavingLeaderboardHome] = useState(false);
   const [isLeavingLeaderboardLobby, setIsLeavingLeaderboardLobby] = useState(false);
   const [resumePhase, setResumePhase] = useState(null);
+  const [selectedPatternTile, setSelectedPatternTile] = useState(null);
+  const [patternSwaps, setPatternSwaps] = useState(0);
+  const oddTransitionOverlayRef = useRef(null);
+  const oddTransitioningRef = useRef(false);
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
   const usesShowcaseGuessChrome =
     game.isRushMode && (isFlagMode || isCartoonMode);
   const usesShowcaseTransition =
-    cleanGameFamily !== "color" && !game.isRushMode;
+    cleanGameFamily !== "color" && !game.isRushMode && !isOddMode;
   const usesExternalGuessChrome =
     (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
@@ -164,6 +173,50 @@ export default function MultiplayerGame({
   useEffect(() => {
     return () => releaseVisualRenderService();
   }, []);
+
+  useEffect(() => {
+    setSelectedPatternTile(null);
+    setPatternSwaps(0);
+  }, [game.roundIndex, game.targetColor]);
+
+  const handlePatternTile = (position) => {
+    if (selectedPatternTile === null) {
+      setSelectedPatternTile(position);
+      return;
+    }
+    if (selectedPatternTile === position) {
+      setSelectedPatternTile(null);
+      return;
+    }
+    game.updatePatternBoard(swapPatternTiles(game.guessColor, selectedPatternTile, position));
+    setPatternSwaps((current) => current + 1);
+    setSelectedPatternTile(null);
+  };
+
+  const handleOddTile = async (oddSelection) => {
+    if (oddTransitioningRef.current || game.isSubmitting) return;
+    oddTransitioningRef.current = true;
+    const overlay = oddTransitionOverlayRef.current;
+    if (overlay) {
+      overlay.style.pointerEvents = "auto";
+      const fadeIn = overlay.animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 90, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" },
+      );
+      await fadeIn.finished.catch(() => {});
+    }
+    await game.submitGuess({ oddSelection });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (overlay) {
+      const fadeOut = overlay.animate(
+        [{ opacity: 1 }, { opacity: 0 }],
+        { duration: 130, easing: "cubic-bezier(0, 0, 0.2, 1)", fill: "forwards" },
+      );
+      await fadeOut.finished.catch(() => {});
+      overlay.style.pointerEvents = "none";
+    }
+    oddTransitioningRef.current = false;
+  };
 
   useEffect(() => {
     if (!game.hasRestoredSession) return undefined;
@@ -350,6 +403,7 @@ export default function MultiplayerGame({
     const currentRow = rows.find((row) => row.playerId === playerId);
     const totalRounds = game.leaderboard.totalRounds || game.roundCount || ROUND_COUNT;
     const totalScore = currentRow?.totalScore || 0;
+    const oddLevelsCleared = currentRow?.oddLevelsCleared || 0;
 
     completionTrackedRef.current = true;
     trackMatchEnd({
@@ -359,6 +413,7 @@ export default function MultiplayerGame({
       totalScore,
       averageScore: totalRounds ? totalScore / totalRounds : 0,
       rounds: totalRounds,
+      ...(isOddMode ? { progressValue: oddLevelsCleared, progressUnit: "levels" } : {}),
     });
   }, [
     game.difficulty.id,
@@ -377,6 +432,7 @@ export default function MultiplayerGame({
     historySavedRef.current = true;
     const rows = game.leaderboard.leaderboard || [];
     const currentRow = rows.find((row) => row.playerId === playerId);
+    const oddLevelsCleared = currentRow?.oddLevelsCleared || 0;
 
     upsertMatchHistoryEntry({
       id: game.historyMatchId,
@@ -395,6 +451,7 @@ export default function MultiplayerGame({
       playerCount: rows.length,
       roomCode,
       leaderboard: game.leaderboard,
+      ...(isOddMode ? { progressValue: oddLevelsCleared, progressUnit: "levels" } : {}),
     });
   }, [
     cleanGameFamily,
@@ -404,6 +461,8 @@ export default function MultiplayerGame({
     game.isEndlessMode,
     game.leaderboard,
     game.roundCount,
+    isOddMode,
+    isOddMode,
     phase,
     playerId,
     roomCode,
@@ -484,7 +543,9 @@ export default function MultiplayerGame({
       <GameCardShell
         data-intro-card-target
         backgroundOverride={
-          renderedPhase === GAME_PHASES.GUESS && game.isBlindMode
+          isPatternMode || isOddMode
+            ? "#000000"
+            : renderedPhase === GAME_PHASES.GUESS && game.isBlindMode
             ? "#3f3f46"
             : renderedPhase === GAME_PHASES.GUESS && game.isBlendMode
               ? "#000000"
@@ -493,7 +554,7 @@ export default function MultiplayerGame({
                 : null
         }
         hideVisualLabel={game.isRushMode || game.guessDurationMs > 0}
-        color={shellColor}
+        color={isPatternMode || isOddMode ? null : shellColor}
         overlayToneSource={
           isRenderedShowcaseGuessPhase ? game.targetColor || game.guessColor : null
         }
@@ -585,7 +646,11 @@ export default function MultiplayerGame({
               targetColor={game.targetColor}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
-              onSubmit={game.submitGuess}
+              onSubmit={isPatternMode ? (options) => game.submitGuess({
+                ...options,
+                patternBoard: game.guessColor,
+                swaps: patternSwaps,
+              }) : game.submitGuess}
               guessDurationMs={game.guessDurationMs}
               rushDurationMs={game.rushDurationMs}
               rushRemainingMs={game.rushRemainingMs}
@@ -600,10 +665,20 @@ export default function MultiplayerGame({
               unlimitedHints={game.unlimitedHints}
               hintActive={game.hintActive}
               hintsEnabled={game.hintsEnabled}
-              onUseHint={game.useHint}
+              onUseHint={isOddMode ? undefined : game.useHint}
               isSpotMode={game.isSpotMode}
               isBlindMode={game.isBlindMode}
               isBlendMode={game.isBlendMode}
+              submitLabel={isPatternMode ? t("game.pattern.submit") : undefined}
+              hideSubmitButton={isOddMode}
+              customContentAnimated={!isPatternMode && !isOddMode}
+              customContentReceivesPointerEvents={isPatternMode || isOddMode}
+              timedTimerDisplay={isPatternMode ? "clock" : "reel"}
+              customContent={isPatternMode
+                ? <PatternBoard puzzle={game.targetColor} board={game.guessColor} selected={selectedPatternTile} interactive onTile={handlePatternTile} />
+                : isOddMode
+                  ? <OddBoard puzzle={game.targetColor} interactive={!game.isSubmitting} onTile={handleOddTile} />
+                  : null}
             />
           )}
 
@@ -613,7 +688,9 @@ export default function MultiplayerGame({
               result={game.latestResult}
               roundLabel={currentRoundLabel}
               hasNextRound={
-                game.isEliminationMode
+                game.isOddMode
+                  ? Boolean(game.latestResult?.oddPassed)
+                  : game.isEliminationMode
                   ? Boolean(game.latestResult?.eliminationPassed)
                   : game.roundIndex + 1 < game.roundCount
               }
@@ -630,6 +707,18 @@ export default function MultiplayerGame({
                   ? (game.difficulty?.controls?.length || 1) * 50
                   : 0
               }
+              customContent={isPatternMode
+                ? <PatternBoard puzzle={game.targetColor} board={game.latestResult?.guess?.board || game.guessColor} showMisplacedHint />
+                : isOddMode
+                  ? <OddBoard puzzle={game.targetColor} selectedIndex={game.latestResult?.oddSelection} revealAnswer />
+                  : null}
+              customResultLine={isPatternMode
+                ? (game.latestResult?.solved ? t("game.pattern.solved") : t("game.pattern.timeout"))
+                : isOddMode
+                  ? t(game.latestResult?.oddPassed ? "game.odd.correct" : "game.odd.wrong")
+                  : null}
+              customSelectionLabel={isPatternMode ? t("game.pattern.swaps", { count: game.latestResult?.swaps || 0 }) : isOddMode ? t("game.odd.level", { level: game.roundIndex + 1 }) : null}
+              hideScore={isOddMode}
             />
           )}
 
@@ -656,6 +745,8 @@ export default function MultiplayerGame({
               {game.error}
             </p>
           )}
+
+          {isOddMode && <div ref={oddTransitionOverlayRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[80] bg-black opacity-0" />}
 
           {isResultToIntroTransition && (
             <div

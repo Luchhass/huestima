@@ -40,7 +40,7 @@ export default function AppHeader() {
   const [historyFamily] = useState(() => {
     if (typeof window === "undefined") return "color";
     const family = new URLSearchParams(window.location.search).get("from");
-    return ["color", "flag", "cartoon", "brand", "team"].includes(family)
+    return ["color", "flag", "cartoon", "brand", "team", "perception"].includes(family)
       ? family
       : "color";
   });
@@ -321,7 +321,7 @@ export default function AppHeader() {
         return;
       }
     }
-    const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team)$/.test(pathname || "");
+    const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team|perception)$/.test(pathname || "");
     if (isSetupHomeRoute) {
       const card = document.querySelector("[data-intro-card-target]");
       const content = document.querySelector("[data-route-transition-scope]");

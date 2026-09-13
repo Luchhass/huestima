@@ -10,6 +10,6 @@ export default function sitemap() {
       tr: absoluteUrl(landingHref(family, "tr")),
       "x-default": absoluteUrl(landingHref(family, "en")),
     } },
-    images: [absoluteUrl(`/og-${family}.png`)],
+    images: [absoluteUrl(family === "perception" ? "/og-color.png" : `/og-${family}.png`)],
   })));
 }

@@ -58,7 +58,7 @@ function getScoreColor(score, maxScore) {
   return `hsl(${hue} 100% 58%)`;
 }
 
-function SummaryTile({ result, locale, t, isSpotMode = false }) {
+function SummaryTile({ result, locale, t, isSpotMode = false, hideScore = false }) {
   const overlayTones = useVisualOverlayTones(result.target);
   const scoreStyle = {
     color: overlayTextColor(overlayTones.topLeft),
@@ -115,13 +115,13 @@ function SummaryTile({ result, locale, t, isSpotMode = false }) {
 
       {isBrandColor(result.target) && <BrandOverlay color={result.guess} className="z-[2]" size="tile" />}
 
-      <span
+      {!hideScore && <span
         data-summary-tile-score
         className="absolute top-1.5 left-1.5 z-10 max-w-[calc(100%-0.75rem)] truncate text-[clamp(0.86rem,3.15vw,1.05rem)] leading-none font-semibold tabular-nums sm:top-2 sm:left-2 sm:max-w-[calc(100%-1rem)] sm:text-[1.08rem]"
         style={scoreStyle}
       >
         {formatScore(result.score)}
-      </span>
+      </span>}
     </div>
   );
 }
@@ -135,6 +135,10 @@ export default function FinalSummary({
   onBackHome,
   isLeavingHome = false,
   isSpotMode = false,
+  summaryUnit = null,
+  assessmentOverride = null,
+  hideTileScores = false,
+  suppressScoreAudio = false,
 }) {
   const { locale, t } = useTranslation();
   const scopeRef = useRef(null);
@@ -154,7 +158,7 @@ export default function FinalSummary({
 
   const maxScore = providedMaxScore || ROUND_COUNT * MAX_ROUND_SCORE;
   const scoreColor = getScoreColor(totalScore, maxScore);
-  const assessment = t(`game.assessment.${getFinalAssessmentKey(averageScore)}`);
+  const assessment = assessmentOverride || t(`game.assessment.${getFinalAssessmentKey(averageScore)}`);
   const assessmentWords = assessment.split(" ");
   const hasWrappedTiles = results.length > ROUND_COUNT;
   const hasFlagTiles = results.some((result) => isFlagColor(result.target));
@@ -176,7 +180,7 @@ export default function FinalSummary({
 
     if (reduceMotion.matches) {
       resumeAudioIfAllowed();
-      playFinalScore(totalScore, maxScore);
+      if (!suppressScoreAudio) playFinalScore(totalScore, maxScore);
       return undefined;
     }
 
@@ -266,7 +270,7 @@ export default function FinalSummary({
         .call(
           () => {
             resumeAudioIfAllowed();
-            playFinalScore(totalScore, maxScore);
+            if (!suppressScoreAudio) playFinalScore(totalScore, maxScore);
           },
           undefined,
           0.14
@@ -416,7 +420,7 @@ export default function FinalSummary({
     }, scopeRef);
 
     return () => ctx.revert();
-  }, [assessment, maxScore, totalScore]);
+  }, [assessment, maxScore, suppressScoreAudio, totalScore]);
 
   return (
     <div
@@ -447,7 +451,7 @@ export default function FinalSummary({
                 ref={maxScoreRef}
                 className="pb-1 text-[clamp(1.15rem,4vw,1.5rem)] leading-none font-semibold text-white/35"
               >
-                / {maxScore}
+                {summaryUnit || `/ ${maxScore}`}
               </p>
             </div>
           </div>
@@ -500,6 +504,7 @@ export default function FinalSummary({
               locale={locale}
               t={t}
               isSpotMode={isSpotMode}
+              hideScore={hideTileScores}
             />
           ))}
         </div>

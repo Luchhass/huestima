@@ -83,7 +83,7 @@ router.post("/operations/game-configuration", operationsSchema, requireAdmin, (r
     return;
   }
 
-  const allowedFamilies = ["color", "flag", "cartoon", "brand", "team"];
+  const allowedFamilies = ["color", "flag", "cartoon", "brand", "team", "perception"];
   const cleanConfiguration = {};
   for (const family of allowedFamilies) {
     const source = configuration[family];

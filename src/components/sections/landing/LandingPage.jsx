@@ -61,6 +61,13 @@ const LANDING_CARDS = [
     title: "Teams",
     description: "Choose familiar clubs and recreate their team colors.",
   },
+  {
+    id: "perception",
+    href: "/perception",
+    className: "landing-card--perception",
+    title: "Perception",
+    description: "Repair broken color patterns or spot the one subtly different tone.",
+  },
 ];
 
 export default function LandingPage() {
@@ -352,9 +359,9 @@ export default function LandingPage() {
           <p className="landing-page__subtitle">
             Chase a color after it disappears, pull the defining shade from a
             flag, rebuild a cartoon character&apos;s palette, recognize a brand by
-            its signature hue, or prove how well you know your team&apos;s colors.
-            Each game turns something familiar into a different test of visual
-            memory.
+            its signature hue, prove how well you know your team&apos;s colors, or
+            test your perception by spotting what breaks a color pattern. Each
+            game turns color into a different visual challenge.
           </p>
         </div>
         </section>

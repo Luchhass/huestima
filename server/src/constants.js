@@ -22,6 +22,8 @@ export const GAME_MODES = {
   BLIND: "blind",
   CARTOON: "cartoon",
   SPOT: "spot",
+  PATTERN: "pattern",
+  ODD: "odd",
 };
 
 export const GAME_FAMILIES = {
@@ -30,6 +32,7 @@ export const GAME_FAMILIES = {
   CARTOON: "cartoon",
   BRAND: "brand",
   TEAM: "team",
+  PERCEPTION: "perception",
 };
 
 export const GAME_FAMILY_MODES = MULTIPLAYER_GAME_FAMILY_MODE_IDS;
@@ -104,6 +107,14 @@ export const GAME_MODE_CONFIG = {
   },
   [GAME_MODES.BLIND]: {
     revealDurationMs: 5000,
+  },
+  [GAME_MODES.PATTERN]: {
+    revealDurationMs: 0,
+    guessDurationMs: 10000,
+  },
+  [GAME_MODES.ODD]: {
+    revealDurationMs: 0,
+    roundCount: 1,
   },
 };
 

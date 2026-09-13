@@ -67,7 +67,11 @@ export default function SingleplayerCard({
     ? "gradient"
     : selectedMode === "blend"
       ? "blend"
-      : selectedDifficulty;
+      : selectedMode === "pattern"
+        ? "pattern"
+        : selectedMode === "odd"
+          ? "odd"
+        : selectedDifficulty;
   const runKey = selectedMode === "endless"
     ? "endless"
     : selectedMode === "rush"
@@ -80,6 +84,10 @@ export default function SingleplayerCard({
         ? "blend"
       : selectedMode === "timed"
         ? "timed"
+      : selectedMode === "pattern"
+        ? "pattern"
+      : selectedMode === "odd"
+        ? "odd"
         : "fixed";
   const roundUnit = roundCount === 1
     ? t("setup.roundUnit.single")
@@ -102,9 +110,17 @@ export default function SingleplayerCard({
     isNavigatingRef.current = true;
 
     await onBeforePlay?.();
-    const cartoonQuery = cartoonIds.length ? `&cartoons=${encodeURIComponent(cartoonIds.join(","))}` : "";
-    const flagQuery = flagDifficulties.length ? `&flagDifficulties=${encodeURIComponent(flagDifficulties.join(","))}` : `&flagDifficulty=${flagDifficulty}`;
-    const teamQuery = teamIds.length ? `&teams=${encodeURIComponent(teamIds.join(","))}` : "";
+    const cartoonQuery = gameFamily === GAME_FAMILY_IDS.CARTOON && cartoonIds.length
+      ? `&cartoons=${encodeURIComponent(cartoonIds.join(","))}`
+      : "";
+    const flagQuery = gameFamily === GAME_FAMILY_IDS.FLAG
+      ? flagDifficulties.length
+        ? `&flagDifficulties=${encodeURIComponent(flagDifficulties.join(","))}`
+        : `&flagDifficulty=${flagDifficulty}`
+      : "";
+    const teamQuery = gameFamily === GAME_FAMILY_IDS.TEAM && teamIds.length
+      ? `&teams=${encodeURIComponent(teamIds.join(","))}`
+      : "";
     router.push(`${playPath}?difficulty=${difficulty}&gameMode=${gameMode}&roundCount=${roundCount}&hints=${serializeHintsEnabled(hintsEnabled)}${flagQuery}${cartoonQuery}${teamQuery}`);
   };
 

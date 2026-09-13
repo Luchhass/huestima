@@ -16,12 +16,14 @@ import {
   Waves,
   Zap,
   ShieldX,
+  Grid3X3,
+  ScanSearch,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { GAME_MODE_OPTIONS } from "@/lib/constants";
 import { playGameModeSelect } from "@/lib/sound";
 
-const ICONS = { normal: Target, endless: Infinity, flash: Eye, blind: EyeOff, sequence: Layers, timed: Timer, gradient: Waves, blend: Blend, decoy: Dices, rush: Zap, elimination: ShieldX, flag: Flag, cartoon: Palette, spot: Circle };
+const ICONS = { normal: Target, endless: Infinity, flash: Eye, blind: EyeOff, sequence: Layers, timed: Timer, gradient: Waves, blend: Blend, decoy: Dices, rush: Zap, elimination: ShieldX, flag: Flag, cartoon: Palette, spot: Circle, pattern: Grid3X3, odd: ScanSearch };
 const SNAP_THRESHOLD = 0.28;
 
 function wrap(index, length) {

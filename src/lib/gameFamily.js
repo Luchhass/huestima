@@ -7,6 +7,7 @@ export const GAME_FAMILY_IDS = {
   CARTOON: "cartoon",
   BRAND: "brand",
   TEAM: "team",
+  PERCEPTION: "perception",
 };
 
 export const GAME_FAMILY_OPTIONS = [
@@ -35,6 +36,11 @@ export const GAME_FAMILY_OPTIONS = [
     label: "Teams",
     href: "/team",
   },
+  {
+    id: GAME_FAMILY_IDS.PERCEPTION,
+    label: "Perception",
+    href: "/perception",
+  },
 ];
 
 export const GAME_FAMILY_MODE_IDS = SHARED_GAME_FAMILY_MODE_IDS;
@@ -54,6 +60,7 @@ export const DEFAULT_GAME_MODE_BY_FAMILY = {
   [GAME_FAMILY_IDS.CARTOON]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.BRAND]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.TEAM]: GAME_MODE_IDS.NORMAL,
+  [GAME_FAMILY_IDS.PERCEPTION]: GAME_MODE_IDS.PATTERN,
 };
 
 export function normalizeGameFamily(gameFamily) {

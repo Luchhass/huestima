@@ -9,6 +9,20 @@ import {
   MULTIPLAYER_GAME_FAMILY_MODE_IDS,
 } from "../shared/gameFamilyModes.mjs";
 import {
+  PATTERN_DIFFICULTY_GRIDS,
+  PATTERN_DIFFICULTY_MISPLACED_COUNTS,
+  countMisplacedPatternTiles,
+  createPatternPuzzle,
+  isPatternSolved,
+  scorePatternRound,
+  swapPatternTiles,
+} from "../shared/patternGame.mjs";
+import {
+  createOddPuzzle,
+  getOddDifference,
+  isOddSelectionCorrect,
+} from "../shared/oddGame.mjs";
+import {
   BLEND_SOURCE_HUES,
   blendSourcesToHex,
 } from "../shared/blendMechanics.mjs";
@@ -483,6 +497,99 @@ test("every multiplayer family and mode starts with a valid game payload", () =>
   }
 });
 
+test("pattern multiplayer scores the repaired shared board", () => {
+  const playerId = `pattern-multiplayer-${Date.now()}`;
+  const created = createRoom({
+    playerId,
+    playerName: "Pattern tester",
+    roomName: "Pattern lobby",
+    visibility: "public",
+    gameMode: GAME_MODES.PATTERN,
+    gameFamily: GAME_FAMILIES.PERCEPTION,
+    difficulty: DIFFICULTIES.NORMAL,
+    roundCount: 1,
+  });
+  assert.equal(created.ok, true);
+  assert.equal(startRoomGame({ roomCode: created.data.room.code, playerId }).ok, true);
+
+  const room = getRoom(created.data.room.code);
+  const target = room.game.targetColors[0];
+  const submitted = submitRoundGuess(room, {
+    playerId,
+    roundIndex: 0,
+    patternBoard: Array.from({ length: target.board.length }, (_, index) => index),
+    remainingMs: 5000,
+    swaps: 2,
+  });
+  assert.equal(submitted.ok, true);
+  assert.equal(submitted.data.result.solved, true);
+  assert.equal(submitted.data.result.score, 10);
+});
+
+test("odd always creates six tiles with exactly one different tone and a shrinking gap", () => {
+  const first = createOddPuzzle(() => 0.37, { difficulty: "normal", level: 0 });
+  const later = createOddPuzzle(() => 0.37, { difficulty: "normal", level: 20 });
+
+  assert.equal(first.colors.length, 6);
+  assert.match(first.hex, /^#[0-9a-f]{6}$/i);
+  assert.ok(first.colors.every((color) => /^#[0-9a-f]{6}$/i.test(color)));
+  assert.equal(first.colors.filter((color) => color === first.oddColor).length, 1);
+  assert.equal(first.colors.filter((color) => color === first.baseColor).length, 5);
+  assert.equal(isOddSelectionCorrect(first, first.oddIndex), true);
+  assert.equal(isOddSelectionCorrect(first, (first.oddIndex + 1) % 6), false);
+  assert.ok(later.difference < first.difference);
+  assert.ok(getOddDifference(0, "easy") >= 18);
+  assert.ok(getOddDifference(10, "easy") > 7);
+  assert.ok(getOddDifference(15, "normal") > 3);
+  assert.ok(getOddDifference(20, "normal") > 2);
+  assert.ok(getOddDifference(30, "hard") > 1);
+  assert.ok(getOddDifference(1000, "hard") >= 0.65);
+});
+
+test("multiplayer odd expands after correct choices and ends each player on a miss", () => {
+  const playerId = `odd-${Date.now()}`;
+  const created = createRoom({
+    playerId,
+    playerName: "Odd tester",
+    roomName: "Odd lobby",
+    visibility: "public",
+    gameMode: GAME_MODES.ODD,
+    gameFamily: GAME_FAMILIES.PERCEPTION,
+    difficulty: DIFFICULTIES.NORMAL,
+    roundCount: 5,
+  });
+  assert.equal(created.ok, true);
+  assert.equal(startRoomGame({ roomCode: created.data.room.code, playerId }).ok, true);
+
+  const room = getRoom(created.data.room.code);
+  const first = room.game.targetColors[0];
+  const correct = submitRoundGuess(room, {
+    playerId,
+    roundIndex: 0,
+    oddSelection: first.oddIndex,
+  });
+  assert.equal(correct.ok, true);
+  assert.equal(correct.data.result.oddPassed, true);
+  assert.equal(correct.data.result.score, 0);
+  assert.equal(correct.data.result.guess.hex, first.colors[first.oddIndex]);
+  assert.ok(correct.data.nextTargetColor);
+  assert.equal(room.status, "in_game");
+
+  const second = room.game.targetColors[1];
+  const wrong = submitRoundGuess(room, {
+    playerId,
+    roundIndex: 1,
+    oddSelection: (second.oddIndex + 1) % 6,
+  });
+  assert.equal(wrong.ok, true);
+  assert.equal(wrong.data.result.oddPassed, false);
+  assert.equal(wrong.data.result.score, 0);
+  assert.equal(room.status, "completed");
+  assert.ok(wrong.data.leaderboard);
+  assert.equal(wrong.data.leaderboard.leaderboard[0].totalScore, 0);
+  assert.equal(wrong.data.leaderboard.leaderboard[0].oddLevelsCleared, 1);
+});
+
 test("every multiplayer family has a room route", () => {
   for (const family of Object.keys(MULTIPLAYER_GAME_FAMILY_MODE_IDS)) {
     assert.equal(
@@ -501,6 +608,7 @@ test("the server rejects cross-family modes", () => {
 
 test("every family/mode combination generates deterministic targets", () => {
   for (const [family, modes] of Object.entries(GAME_FAMILY_MODE_IDS)) {
+    if (family === "perception") continue;
     for (const mode of modes) {
       const input = {
         seed: `test-${family}-${mode}`,
@@ -520,6 +628,47 @@ test("every family/mode combination generates deterministic targets", () => {
       if (family === "team") assert.ok(first.every((target) => target.teamId));
     }
   }
+});
+
+test("pattern puzzles move the requested number of tiles and remain solvable", () => {
+  for (const misplacedCount of [2, 3, 4]) {
+    const puzzle = createPatternPuzzle(() => 0.37, { misplacedCount, variant: 2 });
+    assert.equal(countMisplacedPatternTiles(puzzle.board), misplacedCount);
+    assert.equal(isPatternSolved(puzzle.board), false);
+
+    let board = [...puzzle.board];
+    while (!isPatternSolved(board)) {
+      const firstWrong = board.findIndex((tile, index) => tile !== index);
+      const tileForPosition = board.findIndex((tile) => tile === firstWrong);
+      board = swapPatternTiles(board, firstWrong, tileForPosition);
+    }
+    assert.equal(isPatternSolved(board), true);
+  }
+});
+
+test("pattern difficulty increases the board density", () => {
+  const grids = ["easy", "normal", "hard"].map((difficulty) =>
+    createPatternPuzzle(() => 0.37, { difficulty, variant: 2 }),
+  );
+
+  assert.deepEqual(
+    grids.map(({ rows, columns }) => ({ rows, columns })),
+    ["easy", "normal", "hard"].map((difficulty) => PATTERN_DIFFICULTY_GRIDS[difficulty]),
+  );
+  assert.ok(grids[0].board.length < grids[1].board.length);
+  assert.ok(grids[1].board.length < grids[2].board.length);
+  assert.deepEqual(
+    grids.map(({ board }) => countMisplacedPatternTiles(board)),
+    ["easy", "normal", "hard"].map(
+      (difficulty) => PATTERN_DIFFICULTY_MISPLACED_COUNTS[difficulty],
+    ),
+  );
+});
+
+test("pattern scoring follows repaired puzzle progress", () => {
+  assert.equal(scorePatternRound({ initialMisplaced: 8, remainingMisplaced: 0 }), 10);
+  assert.equal(scorePatternRound({ initialMisplaced: 8, remainingMisplaced: 2 }), 7.5);
+  assert.equal(scorePatternRound({ initialMisplaced: 8, remainingMisplaced: 8 }), 0);
 });
 
 test("every visual catalog entry has its runtime assets", () => {
