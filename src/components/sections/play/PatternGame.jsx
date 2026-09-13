@@ -272,6 +272,7 @@ export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
               customContentAnimated={false}
               customContentReceivesPointerEvents
               timedTimerDisplay="clock"
+              hideSubmitButton
               customContent={<PatternBoard puzzle={puzzle} board={board} selected={selected} interactive onTile={handleTile} />}
             />
           )}
