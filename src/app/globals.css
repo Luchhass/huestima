@@ -2470,7 +2470,6 @@ input {
 
 .home-perception-pattern {
   --home-pattern-gap: 4px;
-  transform: translate3d(0, 0, 0) rotate(5deg);
   transform-origin: 58% 62%;
 }
 
@@ -2486,7 +2485,9 @@ input {
 }
 
 @media (min-width: 640px) {
-  .home-perception-pattern { --home-pattern-gap: 6px; }
+  .home-perception-pattern {
+    --home-pattern-gap: 6px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

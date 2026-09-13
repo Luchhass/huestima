@@ -303,7 +303,10 @@ export default function HomeCardArtwork({
                 />
               </>
             ) : cleanGameFamily === GAME_FAMILY_IDS.PERCEPTION ? (
-              <div className={`home-perception-pattern grid grid-cols-5 gap-1 rounded-[18px] bg-white/8 p-2 shadow-[0_18px_38px_rgba(0,0,0,0.38)] backdrop-blur-sm sm:gap-1.5 sm:p-2.5 ${view === "home" ? "home-perception-pattern--active" : ""}`}>
+              <div
+                className={`home-perception-pattern grid grid-cols-5 gap-1 sm:gap-1.5 ${view === "home" ? "home-perception-pattern--active" : ""}`}
+                style={{ transform: "translate3d(0, 0, 0) rotate(8deg)" }}
+              >
                 {Array.from({ length: 25 }, (_, index) => {
                   const swaps = { 7: 17, 17: 7, 13: 14, 14: 13 };
                   const source = swaps[index] ?? index;

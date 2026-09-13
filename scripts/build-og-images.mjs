@@ -20,6 +20,7 @@ const modes = {
   cartoon: ["Çizgi Film", "Çizgi film sahnesinde hatırlaman gereken boyanabilir bir karakter alanı görürsün.", "Sahne sabit kalırken kaybolan karakter rengini yeniden kurar, tahmininin aslına yakınlığını görürsün."],
   brand: ["Marka", "Tanıdık bir logo kendi imza rengi üzerinde görünür. Logo ve altındaki tonu kaybolmadan önce aklında tutarsın.", "Logo değişmeden gizlenen zemin rengini yeniden kurar, tahminini orijinal renkle karşılaştırırsın."],
   team: ["Takımlar", "Bir takım logosu kendi renkleri üzerinde görünür. Logoyu ve renk paletini kaybolmadan önce aklında tutarsın.", "Logo sabit kalırken gizlenen takım rengini yeniden kurar, tahmininin aslına ne kadar yaklaştığını görürsün."],
+  perception: ["Algı", "Renklerin oluşturduğu düzeni inceler, akışı bozan parçaları veya farklı tonu bulursun.", "Pattern modunda yanlış parçaları yerine koyar, Odd modunda giderek küçülen ton farkını seçerek ilerlersin."],
 };
 
 // One immutable layout for every mode, independent of content length.
@@ -49,6 +50,17 @@ async function artwork(mode) {
   if (mode === "flag") return `<div style="position:absolute;inset:0;background:radial-gradient(ellipse 64% 90% at 100% 110%,#e30a17 0%,#bd0610 45%,#000 100%)"></div>${await asset("game-modes/flag/decorative/turkey-crescent-star.png", "width:600px;right:-74px;bottom:-112px")}`;
   if (mode === "cartoon") return asset("game-modes/cartoon/ben-10/ben-home-character-new.png", "width:300px;right:105px;top:195px");
   if (mode === "team") return `${await asset("game-modes/team/team-logos/galatasaray.png", "width:105px;right:8px;top:408px")}${await asset("game-modes/team/team-logos/fenerbahce.png", "width:520px;right:-18px;bottom:-134px;transform:rotate(-8deg)")}`;
+  if (mode === "perception") {
+    const swapped = { 7: 17, 17: 7, 13: 14, 14: 13 };
+    const tiles = Array.from({ length: 25 }, (_, index) => {
+      const source = swapped[index] ?? index;
+      const row = Math.floor(source / 5);
+      const column = source % 5;
+      const hue = (338 + column * 13 + row * 8) % 360;
+      return `<span style="border-radius:18px;background:hsl(${hue} ${72 - row}% ${76 - row * 5 - column * 2}%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)"></span>`;
+    }).join("");
+    return `<div style="position:absolute;right:-34px;bottom:-52px;width:510px;height:510px;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:14px;transform:rotate(8deg);transform-origin:58% 62%">${tiles}</div>`;
+  }
   const logos = [
     ["google-chrome", "width:180px;right:265px;bottom:135px;transform:rotate(-17deg)"],
     ["facebook", "width:430px;right:-55px;bottom:-158px;transform:rotate(7deg)"],
@@ -100,4 +112,4 @@ for (const mode of names) {
 await sharp({ create: { width: 1732, height: 1362, channels: 3, background: "#eee" } })
   .composite(await Promise.all(names.map(async (mode, i) => ({ input: await sharp(join(preview, `og-${mode}.png`)).resize(866, 454).png().toBuffer(), left: (i % 2) * 866, top: Math.floor(i / 2) * 454 }))))
   .png().toFile(join(preview, "comparison.png"));
-console.log("Five OG images saved. Dimensions and shared control/exterior pixels match exactly.");
+console.log(`${names.length} OG images saved. Dimensions and shared control/exterior pixels match exactly.`);

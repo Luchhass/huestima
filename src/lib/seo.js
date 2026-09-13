@@ -176,7 +176,7 @@ const ROUTE_IMAGE_PATHS = {
   cartoon: "/og-cartoon.png",
   brand: "/og-brand.png",
   team: "/og-team.png",
-  perception: SITE_IMAGE_PATH,
+  perception: "/og-perception.png",
 };
 
 export function absoluteUrl(path = "/") {
