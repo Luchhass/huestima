@@ -18,6 +18,7 @@ import {
   markAllNotificationsRead,
   markNotificationSeen,
   readNotificationInbox,
+  isNotificationVisibleToUser,
 } from "@/lib/notificationInbox";
 
 const API_ROOT = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
@@ -192,8 +193,14 @@ export function SiteOperationsProvider({ children }) {
   }, [operations.gameConfiguration, operations.maintenanceEnabled, operations.multiplayerEnabled, pathname, ready, router]);
 
   const unreadAnnouncementCount = announcements.filter(
-    (announcement) => !inbox.readIds.includes(announcement.id),
+    (announcement) =>
+      isNotificationVisibleToUser(announcement.id, inbox) &&
+      !inbox.readIds.includes(announcement.id),
   ).length;
+
+  const userAnnouncements = announcements.filter((announcement) =>
+    isNotificationVisibleToUser(announcement.id, inbox),
+  );
 
   const markAllAnnouncementsRead = useCallback(() => {
     markAllNotificationsRead(announcements.map((announcement) => announcement.id));
@@ -203,11 +210,12 @@ export function SiteOperationsProvider({ children }) {
     () => ({
       operations,
       announcements,
+      userAnnouncements,
       unreadAnnouncementCount,
       markAllAnnouncementsRead,
       ready,
     }),
-    [announcements, markAllAnnouncementsRead, operations, ready, unreadAnnouncementCount],
+    [announcements, markAllAnnouncementsRead, operations, ready, unreadAnnouncementCount, userAnnouncements],
   );
 
   return (

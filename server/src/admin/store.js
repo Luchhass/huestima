@@ -159,7 +159,6 @@ export function deleteAnnouncement(id) {
 
 export function readAnnouncementHistory(limit = 50) {
   const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
-  database.prepare("DELETE FROM announcement_history WHERE created_at < ?").run(Date.now() - 48 * 60 * 60 * 1000);
   return database.prepare(`
     SELECT id, message, created_at AS createdAt
     FROM announcement_history

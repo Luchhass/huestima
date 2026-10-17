@@ -41,7 +41,7 @@ export default function NotificationsPage() {
   const [isExpanded, setIsExpanded] = useState(skipsEntryResize);
   const [isClosing, setIsClosing] = useState(false);
   const cardHeight = useResponsiveCardHeight(isExpanded);
-  const { announcements } = useSiteOperations();
+  const { userAnnouncements: announcements } = useSiteOperations();
   const { locale, t } = useTranslation();
 
   useEffect(() => {

@@ -83,7 +83,12 @@ export function setAnnouncement(message) {
 }
 
 export function getAnnouncementHistory(limit) {
-  return readAnnouncementHistory(limit);
+  const history = readAnnouncementHistory(limit);
+  if (!cachedState.announcement || history.some((item) => item.id === cachedState.announcement.id)) {
+    return history;
+  }
+
+  return [cachedState.announcement, ...history].slice(0, Math.min(Math.max(Number(limit) || 50, 1), 100));
 }
 
 export function removeAnnouncement(id) {
