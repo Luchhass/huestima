@@ -6,6 +6,8 @@ const ADVENTURE_TIME_ASSET_ROOT = "public/game-modes/cartoon/adventure-time/asse
 const ADVENTURE_TIME_MASK_ROOT = "public/game-modes/cartoon/adventure-time/masks";
 const REGULAR_SHOW_ASSET_ROOT = "public/game-modes/cartoon/regular-show/assets";
 const REGULAR_SHOW_MASK_ROOT = "public/game-modes/cartoon/regular-show/masks";
+const GUMBALL_ASSET_ROOT = "public/game-modes/cartoon/gumball/assets";
+const GUMBALL_MASK_ROOT = "public/game-modes/cartoon/gumball/masks";
 
 const BEN10_ITEMS = [
   {
@@ -2635,10 +2637,36 @@ const REGULAR_SHOW_ITEMS = [
   },
 ];
 
+const GUMBALL_ITEMS = [
+  "12718510", "12723224", "12724562", "12725534", "12725575", "12726143",
+  "12727581", "12734983", "12736018", "12736383", "1545815", "22313951",
+  "22320320", "23175405", "23175628", "23178794", "23179571", "23179783",
+  "23181841", "23186339", "25211990", "25212975", "25213055", "25213286",
+  "25213303", "25217290", "25217737", "29734484", "29737828", "29739699",
+  "29740866", "29741341", "29741551", "29741579", "29743714", "29744323",
+  "29747701", "29748475", "29748753", "29750658", "29751779", "29751872",
+  "29754342", "29756158", "29756181", "29758287",
+].map((catalogId, index) => {
+  const id = `gumball-${catalogId}`;
+  const fileName = `${catalogId}.jpg`;
+
+  return {
+    id,
+    label: `Gumball ${String(index + 1).padStart(2, "0")}`,
+    series: "The Amazing World of Gumball",
+    paintLabel: "cartoon",
+    paint: { h: 0, s: 100, v: 100 },
+    sourcePath: `${GUMBALL_ASSET_ROOT}/${fileName}`,
+    sourceTitle: fileName,
+    maskPath: `${GUMBALL_MASK_ROOT}/${catalogId}.png`,
+  };
+});
+
 export const CARTOON_SOURCE_ITEMS = [
   ...BEN10_ITEMS,
   ...ADVENTURE_TIME_ITEMS,
   ...REGULAR_SHOW_ITEMS,
+  ...GUMBALL_ITEMS,
 ];
 
 export const CARTOON_ITEMS = CARTOON_SOURCE_ITEMS.map((item) => ({

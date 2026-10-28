@@ -234,6 +234,7 @@ const CARTOON_PACK_LABELS = {
   "adventure-time": "Adventure Time",
   "ben-10": "Ben 10",
   "regular-show": "Regular Show",
+  gumball: "Gumball",
 };
 
 function formatCartoonPackLabel(pack) {
