@@ -69,6 +69,7 @@ export default function AppHeader() {
   const router = useRouter();
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
+  const isExploreRoute = pathname === "/explore" || pathname?.startsWith("/explore/");
   const isCreditsRoute = pathname === "/credits";
   const isDownloadRoute = pathname === "/download";
   const isNotificationsRoute = pathname === "/notifications";
@@ -487,6 +488,7 @@ export default function AppHeader() {
     pathname === "/admin/login" ||
     isPrivacyRoute ||
     isHowItWorksRoute ||
+    isExploreRoute ||
     isCreditsRoute
   ) {
     return null;
