@@ -25,6 +25,8 @@ const CARD_SCALE_EASE = "power3.inOut";
 const APP_CHROME_FADE_PATHS = new Set([
   "/admin",
   "/admin/login",
+  "/explore",
+  "/how-it-works",
   "/privacy-policy",
   "/credits",
 ]);
@@ -33,7 +35,7 @@ export function shouldFadeAppChrome(pathname = "") {
   const cleanPath = String(pathname)
     .split("?")[0]
     .replace(/^\/tr(?=\/)/, "");
-  return APP_CHROME_FADE_PATHS.has(cleanPath);
+  return APP_CHROME_FADE_PATHS.has(cleanPath) || cleanPath.startsWith("/explore/");
 }
 
 // Each persistent chrome component restores itself before paint on route changes.
@@ -119,11 +121,14 @@ function asElement(scopeRef) {
 
 export function getRouteCardKind(pathname = "") {
   const cleanPath = String(pathname).split("?")[0];
-  if ([
+  if (
+    cleanPath === "/explore" ||
+    cleanPath.startsWith("/explore/") || [
     "/how-it-works",
     "/privacy-policy",
     "/credits",
-  ].includes(cleanPath)) {
+    ].includes(cleanPath)
+  ) {
     return "expanded";
   }
   if (cleanPath === "/download") return "download";

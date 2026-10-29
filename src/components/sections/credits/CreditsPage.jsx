@@ -127,16 +127,16 @@ export default function CreditsPage() {
   return (
     <FooterPageShell
       mainRef={mainRef}
-      className="credits-page text-white"
-      scrollable={false}
+      className="text-white"
       onRevealComplete={handleRevealComplete}
       effects={celebrating ? <CreditsConfetti /> : null}
       action={
         <CardCloseButton href={`/${family}`} onClick={handleClose} label={t("common.closeCredits")} className="absolute right-6 top-6 text-foreground/62 sm:right-10 sm:top-8 lg:right-14" />
       }
     >
-      <div className="credits-content relative z-10">
+      <article data-screen-reveal>
         <FooterPageHeader
+          kicker={null}
           title={locale === "tr" ? "Emeği geçenler" : "Credits"}
           description={
             locale === "tr"
@@ -176,7 +176,7 @@ export default function CreditsPage() {
             ))}
           </div>
         </section>
-      </div>
+      </article>
     </FooterPageShell>
   );
 }

@@ -37,8 +37,8 @@ export default function AppFooter() {
   }, [pathname]);
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
+  const isExploreRoute = pathname === "/explore" || pathname?.startsWith("/explore/");
   const isCreditsRoute = pathname === "/credits";
-  const isDownloadRoute = pathname === "/download";
   const isCartoonHomeRoute = pathname === "/cartoon";
   const isStandaloneCardRoute =
     pathname === "/notifications" || pathname === "/history";
@@ -58,15 +58,13 @@ export default function AppFooter() {
     : ["color", "flag", "cartoon", "brand", "team", "perception"].includes(pathnameFamily)
       ? pathnameFamily
       : "color";
-  const howItWorksLabel = locale === "tr" ? "nasıl çalışır" : "how it works";
+  const exploreLabel = locale === "tr" ? "keşfet" : "explore";
   const footerLinkClass = "pointer-events-auto text-[11px] font-medium lowercase tracking-wider text-zinc-500 no-underline transition hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-500 dark:hover:text-zinc-50";
+  const exploreFooterRow = isCartoonHomeRoute
+    ? [[`/explore?from=${family}`, exploreLabel]]
+    : null;
   const footerRows = [
-    [
-      ...(isCartoonHomeRoute
-        ? [[`/how-it-works?from=${family}`, howItWorksLabel]]
-        : []),
-      [`/download?from=${family}`, locale === "tr" ? "uygulamayı indir" : "download app"],
-    ],
+    ...(exploreFooterRow ? [exploreFooterRow] : []),
     [
       [`/privacy-policy?from=${family}`, locale === "tr" ? "gizlilik politikası" : "privacy policy"],
       [`/credits?from=${family}`, locale === "tr" ? "emeği geçenler" : "credits"],
@@ -76,7 +74,7 @@ export default function AppFooter() {
   const handleFooterNavigation = async (event, href) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    if (isTransitioningRef.current) return;
+    if (href.split("?")[0] === pathname || isTransitioningRef.current) return;
     isTransitioningRef.current = true;
     const targetPath = href.split("?")[0];
     const fadeChrome = shouldFadeAppChrome(targetPath);
@@ -105,13 +103,13 @@ export default function AppFooter() {
     const renderedSourceCardKind = getRenderedCardKind(card, pathname);
     markCardRouteTransition(href, renderedSourceCardKind);
 
-    if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
+    if (["/explore", "/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
         hideChrome: fadeChrome,
       });
     } else if (
-      !["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath) &&
+      !["/explore", "/how-it-works", "/privacy-policy", "/credits"].includes(targetPath) &&
       (renderedSourceCardKind === "large" || sourceCardKind === "download") &&
       targetCardKind === "expanded"
     ) {
@@ -128,12 +126,6 @@ export default function AppFooter() {
           hideChrome: false,
         });
       }
-    } else if (["/how-it-works", "/privacy-policy", "/credits"].includes(targetPath)) {
-      await playHomeToFooterExit(card, content, {
-        scaleCard: false,
-        expandCard: true,
-        hideChrome: fadeChrome,
-      });
     } else if (href.startsWith("/download")) {
       await playHomeToFooterExit(card, content, {
         scaleCard: false,
@@ -156,7 +148,7 @@ export default function AppFooter() {
     router.push(href);
   };
 
-  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isPrivacyRoute || isHowItWorksRoute || isCreditsRoute) return null;
+  if (pathname === "/admin" || pathname === "/admin/login" || pathname === "/maintenance" || isPrivacyRoute || isHowItWorksRoute || isExploreRoute || isCreditsRoute) return null;
 
   return (
     <>

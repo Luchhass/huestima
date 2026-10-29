@@ -2,16 +2,15 @@
 
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useRef } from "react";
 import HueSlider from "@/components/ui/color-picker/HueSlider";
 import CartoonCanvas from "@/components/ui/game/CartoonCanvas";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import { CARTOON_OPTIONS } from "@/lib/cartoons";
 import { hsvToHex } from "@/lib/color";
-import { useFooterPageTransition } from "@/hooks/useFooterPageTransition";
 import FooterPageShell, {
   FooterPageHeader,
 } from "@/components/sections/footer-pages/FooterPageShell";
@@ -273,12 +272,15 @@ export default function HowItWorksPage() {
   const { t } = useTranslation();
   const mainRef = useRef(null);
   const searchParams = useSearchParams();
-  const returnPath = ["color", "flag", "cartoon", "brand"].includes(
-    searchParams.get("from"),
-  )
-    ? `/${searchParams.get("from")}`
-    : "/color";
-
+  const fromFamily = searchParams.get("family");
+  const returnFamily = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(fromFamily)
+    ? fromFamily
+    : "cartoon";
+  const returnPath = searchParams.get("from") === "explore"
+    ? `/explore?from=${returnFamily}&via=child`
+    : ["color", "flag", "cartoon", "brand"].includes(searchParams.get("from"))
+      ? `/${searchParams.get("from")}`
+      : "/color";
   const leavePage = useFooterPageTransition(mainRef);
 
   const handleClose = async (event) => {
@@ -318,6 +320,7 @@ export default function HowItWorksPage() {
   return (
     <FooterPageShell
       mainRef={mainRef}
+      fullScreen
       scrollable={false}
       scrollableMobile
       className="text-white"

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { FooterCardLoading } from "@/components/sections/footer-pages/FooterCardSurface";
+import { FullScreenPageLoading } from "@/components/sections/footer-pages/FooterPageShell";
 import HowItWorksPage from "@/components/sections/how-it-works/HowItWorksPage";
 
 export const metadata = {
@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <Suspense fallback={<FooterCardLoading />}>
+    <Suspense fallback={<FullScreenPageLoading />}>
       <HowItWorksPage />
     </Suspense>
   );

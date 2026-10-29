@@ -7,9 +7,7 @@ import {
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
-import {
-  consumeCardRouteTransition,
-} from "@/hooks/useFooterPageTransition";
+import { consumeCardRouteTransition } from "@/hooks/useFooterPageTransition";
 
 export function FooterPageAction({ children, className = "", ...props }) {
   return (
@@ -73,6 +71,7 @@ export default function FooterPageShell({
   effects,
   mainRef,
   onRevealComplete,
+  fullScreen = false,
   scrollable = true,
   scrollableMobile = false,
   staticLanguage = false,
@@ -83,11 +82,23 @@ export default function FooterPageShell({
     cardRef.current = node;
     if (mainRef) mainRef.current = node;
   }, [mainRef]);
-  useScreenReveal(contentRef, [], { defer: true, onComplete: onRevealComplete });
+  useScreenReveal(contentRef, [fullScreen], {
+    defer: true,
+    onComplete: onRevealComplete,
+  });
 
   useLayoutEffect(() => {
     const card = cardRef.current;
+    if (!card) return undefined;
+    const locationAtSetup = window.location.href;
     const transition = consumeCardRouteTransition();
+    if (fullScreen) {
+      const revealFrame = requestAnimationFrame(() => {
+        window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
+      });
+      return () => cancelAnimationFrame(revealFrame);
+    }
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight;
@@ -136,10 +147,42 @@ export default function FooterPageShell({
     return () => {
       cancelAnimationFrame(revealFrame);
       animation?.kill();
-      gsap.set(card, { clearProps: "left,top,width,height,borderRadius,overflow,overflowY" });
+      if (window.location.href === locationAtSetup) {
+        gsap.set(card, { clearProps: "left,top,width,height,borderRadius,overflow,overflowY" });
+      }
       delete card.footerCollapse;
     };
-  }, [scrollable, scrollableMobile]);
+  }, [fullScreen, scrollable, scrollableMobile]);
+
+  if (fullScreen) {
+    const overflowY = scrollable
+      ? "overflow-y-auto"
+      : scrollableMobile
+        ? "overflow-y-hidden max-sm:overflow-y-auto"
+        : "overflow-y-hidden";
+
+    return (
+      <main
+        ref={setMainNode}
+        data-language-static={staticLanguage ? "" : undefined}
+        className={`footer-page-dark fixed inset-0 z-40 h-dvh w-full overflow-hidden bg-black text-white ${className}`}
+      >
+        <div
+          ref={contentRef}
+          data-footer-page-content
+          className={`h-full w-full overflow-x-hidden ${overflowY}`}
+        >
+          <div className="mx-auto min-h-full w-full max-w-[68rem] px-6 pt-8 pb-16 sm:px-10 sm:pb-16 lg:px-14">
+            {action}
+            {effects}
+            <div data-screen-reveal className="pt-16 sm:pt-14">
+              {children}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -157,5 +200,14 @@ export default function FooterPageShell({
         </div>
       </FooterCardSurface>
     </main>
+  );
+}
+
+export function FullScreenPageLoading() {
+  return (
+    <main
+      aria-hidden="true"
+      className="footer-page-dark fixed inset-0 z-40 h-dvh w-full bg-black"
+    />
   );
 }
