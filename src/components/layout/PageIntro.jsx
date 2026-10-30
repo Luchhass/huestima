@@ -14,7 +14,9 @@ import { hasPendingFooterReturn } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
 
 const GAME_FAMILY_ENTRY_PATHS = new Set(["color", "flag", "cartoon", "brand", "team", "perception"]);
+const RELOAD_INTRO_PATHS = new Set(["notifications", "explore", "privacy-policy", "credits"]);
 const NON_INVITE_ENTRY_PATHS = new Set([
+  "explore",
   "how-it-works",
   "test",
   "icon.svg",
@@ -45,6 +47,7 @@ function shouldPlayEntryIntro(pathname) {
   return (
     normalizedPathname === "/" ||
     (segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0])) ||
+    (segments.length === 1 && RELOAD_INTRO_PATHS.has(segments[0])) ||
     isInviteRoomPath(pathname)
   );
 }
@@ -84,14 +87,14 @@ function shouldRunIntroForCurrentLoad(pathname) {
   }
   const normalizedPathname = normalizeLandingPath(pathname);
   const segments = normalizedPathname.split("/").filter(Boolean);
-  const isHomeEntry = segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
+  const isGameFamilyEntry = segments.length === 1 && GAME_FAMILY_ENTRY_PATHS.has(segments[0]);
   const isReload =
     !window.__huestimaReloadIntroConsumed &&
     window.performance?.getEntriesByType("navigation")[0]?.type === "reload";
 
-  if (!hasSeenIntro || (isReload && isHomeEntry) || bootstrapPending) {
+  if (!hasSeenIntro || (isReload && shouldPlayEntryIntro(pathname)) || bootstrapPending) {
     window.__huestimaIntroSeen = true;
-    if (isReload && isHomeEntry) {
+    if (isReload && isGameFamilyEntry) {
       window.__huestimaReloadIntroConsumed = true;
     }
     try {

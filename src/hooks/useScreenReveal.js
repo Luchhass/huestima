@@ -433,6 +433,7 @@ export function useScrollScreenReveal(scopeRef, dependencies = [], options = {})
 
     const items = gsap.utils.toArray(SCROLL_REVEAL_SELECTOR, scope);
     if (!items.length) return undefined;
+    const maskClip = options.maskClip ?? MASK_CLIP;
 
     const groups = items.map((mask) => {
       const children = Array.from(mask.children).filter(
@@ -472,7 +473,7 @@ export function useScrollScreenReveal(scopeRef, dependencies = [], options = {})
       group.slideDistance = slideDistance;
 
       gsap.set(mask, {
-        clipPath: MASK_CLIP,
+        clipPath: maskClip,
         willChange: "clip-path",
       });
       gsap.set(children, {
@@ -513,7 +514,7 @@ export function useScrollScreenReveal(scopeRef, dependencies = [], options = {})
 
         entries
           .filter(
-            (entry) => !entry.isIntersecting && revealedGroups.has(entry.target),
+            (entry) => options.reverseOnExit !== false && !entry.isIntersecting && revealedGroups.has(entry.target),
           )
           .forEach((entry) => {
             const group = groups.find(({ mask }) => mask === entry.target);
@@ -605,7 +606,7 @@ export function useScrollCardPopReveal(scopeRef, dependencies = [], options = {}
 
         entries
           .filter(
-            (entry) => !entry.isIntersecting && revealedCards.has(entry.target),
+            (entry) => options.reverseOnExit !== false && !entry.isIntersecting && revealedCards.has(entry.target),
           )
           .forEach((entry) => {
             const card = entry.target;

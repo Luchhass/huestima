@@ -6,6 +6,18 @@ export const metadata = createPageMetadata("perceptionMultiplayer");
 
 export default async function PerceptionMultiplayerPage({ searchParams }) {
   const setup = resolveMultiplayerSetupRoute(await searchParams, "perception");
-
-  return <HomeCard initialView="multiplayer" gameFamily="perception" initialDifficulty={setup.difficulty} initialGameMode={setup.gameMode} initialRoundCount={setup.roundCount} initialHintsEnabled={setup.hintsEnabled} />;
+  return (
+    <HomeCard
+      initialView="multiplayer"
+      gameFamily="perception"
+      initialDifficulty={setup.difficulty}
+      initialGameMode={setup.gameMode}
+      initialRoundCount={setup.roundCount}
+      initialHintsEnabled={setup.hintsEnabled}
+      initialFlagDifficulty={setup.flagDifficulty}
+      initialFlagDifficulties={setup.flagDifficulties}
+      initialCartoonIds={setup.cartoonIds}
+      initialTeamIds={setup.teamIds}
+    />
+  );
 }

@@ -91,7 +91,7 @@ export const ROUTE_SEO = {
   },
   privacyPolicy: {
     title: "Huestima Privacy Policy",
-    description: "How Huestima handles browser storage, multiplayer data, match sharing, analytics, and privacy choices.",
+    description: "How Huestima handles local match history, multiplayer data, shared results, technical logs, analytics, retention, and privacy rights.",
     path: "/privacy-policy",
   },
   download: {

@@ -1,21 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import gsap from "gsap";
 import { useTranslation } from "@/hooks/useLanguage";
-import CardCloseButton from "@/components/ui/CardCloseButton";
 import {
-  playScreenFadeOut,
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import {
   consumeCardRouteTransition,
-  DOWNLOAD_RESIZE_DURATION_MS,
-  markDownloadReturn,
+  useWideCardNavigation,
   SCREEN_REVEAL_AFTER_RESIZE_MS,
   SCREEN_REVEAL_DIRECT_MS,
 } from "@/hooks/useFooterPageTransition";
@@ -60,12 +56,12 @@ function interpolate(start, end, progress) {
 
 const PREVIEW_DRAG_COMMIT_PROGRESS = 0.2;
 
-export default function DownloadPage({ initialFrom = "", initialPlatform = "" }) {
+export default function DownloadPage({ initialPlatform = "", embedded = false }) {
   const { locale, t } = useTranslation();
-  const router = useRouter();
   const scopeRef = useRef(null);
-  const [entryTransition] = useState(consumeCardRouteTransition);
-  const skipsEntryResize = ["large", "download"].includes(entryTransition?.from);
+  const cardRef = useRef(null);
+  const [entryTransition] = useState(() => embedded ? null : consumeCardRouteTransition());
+  const skipsEntryResize = embedded || ["large", "download"].includes(entryTransition?.from);
   const [isExpanded, setIsExpanded] = useState(skipsEntryResize);
   const [hoveredStore, setHoveredStore] = useState(null);
   const [activePreview, setActivePreview] = useState(0);
@@ -73,12 +69,16 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
   const previewAnimatingRef = useRef(false);
   const previewTweenRef = useRef(null);
   const previewDragRef = useRef(null);
-  const from = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(initialFrom) ? initialFrom : "color";
   const cardHeight = useResponsiveCardHeight(isExpanded);
+  useWideCardNavigation(cardRef, scopeRef, setIsExpanded);
 
-  useScreenReveal(scopeRef, [locale], { defer: true });
+  useScreenReveal(scopeRef, [locale, embedded], {
+    defer: true,
+    preserveScopeVisibility: embedded,
+  });
 
   useEffect(() => {
+    if (embedded) return undefined;
     const timeoutId = skipsEntryResize
       ? null
       : window.setTimeout(() => setIsExpanded(true), 40);
@@ -89,7 +89,7 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
       if (timeoutId) window.clearTimeout(timeoutId);
       window.clearTimeout(revealTimeoutId);
     };
-  }, [skipsEntryResize]);
+  }, [embedded, skipsEntryResize]);
 
   useEffect(() => {
     const front = previewRefs.current[0];
@@ -98,14 +98,6 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
     if (back) gsap.set(back, { x: -58, y: 18, rotate: -8, scale: 0.94, autoAlpha: 1, zIndex: 2 });
     return () => previewTweenRef.current?.kill();
   }, []);
-
-  const handleClose = async () => {
-    await playScreenFadeOut(scopeRef, { duration: 0.24 });
-    setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, DOWNLOAD_RESIZE_DURATION_MS));
-    markDownloadReturn();
-    router.push(`/${from}`);
-  };
 
   const applyPreviewProgress = (current, next, progress) => {
     const currentX = cubicBezier(0, 138, 132, -58, progress);
@@ -240,41 +232,42 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
     }
   }, [initialPlatform]);
 
-  return <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
-    <article data-intro-card-target style={cardHeight ? { height: cardHeight } : undefined} className={`relative w-full overflow-hidden rounded-[24px] bg-black p-6 text-white shadow-[var(--app-card-shadow)] transition-[height,max-width] duration-[860ms] ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] sm:p-8 ${isExpanded ? "max-w-125 lg:max-w-[64rem]" : "max-w-125"}`}>
-      <CardCloseButton onClick={() => void handleClose()} label={t("download.back")} className="absolute right-6 top-6 sm:right-8 sm:top-8" />
-      <div ref={scopeRef} data-route-transition-scope className="relative grid h-full min-h-0 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
-        <section className="flex min-h-0 flex-col">
-          <div data-screen-reveal className="max-w-[40rem]">
+  const card = (
+    <article ref={cardRef} data-intro-card-target={!embedded ? "" : undefined} style={cardHeight && !embedded ? { height: cardHeight } : undefined} className={`relative w-full overflow-hidden rounded-[24px] bg-black text-white shadow-[var(--app-card-shadow)] transition-[height,max-width] duration-[860ms] ease-[cubic-bezier(0.87,0,0.13,1)] sm:rounded-[26px] ${embedded ? "min-h-[30rem] max-w-none p-7 sm:p-10 lg:p-12" : `p-6 sm:p-8 ${isExpanded ? "max-w-125 lg:max-w-[64rem]" : "max-w-125"}`}`}>
+      <div ref={scopeRef} data-route-transition-scope={!embedded ? "" : undefined} className={`relative grid min-h-0 ${embedded ? "min-h-[24rem] grid-cols-1" : "h-full lg:grid-cols-[1.2fr_0.8fr] lg:gap-8"}`}>
+        <section className={`relative z-10 flex min-h-0 flex-col ${embedded ? "max-w-[40rem]" : ""}`}>
+          <div data-screen-reveal={!embedded ? "" : undefined} className="grid max-w-[40rem] gap-4 sm:gap-5">
             <h1 className="max-w-[40rem] pr-8 whitespace-pre-line text-[clamp(2.35rem,7vw,3.85rem)] font-semibold leading-[0.95] tracking-normal text-white sm:pr-0">{t("download.title")}</h1>
-            <div className="mt-4 max-w-[29rem] space-y-2.5 text-[0.88rem] font-medium leading-[1.28] text-white/72 sm:mt-5 sm:space-y-3 sm:text-base sm:leading-[1.22]">
+            <div className="grid max-w-[29rem] gap-2.5 text-[0.88rem] font-medium leading-[1.28] text-white/72 sm:gap-3 sm:text-base sm:leading-[1.22]">
               <p>{t("download.intro")}</p>
               <p>{t("download.support")}</p>
             </div>
           </div>
-          <div data-screen-reveal className="mt-auto pt-5 sm:pt-6">
-            <p className="mb-3 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/82">
-              {hoveredStore === "ios"
-                ? locale === "tr"
-                  ? "APP STORE'DAN İNDİR"
-                  : "DOWNLOAD ON APP STORE"
-                : hoveredStore === "android"
+          <div data-screen-reveal={!embedded ? "" : undefined} className="mt-auto pt-5 sm:pt-6">
+            <div className="grid gap-3">
+              <p className="m-0 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/82">
+                {hoveredStore === "ios"
                   ? locale === "tr"
-                    ? "GOOGLE PLAY'DEN İNDİR"
-                    : "DOWNLOAD ON GOOGLE PLAY"
-                  : locale === "tr"
-                    ? "MOBİLDE OYNA"
-                    : "PLAY ON MOBILE"}
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <StoreButton platform="ios" href={STORES.ios} label={t("download.appStore")} onHover={setHoveredStore} />
-              <StoreButton platform="android" href={STORES.android} label={t("download.playStore")} onHover={setHoveredStore} />
+                    ? "APP STORE'DAN İNDİR"
+                    : "DOWNLOAD ON APP STORE"
+                  : hoveredStore === "android"
+                    ? locale === "tr"
+                      ? "GOOGLE PLAY'DEN İNDİR"
+                      : "DOWNLOAD ON GOOGLE PLAY"
+                    : locale === "tr"
+                      ? "MOBİLDE OYNA"
+                      : "PLAY ON MOBILE"}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <StoreButton platform="ios" href={STORES.ios} label={t("download.appStore")} onHover={setHoveredStore} />
+                <StoreButton platform="android" href={STORES.android} label={t("download.playStore")} onHover={setHoveredStore} />
+              </div>
             </div>
           </div>
         </section>
 
-        <section data-screen-reveal className="relative hidden min-h-0 items-center justify-center lg:flex">
-          <div className="relative aspect-[942/1900] h-[84%] max-h-[27rem] w-auto">
+        <section data-screen-reveal={!embedded ? "" : undefined} className={`hidden min-h-0 items-center justify-center lg:flex ${embedded ? "absolute right-[-3rem] top-2/3 z-0 h-[84%] min-h-[24rem] w-[25rem] -translate-y-1/2" : "relative"}`}>
+          <div className={`relative aspect-[942/1900] h-[84%] max-h-[27rem] w-auto ${embedded ? "scale-150" : ""}`}>
             {["download-preview-game-v3.jpeg", "download-preview-result-v3.jpeg"].map((source, index) => (
               <button key={source} type="button" aria-label={index === activePreview ? "Active preview" : "Show next preview"} onClick={() => showPreview(index)} onPointerDown={handlePreviewPointerDown} onPointerMove={handlePreviewPointerMove} onPointerUp={handlePreviewPointerEnd} onPointerCancel={handlePreviewPointerEnd} onDragStart={(event) => event.preventDefault()} ref={(node) => { previewRefs.current[index] = node; }} className={`absolute inset-0 cursor-grab touch-none select-none overflow-hidden rounded-[22px] shadow-[0_24px_48px_rgba(0,0,0,0.5)] active:cursor-grabbing ${index === activePreview ? "z-[3]" : "z-[2]"}`}>
                 <Image src={`/images/${source}`} alt={locale === "tr" ? "Huestima mobil oyun ekranı" : "Huestima mobile game screen"} fill priority={index === 0} sizes="210px" draggable={false} className="pointer-events-none object-contain" />
@@ -285,5 +278,11 @@ export default function DownloadPage({ initialFrom = "", initialPlatform = "" })
 
       </div>
     </article>
-  </main>;
+  );
+
+  if (embedded) {
+    return <section className="landing-download-embed" data-scroll-screen-reveal>{card}</section>;
+  }
+
+  return <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">{card}</main>;
 }

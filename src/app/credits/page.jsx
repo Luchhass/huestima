@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { FooterCardLoading } from "@/components/sections/footer-pages/FooterCardSurface";
 import CreditsPage from "@/components/sections/credits/CreditsPage";
+import PageIntro from "@/components/layout/PageIntro";
 
 export const metadata = {
   title: "Credits | Huestima",
@@ -9,8 +10,11 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <Suspense fallback={<FooterCardLoading />}>
-      <CreditsPage />
-    </Suspense>
+    <>
+      <PageIntro />
+      <Suspense fallback={<FooterCardLoading />}>
+        <CreditsPage />
+      </Suspense>
+    </>
   );
 }

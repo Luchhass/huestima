@@ -18,6 +18,7 @@ import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const HOW_IT_WORKS_CARTOON_ID = "adventure-time-9596374";
 const CLASSIC_CUTOUT_SRC = "/how-it-works/lady-rainicorn-bad-cutout.png";
+const WHOLE_CHARACTER_SRC = "/how-it-works/adventure-time-9596374-main-layer.png";
 const DEMO_SATURATION = 50;
 const DEMO_VALUE = 98;
 
@@ -137,19 +138,17 @@ function ThemeColorDemo({ color, imageSrc }) {
   );
 }
 
-function WholeCharacterDemo({ item }) {
+function WholeCharacterDemo() {
   return (
-    <>
-      <Image
-        src={item.sourceImagePath || item.originalScenePath}
-        alt=""
-        fill
-        sizes="(max-width: 768px) 78vw, 500px"
-        priority
-        unoptimized
-        className="object-cover"
-      />
-    </>
+    <Image
+      src={WHOLE_CHARACTER_SRC}
+      alt=""
+      fill
+      sizes="(max-width: 768px) 78vw, 500px"
+      priority
+      unoptimized
+      className="object-contain grayscale"
+    />
   );
 }
 
@@ -235,9 +234,9 @@ function StepVisual({ type, example, colors, cardHeight, setters }) {
 
         <section
           data-how-card
-          className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden rounded-[22px] bg-surface shadow-[var(--app-card-shadow)] md:h-[var(--how-card-tablet-height)] md:rounded-[26px] lg:h-[var(--how-card-height)]"
+          className="relative h-[var(--how-card-mobile-height)] w-full max-w-125 overflow-hidden bg-transparent md:h-[var(--how-card-tablet-height)] lg:h-[var(--how-card-height)]"
         >
-          <WholeCharacterDemo item={example} />
+          <WholeCharacterDemo />
         </section>
 
         <div aria-hidden="true" className="h-[50px] w-full max-w-125 shrink-0 opacity-0 lg:hidden" />
@@ -329,6 +328,7 @@ export default function HowItWorksPage() {
       }
     >
       <FooterPageHeader
+        kicker={null}
         title={t("howItWorks.eyebrow")}
         meta={`${activeStep + 1} / ${STEPS.length}`}
         description={t("howItWorks.title")}
@@ -339,9 +339,7 @@ export default function HowItWorksPage() {
       >
         <div
           key={currentStep.key}
-          className={`grid min-h-0 w-full items-start gap-5 md:gap-7 lg:items-center lg:gap-10 ${
-            "lg:grid-cols-[minmax(27rem,1fr)_minmax(0,0.84fr)]"
-          }`}
+          className="grid min-h-0 w-full grid-cols-1 items-start gap-5 md:gap-7 lg:grid-cols-2 lg:items-center lg:gap-10"
         >
           <article
             className="order-2 mx-auto flex w-full max-w-125 min-w-0 flex-col justify-start lg:mx-0 lg:max-w-none lg:justify-center"
@@ -403,7 +401,7 @@ export default function HowItWorksPage() {
               type="button"
               onClick={() => setActiveStep((step) => Math.max(0, step - 1))}
               disabled={!hasPrevious}
-              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
+              className="rgb-hover-button inline-flex size-16 min-h-0 min-w-0 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
               aria-label={t("howItWorks.previous")}
             >
               <span className="relative z-10 inline-flex items-center justify-center">
@@ -415,7 +413,7 @@ export default function HowItWorksPage() {
               type="button"
               onClick={() => setActiveStep((step) => Math.min(STEPS.length - 1, step + 1))}
               disabled={!hasNext}
-              className="rgb-hover-button inline-flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
+              className="rgb-hover-button inline-flex size-16 min-h-0 min-w-0 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-[0_14px_28px_rgba(0,0,0,0.18)] transition disabled:pointer-events-none disabled:opacity-25"
               aria-label={t("howItWorks.next")}
             >
               <span className="relative z-10 inline-flex items-center justify-center">

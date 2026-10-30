@@ -1,6 +1,7 @@
 "use client";
 
 import { io } from "socket.io-client";
+import { getRoomSession } from "@/hooks/useRoomSession";
 
 let socket = null;
 
@@ -65,6 +66,7 @@ export function getSocket() {
   if (!socket) {
     socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
       autoConnect: true,
+      withCredentials: true,
       transports: ["websocket", "polling"],
     });
   }
@@ -78,6 +80,10 @@ export function getSocket() {
 
 export async function emitWithAck(eventName, payload = {}, timeoutMs = 8000) {
   const activeSocket = getSocket();
+  const session = payload.roomCode ? getRoomSession(payload.roomCode) : null;
+  if (session?.sessionToken && !payload.sessionToken) {
+    payload = { ...payload, sessionToken: session.sessionToken };
+  }
 
   if (!activeSocket) {
     return Promise.resolve({

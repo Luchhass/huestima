@@ -5,9 +5,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata("flagMultiplayer");
 
 export default async function FlagMultiplayerPage({ searchParams }) {
-  const params = await searchParams;
-  const setup = resolveMultiplayerSetupRoute(params, "flag");
-
+  const setup = resolveMultiplayerSetupRoute(await searchParams, "flag");
   return (
     <HomeCard
       initialView="multiplayer"
@@ -18,6 +16,8 @@ export default async function FlagMultiplayerPage({ searchParams }) {
       initialHintsEnabled={setup.hintsEnabled}
       initialFlagDifficulty={setup.flagDifficulty}
       initialFlagDifficulties={setup.flagDifficulties}
+      initialCartoonIds={setup.cartoonIds}
+      initialTeamIds={setup.teamIds}
     />
   );
 }

@@ -66,7 +66,7 @@ export default function CartoonListPage() {
       }
     >
       <FooterPageHeader
-        kicker="Explore"
+        kicker={null}
         title={isTurkish ? "Çizgi film listesi" : "Cartoon list"}
         description={
           isTurkish
@@ -77,11 +77,7 @@ export default function CartoonListPage() {
       />
 
       <section aria-label={isTurkish ? "Çizgi film görselleri" : "Cartoon images"} className="pt-7">
-        <h2 className="text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
-          {isTurkish ? "Tüm havuzlar" : "All pools"}
-        </h2>
-
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-b border-white/14" aria-label={isTurkish ? "Havuz filtreleri" : "Pool filters"}>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 border-b border-white/14" aria-label={isTurkish ? "Havuz filtreleri" : "Pool filters"}>
           {CARTOON_PACKS.map((pack) => (
             <button
               key={pack.id}

@@ -5,9 +5,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata("colorMultiplayer");
 
 export default async function ColorMultiplayerPage({ searchParams }) {
-  const params = await searchParams;
-  const setup = resolveMultiplayerSetupRoute(params, "color");
-
+  const setup = resolveMultiplayerSetupRoute(await searchParams, "color");
   return (
     <HomeCard
       initialView="multiplayer"
@@ -16,6 +14,10 @@ export default async function ColorMultiplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      initialFlagDifficulty={setup.flagDifficulty}
+      initialFlagDifficulties={setup.flagDifficulties}
+      initialCartoonIds={setup.cartoonIds}
+      initialTeamIds={setup.teamIds}
     />
   );
 }

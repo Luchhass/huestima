@@ -10,6 +10,12 @@ export function initializeAnalytics() {
       window.dataLayer.push(arguments);
     };
 
+  window.gtag("set", {
+    page_location: sanitizeAnalyticsLocation(window.location.href || window.location.pathname),
+    page_path: sanitizeAnalyticsLocation(window.location.pathname),
+    page_referrer: typeof document !== "undefined" && document.referrer ? sanitizeAnalyticsLocation(document.referrer) : "",
+  });
+
   if (!window.__huestimaGaConfigured) {
     window.gtag("js", new Date());
     window.gtag("config", GA_MEASUREMENT_ID, { send_page_view: false });
@@ -31,13 +37,21 @@ export function trackEvent(eventName, params = {}) {
   });
 }
 
+export function sanitizeAnalyticsLocation(value) {
+  const url = new URL(value, "https://www.huestima.com");
+  url.search = "";
+  url.hash = "";
+  url.pathname = url.pathname.replace(/\/\d{6}(?=\/|$)/g, "/room");
+  return String(value).startsWith("/") ? url.pathname : url.toString();
+}
+
 export function trackPageView({ pagePath, pageLocation, pageTitle }) {
   if (!initializeAnalytics()) return;
 
   // Configuration disables automatic pageviews; navigation sends an explicit event.
   trackEvent("page_view", {
-    page_path: pagePath,
-    page_location: pageLocation,
+    page_path: sanitizeAnalyticsLocation(pagePath),
+    page_location: sanitizeAnalyticsLocation(pageLocation),
     page_title: pageTitle,
   });
 }

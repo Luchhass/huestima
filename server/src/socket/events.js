@@ -14,9 +14,10 @@ import {
   updateRoomSettings,
 } from "../rooms/roomService.js";
 import { getRoom } from "../rooms/roomStore.js";
-import { finishRushForPlayer, submitFullResults, submitRoundGuess } from "../game/gameService.js";
+import { finishRushForPlayer, requestRoundHint, requestRoundTarget, submitFullResults, submitRoundGuess } from "../game/gameService.js";
 import { validateRoomCode } from "../rooms/roomValidation.js";
 import { createEmitters } from "./emitters.js";
+import { hasAdminSession } from "../admin/auth.js";
 import { logger } from "../utils/logger.js";
 import {
   getSiteOperations,
@@ -158,7 +159,7 @@ export function registerSocketEvents(io) {
       const result = requestRoomState({ ...payload, socketId: socket.id });
       if (!result.ok) return ackFail(ack, result.error);
 
-      if (result.data.room) {
+      if (result.data.player) {
         joinSocketToRoom(socket, result.data.room.code);
         socket.emit("connection:restored", result.data);
         emitters.emitRoomState(getRoom(result.data.room.code));
@@ -184,6 +185,10 @@ export function registerSocketEvents(io) {
         leaveSocketFromRoom(socket, payload.roomCode);
         ackOk(ack, result.data);
         if (result.data.room) emitters.emitRoomState(getRoom(result.data.room.code));
+        if (result.data.leaderboard) {
+          emitters.emitScoreboard(roomResult.data.room, result.data.leaderboard);
+          scheduleCompletedCleanup(roomResult.data.room);
+        }
         emitters.emitRoomList();
       }),
     );
@@ -337,33 +342,27 @@ export function registerSocketEvents(io) {
       }),
     );
 
-    socket.on(
-      "round:requestTarget",
-      safeEvent((payload, ack) => {
+    socket.on("game:requestPerfect", safeEvent((payload, ack) => {
+      const result = getRoomFromPayload(payload);
+      if (!result.ok) return ackFail(ack, result.error);
+      const auth = requireSocketPlayer(result.data.room, socket, payload.playerId);
+      if (!auth.ok || !hasAdminSession(socket.handshake.headers.cookie)) return ackFail(ack, "Authentication required.");
+      const player = auth.data.player;
+      if (player.roundTiming?.roundIndex !== Number(payload.roundIndex)) return ackFail(ack, "That round is not currently active.");
+      ackOk(ack, { targetColor: result.data.room.game.targetColors[payload.roundIndex] });
+    }));
+
+    for (const [event, handler] of [["round:requestTarget", requestRoundTarget], ["game:requestHint", requestRoundHint]]) {
+      socket.on(event, safeEvent((payload, ack) => {
         const roomResult = getRoomFromPayload(payload);
         if (!roomResult.ok) return ackFail(ack, roomResult.error);
         const auth = requireSocketPlayer(roomResult.data.room, socket, payload.playerId);
         if (!auth.ok) return ackFail(ack, auth.error);
-
-        const { room } = roomResult.data;
-        const roundIndex = Number(payload.roundIndex);
-        if (!Number.isInteger(roundIndex) || roundIndex !== room.game?.currentRoundIndex) {
-          return ackFail(ack, "That round is not currently active.");
-        }
-        const targetColors = room.game?.targetColors || [];
-        const targetColor = targetColors[roundIndex] || null;
-        if (!targetColor) return ackFail(ack, "Target color is unavailable.");
-
-        ackOk(ack, {
-          round: {
-            roundIndex,
-            targetColor,
-            revealDurationMs: room.game.revealDurationMs,
-            guessDurationMs: room.game.guessDurationMs || null,
-          },
-        });
-      }),
-    );
+        const result = handler(roomResult.data.room, payload);
+        if (!result.ok) return ackFail(ack, result.error);
+        ackOk(ack, result.data);
+      }));
+    }
 
     socket.on("disconnect", () => {
       handleSocketDisconnect(socket.id);

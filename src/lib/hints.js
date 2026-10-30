@@ -11,10 +11,12 @@ export function getInitialHintCount(roundCountValue) {
   return 0;
 }
 
-export function normalizeHintsEnabled() {
-  return true;
+export function normalizeHintsEnabled(value, fallback = true) {
+  if (value === false || value === "off" || value === "false") return false;
+  if (value === true || value === "on" || value === "true") return true;
+  return fallback;
 }
 
-export function serializeHintsEnabled() {
-  return "on";
+export function serializeHintsEnabled(value) {
+  return normalizeHintsEnabled(value) ? "on" : "off";
 }

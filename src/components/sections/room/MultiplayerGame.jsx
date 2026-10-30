@@ -1,5 +1,7 @@
 "use client";
 
+import { useProfilePlayTime } from "@/hooks/useProfilePlayTime";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import {
@@ -106,6 +108,7 @@ export default function MultiplayerGame({
   });
   const { abandonSession } = game;
   const { phase, leaderboard: gameLeaderboard, showLeaderboard } = game;
+  useProfilePlayTime(!["waiting", "leaderboard"].includes(phase), true);
   const currentRoundLabel = game.isEndlessMode || game.isRushMode || game.isEliminationMode || game.isOddMode
       ? `${game.roundIndex + 1}/${game.roundIndex + 1}`
       : `${game.roundIndex + 1}/${game.roundCount}`;
@@ -175,8 +178,11 @@ export default function MultiplayerGame({
   }, []);
 
   useEffect(() => {
-    setSelectedPatternTile(null);
-    setPatternSwaps(0);
+    const timer = window.setTimeout(() => {
+      setSelectedPatternTile(null);
+      setPatternSwaps(0);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [game.roundIndex, game.targetColor]);
 
   const handlePatternTile = (position) => {
@@ -245,7 +251,7 @@ export default function MultiplayerGame({
   ]);
 
   useEffect(() => {
-    if (!resumePhase || renderedPhase !== resumePhase) return undefined;
+    if (!resumePhase || renderedPhase === resumePhase) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setResumePhase(null);
@@ -420,6 +426,7 @@ export default function MultiplayerGame({
     game.gameMode.id,
     game.leaderboard,
     game.roundCount,
+    isOddMode,
     phase,
     playerId,
   ]);
@@ -436,6 +443,10 @@ export default function MultiplayerGame({
 
     upsertMatchHistoryEntry({
       id: game.historyMatchId,
+      flagDifficulty: room?.flagDifficulty,
+      flagDifficulties: room?.flagDifficulties,
+      cartoonIds: room?.cartoonIds,
+      teamIds: room?.teamIds,
       gameType: "multiplayer",
       gameFamily: cleanGameFamily,
       gameMode: game.gameMode.id,
@@ -449,6 +460,8 @@ export default function MultiplayerGame({
           ? (currentRow?.totalScore || 0) / game.leaderboard.totalRounds
           : 0,
       playerCount: rows.length,
+      currentPlayerId: playerId,
+      maxScore: game.leaderboard.maxTotalScore,
       roomCode,
       leaderboard: game.leaderboard,
       ...(isOddMode ? { progressValue: oddLevelsCleared, progressUnit: "levels" } : {}),
@@ -462,10 +475,13 @@ export default function MultiplayerGame({
     game.leaderboard,
     game.roundCount,
     isOddMode,
-    isOddMode,
     phase,
     playerId,
     roomCode,
+    room?.flagDifficulty,
+    room?.flagDifficulties,
+    room?.cartoonIds,
+    room?.teamIds,
   ]);
 
   const handleBackHome = async () => {
@@ -646,6 +662,7 @@ export default function MultiplayerGame({
               targetColor={game.targetColor}
               guessColor={game.guessColor}
               onGuessChange={game.updateGuess}
+              onPerfectGuess={game.requestPerfectTarget}
               onSubmit={isPatternMode ? (options) => game.submitGuess({
                 ...options,
                 patternBoard: game.guessColor,

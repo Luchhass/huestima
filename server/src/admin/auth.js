@@ -44,6 +44,11 @@ export async function authenticate(username, password, code) {
   return { ok: true, sessionId };
 }
 
+export function hasAdminSession(cookie = "") {
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${ADMIN_COOKIE}=([^;]+)`));
+  return Boolean(match?.[1] && findSession(hashSession(match[1]), Date.now(), SESSION_IDLE_MS, SESSION_ABSOLUTE_MS));
+}
+
 export function requireAdmin(request, response, next) {
   const cookie = request.headers.cookie || "";
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${ADMIN_COOKIE}=([^;]+)`));

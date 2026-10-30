@@ -31,6 +31,13 @@ const bootstrapScript = String.raw`
     document.documentElement.lang = language;
     document.documentElement.dataset.locale = language;
 
+    const reloadPath = window.location.pathname.replace(/^\/tr(?=\/)/, "");
+    const isReload = window.performance?.getEntriesByType("navigation")[0]?.type === "reload";
+    if (isReload && ["/explore", "/privacy-policy", "/credits"].includes(reloadPath)) {
+      window.location.replace(language === "tr" ? "/tr/color" : "/color");
+      return;
+    }
+
     const pathSegments = window.location.pathname.split("/").filter(Boolean);
     const isGameFamilyPath = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(pathSegments[0]);
     const isInviteRoomPath =
@@ -42,19 +49,20 @@ const bootstrapScript = String.raw`
       /^\/(?:tr\/)?(color|flag|cartoon|brand|team|perception)\/?$/.test(
         window.location.pathname,
       );
-    const isEntryPath = isLandingEntryPath || isInviteRoomPath;
+    const introRouteSegments = pathSegments[0] === "tr" ? pathSegments.slice(1) : pathSegments;
+    const isReloadIntroPath =
+      introRouteSegments.length === 1 &&
+      ["notifications", "explore", "privacy-policy", "credits"].includes(introRouteSegments[0]);
+    const isEntryPath = isLandingEntryPath || isInviteRoomPath || isReloadIntroPath;
     const hasSeenIntro =
       window.sessionStorage.getItem("huestima-page-intro-seen") === "true";
     const hasPendingFooterReturn =
       window.sessionStorage.getItem("huestima-card-enter") === "true";
     const navigationType = window.performance?.getEntriesByType("navigation")[0]?.type;
-    const isReloadHomeEntry =
-      navigationType === "reload" &&
-      isLandingEntryPath;
     const shouldPlayIntro =
       isEntryPath &&
       !hasPendingFooterReturn &&
-      (!hasSeenIntro || isReloadHomeEntry);
+      (!hasSeenIntro || navigationType === "reload" && isEntryPath || isReloadIntroPath);
 
     if (shouldPlayIntro) {
       document.documentElement.dataset.pageIntroPending = "true";

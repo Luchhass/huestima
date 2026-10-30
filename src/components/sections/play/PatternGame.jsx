@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useProfilePlayTime } from "@/hooks/useProfilePlayTime";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useGameAvailability } from "@/hooks/useGameAvailability";
 import { useRouter } from "next/navigation";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import FinalSummary from "@/components/ui/game/FinalSummary";
@@ -34,10 +37,12 @@ const PATTERN_BLACK = { h: 0, s: 0, v: 0, hex: "#000000" };
 
 export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
   const router = useRouter();
+  const gameAvailable = useGameAvailability("perception", "pattern");
   const { t } = useTranslation();
   const cardRef = useRef(null);
   const phaseRef = useRef(PHASES.INTRO);
-  const phaseStartedAtRef = useRef(Date.now());
+  const [initialPhaseStartedAt] = useState(() => Date.now());
+  const phaseStartedAtRef = useRef(initialPhaseStartedAt);
   const snapshotRef = useRef(null);
   const isPageUnloadRef = useRef(false);
   const boardRef = useRef([]);
@@ -57,9 +62,13 @@ export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
   const [resumePhase, setResumePhase] = useState(null);
   const [historyMatchId, setHistoryMatchId] = useState(() => createMatchHistoryId());
   const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
+  useProfilePlayTime(gameAvailable && phase !== PHASES.FINAL);
   const gameSessionKey = buildGameSessionKey("perception-pattern", [difficulty, roundCount]);
 
+  const initialGameSession = useMemo(() => getGameSession(gameSessionKey), [gameSessionKey]);
+
   const setPhase = (nextPhase) => {
+    setResumePhase(null);
     phaseRef.current = nextPhase;
     phaseStartedAtRef.current = Date.now();
     setPhaseState(nextPhase);
@@ -83,7 +92,7 @@ export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
-      const restoredSession = getGameSession(gameSessionKey);
+      const restoredSession = initialGameSession;
       if (restoredSession?.puzzle && Array.isArray(restoredSession.board)) {
         setPuzzle(restoredSession.puzzle);
         setBoard(restoredSession.board);
@@ -113,7 +122,7 @@ export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
       phaseStartedAtRef.current = Date.now();
     }, 0);
     return () => window.clearTimeout(timerId);
-  }, [difficulty, gameSessionKey]);
+  }, [difficulty, gameSessionKey, initialGameSession]);
 
   useEffect(() => {
     snapshotRef.current = {
@@ -250,6 +259,8 @@ export default function PatternGame({ difficulty = "easy", roundCount = 5 }) {
     await new Promise((resolve) => window.setTimeout(resolve, CARD_RESIZE_DURATION_MS));
     router.push("/perception");
   };
+
+  if (!gameAvailable) return null;
 
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">

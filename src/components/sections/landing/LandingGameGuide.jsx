@@ -49,41 +49,41 @@ export default function LandingGameGuide() {
 
   return (
     <section
-      className="py-20 sm:py-28"
+      className="landing-guide"
       aria-labelledby="landing-guide-title"
       data-header-theme="light"
       data-footer-theme="light"
     >
-      <header className="max-w-3xl" data-scroll-screen-reveal>
-        <p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-black">
-          {content.eyebrow}
-        </p>
-        <h2
-          id="landing-guide-title"
-          className="mt-4 text-[clamp(2.6rem,5.2vw,5rem)] font-semibold leading-[0.9] tracking-[-0.075em] text-black"
-        >
-          {content.title}
-        </h2>
-        <p className="mb-0 mt-6 max-w-2xl text-[1.05rem] font-medium leading-[1.55] tracking-[-0.03em] text-black/60 sm:text-lg">
-          {content.intro}
-        </p>
-      </header>
-
-      <div className="mt-14 border-t border-black/10">
-        {content.sections.map(({ title, text }) => (
-          <section
-            key={title}
-            className="grid gap-4 border-b border-black/10 py-8 sm:py-10 md:grid-cols-[minmax(12rem,0.42fr)_minmax(0,1fr)] md:gap-12"
-            data-scroll-screen-reveal
+      <div className="landing-guide__body">
+        <header className="landing-guide__header max-w-3xl" data-scroll-screen-reveal>
+          <p className="landing-guide__eyebrow">{content.eyebrow}</p>
+          <h2
+            id="landing-guide-title"
+            className="m-0 text-[clamp(2.6rem,5.2vw,5rem)] font-semibold leading-[0.9] tracking-[-0.075em] text-black"
           >
-            <h3 className="m-0 text-xl font-semibold leading-none tracking-[-0.05em] text-black sm:text-2xl">
-              {title}
-            </h3>
-            <p className="m-0 max-w-2xl text-[0.98rem] font-medium leading-[1.55] tracking-[-0.025em] text-black/60 sm:text-base">
-              {text}
-            </p>
-          </section>
-        ))}
+            {content.title}
+          </h2>
+          <p className="landing-guide__intro">
+            {content.intro}
+          </p>
+        </header>
+
+        <div className="landing-guide__rows">
+          {content.sections.map(({ title, text }) => (
+            <section
+              key={title}
+              className="landing-guide__row"
+              data-scroll-screen-reveal
+            >
+              <h3 className="m-0 text-xl font-semibold leading-none tracking-[-0.05em] text-black sm:text-2xl">
+                {title}
+              </h3>
+              <p className="m-0 max-w-2xl text-[0.98rem] font-medium leading-[1.55] tracking-[-0.025em] text-black/60 sm:text-base">
+                {text}
+              </p>
+            </section>
+          ))}
+        </div>
       </div>
     </section>
   );

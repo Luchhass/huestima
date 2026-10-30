@@ -4,6 +4,7 @@ import {
   isFlagColor,
   withCartoonHex,
   withBrandHex,
+  withTeamHex,
   withFlagHex,
   withGradientHex,
   withHex,
@@ -66,6 +67,7 @@ function compactColor(color) {
 
   if (isFlagColor(color)) return ["f", color.flagId, ...compactHsv(color)];
   if (isCartoonColor(color)) return ["t", color.cartoonId, ...compactHsv(color)];
+  if (color?.teamId) return ["m", color.teamId, ...compactHsv(color)];
   if (isBrandColor(color)) return ["b", color.brandId, ...compactHsv(color)];
   if (color?.hex && !Number.isFinite(Number(color?.h))) return ["x", color.hex];
 
@@ -102,6 +104,7 @@ function expandColor(value) {
 
   if (type === "f") return withFlagHex({ flagId: idOrHue, ...hsv });
   if (type === "t") return withCartoonHex({ cartoonId: idOrHue, ...hsv });
+  if (type === "m") return withTeamHex({ teamId: idOrHue, ...hsv });
   if (type === "b") return withBrandHex({ brandId: idOrHue, ...hsv });
 
   return withHex({
@@ -187,6 +190,7 @@ function compactEntry(entry, sharedBy) {
       : compactResults(entry?.results),
     Number(entry?.progressValue) || 0,
     entry?.progressUnit || "",
+    { flagDifficulty: entry?.flagDifficulty, flagDifficulties: entry?.flagDifficulties, cartoonIds: entry?.cartoonIds, teamIds: entry?.teamIds },
   ];
 }
 
@@ -210,6 +214,7 @@ function expandEntry(value) {
     details,
     progressValue,
     progressUnit,
+    pools,
   ] = value;
 
   const entry = {
@@ -228,6 +233,10 @@ function expandEntry(value) {
     sharedBy: String(sharedBy || "").trim(),
     progressValue: Number(progressValue) || 0,
     progressUnit: String(progressUnit || ""),
+    flagDifficulty: typeof pools?.flagDifficulty === "string" ? pools.flagDifficulty : null,
+    flagDifficulties: Array.isArray(pools?.flagDifficulties) ? pools.flagDifficulties : null,
+    cartoonIds: Array.isArray(pools?.cartoonIds) ? pools.cartoonIds : null,
+    teamIds: Array.isArray(pools?.teamIds) ? pools.teamIds : null,
   };
 
   if (entry.gameType === "multiplayer") {

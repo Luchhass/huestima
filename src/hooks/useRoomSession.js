@@ -36,6 +36,7 @@ export function saveRoomSession(roomCode, session) {
     JSON.stringify({
       roomCode,
       playerId: session.playerId,
+      sessionToken: session.sessionToken,
       playerName: session.playerName,
       isHost: Boolean(session.isHost),
       savedAt: Date.now(),

@@ -307,6 +307,10 @@ export default function MultiplayerCard({
   initialGameMode = null,
   initialRoundCount = DEFAULT_ROUND_COUNT,
   initialHintsEnabled = true,
+  initialFlagDifficulty = null,
+  initialFlagDifficulties = null,
+  initialCartoonIds = null,
+  initialTeamIds = null,
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -322,7 +326,7 @@ export default function MultiplayerCard({
     cleanGameFamily,
     operations.gameConfiguration,
   );
-  const defaultGameMode = defaultGameModeOption.id;
+  const defaultGameMode = defaultGameModeOption?.id || getDefaultGameModeForFamily(cleanGameFamily);
   const defaultDifficulty =
     initialDifficulty || defaultGameModeOption?.lockedDifficultyId || DEFAULT_DIFFICULTY_ID;
   const scopeRef = useRef(null);
@@ -524,6 +528,7 @@ export default function MultiplayerCard({
   };
 
   const handleCreate = async () => {
+    if (!defaultGameModeOption) return;
     if (isCreating) return;
 
     const lobbyNameError = validateLobbyName(lobbyName, t);
@@ -568,6 +573,10 @@ export default function MultiplayerCard({
       gameFamily: cleanGameFamily,
       roundCount: initialRoundCount,
       hintsEnabled: initialHintsEnabled,
+      flagDifficulty: initialFlagDifficulty,
+      flagDifficulties: initialFlagDifficulties,
+      cartoonIds: initialCartoonIds,
+      teamIds: initialTeamIds,
     });
 
     if (!response.ok) {
@@ -577,6 +586,7 @@ export default function MultiplayerCard({
     }
 
     saveRoomSession(response.room.code, {
+      sessionToken: response.sessionToken,
       playerId,
       playerName: cleanName,
       isHost: true,
@@ -647,6 +657,7 @@ export default function MultiplayerCard({
     }
 
     saveRoomSession(selectedRoom.code, {
+      sessionToken: response.sessionToken,
       playerId,
       playerName: cleanName,
       isHost: false,

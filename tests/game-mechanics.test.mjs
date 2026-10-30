@@ -63,7 +63,14 @@ import {
   getEliminationThreshold,
   passesEliminationThreshold,
 } from "../shared/elimination.mjs";
-import { submitRoundGuess } from "../server/src/game/gameService.js";
+import { requestRoundTarget, submitRoundGuess as submitPreparedGuess } from "../server/src/game/gameService.js";
+
+// Mechanics fixtures enter a prepared guess phase; protocol/timing checks live in regressions.
+function submitRoundGuess(room, payload) {
+  const prepared = requestRoundTarget(room, payload);
+  if (prepared.ok) room.players.get(payload.playerId).roundTiming.guessReadyAt = Date.now();
+  return submitPreparedGuess(room, payload);
+}
 import { getRoom } from "../server/src/rooms/roomStore.js";
 
 test("visual paint anchors follow a real dominant color instead of averaging hues", () => {
@@ -488,7 +495,8 @@ test("every multiplayer family and mode starts with a valid game payload", () =>
       const modeConfig = GAME_MODE_CONFIG[gameMode];
       const expectedRoundCount = modeConfig?.roundCount || 3;
       assert.equal(started.data.game.roundCount, expectedRoundCount);
-      assert.equal(started.data.game.targetColors.length, expectedRoundCount);
+      assert.deepEqual(started.data.game.targetColors, []);
+      assert.equal(getRoom(created.data.room.code).game.targetColors.length, expectedRoundCount);
       assert.equal(
         started.data.game.difficulty,
         modeConfig?.lockedDifficulty || "normal",

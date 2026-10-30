@@ -6,6 +6,8 @@ import {
   ROOM_STATUSES,
   DEFAULT_ROUND_COUNT,
 } from "../constants.js";
+import { randomUUID } from "node:crypto";
+import { shouldMemorizeMultiplayerRound } from "../../../shared/gameMechanics.mjs";
 import { recordGameActivity } from "../operations/metrics.js";
 import {
   applyDifficultyConstraints,
@@ -234,7 +236,7 @@ export function buildGamePayload(room) {
 
   return {
     roomCode: room.code,
-    seed: room.game.seed,
+    seed: room.game.id,
     mode: room.game.mode,
     gameMode: room.game.mode,
     difficulty: room.game.difficulty,
@@ -244,7 +246,7 @@ export function buildGamePayload(room) {
     revealDurationMs: room.game.revealDurationMs,
     guessDurationMs: room.game.guessDurationMs || null,
     rushDurationMs: room.game.rushDurationMs || null,
-    targetColors: room.game.targetColors,
+    targetColors: [],
     startedAt: room.game.startedAt,
   };
 }
@@ -262,6 +264,7 @@ export function startGameForRoom(room) {
   room.seed = seed;
   room.difficulty = difficulty;
   room.game = {
+    id: randomUUID(),
     seed,
     mode: room.gameMode,
     difficulty,
@@ -302,6 +305,9 @@ export function startGameForRoom(room) {
     player.returnedToLobby = false;
     player.results = [];
     player.totalScore = 0;
+    player.roundTiming = null;
+    player.rushRemainingMs = modeConfig.rushDurationMs || null;
+    player.hintsUsed = new Set();
   }
 
   recordGameActivity(room, "started");
@@ -349,6 +355,64 @@ export function markPlayerInactiveForGame(room, playerId) {
   return maybeFinishRoom(room);
 }
 
+// Only disclose the round this player is allowed to see. The generation seed stays private.
+export function publicRoundTarget(target) {
+  if (target?.type === GAME_MODES.ODD) {
+    const { oddIndex: _oddIndex, oddColor: _oddColor, ...visible } = target;
+    return visible;
+  }
+  if (target?.type === GAME_MODES.DECOY) {
+    const top = target.targetPosition === "bottom" ? target.decoy : target;
+    const bottom = target.targetPosition === "bottom" ? target : target.decoy;
+    const display = ({ h, s, v, hex }) => ({ h, s, v, hex });
+    return { ...display(top), type: GAME_MODES.DECOY, decoy: display(bottom) };
+  }
+  return target;
+}
+
+export function requestRoundTarget(room, payload) {
+  if (!room?.game || room.status !== ROOM_STATUSES.IN_GAME) return fail("Game has not started.");
+  const player = room.players.get(payload.playerId);
+  if (!player || player.kicked || player.inactive || player.eliminated || player.submitted) {
+    return fail("Player is not active in this game.");
+  }
+  const roundIndex = Number(payload.roundIndex);
+  const expected = player.results.filter(Boolean).length;
+  if (!Number.isInteger(roundIndex) || roundIndex !== expected) return fail("That round is not currently active.");
+  const target = room.game.targetColors[roundIndex];
+  if (!target) return fail("Target color is unavailable.");
+  if (player.roundTiming?.roundIndex !== roundIndex) {
+    const sequence = room.game.mode === GAME_MODES.SEQUENCE;
+    const revealMs = shouldMemorizeMultiplayerRound(room.game.mode, room.gameFamily)
+      ? sequence ? (roundIndex === 0 ? room.game.revealDurationMs * room.game.roundCount : 0) : room.game.revealDurationMs
+      : 0;
+    player.roundTiming = { roundIndex, revealedAt: now(), guessReadyAt: now() + revealMs };
+  }
+  return ok({ round: {
+    roundIndex, targetColor: publicRoundTarget(target),
+    ...(room.game.mode === GAME_MODES.SEQUENCE && roundIndex === 0
+      ? { targetColors: room.game.targetColors.map(publicRoundTarget) } : {}),
+    revealDurationMs: room.game.revealDurationMs,
+    guessDurationMs: room.game.guessDurationMs,
+    rushRemainingMs: player.rushRemainingMs,
+  } });
+}
+
+export function requestRoundHint(room, payload) {
+  const player = room?.players.get(payload.playerId);
+  const roundIndex = Number(payload.roundIndex);
+  if (!player?.roundTiming || player.roundTiming.roundIndex !== roundIndex || player.results[roundIndex] ||
+      room.status !== ROOM_STATUSES.IN_GAME || player.inactive || player.eliminated ||
+      now() < player.roundTiming.guessReadyAt - 150) return fail("That round is not currently active.");
+  const rounds = room.roundCount;
+  const limit = rounds >= 20 ? 4 : rounds >= 10 ? 3 : rounds >= 5 ? 2 : rounds >= 3 ? 1 : 0;
+  if (room.hintsEnabled === false || (!player.hintsUsed.has(roundIndex) && player.hintsUsed.size >= limit)) {
+    return fail("No hints available.");
+  }
+  player.hintsUsed.add(roundIndex);
+  return ok({ targetColor: room.game.targetColors[roundIndex], hintCount: Math.max(0, limit - player.hintsUsed.size) });
+}
+
 export function submitRoundGuess(room, payload) {
   if (!room) return fail("Lobby not found or expired.");
   if (room.status !== ROOM_STATUSES.IN_GAME || !room.game) {
@@ -391,15 +455,23 @@ export function submitRoundGuess(room, payload) {
 
   const targetColor = room.game.targetColors[roundIndex];
   if (!targetColor) return fail("Target color is unavailable.");
+  if (roundIndex !== player.results.filter(Boolean).length || player.roundTiming?.roundIndex !== roundIndex) {
+    return fail("That round is not currently active.");
+  }
+  const elapsed = now() - player.roundTiming.guessReadyAt;
+  if (elapsed < -150) return fail("The memorize phase is still running.");
+  // Allow the existing 860ms control entrance and a small transport allowance.
+  const timedOut = room.game.guessDurationMs && elapsed > room.game.guessDurationMs + 1500;
+  const rushExpired = room.game.mode === GAME_MODES.RUSH && elapsed > player.rushRemainingMs + 500;
 
   if (room.game.mode === GAME_MODES.PATTERN) {
     const boardResult = validatePatternBoard(payload.patternBoard, targetColor);
     if (!boardResult.ok) return boardResult;
     const board = boardResult.data.board;
-    const solved = isPatternSolved(board);
+    const solved = !timedOut && isPatternSolved(board);
     const swaps = Math.max(0, Math.floor(Number(payload.swaps) || 0));
     const remainingMs = Math.max(0, Math.min(getPatternDurationMs(room.game.difficulty), Number(payload.remainingMs) || 0));
-    const score = scorePatternRound({
+    const score = timedOut ? 0 : scorePatternRound({
       initialMisplaced: countMisplacedPatternTiles(targetColor.board),
       remainingMisplaced: countMisplacedPatternTiles(board),
     });
@@ -463,7 +535,7 @@ export function submitRoundGuess(room, payload) {
       result,
       playerResults: player.results.filter(Boolean),
       playerTotalScoreSoFar: player.totalScore,
-      nextTargetColor: oddPassed ? room.game.targetColors[roundIndex + 1] : null,
+      nextTargetColor: oddPassed ? publicRoundTarget(room.game.targetColors[roundIndex + 1]) : null,
       nextRoundIndex: oddPassed ? roundIndex + 1 : null,
       leaderboard,
     });
@@ -492,7 +564,7 @@ export function submitRoundGuess(room, payload) {
                   brandId: targetColor.brandId,
                 })
             : withHex(applyDifficultyConstraints(colorResult.data.color, room.difficulty));
-  const score = roundScore(calculateMatchScore(targetColor, guessColor));
+  const score = timedOut || rushExpired ? 0 : roundScore(calculateMatchScore(targetColor, guessColor));
   const eliminationThreshold = isElimination
     ? getEliminationThreshold(roundIndex)
     : null;
@@ -538,14 +610,20 @@ export function submitRoundGuess(room, payload) {
   player.lastSeenAt = now();
   room.updatedAt = now();
 
+  if (room.game.mode === GAME_MODES.RUSH) {
+    player.rushRemainingMs = Math.max(0, player.rushRemainingMs - Math.max(0, elapsed));
+    player.submitted = player.submitted || player.rushRemainingMs === 0;
+  }
   const leaderboard = maybeFinishRoom(room);
 
   return ok({
+    rushRemainingMs: player.rushRemainingMs,
+    playerFinished: player.submitted,
     result,
     playerResults: player.results.filter(Boolean),
     playerTotalScoreSoFar: player.totalScore,
     nextTargetColor: isElimination && eliminationPassed
-      ? room.game.targetColors[roundIndex + 1]
+      ? publicRoundTarget(room.game.targetColors[roundIndex + 1])
       : null,
     nextRoundIndex: isElimination && eliminationPassed ? roundIndex + 1 : null,
     leaderboard,
@@ -584,6 +662,9 @@ export function submitFullResults(room, payload) {
 
 export function finishRushForPlayer(room, payload) {
   if (!room) return fail("Lobby not found or expired.");
+  if (room.status === ROOM_STATUSES.COMPLETED && room.game?.mode === GAME_MODES.RUSH && room.players.get(payload.playerId)?.submitted) {
+    return ok({ leaderboard: room.leaderboard });
+  }
   if (room.status !== ROOM_STATUSES.IN_GAME || !room.game) {
     return fail("Game has not started.");
   }
@@ -597,6 +678,12 @@ export function finishRushForPlayer(room, payload) {
     return fail("Player is not active in this game.");
   }
 
+  const timing = player.roundTiming;
+  const activeElapsed = timing && !player.results[timing.roundIndex] ? Math.max(0, now() - timing.guessReadyAt) : 0;
+  if (!player.submitted && activeElapsed + 100 < player.rushRemainingMs) {
+    return fail("The rush clock is still running.");
+  }
+  player.rushRemainingMs = 0;
   player.submitted = true;
   player.lastSeenAt = now();
   room.updatedAt = now();

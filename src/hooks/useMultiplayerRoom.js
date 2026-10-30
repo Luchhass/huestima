@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useLanguage";
 import { emitWithAck, getSocket } from "@/lib/socket";
+import { getRoomSession } from "@/hooks/useRoomSession";
 import { getMultiplayerErrorMessage } from "@/lib/multiplayerErrors";
 
 function responseData(response) {
@@ -84,7 +85,18 @@ export function useMultiplayerRoom(roomCode) {
       setConnectionError(t("room.serverUnavailable"));
     };
 
-    const handleConnect = () => {
+    const handleConnect = async () => {
+      const session = getRoomSession(roomCode);
+      if (!session?.playerId || !session.sessionToken) return;
+      const response = await emitWithAck("room:getState", { roomCode, playerId: session.playerId });
+      if (!response.ok) {
+        setConnectionError(getMultiplayerErrorMessage(response, t));
+        return;
+      }
+      const data = responseData(response);
+      handleRoomState(data.room);
+      if (data.room?.status === "completed") setStartedGame(null);
+      if (data.leaderboard) setLeaderboard(data.leaderboard);
       setConnectionError("");
     };
 

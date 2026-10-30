@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import NotificationsPage from "@/components/sections/notifications/NotificationsPage";
+import PageIntro from "@/components/layout/PageIntro";
 
 export const metadata = {
   title: "Notifications",
@@ -20,8 +21,11 @@ function NotificationsRouteFallback() {
 
 export default function NotificationsRoute() {
   return (
-    <Suspense fallback={<NotificationsRouteFallback />}>
-      <NotificationsPage />
-    </Suspense>
+    <>
+      <PageIntro />
+      <Suspense fallback={<NotificationsRouteFallback />}>
+        <NotificationsPage />
+      </Suspense>
+    </>
   );
 }

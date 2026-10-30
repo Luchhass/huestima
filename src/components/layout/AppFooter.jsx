@@ -11,6 +11,7 @@ import {
   playCardToCardExit,
   markCardRouteTransition,
   requestLandingExit,
+  requestWideCardNavigation,
   shouldFadeAppChrome,
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
@@ -25,16 +26,17 @@ const getFooterThemeSampleY = () =>
 export default function AppFooter() {
   const { locale, t } = useTranslation();
   const pathname = usePathname()?.replace(/^\/tr(?=\/)/, "");
-  const [familyFromQuery] = useState(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("from");
-  });
+  const [familyFromQuery, setFamilyFromQuery] = useState(null);
   const router = useRouter();
   const isTransitioningRef = useRef(false);
 
   useEffect(() => {
     isTransitioningRef.current = false;
   }, [pathname]);
+
+  useEffect(() => {
+    setFamilyFromQuery(new URLSearchParams(window.location.search).get("from"));
+  }, []);
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isExploreRoute = pathname === "/explore" || pathname?.startsWith("/explore/");
@@ -90,6 +92,7 @@ export default function AppFooter() {
 
     await requestActiveGameExit();
     clearAllGameSessions();
+    if (await requestWideCardNavigation(href)) return;
 
     const card = document.querySelector("[data-intro-card-target]");
     const content = document.querySelector("[data-route-transition-scope]");

@@ -12,7 +12,7 @@
     "build:brands": "node scripts/build-brand-scenes.mjs",
     "build:teams": "node scripts/rebuild-team-catalog.mjs && node scripts/build-team-scenes.mjs",
     "check:colors": "node scripts/check-color-mechanics.mjs",
-    "check:games": "node --test tests/game-mechanics.test.mjs",
+    "check:games": "node scripts/run-game-tests.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

@@ -4,6 +4,8 @@ import { encodeSharedMatchEntry } from "@/lib/matchHistoryShare";
 import { serializeHintsEnabled } from "@/lib/hints";
 import { getGameFamilyHref, normalizeGameFamily } from "@/lib/gameFamily";
 
+import { recordProfileMatches } from "@/lib/profile";
+
 const MATCH_HISTORY_STORAGE_KEY = "huestima-match-history";
 export const MATCH_HISTORY_LIMIT = 20;
 
@@ -56,6 +58,7 @@ export function upsertMatchHistoryEntry(entry) {
     createdAt: entry.createdAt || Date.now(),
   };
   const currentEntries = readMatchHistory();
+  recordProfileMatches([...currentEntries, nextEntry]);
   const withoutDuplicate = currentEntries.filter((item) => item?.id !== nextEntry.id);
   const nextEntries = [nextEntry, ...withoutDuplicate].slice(0, MATCH_HISTORY_LIMIT);
 
@@ -105,6 +108,10 @@ export function buildReplayMatchUrl(entry) {
     url.searchParams.set("roundCount", String(entry.roundCount));
   }
 
+  if (entry.flagDifficulties?.length) url.searchParams.set("flagDifficulties", entry.flagDifficulties.join(","));
+  else if (entry.flagDifficulty) url.searchParams.set("flagDifficulty", entry.flagDifficulty);
+  if (entry.cartoonIds?.length) url.searchParams.set("cartoons", entry.cartoonIds.join(","));
+  if (entry.teamIds?.length) url.searchParams.set("teams", entry.teamIds.join(","));
   url.searchParams.set("hints", serializeHintsEnabled(entry.hintsEnabled));
   return url.toString();
 }

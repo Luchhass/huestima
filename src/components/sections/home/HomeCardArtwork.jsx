@@ -13,7 +13,8 @@ export default function HomeCardArtwork({
   const perceptionTileRefs = useRef(new Map());
 
   useEffect(() => {
-    setPerceptionHue(Math.floor(Math.random() * 360));
+    const timer = window.setTimeout(() => setPerceptionHue(Math.floor(Math.random() * 360)), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,9 @@
 "use client";
 
+import { useProfilePlayTime } from "@/hooks/useProfilePlayTime";
+
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useGameAvailability } from "@/hooks/useGameAvailability";
 import { useRouter } from "next/navigation";
 import { GAME_MODE_IDS } from "@/lib/constants";
 import {
@@ -48,6 +51,7 @@ export default function SingleplayerGame({
   gameFamily = "color",
 }) {
   const router = useRouter();
+  const gameAvailable = useGameAvailability(gameFamily, initialGameMode);
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const game = useSingleplayerGame(
     initialDifficulty,
@@ -60,6 +64,7 @@ export default function SingleplayerGame({
     initialTeamIds,
   );
   const { abandonSession } = game;
+  useProfilePlayTime(gameAvailable && game.phase !== GAME_PHASES.FINAL);
   const startTrackedRef = useRef(false);
   const completionTrackedRef = useRef(false);
   const latestResult = game.results[game.results.length - 1];
@@ -152,7 +157,7 @@ export default function SingleplayerGame({
   ]);
 
   useEffect(() => {
-    if (!resumePhase || renderedPhase !== resumePhase) return undefined;
+    if (!resumePhase || renderedPhase === resumePhase) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setResumePhase(null);
@@ -331,6 +336,10 @@ export default function SingleplayerGame({
     historySavedRef.current = true;
     upsertMatchHistoryEntry({
       id: game.historyMatchId,
+      flagDifficulty: initialFlagDifficulty,
+      flagDifficulties: initialFlagDifficulties,
+      cartoonIds: initialCartoonIds,
+      teamIds: initialTeamIds,
       gameType: "singleplayer",
       gameFamily: cleanGameFamily,
       gameMode: game.gameMode.id,
@@ -345,6 +354,10 @@ export default function SingleplayerGame({
     });
   }, [
     cleanGameFamily,
+    initialFlagDifficulty,
+    initialFlagDifficulties,
+    initialCartoonIds,
+    initialTeamIds,
     game.difficulty.id,
     game.gameMode.id,
     game.historyMatchId,
@@ -409,6 +422,8 @@ export default function SingleplayerGame({
       </main>
     );
   }
+
+  if (!gameAvailable) return null;
 
   return (
     <main

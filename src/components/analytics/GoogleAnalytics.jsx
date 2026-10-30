@@ -40,11 +40,7 @@ export default function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){window.dataLayer.push(arguments);}
           window.gtag = window.gtag || gtag;
-          if (!window.__huestimaGaConfigured) {
-            gtag("js", new Date());
-            gtag("config", "${GA_MEASUREMENT_ID}", { send_page_view: false });
-            window.__huestimaGaConfigured = true;
-          }
+          // Route tracking configures GA only after sanitizing the current URL.
         `}
       </Script>
       <Script

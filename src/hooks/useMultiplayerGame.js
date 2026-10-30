@@ -290,6 +290,7 @@ export function useMultiplayerGame({
   );
   const restoredFromSession = Boolean(initialGameSession);
   const snapshotRef = useRef(null);
+  const restoredSeedRef = useRef(null);
   const rushExpiredRef = useRef(false);
   const rushSubmitRef = useRef(null);
   const currentSeed = gamePayload?.seed || room?.game?.seed || null;
@@ -301,6 +302,8 @@ export function useMultiplayerGame({
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      if (!currentSeed || restoredSeedRef.current === currentSeed) return;
+      restoredSeedRef.current = currentSeed;
       const canRestoreSession =
         initialGameSession &&
         (!currentSeed || !initialGameSession.seed || initialGameSession.seed === currentSeed);
@@ -409,11 +412,17 @@ export function useMultiplayerGame({
   ]);
 
   const prepareRound = useCallback(
-    (nextRoundIndex) => {
-      const payloadColors = gamePayload?.targetColors || [];
-      const colors = targetColors.length >= payloadColors.length
-        ? targetColors
-        : payloadColors;
+    async (nextRoundIndex) => {
+      const response = await emitWithAck("round:requestTarget", { roomCode, playerId, roundIndex: nextRoundIndex });
+      if (!response.ok) {
+        completedIntroRoundRef.current = null;
+        setError(getMultiplayerErrorMessage(response, t));
+        return false;
+      }
+      const round = responseData(response).round;
+      const colors = [...targetColors];
+      if (round.targetColors) round.targetColors.forEach((color, index) => { colors[index] = color; });
+      colors[nextRoundIndex] = round.targetColor;
       hintActionRef.current = false;
       setHintActive(false);
 
@@ -426,9 +435,7 @@ export function useMultiplayerGame({
       setTargetColors(colors);
       setRevealDurationMs(gamePayload?.revealDurationMs || gameMode.revealDurationMs);
 
-      const nextTargetColor = isSequenceMode
-        ? colors[0]
-        : colors[nextRoundIndex];
+      const nextTargetColor = colors[nextRoundIndex];
 
       setGuessColor(
         createDefaultGuess(
@@ -446,7 +453,7 @@ export function useMultiplayerGame({
       }
 
       transitionToPhase(
-        shouldMemorizeRound ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
+        shouldMemorizeRound && (!isSequenceMode || nextRoundIndex === 0) ? GAME_PHASES.MEMORIZE : GAME_PHASES.GUESS,
       );
       return true;
     },
@@ -455,6 +462,8 @@ export function useMultiplayerGame({
       effectiveDifficulty,
       gameMode,
       gamePayload,
+      roomCode,
+      playerId,
       shouldMemorizeRound,
       isSequenceMode,
       targetColors,
@@ -507,7 +516,7 @@ export function useMultiplayerGame({
     [cleanGameFamily, effectiveDifficulty, gameMode, targetColor],
   );
 
-  const useHint = useCallback(() => {
+  const useHint = useCallback(async () => {
     if (
       phase !== GAME_PHASES.GUESS ||
       (!hintsEnabled && !unlimitedHints) ||
@@ -519,11 +528,17 @@ export function useMultiplayerGame({
     }
 
     hintActionRef.current = true;
-    if (!unlimitedHints) {
-      setHintCount((currentCount) => Math.max(0, currentCount - 1));
+    const response = await emitWithAck("game:requestHint", { roomCode, playerId, roundIndex });
+    if (!response.ok) {
+      hintActionRef.current = false;
+      setError(getMultiplayerErrorMessage(response, t));
+      return;
     }
+    const data = responseData(response);
+    setTargetColor(data.targetColor);
+    setHintCount(data.hintCount);
     setHintActive(true);
-  }, [hintActive, hintCount, hintsEnabled, phase, unlimitedHints]);
+  }, [hintActive, hintCount, hintsEnabled, phase, unlimitedHints, playerId, roomCode, roundIndex, t]);
 
   const submitGuess = useCallback(async (options = {}) => {
     if (
@@ -577,6 +592,7 @@ export function useMultiplayerGame({
     submittedRoundRef.current = roundIndex;
 
     const data = responseData(response);
+    if (Number.isFinite(data.rushRemainingMs)) setRushRemainingMs((current) => Math.min(current, data.rushRemainingMs));
     const nextResult = toResultPhaseShape(data.result);
     if ((isEliminationMode || isOddMode) && data.nextTargetColor) {
       setTargetColors((currentColors) => {
@@ -604,9 +620,7 @@ export function useMultiplayerGame({
         submittedRoundRef.current = null;
         continuedRoundRef.current = null;
         setRoundIndex(data.nextRoundIndex);
-        setTargetColor(data.nextTargetColor);
-        setGuessColor(null);
-        transitionToPhase(GAME_PHASES.GUESS);
+        await prepareRound(data.nextRoundIndex);
       } else {
         transitionToPhase(data.leaderboard ? "leaderboard" : "waiting");
       }
@@ -614,6 +628,10 @@ export function useMultiplayerGame({
     }
 
     if (isRushMode) {
+      if (data.playerFinished) {
+        transitionToPhase(data.leaderboard ? "leaderboard" : "waiting");
+        return nextResult;
+      }
       const nextRoundIndex = roundIndex + 1;
       if (options.finishRush || rushExpiredRef.current) {
         const finishResponse = await emitWithAck("game:finishRush", {
@@ -653,6 +671,7 @@ export function useMultiplayerGame({
     playerId,
     roomCode,
     roundIndex,
+    prepareRound,
     targetColor,
     t,
     transitionToPhase,
@@ -810,8 +829,7 @@ export function useMultiplayerGame({
     setGuessColor(createDefaultGuess(effectiveDifficulty, gameMode, cleanGameFamily));
 
     if (isSequenceMode) {
-      setTargetColor(targetColors[nextRoundIndex] || null);
-      transitionToPhase(GAME_PHASES.GUESS);
+      void prepareRound(nextRoundIndex);
       return;
     }
 
@@ -826,11 +844,11 @@ export function useMultiplayerGame({
     isEndlessMode,
     isSequenceMode,
     localLeaderboard,
+    prepareRound,
     phase,
     roundCount,
     roundIndex,
     results,
-    targetColors,
     transitionToPhase,
   ]);
 
@@ -842,7 +860,14 @@ export function useMultiplayerGame({
     clearGameSession(gameSessionKey);
   }, [gameSessionKey]);
 
+  const requestPerfectTarget = useCallback(async () => {
+    const response = await emitWithAck("game:requestPerfect", { roomCode, playerId, roundIndex });
+    if (response.ok) updateGuess(responseData(response).targetColor);
+    else setError(getMultiplayerErrorMessage(response, t));
+  }, [roomCode, playerId, roundIndex, updateGuess, t]);
+
   return {
+    requestPerfectTarget,
     difficulty: effectiveDifficulty,
     gameMode,
     gameFamily: cleanGameFamily,

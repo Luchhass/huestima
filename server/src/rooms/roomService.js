@@ -129,6 +129,7 @@ function clearRoomTimers(room) {
 function touchRoom(room) {
   room.updatedAt = now();
   room.expiresAt = now() + env.roomTtlMs;
+  scheduleRoomDeletion(room, env.roomTtlMs, "stale", true);
 }
 
 function getPlayerProgress(player, room) {
@@ -269,6 +270,10 @@ function scheduleRoomDeletion(room, delayMs, reason, notify = false) {
   const timer = setTimeout(() => {
     const currentRoom = getRoom(room.code);
     if (!currentRoom) return;
+    if (reason === "stale" && currentRoom.expiresAt > now()) {
+      scheduleRoomDeletion(currentRoom, currentRoom.expiresAt - now(), reason, notify);
+      return;
+    }
 
     closeRoom(currentRoom, reason, notify);
   }, delayMs);
@@ -429,6 +434,7 @@ export function createRoom(payload) {
 
   room.players.set(validation.data.playerId, {
     id: validation.data.playerId,
+    sessionToken: randomBytes(32).toString("base64url"),
     socketId: payload.socketId,
     name: validation.data.playerName,
     isHost: true,
@@ -452,6 +458,7 @@ export function createRoom(payload) {
   return ok({
     room: getRoomSnapshot(room),
     player: serializePlayer(room.players.get(validation.data.playerId), room),
+    sessionToken: room.players.get(validation.data.playerId).sessionToken,
   });
 }
 
@@ -469,11 +476,12 @@ export function requestRoomState(payload) {
   if (playerId?.ok) {
     player = room.players.get(playerId.data.playerId) || null;
     if (player && !player.kicked) {
+      if (!hasPlayerSession(player, payload)) return fail("Invalid player session.");
       reconnectPlayer(room, player, payload.socketId);
     }
   }
 
-  touchRoom(room);
+  if (player) touchRoom(room);
 
   return ok({
     room: getRoomSnapshot(room),
@@ -481,6 +489,14 @@ export function requestRoomState(payload) {
     game: player ? buildGamePayload(room) : null,
     leaderboard: room.leaderboard,
   });
+}
+
+function hasPlayerSession(player, payload) {
+  if (player.socketId && player.socketId === payload.socketId) return true;
+  if (typeof payload.sessionToken !== "string" || !player.sessionToken) return false;
+  const expected = Buffer.from(player.sessionToken);
+  const actual = Buffer.from(payload.sessionToken);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
 function reconnectPlayer(room, player, socketId) {
@@ -518,6 +534,7 @@ export function joinRoom(payload) {
 
   const existingPlayer = room.players.get(playerId.data.playerId);
   if (existingPlayer && !existingPlayer.kicked) {
+    if (!hasPlayerSession(existingPlayer, payload)) return fail("Invalid player session.");
     existingPlayer.name = playerName.data.playerName;
     reconnectPlayer(room, existingPlayer, payload.socketId);
     return ok({
@@ -525,6 +542,7 @@ export function joinRoom(payload) {
       player: serializePlayer(existingPlayer, room),
       game: buildGamePayload(room),
       leaderboard: room.leaderboard,
+      sessionToken: existingPlayer.sessionToken,
     });
   }
 
@@ -548,6 +566,7 @@ export function joinRoom(payload) {
   const joinedAt = now();
   const player = {
     id: playerId.data.playerId,
+    sessionToken: randomBytes(32).toString("base64url"),
     socketId: payload.socketId,
     name: playerName.data.playerName,
     isHost: false,
@@ -570,6 +589,7 @@ export function joinRoom(payload) {
   return ok({
     room: getRoomSnapshot(room),
     player: serializePlayer(player, room),
+    sessionToken: player.sessionToken,
   });
 }
 
@@ -615,6 +635,10 @@ export function updateRoomSettings(payload) {
   }
 
   nextDifficulty = resolveModeDifficulty(nextGameMode, nextDifficulty);
+  const configuration = getSiteOperations().gameConfiguration?.[room.gameFamily];
+  if (configuration?.enabled === false || configuration?.modes?.[nextGameMode] === false) {
+    return fail("This game is currently unavailable.");
+  }
 
   if (payload.flagDifficulty !== undefined) {
     const flagDifficulty = validateFlagDifficulty(payload.flagDifficulty);
@@ -853,6 +877,10 @@ export function startRoomGame(payload) {
   if (room.status !== ROOM_STATUSES.LOBBY) return fail("Game already started.");
   if (room.hostPlayerId !== playerId.data.playerId) return fail("Only the host can start the game.");
   if (room.players.size < 1) return fail("Lobby has no players.");
+  const configuration = getSiteOperations().gameConfiguration?.[room.gameFamily];
+  if (configuration?.enabled === false || configuration?.modes?.[room.gameMode] === false) {
+    return fail("This game is currently unavailable.");
+  }
   room.status = ROOM_STATUSES.STARTING;
   touchRoom(room);
 

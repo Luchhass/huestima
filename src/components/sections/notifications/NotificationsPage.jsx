@@ -2,17 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCheck } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import {
-  playScreenFadeOut,
   SCREEN_REVEAL_REPLAY_EVENT,
   useScreenReveal,
 } from "@/hooks/useScreenReveal";
 import {
   consumeCardRouteTransition,
-  CARD_RESIZE_DURATION_MS,
-  markDownloadReturn,
   SCREEN_REVEAL_AFTER_RESIZE_MS,
   SCREEN_REVEAL_DIRECT_MS,
 } from "@/hooks/useFooterPageTransition";
@@ -21,7 +17,6 @@ import { useTranslation } from "@/hooks/useLanguage";
 import { readNotificationInbox } from "@/lib/notificationInbox";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import EmptyState from "@/components/ui/EmptyState";
-import CardCloseButton from "@/components/ui/CardCloseButton";
 
 function formatNotificationDate(value, locale) {
   if (!Number.isFinite(Number(value))) return "";
@@ -33,13 +28,9 @@ function formatNotificationDate(value, locale) {
 
 export default function NotificationsPage() {
   const scopeRef = useRef(null);
-  const isClosingRef = useRef(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [entryTransition] = useState(consumeCardRouteTransition);
   const skipsEntryResize = ["large", "download"].includes(entryTransition?.from);
   const [isExpanded, setIsExpanded] = useState(skipsEntryResize);
-  const [isClosing, setIsClosing] = useState(false);
   const cardHeight = useResponsiveCardHeight(isExpanded);
   const { userAnnouncements: announcements } = useSiteOperations();
   const { locale, t } = useTranslation();
@@ -60,23 +51,6 @@ export default function NotificationsPage() {
   useScreenReveal(scopeRef, [locale], { defer: true });
 
   const readIds = readNotificationInbox().readIds;
-  const requestedReturnTo = searchParams.get("from") || "/color";
-  const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//")
-    ? requestedReturnTo
-    : "/color";
-
-  const handleClose = async () => {
-    if (isClosingRef.current) return;
-    isClosingRef.current = true;
-    setIsClosing(true);
-
-    await playScreenFadeOut(scopeRef, { duration: 0.24 });
-    setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, CARD_RESIZE_DURATION_MS));
-    markDownloadReturn();
-    router.push(returnTo);
-  };
-
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">
       <section
@@ -86,13 +60,7 @@ export default function NotificationsPage() {
         style={cardHeight ? { height: cardHeight } : undefined}
       >
         <div ref={scopeRef} data-route-transition-scope className="relative flex h-full min-h-0 w-full flex-col">
-          <CardCloseButton
-            onClick={() => void handleClose()}
-            label={t("notifications.close")}
-            disabled={isClosing}
-            className="absolute right-0 top-0"
-          />
-          <div data-screen-reveal className="overflow-hidden pr-12">
+          <div data-screen-reveal className="overflow-hidden">
             <h1 className="whitespace-nowrap text-[clamp(2.3rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">{t("notifications.title")}</h1>
           </div>
 

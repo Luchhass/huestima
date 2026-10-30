@@ -6,6 +6,18 @@ export const metadata = createPageMetadata("brandMultiplayer");
 
 export default async function BrandMultiplayerPage({ searchParams }) {
   const setup = resolveMultiplayerSetupRoute(await searchParams, "brand");
-
-  return <HomeCard initialView="multiplayer" gameFamily="brand" initialDifficulty={setup.difficulty} initialGameMode={setup.gameMode} initialRoundCount={setup.roundCount} initialHintsEnabled={setup.hintsEnabled} />;
+  return (
+    <HomeCard
+      initialView="multiplayer"
+      gameFamily="brand"
+      initialDifficulty={setup.difficulty}
+      initialGameMode={setup.gameMode}
+      initialRoundCount={setup.roundCount}
+      initialHintsEnabled={setup.hintsEnabled}
+      initialFlagDifficulty={setup.flagDifficulty}
+      initialFlagDifficulties={setup.flagDifficulties}
+      initialCartoonIds={setup.cartoonIds}
+      initialTeamIds={setup.teamIds}
+    />
+  );
 }

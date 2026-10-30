@@ -45,6 +45,14 @@ export const GAME_FAMILY_OPTIONS = [
 
 export const GAME_FAMILY_MODE_IDS = SHARED_GAME_FAMILY_MODE_IDS;
 
+export function getAvailableGameHref(configuration, locale = "en") {
+  const family = GAME_FAMILY_OPTIONS.find(({ id }) =>
+    configuration?.[id]?.enabled !== false &&
+    GAME_FAMILY_MODE_IDS[id].some((mode) => configuration?.[id]?.modes?.[mode] !== false),
+  );
+  return family ? `${locale === "tr" ? "/tr" : ""}/${family.id}` : "/?entry=logo";
+}
+
 export function isGameFamilyEnabled(configuration, gameFamily) {
   return configuration?.[normalizeGameFamily(gameFamily)]?.enabled !== false;
 }

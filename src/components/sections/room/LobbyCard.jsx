@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clipboard, Settings, UserMinus } from "lucide-react";
 import gsap from "gsap";
+import { useSiteOperations } from "@/hooks/useSiteOperations";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useCartoonAssetPreload } from "@/hooks/useCartoonAssetPreload";
 import { useGameModeShock } from "@/hooks/useGameModeShock";
@@ -148,6 +149,7 @@ export default function LobbyCard({
 }) {
   const cleanGameFamily = normalizeGameFamily(gameFamily);
   const { locale, t } = useTranslation();
+  const { operations } = useSiteOperations();
   const [isInviteCopied, setIsInviteCopied] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsPool, setSettingsPool] = useState(null);
@@ -177,8 +179,9 @@ export default function LobbyCard({
       getAvailableGameModeOptions(
         GAME_MODE_OPTIONS.filter((option) => !option.singleplayerOnly),
         cleanGameFamily,
+        operations.gameConfiguration,
       ),
-    [cleanGameFamily],
+    [cleanGameFamily, operations.gameConfiguration],
   );
   const gameModeLabel = t(`gameMode.${room?.gameMode || "normal"}`);
   const isUnlimitedRoundMode =

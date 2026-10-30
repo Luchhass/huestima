@@ -5,9 +5,7 @@ import { createPageMetadata } from "@/lib/seo";
 export const metadata = createPageMetadata("cartoonMultiplayer");
 
 export default async function CartoonMultiplayerPage({ searchParams }) {
-  const params = await searchParams;
-  const setup = resolveMultiplayerSetupRoute(params, "cartoon");
-
+  const setup = resolveMultiplayerSetupRoute(await searchParams, "cartoon");
   return (
     <HomeCard
       initialView="multiplayer"
@@ -16,7 +14,10 @@ export default async function CartoonMultiplayerPage({ searchParams }) {
       initialGameMode={setup.gameMode}
       initialRoundCount={setup.roundCount}
       initialHintsEnabled={setup.hintsEnabled}
+      initialFlagDifficulty={setup.flagDifficulty}
+      initialFlagDifficulties={setup.flagDifficulties}
       initialCartoonIds={setup.cartoonIds}
+      initialTeamIds={setup.teamIds}
     />
   );
 }

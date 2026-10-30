@@ -3,6 +3,7 @@
 import Link from "next/link";
 import HomeCardArtwork from "../home/HomeCardArtwork";
 import LandingGameGuide from "./LandingGameGuide";
+import DownloadPage from "../download/DownloadPage";
 import LandingHeroFluid from "./LandingHeroFluid";
 import gsap from "gsap";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -97,8 +98,11 @@ export default function LandingPage() {
     deferContentVisibility: isLandingEntryTransition,
     preserveScopeVisibility: true,
   });
-  useScrollScreenReveal(pageRef, [locale]);
-  useScrollCardPopReveal(pageRef, [locale]);
+  useScrollScreenReveal(pageRef, [locale], {
+    reverseOnExit: false,
+    maskClip: "inset(-64px -120vw -64px -64px)",
+  });
+  useScrollCardPopReveal(pageRef, [locale], { reverseOnExit: false });
 
   useLayoutEffect(() => {
     if (!landingEntryTransition) return undefined;
@@ -350,69 +354,75 @@ export default function LandingPage() {
           data-header-theme="dark"
           data-footer-theme="dark"
         >
-        <LandingHeroFluid />
-        <div className="landing-page__intro" data-screen-reveal>
-          <h1 id="landing-title">
-            <span className="block whitespace-nowrap">how well do you</span>
-            <span className="block whitespace-nowrap">remember color?</span>
-          </h1>
-          <p className="landing-page__subtitle">
-            Chase a color after it disappears, pull the defining shade from a
-            flag, rebuild a cartoon character&apos;s palette, recognize a brand by
-            its signature hue, prove how well you know your team&apos;s colors, or
-            test your perception by spotting what breaks a color pattern. Each
-            game turns color into a different visual challenge.
-          </p>
+          <LandingHeroFluid />
+          <div className="landing-page__intro" data-screen-reveal>
+            <h1 id="landing-title">
+              <span className="block whitespace-nowrap">how well do you</span>
+              <span className="block whitespace-nowrap">remember color?</span>
+            </h1>
+            <p className="landing-page__subtitle">
+              Chase a color after it disappears, pull the defining shade from a
+              flag, rebuild a cartoon character&apos;s palette, recognize a brand by
+              its signature hue, prove how well you know your team&apos;s colors, or
+              test your perception by spotting what breaks a color pattern. Each
+              game turns color into a different visual challenge.
+            </p>
+          </div>
+        </section>
+
+        <div className="landing-page__content">
+          <LandingGameGuide />
+
+          <nav
+            className="landing-page__grid"
+            aria-label="Choose a game"
+            data-header-theme="light"
+            data-footer-theme="light"
+          >
+            {LANDING_CARDS.map(
+              ({ id, href, className, title, description }, index) => (
+                <Link
+                  key={id}
+                  href={href}
+                  className={`landing-card ${className}`}
+                  onClick={(event) => handleNavigation(event, href)}
+                  data-scroll-card-pop
+                  data-scroll-reveal-delay={String((index % 3) * 0.055)}
+                >
+                  <div className="landing-card__canvas">
+                    <div className="landing-card__artwork" aria-hidden="true" inert>
+                      <HomeCardArtwork cleanGameFamily={id} />
+                    </div>
+                    <span className="landing-card__copy">
+                      <span className="landing-card__title">{title}</span>
+                      <span className="landing-card__description">{description}</span>
+                    </span>
+                    <span className="landing-card__modes">
+                      <span>solo or multiplayer</span>
+                      <span className="landing-card__mode-icons">
+                        <User aria-hidden="true" size={23} strokeWidth={2} />
+                        <UsersRound aria-hidden="true" size={23} strokeWidth={2} />
+                      </span>
+                    </span>
+                  </div>
+                </Link>
+              ),
+            )}
+          </nav>
+
+          <DownloadPage embedded />
+
+          <section
+            className="landing-page__more-games"
+            aria-label="Upcoming games"
+            data-header-theme="light"
+            data-footer-theme="light"
+            data-scroll-screen-reveal
+          >
+            <h2>more games are coming</h2>
+            <p>new ways to test your color memory are already in the works.</p>
+          </section>
         </div>
-        </section>
-
-        <LandingGameGuide />
-
-        <nav
-          className="landing-page__grid"
-          aria-label="Choose a game"
-          data-header-theme="light"
-          data-footer-theme="light"
-        >
-          {LANDING_CARDS.map(({ id, href, className, title, description }, index) => (
-            <Link
-              key={id}
-              href={href}
-              className={`landing-card ${className}`}
-              onClick={(event) => handleNavigation(event, href)}
-              data-scroll-card-pop
-              data-scroll-reveal-delay={String((index % 3) * 0.055)}
-            >
-              <div className="landing-card__canvas">
-                <div className="landing-card__artwork" aria-hidden="true" inert>
-                  <HomeCardArtwork cleanGameFamily={id} />
-                </div>
-              <span className="landing-card__copy">
-                <span className="landing-card__title">{title}</span>
-                <span className="landing-card__description">{description}</span>
-              </span>
-              <span className="landing-card__modes">
-                <span>solo or multiplayer</span>
-                <span className="landing-card__mode-icons">
-                  <User aria-hidden="true" size={23} strokeWidth={2} />
-                  <UsersRound aria-hidden="true" size={23} strokeWidth={2} />
-                </span>
-              </span>
-              </div>
-            </Link>
-          ))}
-        </nav>
-
-        <section
-          className="landing-page__more-games"
-          aria-label="Upcoming games"
-          data-header-theme="light"
-          data-footer-theme="light"
-          data-scroll-screen-reveal
-        >
-          <h2>more games are coming</h2>
-          <p>new ways to test your color memory are already in the works.</p>
-        </section>
       </div>
     </main>
   );

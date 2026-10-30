@@ -12,6 +12,9 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { pushNotification } from "@/components/ui/GlobalPushNotifications";
 import { playScreenFadeOut } from "@/hooks/useScreenReveal";
+import { getAvailableGameHref } from "@/lib/gameFamily";
+import { getLandingRoute } from "../../shared/landingRoutes.mjs";
+import { requestActiveGameExit } from "@/lib/gameNavigation";
 import { getSocket } from "@/lib/socket";
 import {
   NOTIFICATION_INBOX_CHANGE_EVENT,
@@ -57,7 +60,7 @@ function multiplayerFallbackPath(pathname) {
 }
 
 function isAnnouncementHomePath(pathname) {
-  return FAMILY_PATHS.has(pathname?.replace(/^\//, ""));
+  return Boolean(getLandingRoute(pathname));
 }
 
 export function SiteOperationsProvider({ children }) {
@@ -160,15 +163,16 @@ export function SiteOperationsProvider({ children }) {
   useEffect(() => {
     if (!ready || redirectingRef.current) return;
 
-    const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+    const normalizedPath = pathname.replace(/^\/tr(?=\/)/, "");
+    const isAdminPath = normalizedPath === "/admin" || normalizedPath.startsWith("/admin/");
     let destination = null;
 
     if (operations.maintenanceEnabled && !isAdminPath && pathname !== "/maintenance") {
       destination = "/maintenance";
     } else if (!operations.maintenanceEnabled && pathname === "/maintenance") {
       destination = "/color";
-    } else if (operations.gameConfiguration?.[pathname.split("/").filter(Boolean)[0]]?.enabled === false) {
-      destination = "/color";
+    } else if (operations.gameConfiguration?.[normalizedPath.split("/").filter(Boolean)[0]]?.enabled === false) {
+      destination = getAvailableGameHref(operations.gameConfiguration, getLandingRoute(pathname)?.locale);
     } else if (!operations.multiplayerEnabled) {
       destination = multiplayerFallbackPath(pathname);
     }
@@ -185,6 +189,7 @@ export function SiteOperationsProvider({ children }) {
       ".app-header, .creator-tag, .route-transition-footer",
     ));
     void Promise.all([
+      requestActiveGameExit(),
       playScreenFadeOut(scope, { duration: 0.24 }),
       ...chrome.map((element) => playScreenFadeOut(element, { duration: 0.24 })),
     ]).finally(() => {

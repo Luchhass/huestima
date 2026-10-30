@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Play, Share2, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Play, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useResponsiveCardHeight } from "@/hooks/useResponsiveCardHeight";
 import {
@@ -12,7 +12,6 @@ import {
 import {
   consumeCardRouteTransition,
   CARD_RESIZE_DURATION_MS,
-  markDownloadReturn,
   SCREEN_REVEAL_AFTER_RESIZE_MS,
   SCREEN_REVEAL_DIRECT_MS,
 } from "@/hooks/useFooterPageTransition";
@@ -44,7 +43,6 @@ import CartoonOverlay from "@/components/ui/game/CartoonOverlay";
 import FlagOverlay from "@/components/ui/game/FlagOverlay";
 import BrandOverlay from "@/components/ui/game/BrandOverlay";
 import EmptyState from "@/components/ui/EmptyState";
-import CardCloseButton from "@/components/ui/CardCloseButton";
 
 const CONTENT_FADE_DURATION_MS = 240;
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
@@ -260,9 +258,11 @@ function DetailHeader({ entry, locale, t, onBack, sharedBy = "" }) {
 
   return (
     <>
-      <CardCloseButton onClick={onBack} label={t("history.backToList")} className="absolute right-0 top-0" />
+      <button type="button" data-screen-reveal onClick={onBack} className="mb-4 inline-flex w-fit items-center gap-2 rounded-full text-xs font-medium text-white/60 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white/60">
+        <ArrowLeft size={16} aria-hidden="true" />{t("history.backToList")}
+      </button>
 
-      <div data-screen-reveal className="max-w-100 pr-12 sm:pr-14">
+      <div data-screen-reveal className="max-w-100">
         <div className="flex items-end gap-2">
           <p
             className="text-[clamp(3.2rem,11.5vw,4.45rem)] leading-[0.82] font-semibold tracking-normal"
@@ -310,7 +310,6 @@ export default function HistoryPage({
   sharedMatch = "",
   selectedMatchId = "",
   initialView = "",
-  initialFrom = "color",
 }) {
   const router = useRouter();
   const { locale, t } = useTranslation();
@@ -328,9 +327,6 @@ export default function HistoryPage({
   const listView = !activeEntry;
   const sharedEntry = useMemo(() => sharedMatch || null, [sharedMatch]);
   const isSharedView = Boolean(sharedEntry);
-  const from = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(initialFrom)
-    ? initialFrom
-    : "color";
 
   useEffect(() => {
     const savedEntries = readMatchHistory();
@@ -398,17 +394,6 @@ export default function HistoryPage({
     window.setTimeout(() => {
       window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     }, 80);
-  };
-
-  const handleClose = async () => {
-    if (isLeavingRef.current) return;
-    isLeavingRef.current = true;
-    setIsLeaving(true);
-    await playScreenFadeOut(scopeRef, { duration: 0.24 });
-    setIsExpanded(false);
-    await new Promise((resolve) => window.setTimeout(resolve, CARD_RESIZE_DURATION_MS));
-    markDownloadReturn();
-    router.push(`/${from}`);
   };
 
   const handleDelete = (entryId) => {
@@ -594,8 +579,7 @@ export default function HistoryPage({
             </>
           ) : (
             <div className="flex h-full min-h-0 flex-col">
-              <CardCloseButton onClick={() => void handleClose()} label={t("history.backToList")} className="absolute right-0 top-0" />
-              <div data-screen-reveal className="pr-10">
+              <div data-screen-reveal>
                 <h1 className="whitespace-nowrap text-[clamp(2.3rem,7vw,3.75rem)] font-semibold leading-[0.92] tracking-normal text-white sm:text-[3.85rem]">
                   {t("history.listTitle")}
                 </h1>

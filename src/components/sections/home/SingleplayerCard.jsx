@@ -107,6 +107,7 @@ export default function SingleplayerCard({
     }
 
     event.preventDefault();
+    if (!gameModeOption) return;
     isNavigatingRef.current = true;
 
     await onBeforePlay?.();

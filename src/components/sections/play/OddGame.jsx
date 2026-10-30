@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useProfilePlayTime } from "@/hooks/useProfilePlayTime";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGameAvailability } from "@/hooks/useGameAvailability";
 import { useRouter } from "next/navigation";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import FinalSummary from "@/components/ui/game/FinalSummary";
@@ -25,9 +28,11 @@ const ODD_DIFFICULTY = { controls: [] };
 
 export default function OddGame({ difficulty = "normal" }) {
   const router = useRouter();
+  const gameAvailable = useGameAvailability("perception", "odd");
   const { t } = useTranslation();
   const phaseRef = useRef(PHASES.INTRO);
-  const phaseStartedAtRef = useRef(Date.now());
+  const [initialPhaseStartedAt] = useState(() => Date.now());
+  const phaseStartedAtRef = useRef(initialPhaseStartedAt);
   const snapshotRef = useRef(null);
   const isPageUnloadRef = useRef(false);
   const submittingRef = useRef(false);
@@ -45,24 +50,28 @@ export default function OddGame({ difficulty = "normal" }) {
   const [resumeElapsedMs, setResumeElapsedMs] = useState(0);
   const [historyMatchId, setHistoryMatchId] = useState(() => createMatchHistoryId());
   const [isLeavingFinalHome, setIsLeavingFinalHome] = useState(false);
+  useProfilePlayTime(gameAvailable && phase !== PHASES.FINAL);
   const gameSessionKey = buildGameSessionKey("perception-odd", [difficulty]);
 
+  const initialGameSession = useMemo(() => getGameSession(gameSessionKey), [gameSessionKey]);
+
   const setPhase = (nextPhase) => {
+    setResumePhase(null);
     phaseRef.current = nextPhase;
     phaseStartedAtRef.current = Date.now();
     setPhaseState(nextPhase);
   };
 
-  const createRound = (nextLevel) => {
+  const createRound = useCallback((nextLevel) => {
     setPuzzle(createOddPuzzle(Math.random, { difficulty, level: nextLevel }));
     setSelectedIndex(null);
     setRoundResult(null);
     submittingRef.current = false;
-  };
+  }, [difficulty]);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
-      const restored = getGameSession(gameSessionKey);
+      const restored = initialGameSession;
       if (restored?.puzzle) {
         setLevel(Math.max(0, Number(restored.level) || 0));
         setPuzzle(restored.puzzle);
@@ -87,7 +96,7 @@ export default function OddGame({ difficulty = "normal" }) {
       createRound(0);
     }, 0);
     return () => window.clearTimeout(timerId);
-  }, [difficulty, gameSessionKey]);
+  }, [createRound, difficulty, gameSessionKey, initialGameSession]);
 
   useEffect(() => {
     snapshotRef.current = {
@@ -219,6 +228,8 @@ export default function OddGame({ difficulty = "normal" }) {
     await new Promise((resolve) => window.setTimeout(resolve, CARD_RESIZE_DURATION_MS));
     router.push("/perception");
   };
+
+  if (!gameAvailable) return null;
 
   return (
     <main className="app-gradient flex h-dvh w-full items-center justify-center overflow-hidden p-6 sm:p-8">

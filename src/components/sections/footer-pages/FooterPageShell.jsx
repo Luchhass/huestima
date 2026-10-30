@@ -164,6 +164,7 @@ export default function FooterPageShell({
     return (
       <main
         ref={setMainNode}
+        data-intro-card-target
         data-language-static={staticLanguage ? "" : undefined}
         className={`footer-page-dark fixed inset-0 z-40 h-dvh w-full overflow-hidden bg-black text-white ${className}`}
       >
@@ -189,7 +190,7 @@ export default function FooterPageShell({
       data-language-static={staticLanguage ? "" : undefined}
       className="app-gradient relative h-dvh w-full overflow-hidden"
     >
-      <FooterCardSurface cardRef={setMainNode} className={className}>
+      <FooterCardSurface cardRef={setMainNode} data-intro-card-target className={className}>
         <div ref={contentRef} data-footer-page-content
           className={`min-h-full px-6 pt-8 sm:px-10 lg:px-14 ${scrollable || scrollableMobile ? "pb-16" : "pb-6 sm:pb-8"}`}>
           {action}

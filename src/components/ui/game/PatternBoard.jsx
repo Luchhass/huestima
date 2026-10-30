@@ -319,7 +319,7 @@ export default function PatternBoard({
       window.clearTimeout(timeoutId);
       activeAnimations.forEach((animation) => animation.cancel());
     };
-  }, [board, puzzle?.columns, puzzle?.rows, showMisplacedHint]);
+  }, [board, puzzle, showMisplacedHint]);
 
   if (!puzzle || !Array.isArray(board)) return null;
 

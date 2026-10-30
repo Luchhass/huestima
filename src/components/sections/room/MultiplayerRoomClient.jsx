@@ -135,6 +135,10 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
         return;
       }
 
+      if (response.room.gameFamily !== cleanGameFamily) {
+        router.replace(`${getGameFamilyHref(response.room.gameFamily)}/${roomCode}`);
+        return;
+      }
       const sessionRoomPlayer = findRoomPlayer(response.room, session?.playerId);
       const isParticipant = session?.playerId && sessionRoomPlayer;
 
@@ -162,7 +166,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
     };
 
     bootstrap();
-  }, [isLoaded, requestState, roomCode, session, t]);
+  }, [cleanGameFamily, isLoaded, requestState, roomCode, router, session, t]);
 
   const handleJoin = async (playerName, password = "") => {
     setIsJoining(true);
@@ -186,8 +190,9 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       return;
     }
 
-    saveSession(nextPlayer);
-    setPlayer(nextPlayer);
+    const joinedPlayer = { ...nextPlayer, sessionToken: response.sessionToken };
+    saveSession(joinedPlayer);
+    setPlayer(joinedPlayer);
     trackEvent("lobby_join", {
       game_type: "multiplayer",
       difficulty: response.room?.difficulty,
@@ -324,7 +329,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
 
     if (
       player?.playerId &&
-      (room?.status === "lobby" || currentRoomPlayer?.returnedToLobby)
+      room
     ) {
       const response = await leaveRoom(player.playerId);
       if (response?.ok === false) {
@@ -345,6 +350,7 @@ export default function MultiplayerRoomClient({ roomCode, gameFamily = "color" }
       });
     }
 
+    clearSession();
     router.push(
       getGameFamilyHref(cleanGameFamily),
     );

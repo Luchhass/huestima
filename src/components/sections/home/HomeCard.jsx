@@ -312,6 +312,17 @@ export default function HomeCard({
   const isCartoonPool = view === "cartoonPool";
   const isFlagPool = view === "flagPool";
   const isTeamPool = view === "teamPool";
+  const availableModeIds = (isMultiplayer ? multiplayerGameModeOptions : singleplayerGameModeOptions).map(({ id }) => id).join(",");
+  useEffect(() => {
+    const ids = availableModeIds.split(",").filter(Boolean);
+    if (!ids.length || ids.includes(gameMode)) return undefined;
+    const timer = window.setTimeout(() => {
+      setGameMode(ids[0]);
+      const locked = GAME_MODE_LOCKED_DIFFICULTIES[ids[0]];
+      if (locked) setDifficulty(locked);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [availableModeIds, gameMode]);
   const isSingleplayerTallView =
     isSingleplayer ||
     ((isCartoonPool || isFlagPool || isTeamPool) &&
@@ -593,7 +604,7 @@ export default function HomeCard({
     window.dispatchEvent(new Event(SCREEN_REVEAL_REPLAY_EVENT));
     setDeferViewReveal(false);
     isChangingViewRef.current = false;
-  }, [cartoonPoolReturnView, isExpandedCard, isMultiplayer, isMultiplayerTallStep, view]);
+  }, [cartoonPoolReturnView, isExpandedCard, isMultiplayer, isMultiplayerTallStep, view, setIsMultiplayerTallStep, setDeferViewReveal, setView]);
 
   useEffect(() => {
     const isMultiplayerOnlyView =
@@ -960,6 +971,10 @@ export default function HomeCard({
               initialGameMode={initialGameMode || defaultGameMode}
               initialRoundCount={roundCount}
               initialHintsEnabled={initialHintsEnabled ?? true}
+              initialFlagDifficulty={flagDifficulty}
+              initialFlagDifficulties={flagDifficulties}
+              initialCartoonIds={cartoonIds}
+              initialTeamIds={teamIds}
             />
           )}
         </div>

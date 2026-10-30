@@ -2,9 +2,11 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Crown, History, Menu, X } from "lucide-react";
+import { Bell, Crown, History, Menu, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
+import { requestActiveGameExit } from "@/lib/gameNavigation";
+import { clearAllGameSessions } from "@/hooks/useGameSession";
 import { APP_NAME } from "@/lib/constants";
 import { GAME_FAMILY_OPTIONS } from "@/lib/gameFamily";
 import { localizeLandingHref } from "../../../shared/landingRoutes.mjs";
@@ -17,6 +19,7 @@ import {
   markCardRouteTransition,
   playHomeToFooterExit,
   requestLandingExit,
+  requestWideCardNavigation,
   useFooterChromeReturn,
 } from "@/hooks/useFooterPageTransition";
 import BrandLogoMark from "./BrandLogoMark";
@@ -31,21 +34,29 @@ import { useViewportSectionTheme } from "@/hooks/useViewportSectionTheme";
 
 const HISTORY_LEAVE_EVENT = "huestima-history-leave";
 const HISTORY_LEAVE_COMPLETE_EVENT = "huestima-history-leave-complete";
+const FAMILY_GLOW_COLORS = {
+  color: "#b39aff",
+  flag: "#ff9eae",
+  cartoon: "#81e2b8",
+  brand: "#ffd36e",
+  team: "#83c6ff",
+  perception: "#e49aff",
+};
 
 export default function AppHeader() {
   const { locale, t } = useTranslation();
   const { unreadAnnouncementCount } = useSiteOperations();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname()?.replace(/^\/tr(?=\/)/, "");
-  const [historyFamily] = useState(() => {
-    if (typeof window === "undefined") return "color";
+  const [historyFamily, setHistoryFamily] = useState("color");
+  useEffect(() => {
     const family = new URLSearchParams(window.location.search).get("from");
-    return ["color", "flag", "cartoon", "brand", "team", "perception"].includes(family)
-      ? family
-      : "color";
-  });
+    if (["color", "flag", "cartoon", "brand", "team", "perception"].includes(family)) {
+      setHistoryFamily(family);
+    }
+  }, []);
   const familyHomeHref =
-    pathname?.startsWith("/history")
+    (pathname?.startsWith("/history") || pathname === "/profile")
       ? `/${historyFamily}`
       : GAME_FAMILY_OPTIONS.find(
           (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
@@ -65,19 +76,32 @@ export default function AppHeader() {
     GAME_FAMILY_OPTIONS.find(
       (option) => pathname === option.href || pathname?.startsWith(`${option.href}/`),
     )?.id || historyFamily;
+  const profileHref = `/profile?from=${encodeURIComponent(historyReturnFamily)}`;
   const historyHref = `/history?from=${encodeURIComponent(historyReturnFamily)}`;
   const router = useRouter();
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isExploreRoute = pathname === "/explore" || pathname?.startsWith("/explore/");
   const isCreditsRoute = pathname === "/credits";
-  const isDownloadRoute = pathname === "/download";
   const isNotificationsRoute = pathname === "/notifications";
   const isHistoryRoute = pathname === "/history" || pathname?.startsWith("/history/");
+  const headerIconClass = "rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30";
+  const iconControlsRef = useRef(null);
+  const headerRef = useRef(null);
+  const iconHighlightRef = useRef(null);
+  const iconLinkRefs = useRef(new Map());
+  const headerTooltipRef = useRef(null);
+  const headerTooltipTextRef = useRef(null);
+  const headerTooltipTargetRef = useRef(null);
+  const headerTooltipPointerRef = useRef({ x: 0, y: 0 });
+  const [highlightedIcon, setHighlightedIcon] = useState(null);
+  const [headerTooltip, setHeaderTooltip] = useState("");
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [familyUnderline, setFamilyUnderline] = useState(null);
+  const [familyGlowColor, setFamilyGlowColor] = useState(FAMILY_GLOW_COLORS.color);
+  const familyGlowRef = useRef(null);
   const landingHeaderTheme = useViewportSectionTheme({
     attribute: "data-header-theme",
     defaultTheme: "dark",
@@ -100,6 +124,201 @@ export default function AppHeader() {
   const mobileOverlayRef = useRef(null);
   const mobileBubbleRef = useRef(null);
   const mobileContentRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const controls = iconControlsRef.current;
+    const highlight = iconHighlightRef.current;
+    if (!controls || !highlight) return undefined;
+
+    const links = [...iconLinkRefs.current.values()];
+    const activeLink = links.find((link) => link.dataset.active === "true");
+    let hoveredLink = null;
+    let animation;
+
+    const moveHighlight = (link) => {
+      if (!link) {
+        animation?.kill();
+        gsap.to(highlight, { autoAlpha: 0, duration: 0.2, ease: "power2.out" });
+        setHighlightedIcon(null);
+        return;
+      }
+
+      const controlsRect = controls.getBoundingClientRect();
+      const linkRect = link.getBoundingClientRect();
+      animation?.kill();
+      animation = gsap.timeline({ defaults: { overwrite: "auto" } });
+      animation.to(highlight, {
+        x: linkRect.left - controlsRect.left,
+        y: linkRect.top - controlsRect.top,
+        width: linkRect.width,
+        height: linkRect.height,
+        autoAlpha: 1,
+        duration: 0.48,
+        ease: "power3.out",
+      });
+      setHighlightedIcon(link.dataset.headerIconLink);
+    };
+
+    const onEnter = (event) => {
+      const link = event.target.closest("[data-header-icon-link]");
+      if (!link || !controls.contains(link)) return;
+      hoveredLink = link;
+      moveHighlight(link);
+    };
+    const onLeave = (event) => {
+      if (event.relatedTarget && controls.contains(event.relatedTarget)) return;
+      hoveredLink = null;
+      moveHighlight(activeLink);
+    };
+    const onResize = () => moveHighlight(hoveredLink || activeLink);
+
+    controls.addEventListener("pointerover", onEnter);
+    controls.addEventListener("pointerout", onLeave);
+    window.addEventListener("resize", onResize);
+    moveHighlight(activeLink);
+
+    return () => {
+      controls.removeEventListener("pointerover", onEnter);
+      controls.removeEventListener("pointerout", onLeave);
+      window.removeEventListener("resize", onResize);
+      animation?.kill();
+    };
+  }, [pathname, historyHref, profileHref]);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return undefined;
+
+    const positionTooltip = () => {
+      const tooltip = headerTooltipRef.current;
+      if (!tooltip) return;
+      const { x, y } = headerTooltipPointerRef.current;
+      gsap.to(tooltip, {
+        x,
+        y: y + 28,
+        xPercent: -50,
+        duration: 0.24,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    };
+
+    const popTooltip = () => {
+      gsap.set(headerTooltipRef.current, { autoAlpha: 1 });
+      gsap.killTweensOf(headerTooltipTextRef.current);
+      gsap.fromTo(
+        headerTooltipTextRef.current,
+        { scale: 0, transformOrigin: "50% 50%" },
+        { scale: 1, duration: 0.34, ease: "back.out(2.2)", overwrite: "auto" },
+      );
+    };
+
+    const onPointerOver = (event) => {
+      if (event.pointerType === "touch") return;
+      const target = event.target.closest?.("[data-header-tooltip]");
+      if (!target || !header.contains(target) || target === headerTooltipTargetRef.current) return;
+
+      gsap.killTweensOf(headerTooltipRef.current);
+      headerTooltipTargetRef.current = target;
+      headerTooltipPointerRef.current = { x: event.clientX, y: event.clientY };
+      setHeaderTooltip(target.dataset.headerTooltip || "");
+      positionTooltip();
+      popTooltip();
+    };
+
+    const onPointerMove = (event) => {
+      if (event.pointerType === "touch") return;
+      const target = event.target.closest?.("[data-header-tooltip]");
+      if (!target || !header.contains(target)) {
+        if (!headerTooltipTargetRef.current) return;
+        headerTooltipTargetRef.current = null;
+        setHeaderTooltip("");
+        gsap.to(headerTooltipRef.current, { autoAlpha: 0, duration: 0.12, ease: "power2.out", overwrite: "auto" });
+        return;
+      }
+
+      if (target !== headerTooltipTargetRef.current) {
+        gsap.killTweensOf(headerTooltipRef.current);
+        headerTooltipTargetRef.current = target;
+        setHeaderTooltip(target.dataset.headerTooltip || "");
+        popTooltip();
+      }
+      headerTooltipPointerRef.current = { x: event.clientX, y: event.clientY };
+      positionTooltip();
+    };
+
+    const onPointerOut = (event) => {
+      const target = event.target.closest?.("[data-header-tooltip]");
+      if (!target || target !== headerTooltipTargetRef.current) return;
+      const nextTarget = event.relatedTarget?.closest?.("[data-header-tooltip]");
+      if (nextTarget === target) return;
+
+      if (nextTarget && header.contains(nextTarget)) {
+        gsap.killTweensOf(headerTooltipRef.current);
+        headerTooltipTargetRef.current = nextTarget;
+        headerTooltipPointerRef.current = { x: event.clientX, y: event.clientY };
+        setHeaderTooltip(nextTarget.dataset.headerTooltip || "");
+        positionTooltip();
+        popTooltip();
+        return;
+      }
+
+      headerTooltipTargetRef.current = null;
+      setHeaderTooltip("");
+      gsap.to(headerTooltipRef.current, { autoAlpha: 0, duration: 0.14, ease: "power2.out", overwrite: "auto" });
+    };
+
+    header.addEventListener("pointerover", onPointerOver);
+    document.addEventListener("pointermove", onPointerMove, true);
+    document.addEventListener("pointerout", onPointerOut, true);
+
+    return () => {
+      header.removeEventListener("pointerover", onPointerOver);
+      document.removeEventListener("pointermove", onPointerMove, true);
+      document.removeEventListener("pointerout", onPointerOut, true);
+      gsap.killTweensOf(headerTooltipRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    const group = header?.querySelector("[data-magnetic-group]");
+    if (!group || window.matchMedia("(hover: none), (prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const items = [...group.children];
+    const radius = 360;
+    const onPointerMove = (event) => {
+      items.forEach((item) => {
+        const rect = item.getBoundingClientRect();
+        const dx = event.clientX - (rect.left + rect.width / 2);
+        const dy = event.clientY - (rect.top + rect.height / 2);
+        const distance = Math.hypot(dx, dy);
+        const influence = Math.max(0, 1 - distance / radius);
+        const pull = influence * influence * 5;
+        gsap.to(item, {
+          x: distance ? (dx / distance) * pull : 0,
+          y: distance ? (dy / distance) * pull : 0,
+          rotateY: Math.max(-1.8, Math.min(1.8, dx / 44)) * influence,
+          rotateX: -Math.max(-1.8, Math.min(1.8, dy / 44)) * influence,
+          transformPerspective: 700,
+          duration: 0.42,
+          ease: "power3.out",
+          overwrite: "auto",
+        });
+      });
+    };
+    const reset = () => items.forEach((item) => gsap.to(item, {
+      x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.55, ease: "elastic.out(1, 0.7)", overwrite: "auto",
+    }));
+
+    document.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("blur", reset);
+    return () => {
+      document.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("blur", reset);
+      reset();
+    };
+  }, []);
 
   const mobileMenuTimelineRef = useRef(null);
   const familyNavRef = useRef(null);
@@ -295,6 +514,13 @@ export default function AppHeader() {
   }, [isNavRendered]);
 
   const playRouteTransition = async (href) => {
+    if (/^\/(profile|history)\?/.test(href)) {
+      const from = new URL(href, window.location.origin).searchParams.get("from");
+      if (GAME_FAMILY_OPTIONS.some((option) => option.id === from)) setHistoryFamily(from);
+    }
+    await requestActiveGameExit();
+    clearAllGameSessions();
+    if (await requestWideCardNavigation(href)) return;
     markCardRouteTransition(href);
     const targetCardKind = getRouteCardKind(href);
     const targetPath = href.split("?")[0];
@@ -441,6 +667,7 @@ export default function AppHeader() {
   };
 
   const handleFamilyNavigation = (event, href, active) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (active) {
       event.preventDefault();
       if (isNavRendered) {
@@ -508,6 +735,7 @@ export default function AppHeader() {
 
   return (
     <header
+      ref={headerRef}
       key="application-header"
       className="app-header pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between p-6 sm:p-8"
       data-nav-open={isNavOpen ? "true" : undefined}
@@ -568,17 +796,26 @@ export default function AppHeader() {
               })}
             </nav>
 
-            <div className="mt-auto flex items-center gap-1 pb-1">
-              <div data-sound-kind="navigation" className="flex items-center gap-1">
+            <div className="mt-auto flex w-full flex-wrap items-center gap-x-1 gap-y-3 pb-1">
+              <div ref={iconControlsRef} data-sound-kind="navigation" className="relative flex items-center gap-1">
+                <span ref={iconHighlightRef} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-0 rounded-full bg-zinc-950 opacity-0 dark:bg-white" />
+                <div data-mobile-menu-control className="overflow-hidden">
+                  <Link ref={(node) => node ? iconLinkRefs.current.set("profile", node) : iconLinkRefs.current.delete("profile")} data-header-icon-link="profile" data-header-tooltip={t("profile.title")} data-active={pathname === "/profile"} href={profileHref} aria-label={t("profile.open")} aria-current={pathname === "/profile" ? "page" : undefined} onClick={(event) => handleFamilyNavigation(event, profileHref, pathname === "/profile")} className={`relative z-10 inline-grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "profile" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}>
+                    <UserRound className="size-6.5" strokeWidth={1.9} />
+                  </Link>
+                </div>
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
                   <Link
                     href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
+                    data-header-tooltip={t("notifications.title")}
                     aria-label={t("notifications.open")}
                     onClick={(event) =>
                       handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
                     }
-                    className="relative inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+                    ref={(node) => node ? iconLinkRefs.current.set("notifications", node) : iconLinkRefs.current.delete("notifications")}
+                    data-header-icon-link="notifications" data-active={isNotificationsRoute}
+                    className={`relative z-10 inline-grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "notifications" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}
                   >
                     <Bell className="size-6.5" strokeWidth={1.9} />
                     {unreadAnnouncementCount > 0 && (
@@ -593,11 +830,14 @@ export default function AppHeader() {
                 <div>
                   <Link
                     href={historyHref}
+                    data-header-tooltip={t("history.eyebrow")}
                     aria-label={t("history.open")}
                     onClick={(event) =>
                       handleFamilyNavigation(event, historyHref, isHistoryRoute)
                     }
-                    className="inline-grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+                    ref={(node) => node ? iconLinkRefs.current.set("history", node) : iconLinkRefs.current.delete("history")}
+                    data-header-icon-link="history" data-active={isHistoryRoute}
+                    className={`relative z-10 inline-grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "history" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}
                   >
                     <History className="size-6.5" strokeWidth={1.9} />
                   </Link>
@@ -607,9 +847,9 @@ export default function AppHeader() {
               <span
                 aria-hidden="true"
                 data-mobile-menu-control
-                className="mx-2 h-6 w-[2px] shrink-0 bg-zinc-950/32 dark:bg-white/34"
+                className="mx-1 hidden h-6 w-[2px] shrink-0 min-[400px]:block bg-zinc-950/32 dark:bg-white/34"
               />
-              <div data-sound-kind="switch" className="flex items-center gap-1">
+              <div data-sound-kind="switch" className="flex items-center">
               <div data-mobile-menu-control className="overflow-hidden">
                 <div>
                   <LanguageToggle />
@@ -652,9 +892,18 @@ export default function AppHeader() {
           ref={familyNavRef}
           aria-label={t("gameFamily.label")}
           data-sound-kind="navigation"
-          onMouseLeave={() => setHoveredFamily(null)}
+          onMouseLeave={() => {
+            setHoveredFamily(null);
+            gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" });
+          }}
           className="app-header__family-nav relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
         >
+          <span
+            ref={familyGlowRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 z-0 size-20 rounded-full opacity-0 blur-lg"
+            style={{ background: `radial-gradient(circle, ${familyGlowColor} 0%, ${familyGlowColor} 38%, transparent 74%)` }}
+          />
           {GAME_FAMILY_OPTIONS.map((option) => {
             const active =
               pathname === option.href || pathname?.startsWith(`${option.href}/`);
@@ -670,8 +919,24 @@ export default function AppHeader() {
                   else familyLinkRefs.current.delete(option.href);
                 }}
                 href={localizeLandingHref(option.href, locale)}
+                data-family-glow={option.id}
                 aria-current={active ? "page" : undefined}
-                onMouseEnter={() => setHoveredFamily(option.href)}
+                onMouseEnter={(event) => {
+                  setHoveredFamily(option.href);
+                  setFamilyGlowColor(FAMILY_GLOW_COLORS[option.id]);
+                  const navRect = familyNavRef.current.getBoundingClientRect();
+                  const linkRect = event.currentTarget.getBoundingClientRect();
+                  gsap.to(familyGlowRef.current, {
+                    x: linkRect.left - navRect.left + linkRect.width / 2,
+                    y: linkRect.top - navRect.top + linkRect.height / 2,
+                    xPercent: -50,
+                    yPercent: -50,
+                    autoAlpha: 1,
+                    duration: 0.72,
+                    ease: "elastic.out(1, 0.68)",
+                    overwrite: "auto",
+                  });
+                }}
                 onClick={(event) =>
                   handleFamilyNavigation(
                     event,
@@ -679,7 +944,7 @@ export default function AppHeader() {
                     pathname === option.href,
                   )
                 }
-                className={`relative top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
+                className={`relative z-10 top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
                   highlighted
                     ? "text-zinc-950 dark:text-white"
                     : "text-zinc-950/42 dark:text-white/42"
@@ -719,14 +984,21 @@ export default function AppHeader() {
           </Link>
         )}
         <div className="hidden items-center gap-1 md:inline-flex">
-          <div data-sound-kind="navigation" className="inline-flex items-center gap-1">
+          <div ref={iconControlsRef} data-sound-kind="navigation" className="relative inline-flex items-center gap-1">
+          <span ref={iconHighlightRef} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-0 rounded-full bg-zinc-950 opacity-0 dark:bg-white" />
+          <Link ref={(node) => node ? iconLinkRefs.current.set("profile", node) : iconLinkRefs.current.delete("profile")} data-header-icon-link="profile" data-header-tooltip={t("profile.title")} data-active={pathname === "/profile"} href={profileHref} aria-label={t("profile.open")} aria-current={pathname === "/profile" ? "page" : undefined} onClick={(event) => handleFamilyNavigation(event, profileHref, pathname === "/profile")} className={`relative z-10 grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "profile" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}>
+            <UserRound className="size-6.5" strokeWidth={1.9} />
+          </Link>
           <Link
             href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
+            data-header-tooltip={t("notifications.title")}
             aria-label={t("notifications.open")}
             onClick={(event) =>
               handleFamilyNavigation(event, "/notifications", pathname === "/notifications")
             }
-            className="relative grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+            ref={(node) => node ? iconLinkRefs.current.set("notifications", node) : iconLinkRefs.current.delete("notifications")}
+            data-header-icon-link="notifications" data-active={isNotificationsRoute}
+            className={`relative z-10 grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "notifications" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}
           >
             <Bell className="size-6.5" strokeWidth={1.9} />
             {unreadAnnouncementCount > 0 && (
@@ -737,11 +1009,14 @@ export default function AppHeader() {
           </Link>
           <Link
             href={historyHref}
+            data-header-tooltip={t("history.eyebrow")}
             aria-label={t("history.open")}
             onClick={(event) =>
               handleFamilyNavigation(event, historyHref, isHistoryRoute)
             }
-            className="grid size-11 place-items-center rounded-full text-zinc-950 transition hover:opacity-62 focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 dark:text-zinc-50"
+            ref={(node) => node ? iconLinkRefs.current.set("history", node) : iconLinkRefs.current.delete("history")}
+            data-header-icon-link="history" data-active={isHistoryRoute}
+            className={`relative z-10 grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "history" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}
           >
             <History className="size-6.5" strokeWidth={1.9} />
           </Link>
@@ -750,7 +1025,7 @@ export default function AppHeader() {
             aria-hidden="true"
             className="mx-2 h-6 w-[2px] bg-zinc-950/32 dark:bg-white/34"
           />
-          <div data-sound-kind="switch" className="inline-flex items-center gap-1">
+          <div data-sound-kind="switch" data-magnetic-group className="inline-flex items-center gap-1">
           <LanguageToggle />
           <SoundToggle />
           <MusicToggle />
@@ -783,6 +1058,15 @@ export default function AppHeader() {
             <Menu size={30} strokeWidth={2.15} />
           )}
         </button>
+      </div>
+      <div
+        ref={headerTooltipRef}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-[60] opacity-0"
+      >
+        <span ref={headerTooltipTextRef} className="block whitespace-nowrap rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1 text-xs font-medium tracking-wide text-white shadow-lg backdrop-blur-md dark:border-black/10 dark:bg-white/90 dark:text-zinc-950">
+          {headerTooltip}
+        </span>
       </div>
     </header>
   );

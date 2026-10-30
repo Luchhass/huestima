@@ -76,6 +76,7 @@ export default function GuessPhase({
   timedTimerDisplay = "reel",
   submitLabel = null,
   hideSubmitButton = false,
+  onPerfectGuess,
 }) {
   const { t } = useTranslation();
   const { enabled: isAdminModeEnabled } = useAdminMode();
@@ -186,8 +187,9 @@ export default function GuessPhase({
   const handleAdminPerfectGuess = useCallback(() => {
     if (!isAdminModeEnabled || !targetColor) return;
 
+    if (onPerfectGuess) { void onPerfectGuess(); return; }
     onGuessChange(targetColor);
-  }, [isAdminModeEnabled, onGuessChange, targetColor]);
+  }, [isAdminModeEnabled, onGuessChange, onPerfectGuess, targetColor]);
 
   const handleUseHintClick = useCallback(() => {
     if (!canUseHint) return;
@@ -863,6 +865,7 @@ export default function GuessPhase({
 
     return () => ctx.revert();
   }, [
+    customContentAnimated,
     controlsKey,
     showHintButton,
     isAdminModeEnabled,

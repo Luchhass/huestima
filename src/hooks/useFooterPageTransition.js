@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { dispatchScreenFadeOut, playScreenFadeOut } from "@/hooks/useScreenReveal";
@@ -131,7 +131,7 @@ export function getRouteCardKind(pathname = "") {
   ) {
     return "expanded";
   }
-  if (cleanPath === "/download") return "download";
+  if (["/download", "/profile"].includes(cleanPath)) return "download";
   if (cleanPath === "/history" || cleanPath === "/notifications") return "large";
   return "default";
 }
@@ -582,4 +582,47 @@ export function useFooterPageTransition(scopeRef) {
   };
 
   return leave;
+}
+
+// Wide cards own their exit so every navigation waits for the same CSS collapse.
+export async function requestWideCardNavigation(href) {
+  const card = document.querySelector('[data-intro-card-target]');
+  if (typeof card?.navigateWideCard !== 'function') return false;
+  return card.navigateWideCard(href);
+}
+
+export function useWideCardNavigation(cardRef, contentRef, setExpanded) {
+  const router = useRouter();
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    let leaving = false;
+    card.navigateWideCard = async href => {
+      if (leaving) return true;
+      leaving = true;
+      try {
+        await playHomeToFooterExit(card, contentRef, {
+          scaleCard: false,
+          hideChrome: shouldFadeAppChrome(href),
+        });
+        setExpanded(false);
+        if (!prefersReducedMotion()) {
+          // Wait for React to commit the compact dimensions before timing CSS.
+          await new Promise(resolve => window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => window.setTimeout(resolve, DOWNLOAD_RESIZE_DURATION_MS));
+          }));
+        }
+        // The source is now compact; the next page must enter from that size.
+        markCardRouteTransition(href, 'default');
+        if (String(href).split('?')[0] === '/') markLandingReturnTransition(card);
+        else if (getRouteCardKind(href) === 'default') markDownloadReturn();
+        router.push(href);
+        return true;
+      } catch (error) {
+        leaving = false;
+        throw error;
+      }
+    };
+    return () => { delete card.navigateWideCard; };
+  }, [cardRef, contentRef, router, setExpanded]);
 }
