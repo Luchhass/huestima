@@ -294,8 +294,76 @@ html[data-landing-hero-locked="true"] .landing-page__hero {
   }
 }
 
+@keyframes header-dropdown-outline-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.header-dropdown-outline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: header-dropdown-outline-draw 440ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes header-dropdown-fill-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+@keyframes header-dropdown-fill-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes header-dropdown-label-reveal {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(0); }
+}
+
+.header-dropdown-fill { position: absolute; background: var(--header-dropdown-fill); }
+.header-dropdown-fill--top, .header-dropdown-fill--bottom { left: 0; right: 0; height: 50.1%; transform: scaleY(0); }
+.header-dropdown-fill--top { top: 0; transform-origin: top; }
+.header-dropdown-fill--bottom { bottom: 0; transform-origin: bottom; }
+.header-dropdown-fill--left, .header-dropdown-fill--right { top: 0; bottom: 0; width: 50.1%; transform: scaleX(0); }
+.header-dropdown-fill--left { left: 0; transform-origin: left; }
+.header-dropdown-fill--right { right: 0; transform-origin: right; }
+.header-dropdown-panel[data-phase="fill"] :is(.header-dropdown-fill--top, .header-dropdown-fill--bottom) { animation: header-dropdown-fill-y 260ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+.header-dropdown-panel[data-phase="fill"] :is(.header-dropdown-fill--left, .header-dropdown-fill--right) { animation: header-dropdown-fill-x 260ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+.header-dropdown-panel[data-phase="content"] .header-dropdown-fill { transform: scale(1); }
+.header-dropdown-panel:not([data-phase="outline"]) { box-shadow: 0 12px 32px rgb(0 0 0 / 14%); }
+.header-dropdown-label { display: inline-block; visibility: hidden; transform: translateX(-110%); }
+.header-dropdown-panel:not([data-phase="content"]) > a { pointer-events: none; }
+.header-dropdown-panel[data-phase="content"] .header-dropdown-label { visibility: visible; animation: header-dropdown-label-reveal 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.header-dropdown-panel[data-phase="content"] > a + a .header-dropdown-label { animation-delay: 55ms; }
+
+.app-header__family-underline {
+  height: var(--header-nav-rule-width, 2px);
+  transition: opacity 120ms ease-out;
+}
+
+.app-header__family-nav {
+  --header-nav-rule-width: 2px;
+  --header-dropdown-rule-width: 1.5px;
+}
+
+.app-header:has(.app-header__family-nav details[open]) { z-index: 100; }
+
+.app-header__family-nav[data-dropdown-ready="true"] .app-header__family-underline {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-dropdown-outline {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .header-dropdown-panel .header-dropdown-fill { animation: none !important; transform: scale(1); }
+  .header-dropdown-panel .header-dropdown-label { animation: none !important; visibility: visible; transform: none; }
+}
+
 :root {
   --background: #ffffff;
+  --header-dropdown-fill: #f6f6f6;
   --foreground: #171717;
   --surface: #000000;
   --app-page-padding: 1.5rem;
@@ -306,6 +374,7 @@ html[data-landing-hero-locked="true"] .landing-page__hero {
 
 .dark {
   --background: #2f2f2f;
+  --header-dropdown-fill: #0f0f11;
   --foreground: #ffffff;
   --surface: #000000;
   --guess-pulse-color: 255 255 255;
@@ -417,23 +486,76 @@ input {
 
 .app-header[data-landing-chrome="true"][data-landing-theme="dark"] {
   color: #ffffff;
+  --landing-nav-ink: #fff;
+  --landing-nav-muted: rgb(255 255 255 / 72%);
+  --header-dropdown-fill: #19191c;
+  --landing-menu-ink: #fff;
+  --landing-menu-muted: #d4d4d8;
+  --landing-menu-hover: rgb(255 255 255 / 9%);
 }
 
 .app-header[data-landing-chrome="true"][data-landing-theme="light"] {
   color: #18181b;
+  --landing-nav-ink: #18181b;
+  --landing-nav-muted: rgb(24 24 27 / 68%);
+  --header-dropdown-fill: #f6f6f6;
+  --landing-menu-ink: #18181b;
+  --landing-menu-muted: #52525b;
+  --landing-menu-hover: rgb(24 24 27 / 6%);
 }
 
 .app-header[data-landing-chrome="true"] .app-header__brand,
 .app-header[data-landing-chrome="true"] .app-header__brand-label,
 .app-header[data-landing-chrome="true"] .app-header__family-nav,
-.app-header[data-landing-chrome="true"] .app-header__family-nav a,
 .app-header[data-landing-chrome="true"] .header-controls,
 .app-header[data-landing-chrome="true"] .header-controls :is(a, button) {
   color: inherit !important;
 }
 
 .app-header[data-landing-chrome="true"] .app-header__family-nav {
-  opacity: 0.46;
+  opacity: 1;
+}
+
+.app-header[data-landing-chrome="true"] .app-header__family-glow {
+  display: none;
+}
+
+.app-header[data-landing-chrome="true"] .app-header__family-nav > a,
+.app-header[data-landing-chrome="true"] .app-header__family-nav > details > summary {
+  color: var(--landing-nav-muted) !important;
+  transition: color 180ms ease;
+}
+
+.app-header[data-landing-chrome="true"] .app-header__family-nav > a:is(:hover, :focus-visible, [data-family-highlighted="true"]),
+.app-header[data-landing-chrome="true"] .app-header__family-nav > details > summary:is(:hover, :focus-visible),
+.app-header[data-landing-chrome="true"] .app-header__family-nav > details[open] > summary {
+  color: var(--landing-nav-ink) !important;
+}
+
+.app-header[data-landing-chrome="true"] .app-header__family-underline {
+  background-color: var(--landing-nav-ink) !important;
+}
+
+.app-header[data-landing-chrome="true"] .header-dropdown-panel,
+.app-header[data-landing-chrome="true"] .header-dropdown-panel > svg {
+  color: var(--landing-menu-ink) !important;
+}
+
+.app-header[data-landing-chrome="true"] .header-dropdown-panel:not([data-phase="outline"]) {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 32%);
+}
+
+.app-header[data-landing-chrome="true"] .header-dropdown-panel > a {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  color: var(--landing-menu-muted) !important;
+  transition: color 180ms ease, background-color 180ms ease;
+}
+
+.app-header[data-landing-chrome="true"] .header-dropdown-panel > a:is(:hover, :focus-visible) {
+  color: var(--landing-menu-ink) !important;
+  background-color: var(--landing-menu-hover);
 }
 
 .app-header[data-landing-chrome="true"] .header-controls > div > span {
@@ -2068,6 +2190,28 @@ input {
   -webkit-tap-highlight-color: transparent;
 }
 
+.pokemon-home-roster { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.pokemon-home-pokedex { position: absolute; top: -48px; right: 12%; z-index: 9; display: block; width: 76px; height: 90px; pointer-events: none; filter: drop-shadow(0 8px 10px rgb(0 0 0 / 30%)); }
+.pokemon-home-pokedex__image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; transition: opacity 220ms ease, transform 300ms cubic-bezier(.2,.75,.25,1); }
+.pokemon-home-pokedex__image--closed { opacity: 1; transform: rotate(11deg) scale(.82); }
+.pokemon-home-pokedex__image--open { opacity: 0; transform: rotate(-8deg) scale(.76); }
+.landing-card--pokemon:hover .pokemon-home-pokedex__image--closed,
+.landing-card--pokemon:focus-visible .pokemon-home-pokedex__image--closed { opacity: 0; transform: rotate(4deg) scale(.74); }
+.landing-card--pokemon:hover .pokemon-home-pokedex__image--open,
+.landing-card--pokemon:focus-visible .pokemon-home-pokedex__image--open { opacity: 1; transform: rotate(-8deg) scale(.82); }
+.home-artwork-drag-piece { pointer-events: auto !important; touch-action: none; cursor: grab; will-change: transform, translate; }
+.home-artwork-drag-piece[data-dragging="true"] { cursor: grabbing; transition: none; }
+/* Pokédex heights normalized by each source PNG's visible alpha bounds. */
+.pokemon-home-roster__character { position: absolute; bottom: 0; width: 52.2% !important; max-width: 52.2%; height: 126% !important; max-height: 126%; object-fit: contain; object-position: center bottom; opacity: 0; filter: drop-shadow(0 8px 12px rgb(0 0 0 / 32%)); }
+.pokemon-home-roster--active .pokemon-home-roster__character { animation: pokemon-home-rise 560ms cubic-bezier(0.16, 0.84, 0.26, 1) both; }
+.pokemon-home-roster--gsap.pokemon-home-roster--active .pokemon-home-roster__character { animation: none; }
+.pokemon-home-roster--active .pokemon-home-roster__character--bulbasaur { left: calc(8% - 12px); bottom: -8%; z-index: 1; width: 69% !important; max-width: 69%; animation-delay: 0ms; }
+.pokemon-home-roster--active .pokemon-home-roster__character--jigglypuff { left: 47%; bottom: 0; z-index: 6; width: 37.44% !important; max-width: 37.44%; height: 135% !important; max-height: 135%; animation-delay: 60ms; }
+.pokemon-home-roster--active .pokemon-home-roster__character--charmander { right: -12px; bottom: 4%; z-index: 8; width: 44.76% !important; max-width: 44.76%; height: 120.6% !important; max-height: 120.6%; animation-delay: 70ms; }
+.pokemon-home-roster--active .pokemon-home-roster__character--pikachu { left: 29%; bottom: calc(20% - 40px); z-index: 7; width: 29.88% !important; max-width: 29.88%; height: 135% !important; max-height: 135%; animation-delay: 140ms; }
+.pokemon-home-roster--active .pokemon-home-roster__character--squirtle { right: -12px; bottom: calc(15% + 70px); z-index: 2; width: 40.44% !important; max-width: 40.44%; height: 115.2% !important; max-height: 115.2%; animation-delay: 210ms; }
+@keyframes pokemon-home-rise { from { opacity: 0; transform: translateY(44px) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
 .cartoon-home-character-preload {
   position: absolute;
   width: 1px;
@@ -2506,4 +2650,79 @@ input {
   .home-color-spectrum__track {
     animation: none;
   }
+}
+.pokedex-trigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pokedex-reveal-shell { display: block; }
+.pokedex-reveal-shell[hidden] { display: none; }
+
+.pokedex-trigger__artwork {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.pokedex-reveal-artwork { position: absolute; inset: 0; display: block; }
+
+.pokedex-trigger__viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.pokedex-trigger__image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 240ms ease;
+  object-position: center;
+}
+
+.pokedex-trigger__image--closed {
+  opacity: 1;
+  transform: scale(0.56);
+  transition: opacity 240ms ease, transform 240ms ease;
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.pokedex-trigger__image--open {
+  opacity: 0;
+  transform: translate(23px, 5px) rotate(-34deg) scale(0.76);
+  transform-origin: 34% 55%;
+  transition: opacity 240ms ease, transform 360ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.pokedex-trigger:hover .pokedex-trigger__image,
+.pokedex-trigger:focus-visible .pokedex-trigger__image {
+  opacity: 0;
+}
+
+.pokedex-trigger:hover .pokedex-trigger__image--open,
+.pokedex-trigger:focus-visible .pokedex-trigger__image--open {
+  opacity: 1;
+  transform: translate(23px, 5px) rotate(-34deg) scale(0.76);
+}
+
+.pokedex-trigger:focus-visible {
+  outline: 2px solid #ffcf55;
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pokedex-trigger__image { transition: none; }
 }

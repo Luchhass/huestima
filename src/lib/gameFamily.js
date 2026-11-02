@@ -5,6 +5,7 @@ export const GAME_FAMILY_IDS = {
   COLOR: "color",
   FLAG: "flag",
   CARTOON: "cartoon",
+  POKEMON: "pokemon",
   BRAND: "brand",
   TEAM: "team",
   PERCEPTION: "perception",
@@ -26,6 +27,7 @@ export const GAME_FAMILY_OPTIONS = [
     label: "Cartoon",
     href: "/cartoon",
   },
+  { id: GAME_FAMILY_IDS.POKEMON, label: "Pokémon", href: "/pokemon" },
   {
     id: GAME_FAMILY_IDS.BRAND,
     label: "Brand",
@@ -66,6 +68,7 @@ export const DEFAULT_GAME_MODE_BY_FAMILY = {
   [GAME_FAMILY_IDS.COLOR]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.FLAG]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.CARTOON]: GAME_MODE_IDS.NORMAL,
+  [GAME_FAMILY_IDS.POKEMON]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.BRAND]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.TEAM]: GAME_MODE_IDS.NORMAL,
   [GAME_FAMILY_IDS.PERCEPTION]: GAME_MODE_IDS.PATTERN,
@@ -104,6 +107,10 @@ export function isFlagFamily(gameFamily) {
 
 export function isCartoonFamily(gameFamily) {
   return normalizeGameFamily(gameFamily) === GAME_FAMILY_IDS.CARTOON;
+}
+
+export function isPokemonFamily(gameFamily) {
+  return normalizeGameFamily(gameFamily) === GAME_FAMILY_IDS.POKEMON;
 }
 
 export function isBrandFamily(gameFamily) {

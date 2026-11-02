@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyProfile, getProfileStats, mergeProfileMatches, normalizeProfile } from '../shared/profileStats.mjs';
+import { emptyProfile, getProfileStats, mergeProfileMatches, normalizeProfile, summarizeMatch } from '../shared/profileStats.mjs';
 
 const single = (id, overrides = {}) => ({ id, createdAt: 1000, gameType: 'singleplayer', gameFamily: 'color', gameMode: 'normal', difficulty: 'hard', rounds: 1, totalScore: 8, results: [{ score: 8 }], ...overrides });
 const multi = (id, own, rivals, overrides = {}) => single(id, { gameType: 'multiplayer', currentPlayerId: 'me', leaderboard: { leaderboard: [{ playerId: 'me', totalScore: own, roundResults: [{ score: own }] }, ...rivals.map((score, i) => ({ playerId: 'rival' + i, totalScore: score, roundResults: [{ score }] }))] }, ...overrides });
@@ -24,21 +24,25 @@ test('profile averages are weighted by completed rounds, with separate Odd recor
   assert.equal(stats.favorite.id, 'color');
 });
 
-test('only identified games with opponents count as wins losses or draws', () => {
+test('multiplayer outcomes require identified opponents and stay outside singleplayer profile totals', () => {
   const entries = [multi('win', 9, [8]), multi('draw', 9, [9]), multi('loss', 8, [9]), multi('solo', 10, []), multi('legacy', 10, [8], { currentPlayerId: undefined }), single('practice')];
   const stats = getProfileStats(mergeProfileMatches(null, entries));
-  assert.equal(stats.total, 6);
-  assert.equal(stats.wins, 1); assert.equal(stats.losses, 1); assert.equal(stats.draws, 1);
-  assert.equal(stats.competitive, 3);
-  assert.ok(Math.abs(stats.winRate - 100 / 3) < 1e-10);
+  assert.deepEqual(entries.map(entry => summarizeMatch(entry).outcome), ['win', 'draw', 'loss', null, null, null]);
+  assert.equal(stats.total, 1);
+  assert.equal(stats.wins, 0); assert.equal(stats.losses, 0); assert.equal(stats.draws, 0);
+  assert.equal(stats.competitive, 0);
+  assert.equal(stats.winRate, null);
 });
 
-test('win streaks use chronological competitive results and survive repeated imports', () => {
+test('identified multiplayer results survive repeated legacy imports without entering singleplayer streaks', () => {
   const entries = [multi('one', 9, [8], { createdAt: 1000 }), multi('two', 9, [8], { createdAt: 2000 }), multi('three', 8, [9], { createdAt: 3000 }), multi('four', 9, [8], { createdAt: 4000 })];
   const profile = mergeProfileMatches(null, entries.reverse());
   const stats = getProfileStats(profile);
-  assert.equal(stats.bestStreak, 2); assert.equal(stats.streak, 1);
-  assert.equal(getProfileStats(mergeProfileMatches(profile, [{ ...entries[0], currentPlayerId: undefined }])).wins, 3);
+  assert.equal(stats.bestStreak, 0); assert.equal(stats.streak, 0);
+  const updated = mergeProfileMatches(profile, [{ ...entries[0], currentPlayerId: undefined }]);
+  assert.equal(updated.matches.four.outcome, 'win');
+  assert.equal(updated.matches.four.createdAt, 4000);
+  assert.equal(Object.values(updated.matches).filter(match => match.outcome === 'win').length, 3);
 });
 
 test('Odd multiplayer compares cleared levels instead of zero numeric scores', () => {
@@ -46,7 +50,9 @@ test('Odd multiplayer compares cleared levels instead of zero numeric scores', (
   entry.leaderboard.leaderboard[0].oddLevelsCleared = 7;
   entry.leaderboard.leaderboard[1].oddLevelsCleared = 4;
   const stats = getProfileStats(mergeProfileMatches(null, [entry]));
-  assert.equal(stats.wins, 1); assert.equal(stats.oddBest, 7); assert.equal(stats.average, null);
+  assert.equal(summarizeMatch(entry).outcome, 'win');
+  assert.equal(summarizeMatch(entry).levels, 7);
+  assert.equal(stats.total, 0); assert.equal(stats.oddBest, 0); assert.equal(stats.average, null);
 });
 
 test('damaged profile data cannot introduce NaN or invalid game families', () => {

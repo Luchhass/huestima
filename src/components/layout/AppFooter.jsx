@@ -35,8 +35,14 @@ export default function AppFooter() {
   }, [pathname]);
 
   useEffect(() => {
-    setFamilyFromQuery(new URLSearchParams(window.location.search).get("from"));
-  }, []);
+    const syncFamily = () => setFamilyFromQuery(new URLSearchParams(window.location.search).get("from"));
+    const frame = window.requestAnimationFrame(syncFamily);
+    window.addEventListener("popstate", syncFamily);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("popstate", syncFamily);
+    };
+  }, [pathname]);
   const isPrivacyRoute = pathname === "/privacy-policy";
   const isHowItWorksRoute = pathname === "/how-it-works";
   const isExploreRoute = pathname === "/explore" || pathname?.startsWith("/explore/");
@@ -55,9 +61,9 @@ export default function AppFooter() {
 
   useFooterChromeReturn(pathname, ".route-transition-footer");
   const pathnameFamily = pathname?.split("/").filter(Boolean)[0];
-  const family = ["color", "flag", "cartoon", "brand", "team", "perception"].includes(familyFromQuery)
+  const family = ["color", "flag", "cartoon", "pokemon", "brand", "team", "perception"].includes(familyFromQuery)
     ? familyFromQuery
-    : ["color", "flag", "cartoon", "brand", "team", "perception"].includes(pathnameFamily)
+    : ["color", "flag", "cartoon", "pokemon", "brand", "team", "perception"].includes(pathnameFamily)
       ? pathnameFamily
       : "color";
   const exploreLabel = locale === "tr" ? "keşfet" : "explore";
@@ -125,7 +131,7 @@ export default function AppFooter() {
       const notificationCard = document.querySelector("[data-notification-card]");
       if (notificationCard) {
         await playCardToCardExit(notificationCard, content, {
-          targetExpanded: /^\/(color|flag|cartoon|brand|team|perception)(\?|$)/.test(href) ? false : true,
+          targetExpanded: /^\/(color|flag|cartoon|pokemon|brand|team|perception)(\?|$)/.test(href) ? false : true,
           hideChrome: false,
         });
       }

@@ -21,19 +21,19 @@ export default function manifest() {
     categories: ["games", "entertainment"],
     icons: [
       {
-        src: "/icon-192.png",
+        src: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any maskable",
       },
       {
-        src: "/icon-512.png",
+        src: "/icons/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any maskable",
       },
       {
-        src: "/icon-1024.png",
+        src: "/icons/icon-1024.png",
         sizes: "1024x1024",
         type: "image/png",
         purpose: "any maskable",
@@ -41,7 +41,7 @@ export default function manifest() {
     ],
     screenshots: [
       {
-        src: "/og-color.png",
+        src: "/social/og-color.png",
         sizes: `${SITE_IMAGE_WIDTH}x${SITE_IMAGE_HEIGHT}`,
         type: "image/png",
         form_factor: "wide",

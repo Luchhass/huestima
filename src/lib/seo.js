@@ -6,14 +6,14 @@ export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
   "https://www.huestima.com";
 
-export const SITE_IMAGE_PATH = "/og-color.png";
+export const SITE_IMAGE_PATH = "/social/og-color.png";
 export const SITE_IMAGE_URL = absoluteUrl(SITE_IMAGE_PATH);
 export const SITE_IMAGE_WIDTH = 1732;
 export const SITE_IMAGE_HEIGHT = 908;
 export const SITE_LAST_MODIFIED = LANDING_UPDATED;
 
 export const SITE_DESCRIPTION =
-  "Play free color memory and perception games with colors, flags, cartoon characters, brands, teams and visual patterns.";
+  "Play free color memory and perception games with colors, flags, cartoon characters, Pokémon, brands, teams and visual patterns.";
 
 export const SEO_KEYWORDS = [
   "Huestima",
@@ -37,6 +37,10 @@ export const SEO_KEYWORDS = [
   "HSV color picker game",
   "hue saturation brightness game",
   "visual memory game",
+  "pokemon game",
+  "pokemon color game",
+  "pokemon memory game",
+  "pokedex game",
   "color perception game",
   "online color challenge",
   "memory challenge",
@@ -137,6 +141,11 @@ export const ROUTE_SEO = {
       "Play the isolated Huestima Cartoon singleplayer game and rebuild cartoon scene colors from memory.",
     path: "/cartoon/singleplayer",
   },
+  pokemonSingleplayer: {
+    title: "Pokémon Color Memory Game Singleplayer | Huestima",
+    description: "Remember Pokémon colors, rebuild their shades from memory, earn points, and fill your Pokédex in Huestima singleplayer.",
+    path: "/pokemon/singleplayer",
+  },
   colorMultiplayer: {
     title: "Huestima Color Multiplayer",
     description:
@@ -155,6 +164,11 @@ export const ROUTE_SEO = {
       "Create or join isolated Huestima Cartoon multiplayer lobbies.",
     path: "/cartoon/multiplayer",
   },
+  pokemonMultiplayer: {
+    title: "Pokémon Color Game Multiplayer | Huestima",
+    description: "Create or join a Pokémon color memory game lobby, compare guesses with friends, and add catches to your Pokédex.",
+    path: "/pokemon/multiplayer",
+  },
   singleplayer: {
     title: "Hue Estimate Singleplayer Game - Huestima",
     description:
@@ -172,11 +186,12 @@ export const ROUTE_SEO = {
 const ROUTE_IMAGE_PATHS = {
   home: SITE_IMAGE_PATH,
   color: SITE_IMAGE_PATH,
-  flag: "/og-flag.png",
-  cartoon: "/og-cartoon.png",
-  brand: "/og-brand.png",
-  team: "/og-team.png",
-  perception: "/og-perception.png",
+  flag: "/social/og-flag.png",
+  cartoon: "/social/og-cartoon.png",
+  pokemon: "/social/og-pokemon.png",
+  brand: "/social/og-brand.png",
+  team: "/social/og-team.png",
+  perception: "/social/og-perception.png",
 };
 
 export function absoluteUrl(path = "/") {

@@ -29,7 +29,7 @@ export function trackEvent(eventName, params = {}) {
   if (!initializeAnalytics()) return;
 
   if (window.location.pathname.startsWith("/admin")) return;
-  const family = /^\/(?:tr\/)?(color|flag|cartoon|brand|team|perception)(?:\/|$)/.exec(window.location.pathname)?.[1];
+  const family = /^\/(?:tr\/)?(color|flag|cartoon|pokemon|brand|team|perception)(?:\/|$)/.exec(window.location.pathname)?.[1];
   window.gtag("event", eventName, {
     ...(family ? { game_family: family } : {}),
     content_language: document.documentElement.lang || "en",

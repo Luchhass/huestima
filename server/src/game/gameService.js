@@ -13,6 +13,7 @@ import {
   applyDifficultyConstraints,
   generateTargetColors,
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isBlendColor,
   isFlagColor,
@@ -75,7 +76,7 @@ function calculateMatchScore(targetColor, guessColor) {
     return calculateFlagSlotAverage(targetColor, guessColor, calculateColorScore);
   }
 
-  if (isCartoonColor(targetColor) && isCartoonColor(guessColor)) {
+  if ((isCartoonColor(targetColor) && isCartoonColor(guessColor)) || (isPokemonColor(targetColor) && isPokemonColor(guessColor))) {
     return calculateColorScore(targetColor.hex, guessColor.hex);
   }
 
@@ -102,7 +103,7 @@ function calculateMatchDistance(targetColor, guessColor) {
     return calculateFlagSlotAverage(targetColor, guessColor, ciede2000Distance);
   }
 
-  if (isCartoonColor(targetColor) && isCartoonColor(guessColor)) {
+  if ((isCartoonColor(targetColor) && isCartoonColor(guessColor)) || (isPokemonColor(targetColor) && isPokemonColor(guessColor))) {
     return ciede2000Distance(targetColor.hex, guessColor.hex);
   }
 
@@ -193,6 +194,12 @@ function validateGuessColorPayload(targetColor, guessColor, difficulty) {
         }),
       },
     };
+  }
+
+  if (isPokemonColor(targetColor)) {
+    const color = validateHsvColor(completeHsvForDifficulty(targetColor, guessColor, difficulty));
+    if (!color.ok) return color;
+    return { ok: true, data: { color: withCartoonHex({ ...color.data.color, pokemonId: targetColor.pokemonId }) } };
   }
 
   if (isCartoonColor(targetColor)) {
@@ -554,7 +561,9 @@ export function submitRoundGuess(room, payload) {
       ? withGradientHex(colorResult.data.color)
       : isFlagColor(targetColor)
         ? withFlagHex(colorResult.data.color)
-        : isCartoonColor(targetColor)
+        : isPokemonColor(targetColor)
+          ? withCartoonHex({ ...colorResult.data.color, pokemonId: targetColor.pokemonId })
+          : isCartoonColor(targetColor)
           ? withCartoonHex(colorResult.data.color)
           : isBrandColor(targetColor)
             ? targetColor.teamId

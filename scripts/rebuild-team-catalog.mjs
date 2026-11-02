@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sourceRoot = path.join(root, "public", "Teams Assets");
+const sourceRoot = path.join(root, "public", "game-modes", "team", "source");
 const logoRoot = path.join(root, "public", "game-modes", "team", "team-logos");
 const catalogPath = path.join(root, "shared", "brandCatalog.mjs");
 const leagueNames = ["Bundesliga", "La Liga", "Ligue 1", "Premier League", "Seria A", "Süper Lig"];

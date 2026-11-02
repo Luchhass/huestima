@@ -38,23 +38,93 @@ const FAMILY_GLOW_COLORS = {
   color: "#b39aff",
   flag: "#ff9eae",
   cartoon: "#81e2b8",
+  pokemon: "#ffcf55",
   brand: "#ffd36e",
   team: "#83c6ff",
   perception: "#e49aff",
 };
+
+function FamilyDropdownBorder({ onComplete }) {
+  const svgRef = useRef(null);
+  const [geometry, setGeometry] = useState(null);
+
+  useLayoutEffect(() => {
+    const panel = svgRef.current?.parentElement;
+    const summary = panel?.closest("details")?.querySelector("summary");
+    if (!panel || !summary) return undefined;
+    const measure = () => setGeometry({
+      width: panel.offsetWidth,
+      height: panel.offsetHeight,
+      underline: Math.min(summary.offsetWidth, panel.offsetWidth),
+    });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(panel);
+    observer.observe(summary);
+    return () => observer.disconnect();
+  }, []);
+
+  const inset = 0.75;
+  const right = geometry ? geometry.width - inset : 0;
+  const bottom = geometry ? geometry.height - inset : 0;
+  const start = geometry ? Math.max(inset, Math.min(right, geometry.underline)) : 0;
+  // Both tips travel equal distances around the remaining perimeter.
+  const meeting = right - (start - inset) / 2;
+
+  return (
+    <svg ref={svgRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible fill-none stroke-current text-zinc-950 dark:text-white" strokeWidth="1.5">
+      {geometry && <>
+        <path d={`M ${inset} ${inset} H ${start}`} />
+        <path className="header-dropdown-outline" pathLength="1" d={`M ${inset} ${inset} V ${bottom} H ${meeting}`} />
+        <path className="header-dropdown-outline" pathLength="1" d={`M ${start} ${inset} H ${right} V ${bottom} H ${meeting}`} onAnimationEnd={onComplete} />
+      </>}
+    </svg>
+  );
+}
+
+function FamilyDropdownPanel({ ready, children }) {
+  const [phase, setPhase] = useState(() => ready && typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "content" : "outline");
+
+  return (
+    <div style={{ position: "absolute", top: "calc(100% - 3px)", opacity: ready ? 1 : 0 }} data-phase={phase} className="header-dropdown-panel relative left-0 z-50 w-32 px-3 py-4 text-zinc-950 dark:text-white">
+      {ready && <FamilyDropdownBorder onComplete={() => setPhase("fill")} />}
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <span className="header-dropdown-fill header-dropdown-fill--top" onAnimationEnd={() => setPhase("content")} />
+        <span className="header-dropdown-fill header-dropdown-fill--bottom" />
+        <span className="header-dropdown-fill header-dropdown-fill--left" />
+        <span className="header-dropdown-fill header-dropdown-fill--right" />
+      </span>
+      {children}
+    </div>
+  );
+}
 
 export default function AppHeader() {
   const { locale, t } = useTranslation();
   const { unreadAnnouncementCount } = useSiteOperations();
   const [adminSessionOpen, setAdminSessionOpen] = useState(false);
   const pathname = usePathname()?.replace(/^\/tr(?=\/)/, "");
+  const activeCharacterOption = GAME_FAMILY_OPTIONS.find(
+    (option) => ["cartoon", "pokemon"].includes(option.id)
+      && (pathname === option.href || pathname?.startsWith(`${option.href}/`)),
+  );
+  const activeBrandTeamOption = GAME_FAMILY_OPTIONS.find(
+    (option) => ["brand", "team"].includes(option.id)
+      && (pathname === option.href || pathname?.startsWith(`${option.href}/`)),
+  );
   const [historyFamily, setHistoryFamily] = useState("color");
   useEffect(() => {
-    const family = new URLSearchParams(window.location.search).get("from");
-    if (["color", "flag", "cartoon", "brand", "team", "perception"].includes(family)) {
-      setHistoryFamily(family);
-    }
-  }, []);
+    const syncFamily = () => {
+      const family = new URLSearchParams(window.location.search).get("from");
+      if (["color", "flag", "cartoon", "pokemon", "brand", "team", "perception"].includes(family)) setHistoryFamily(family);
+    };
+    const frame = window.requestAnimationFrame(syncFamily);
+    window.addEventListener("popstate", syncFamily);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("popstate", syncFamily);
+    };
+  }, [pathname]);
   const familyHomeHref =
     (pathname?.startsWith("/history") || pathname === "/profile")
       ? `/${historyFamily}`
@@ -99,7 +169,10 @@ export default function AppHeader() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isNavRendered, setIsNavRendered] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
+  const [openFamilyDropdown, setOpenFamilyDropdown] = useState(null);
+  const [readyFamilyDropdown, setReadyFamilyDropdown] = useState(null);
   const [familyUnderline, setFamilyUnderline] = useState(null);
+  const familyUnderlineRef = useRef(null);
   const [familyGlowColor, setFamilyGlowColor] = useState(FAMILY_GLOW_COLORS.color);
   const familyGlowRef = useRef(null);
   const landingHeaderTheme = useViewportSectionTheme({
@@ -188,6 +261,7 @@ export default function AppHeader() {
   useEffect(() => {
     const header = headerRef.current;
     if (!header) return undefined;
+    const tooltip = headerTooltipRef.current;
 
     const positionTooltip = () => {
       const tooltip = headerTooltipRef.current;
@@ -276,7 +350,7 @@ export default function AppHeader() {
       header.removeEventListener("pointerover", onPointerOver);
       document.removeEventListener("pointermove", onPointerMove, true);
       document.removeEventListener("pointerout", onPointerOut, true);
-      gsap.killTweensOf(headerTooltipRef.current);
+      gsap.killTweensOf(tooltip);
     };
   }, []);
 
@@ -323,7 +397,37 @@ export default function AppHeader() {
   const mobileMenuTimelineRef = useRef(null);
   const familyNavRef = useRef(null);
   const familyLinkRefs = useRef(new Map());
+  const characterMenuRef = useRef(null);
+  const brandTeamMenuRef = useRef(null);
+  const dropdownSelectionRef = useRef(null);
   const closeMenuRef = useRef(() => Promise.resolve());
+
+  useEffect(() => {
+    if (dropdownSelectionRef.current === pathname) dropdownSelectionRef.current = null;
+  }, [pathname]);
+
+  useEffect(() => {
+    const menus = [characterMenuRef.current, brandTeamMenuRef.current];
+    const closeOnOutsidePointer = (event) => {
+      menus.forEach((menu) => {
+        if (menu?.open && !menu.contains(event.target)) menu.open = false;
+      });
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        menus.forEach((menu) => {
+          if (menu?.open) menu.open = false;
+        });
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const nav = familyNavRef.current;
@@ -352,6 +456,30 @@ export default function AppHeader() {
     window.addEventListener("resize", updateUnderline);
     return () => window.removeEventListener("resize", updateUnderline);
   }, [hoveredFamily, pathname, locale]);
+
+  useLayoutEffect(() => {
+    if (!openFamilyDropdown) return undefined;
+
+    const underline = familyUnderlineRef.current;
+    const menu = openFamilyDropdown === "toons" ? characterMenuRef.current : brandTeamMenuRef.current;
+    const summary = menu?.querySelector("summary");
+    if (!summary) return undefined;
+
+    let frame = 0;
+    const revealWhenAligned = () => {
+      const lineRect = underline?.getBoundingClientRect();
+      const targetRect = summary.getBoundingClientRect();
+      if (!lineRect || (Math.abs(lineRect.left - targetRect.left) < 1 && Math.abs(lineRect.width - targetRect.width) < 1)) {
+        setReadyFamilyDropdown(openFamilyDropdown);
+      } else {
+        frame = window.requestAnimationFrame(revealWhenAligned);
+      }
+    };
+    frame = window.requestAnimationFrame(revealWhenAligned);
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [openFamilyDropdown, familyUnderline]);
 
   useEffect(() => {
     isNavigatingRef.current = false;
@@ -548,7 +676,7 @@ export default function AppHeader() {
         return;
       }
     }
-    const isSetupHomeRoute = /^\/(color|flag|cartoon|brand|team|perception)$/.test(pathname || "");
+    const isSetupHomeRoute = /^\/(color|flag|cartoon|pokemon|brand|team|perception)$/.test(pathname || "");
     if (isSetupHomeRoute) {
       const card = document.querySelector("[data-intro-card-target]");
       const content = document.querySelector("[data-route-transition-scope]");
@@ -763,7 +891,7 @@ export default function AppHeader() {
               data-sound-kind="navigation"
               className="flex w-full flex-col items-start gap-3 text-[clamp(2.85rem,13vw,4.9rem)] font-semibold leading-[0.96] tracking-normal"
             >
-              {GAME_FAMILY_OPTIONS.map((option) => {
+              {GAME_FAMILY_OPTIONS.filter(({ id }) => ["color", "flag"].includes(id)).map((option) => {
                 const active =
                   pathname === option.href || pathname?.startsWith(`${option.href}/`);
 
@@ -794,6 +922,22 @@ export default function AppHeader() {
                   </div>
                 );
               })}
+              <details name="header-game-family-dropdown" className="group -mb-[0.12em] pb-[0.12em]">
+                <summary data-mobile-menu-nav-item className={`cursor-pointer list-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeCharacterOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>{t("gameFamily.toons")}</summary>
+                <div className="mt-2 flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
+                  {GAME_FAMILY_OPTIONS.filter(({ id }) => ["cartoon", "pokemon"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+                </div>
+              </details>
+              {GAME_FAMILY_OPTIONS.filter(({ id }) => id === "perception").map((option) => {
+                const active = pathname === option.href || pathname?.startsWith(`${option.href}/`);
+                return <Link key={option.id} href={localizeLandingHref(option.href, locale)} aria-current={active ? "page" : undefined} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={`-mb-[0.12em] pb-[0.12em] transition ${active ? "text-zinc-950 dark:text-white" : "text-zinc-950/34 hover:text-zinc-950 dark:text-white/34 dark:hover:text-white"}`}>{t(`gameFamily.${option.id}`)}</Link>;
+              })}
+              <details name="header-game-family-dropdown" className="group -mb-[0.12em] pb-[0.12em]">
+                <summary data-mobile-menu-nav-item className={`cursor-pointer list-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeBrandTeamOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>{t("gameFamily.logos")}</summary>
+                <div className="mt-2 flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
+                  {GAME_FAMILY_OPTIONS.filter(({ id }) => ["brand", "team"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+                </div>
+              </details>
             </nav>
 
             <div className="mt-auto flex w-full flex-wrap items-center gap-x-1 gap-y-3 pb-1">
@@ -876,7 +1020,7 @@ export default function AppHeader() {
         </div>
       )}
 
-      <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-6">
+      <div className="pointer-events-auto relative z-10 flex h-11 items-center gap-[clamp(1.5rem,3vw,3rem)]">
         <Link
           href="/color"
           aria-label={t("app.homeAria")}
@@ -890,21 +1034,25 @@ export default function AppHeader() {
 
         <nav
           ref={familyNavRef}
+          data-dropdown-ready={readyFamilyDropdown && readyFamilyDropdown === openFamilyDropdown ? "true" : undefined}
           aria-label={t("gameFamily.label")}
           data-sound-kind="navigation"
           onMouseLeave={() => {
-            setHoveredFamily(null);
+            const dropdownOpen = characterMenuRef.current?.open || brandTeamMenuRef.current?.open;
+            if (!dropdownOpen && !(dropdownSelectionRef.current && dropdownSelectionRef.current !== pathname)) {
+              setHoveredFamily(null);
+            }
             gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" });
           }}
-          className="app-header__family-nav relative hidden h-11 items-center gap-5 text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
+          className="app-header__family-nav relative hidden h-11 items-center gap-[clamp(0.8rem,1.45vw,1.25rem)] text-[13px] font-semibold uppercase leading-none tracking-normal text-zinc-950/42 dark:text-white/42 md:inline-flex"
         >
           <span
             ref={familyGlowRef}
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-0 z-0 size-20 rounded-full opacity-0 blur-lg"
+            className="app-header__family-glow pointer-events-none absolute left-0 top-0 z-0 size-20 rounded-full opacity-0 blur-lg"
             style={{ background: `radial-gradient(circle, ${familyGlowColor} 0%, ${familyGlowColor} 38%, transparent 74%)` }}
           />
-          {GAME_FAMILY_OPTIONS.map((option) => {
+          {GAME_FAMILY_OPTIONS.filter(({ id }) => ["color", "flag"].includes(id)).map((option) => {
             const active =
               pathname === option.href || pathname?.startsWith(`${option.href}/`);
             const highlighted = hoveredFamily
@@ -920,6 +1068,7 @@ export default function AppHeader() {
                 }}
                 href={localizeLandingHref(option.href, locale)}
                 data-family-glow={option.id}
+                data-family-highlighted={highlighted ? "true" : undefined}
                 aria-current={active ? "page" : undefined}
                 onMouseEnter={(event) => {
                   setHoveredFamily(option.href);
@@ -954,21 +1103,195 @@ export default function AppHeader() {
               </Link>
             );
           })}
+          <details
+            ref={characterMenuRef}
+            name="header-game-family-dropdown"
+            onMouseEnter={() => {
+              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) characterMenuRef.current.open = true;
+            }}
+            onMouseLeave={() => {
+              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) characterMenuRef.current.open = false;
+            }}
+            onToggle={(event) => {
+              if (event.currentTarget.open) {
+                setOpenFamilyDropdown("toons");
+                setReadyFamilyDropdown(null);
+                setHoveredFamily(activeCharacterOption?.href || "/cartoon");
+              } else {
+                const nextOpen = brandTeamMenuRef.current?.open ? "logos" : null;
+                setOpenFamilyDropdown(nextOpen);
+                setReadyFamilyDropdown(null);
+                if (!nextOpen && !(dropdownSelectionRef.current && dropdownSelectionRef.current !== pathname)) {
+                  setHoveredFamily(null);
+                  gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" });
+                }
+              }
+            }}
+            className="group relative z-20 top-px h-11"
+          >
+            <summary
+              onClick={(event) => {
+                if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                  event.preventDefault();
+                  characterMenuRef.current.open = true;
+                }
+              }}
+              ref={(node) => {
+                ["/cartoon", "/pokemon"].forEach((href) => {
+                  if (node) familyLinkRefs.current.set(href, node);
+                  else familyLinkRefs.current.delete(href);
+                });
+              }}
+              onMouseEnter={(event) => {
+                const option = activeCharacterOption || GAME_FAMILY_OPTIONS.find(({ id }) => id === "cartoon");
+                setHoveredFamily(option.href);
+                setFamilyGlowColor(FAMILY_GLOW_COLORS[option.id]);
+                const navRect = familyNavRef.current.getBoundingClientRect();
+                const linkRect = event.currentTarget.getBoundingClientRect();
+                gsap.to(familyGlowRef.current, {
+                  x: linkRect.left - navRect.left + linkRect.width / 2,
+                  y: linkRect.top - navRect.top + linkRect.height / 2,
+                  xPercent: -50,
+                  yPercent: -50,
+                  autoAlpha: 1,
+                  duration: 0.72,
+                  ease: "elastic.out(1, 0.68)",
+                  overwrite: "auto",
+                });
+              }}
+              onMouseLeave={() => gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" })}
+              className={`relative z-10 inline-flex h-11 cursor-pointer list-none items-center gap-1 rounded-full leading-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeCharacterOption ? "text-zinc-950 dark:text-white" : ""}`}
+            >
+              {t("gameFamily.toons")} <span aria-hidden="true" className="mb-[0.18em] ml-[0.1em] size-[0.52em] rotate-45 border-b-2 border-r-2 border-current" />
+            </summary>
+            <FamilyDropdownPanel key={readyFamilyDropdown === "toons" ? "ready" : "waiting"} ready={readyFamilyDropdown === "toons"}>
+              {GAME_FAMILY_OPTIONS.filter(({ id }) => ["cartoon", "pokemon"].includes(id)).map((option) => {
+                const active = pathname === option.href || pathname?.startsWith(`${option.href}/`);
+                return <Link key={option.id} href={localizeLandingHref(option.href, locale)} onClick={(event) => { dropdownSelectionRef.current = option.href; characterMenuRef.current.open = false; brandTeamMenuRef.current.open = false; handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href); }} className={`relative z-10 block overflow-hidden py-2 text-sm font-medium leading-none tracking-normal transition-colors duration-200 hover:translate-x-1 hover:text-zinc-950 dark:hover:text-white ${active ? "text-zinc-950 dark:text-white" : "text-zinc-950/50 dark:text-white/50"}`}><span className="header-dropdown-label">{t(`gameFamily.${option.id}`)}</span></Link>;
+              })}
+            </FamilyDropdownPanel>
+          </details>
+          {GAME_FAMILY_OPTIONS.filter(({ id }) => id === "perception").map((option) => {
+            const active = pathname === option.href || pathname?.startsWith(`${option.href}/`);
+            const highlighted = hoveredFamily ? hoveredFamily === option.href : active;
+            return (
+              <Link
+                key={option.id}
+                ref={(node) => {
+                  if (node) familyLinkRefs.current.set(option.href, node);
+                  else familyLinkRefs.current.delete(option.href);
+                }}
+                href={localizeLandingHref(option.href, locale)}
+                data-family-glow={option.id}
+                data-family-highlighted={highlighted ? "true" : undefined}
+                aria-current={active ? "page" : undefined}
+                onMouseEnter={(event) => {
+                  setHoveredFamily(option.href);
+                  setFamilyGlowColor(FAMILY_GLOW_COLORS[option.id]);
+                  const navRect = familyNavRef.current.getBoundingClientRect();
+                  const linkRect = event.currentTarget.getBoundingClientRect();
+                  gsap.to(familyGlowRef.current, {
+                    x: linkRect.left - navRect.left + linkRect.width / 2,
+                    y: linkRect.top - navRect.top + linkRect.height / 2,
+                    xPercent: -50,
+                    yPercent: -50,
+                    autoAlpha: 1,
+                    duration: 0.72,
+                    ease: "elastic.out(1, 0.68)",
+                    overwrite: "auto",
+                  });
+                }}
+                onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)}
+                className={`relative z-10 top-px inline-flex h-11 items-center rounded-full leading-none transition focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${highlighted ? "text-zinc-950 dark:text-white" : "text-zinc-950/42 dark:text-white/42"}`}
+              >
+                {t(`gameFamily.${option.id}`)}
+              </Link>
+            );
+          })}
+          <details
+            ref={brandTeamMenuRef}
+            name="header-game-family-dropdown"
+            onMouseEnter={() => {
+              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) brandTeamMenuRef.current.open = true;
+            }}
+            onMouseLeave={() => {
+              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) brandTeamMenuRef.current.open = false;
+            }}
+            onToggle={(event) => {
+              if (event.currentTarget.open) {
+                setOpenFamilyDropdown("logos");
+                setReadyFamilyDropdown(null);
+                setHoveredFamily(activeBrandTeamOption?.href || "/brand");
+              } else {
+                const nextOpen = characterMenuRef.current?.open ? "toons" : null;
+                setOpenFamilyDropdown(nextOpen);
+                setReadyFamilyDropdown(null);
+                if (!nextOpen && !(dropdownSelectionRef.current && dropdownSelectionRef.current !== pathname)) {
+                  setHoveredFamily(null);
+                  gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" });
+                }
+              }
+            }}
+            className="group relative z-20 top-px h-11"
+          >
+            <summary
+              onClick={(event) => {
+                if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                  event.preventDefault();
+                  brandTeamMenuRef.current.open = true;
+                }
+              }}
+              ref={(node) => {
+                ["/brand", "/team"].forEach((href) => {
+                  if (node) familyLinkRefs.current.set(href, node);
+                  else familyLinkRefs.current.delete(href);
+                });
+              }}
+              onMouseEnter={(event) => {
+                const option = activeBrandTeamOption || GAME_FAMILY_OPTIONS.find(({ id }) => id === "brand");
+                setHoveredFamily(option.href);
+                setFamilyGlowColor(FAMILY_GLOW_COLORS[option.id]);
+                const navRect = familyNavRef.current.getBoundingClientRect();
+                const linkRect = event.currentTarget.getBoundingClientRect();
+                gsap.to(familyGlowRef.current, {
+                  x: linkRect.left - navRect.left + linkRect.width / 2,
+                  y: linkRect.top - navRect.top + linkRect.height / 2,
+                  xPercent: -50,
+                  yPercent: -50,
+                  autoAlpha: 1,
+                  duration: 0.72,
+                  ease: "elastic.out(1, 0.68)",
+                  overwrite: "auto",
+                });
+              }}
+              onMouseLeave={() => gsap.to(familyGlowRef.current, { autoAlpha: 0, duration: 0.2, ease: "power2.out", overwrite: "auto" })}
+              className={`relative z-10 inline-flex h-11 cursor-pointer list-none items-center gap-1 rounded-full leading-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeBrandTeamOption ? "text-zinc-950 dark:text-white" : ""}`}
+            >
+              {t("gameFamily.logos")} <span aria-hidden="true" className="mb-[0.18em] ml-[0.1em] size-[0.52em] rotate-45 border-b-2 border-r-2 border-current" />
+            </summary>
+            <FamilyDropdownPanel key={readyFamilyDropdown === "logos" ? "ready" : "waiting"} ready={readyFamilyDropdown === "logos"}>
+              {GAME_FAMILY_OPTIONS.filter(({ id }) => ["brand", "team"].includes(id)).map((option) => {
+                const active = pathname === option.href || pathname?.startsWith(`${option.href}/`);
+                return <Link key={option.id} href={localizeLandingHref(option.href, locale)} onClick={(event) => { dropdownSelectionRef.current = option.href; characterMenuRef.current.open = false; brandTeamMenuRef.current.open = false; handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href); }} className={`relative z-10 block overflow-hidden py-2 text-sm font-medium leading-none tracking-normal transition-colors duration-200 hover:translate-x-1 hover:text-zinc-950 dark:hover:text-white ${active ? "text-zinc-950 dark:text-white" : "text-zinc-950/50 dark:text-white/50"}`}><span className="header-dropdown-label">{t(`gameFamily.${option.id}`)}</span></Link>;
+              })}
+            </FamilyDropdownPanel>
+          </details>
           {familyUnderline && hasFamilyHighlight && (
             <span
+              ref={familyUnderlineRef}
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-full bg-zinc-950 dark:bg-white"
+              className="app-header__family-underline pointer-events-none absolute bottom-0 left-0 rounded-full bg-zinc-950 dark:bg-white"
               style={{
                 width: familyUnderline.width,
                 transform: `translateX(${familyUnderline.left}px)`,
-                transition: "transform 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1)",
+                transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), width 220ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             />
           )}
         </nav>
       </div>
 
-      <div className="header-controls pointer-events-auto relative z-10 inline-flex h-11 items-center justify-end gap-1">
+      <div className="header-controls pointer-events-auto relative z-10 inline-flex h-11 items-center justify-end gap-0">
         {adminSessionOpen && (
           <Link
             href="/admin"
@@ -983,12 +1306,17 @@ export default function AppHeader() {
             {locale === "tr" ? "Admin oturumu açık" : "Admin session open"}
           </Link>
         )}
-        <div className="hidden items-center gap-1 md:inline-flex">
-          <div ref={iconControlsRef} data-sound-kind="navigation" className="relative inline-flex items-center gap-1">
+        <div className="hidden items-center gap-0 md:inline-flex">
+          <div data-sound-kind="switch" data-magnetic-group className="inline-flex items-center gap-2">
+            <LanguageToggle />
+            <SoundToggle />
+            <MusicToggle />
+            <ThemeToggle />
+            {pathname === "/" && <LandingHeroLockToggle />}
+          </div>
+          <span aria-hidden="true" className="mx-2 h-6 w-[2px] bg-zinc-950/32 dark:bg-white/34" />
+          <div ref={iconControlsRef} data-sound-kind="navigation" className="relative inline-flex items-center gap-2">
           <span ref={iconHighlightRef} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-0 rounded-full bg-zinc-950 opacity-0 dark:bg-white" />
-          <Link ref={(node) => node ? iconLinkRefs.current.set("profile", node) : iconLinkRefs.current.delete("profile")} data-header-icon-link="profile" data-header-tooltip={t("profile.title")} data-active={pathname === "/profile"} href={profileHref} aria-label={t("profile.open")} aria-current={pathname === "/profile" ? "page" : undefined} onClick={(event) => handleFamilyNavigation(event, profileHref, pathname === "/profile")} className={`relative z-10 grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "profile" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}>
-            <UserRound className="size-6.5" strokeWidth={1.9} />
-          </Link>
           <Link
             href={`/notifications?from=${encodeURIComponent(notificationReturnHref)}`}
             data-header-tooltip={t("notifications.title")}
@@ -1020,17 +1348,9 @@ export default function AppHeader() {
           >
             <History className="size-6.5" strokeWidth={1.9} />
           </Link>
-          </div>
-          <span
-            aria-hidden="true"
-            className="mx-2 h-6 w-[2px] bg-zinc-950/32 dark:bg-white/34"
-          />
-          <div data-sound-kind="switch" data-magnetic-group className="inline-flex items-center gap-1">
-          <LanguageToggle />
-          <SoundToggle />
-          <MusicToggle />
-          <ThemeToggle />
-          {pathname === "/" && <LandingHeroLockToggle />}
+          <Link ref={(node) => node ? iconLinkRefs.current.set("profile", node) : iconLinkRefs.current.delete("profile")} data-header-icon-link="profile" data-header-tooltip={t("profile.title")} data-active={pathname === "/profile"} href={profileHref} aria-label={t("profile.open")} aria-current={pathname === "/profile" ? "page" : undefined} onClick={(event) => handleFamilyNavigation(event, profileHref, pathname === "/profile")} className={`relative z-10 grid size-11 place-items-center ${headerIconClass} ${highlightedIcon === "profile" ? "text-white dark:text-zinc-950" : "text-zinc-950 dark:text-zinc-50"}`}>
+            <UserRound className="size-6.5" strokeWidth={1.9} />
+          </Link>
           </div>
         </div>
 

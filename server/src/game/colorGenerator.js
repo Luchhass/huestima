@@ -15,6 +15,7 @@ import {
   createDecoyTargetPosition,
 } from "../../../shared/decoyMechanics.mjs";
 import { createPatternPuzzle } from "../../../shared/patternGame.mjs";
+import { POKEMON_ITEMS } from "../../../shared/pokemonCatalog.mjs";
 
 const GRADIENT_FIXED_COLOR = {
   s: 82,
@@ -133,6 +134,10 @@ export function isCartoonColor(color) {
   return color?.type === GAME_MODES.CARTOON && Boolean(color?.cartoonId);
 }
 
+export function isPokemonColor(color) {
+  return color?.type === GAME_MODES.CARTOON && Boolean(color?.pokemonId);
+}
+
 export function isBrandColor(color) {
   return color?.type === "brand" && Boolean(color?.brandId);
 }
@@ -239,6 +244,27 @@ function mergeCartoonPaint(cartoon, color) {
 }
 
 export function withCartoonHex(color) {
+  if (color?.pokemonId) {
+    const pokemon = POKEMON_ITEMS.find((item) => item.id === color.pokemonId) || POKEMON_ITEMS[0];
+    const clean = withHex({ ...pokemon.paint, ...color });
+    return {
+      ...pokemon,
+      ...clean,
+      type: GAME_MODES.CARTOON,
+      pokemonId: pokemon.id,
+      pokemonName: pokemon.name,
+      imagePath: pokemon.imagePath,
+      assetPath: pokemon.assetPath,
+      scenePath: pokemon.scenePath,
+      baseScenePath: pokemon.baseScenePath,
+      originalScenePath: pokemon.originalScenePath,
+      maskPath: pokemon.maskPath,
+      paintBase: pokemon.paint,
+      layers: pokemon.layers,
+      hex: clean.hex,
+      toneHex: clean.hex,
+    };
+  }
   const cartoon = getCartoonOption(color?.cartoonId || DEFAULT_CARTOON_ID);
 
   if (!cartoon) {
@@ -434,6 +460,15 @@ export function randomCartoonTargetColors(count, random = Math.random, cartoonId
   return result;
 }
 
+export function randomPokemonTargetColors(count, random = Math.random) {
+  const shuffled = [...POKEMON_ITEMS];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return Array.from({ length: count }, (_, index) => withCartoonHex({ pokemonId: shuffled[index % shuffled.length].id }));
+}
+
 export function applyDifficultyConstraints(hsv, difficultyId) {
   if (isGradientColor(hsv)) {
     return withGradientHex(hsv);
@@ -446,6 +481,8 @@ export function applyDifficultyConstraints(hsv, difficultyId) {
   if (isCartoonColor(hsv)) {
     return withCartoonHex(hsv);
   }
+
+  if (isPokemonColor(hsv)) return withCartoonHex(hsv);
 
   if (isBrandColor(hsv)) {
     return withBrandHex(hsv);
@@ -548,6 +585,8 @@ export function generateTargetColors({ seed, difficulty, roundCount, gameMode, g
   if (gameFamily === "cartoon") {
     return randomCartoonTargetColors(roundCount, random, cartoonIds);
   }
+
+  if (gameFamily === "pokemon") return randomPokemonTargetColors(roundCount, random);
 
   if (gameFamily === "team") {
     return randomTeamTargetColors(roundCount, random, teamIds);

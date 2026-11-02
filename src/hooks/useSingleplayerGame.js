@@ -15,6 +15,8 @@ import {
   createDefaultBlendGuess,
   createDefaultFlagGuess,
   isCartoonColor,
+  isPokemonColor,
+  randomPokemonTargetColors,
   isBrandColor,
   isGradientColor,
   isBlendColor,
@@ -128,7 +130,8 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultFlagGuess(targetColor, difficulty);
   }
 
-  if (isCartoonFamily(gameFamily)) {
+  if (gameFamily === "pokemon" && targetColor) return createDefaultCartoonGuess(targetColor, difficulty);
+  if (isCartoonFamily(gameFamily) || gameFamily === "pokemon") {
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
@@ -160,7 +163,7 @@ function constrainGuessColor(
     return withFlagDifficultyHex(guessColor, targetColor, difficulty);
   }
 
-  if (isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
+  if (gameFamily === "pokemon" || isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 
@@ -178,6 +181,7 @@ function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, fl
     return randomFlagTargetColors(roundCount, Math.random, flagDifficulty);
   }
 
+  if (gameFamily === "pokemon") return randomPokemonTargetColors(roundCount);
   if (isCartoonFamily(gameFamily)) {
     return randomCartoonTargetColors(roundCount, Math.random, cartoonIds);
   }
@@ -195,6 +199,7 @@ function createTargetColors(difficultyId, gameModeId, gameFamily, roundCount, fl
 
 function isVisualTargetForFamily(color, gameFamily) {
   if (isFlagFamily(gameFamily)) return isFlagColor(color);
+  if (gameFamily === "pokemon") return isPokemonColor(color);
   if (isCartoonFamily(gameFamily)) return isCartoonColor(color);
   if (isTeamFamily(gameFamily)) return isBrandColor(color) && Boolean(color?.teamId);
   if (isBrandFamily(gameFamily)) return isBrandColor(color) && !color?.teamId;
@@ -255,6 +260,7 @@ export function useSingleplayerGame(
   const isFlagMode = isFlagFamily(cleanGameFamily);
   const isRushMode = gameMode.id === GAME_MODE_IDS.RUSH;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isPokemonMode = cleanGameFamily === "pokemon";
   const isBrandMode = isLogoFamily(cleanGameFamily);
   const lockedDifficultyId = gameMode.lockedDifficultyId || null;
   const effectiveDifficulty = useMemo(
@@ -294,7 +300,7 @@ export function useSingleplayerGame(
   const [roundIndex, setRoundIndex] = useState(0);
   const [targetColor, setTargetColor] = useState(null);
   const [targetColors, setTargetColors] = useState(() => {
-    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
+    if (!isFlagMode && !isCartoonMode && !isPokemonMode && !isBrandMode) return [];
     const restoredRoundIndex = Math.max(
       Number(initialGameSession?.roundIndex) || 0,
       0,
@@ -373,7 +379,7 @@ export function useSingleplayerGame(
             : Date.now(),
         );
         setRoundIndex(restoredRoundIndex);
-        const isVisualMode = isFlagMode || isCartoonMode || isBrandMode;
+        const isVisualMode = isFlagMode || isCartoonMode || isPokemonMode || isBrandMode;
         const restoredTargetCount = isRushMode || isEndlessMode || isEliminationMode
           ? restoredRoundIndex + 2
           : roundCount;
@@ -462,6 +468,7 @@ export function useSingleplayerGame(
     initialGameSession,
     isBrandMode,
     isCartoonMode,
+    isPokemonMode,
     isFlagMode,
     isEndlessMode,
     isEliminationMode,
@@ -615,11 +622,11 @@ export function useSingleplayerGame(
       return;
     }
 
-    if (isCartoonMode) {
+    if (isCartoonMode || isPokemonMode) {
       if (isRushMode || isEndlessMode || isEliminationMode) {
         const rushTargets = [...targetColors];
         while (rushTargets.length <= nextRoundIndex + 1) {
-          rushTargets.push(randomCartoonTargetColors(1, Math.random, cartoonIds)[0]);
+          rushTargets.push(createTargetColors(effectiveDifficulty.id, gameMode.id, cleanGameFamily, 1, flagDifficulty, cartoonIds, teamIds)[0]);
         }
         const nextTargetColor = rushTargets[nextRoundIndex];
         if (rushTargets.length !== targetColors.length) setTargetColors(rushTargets);
@@ -630,7 +637,7 @@ export function useSingleplayerGame(
       }
       const cartoonTargetColors =
         !hasValidVisualTargets(targetColors, roundCount, cleanGameFamily)
-          ? randomCartoonTargetColors(roundCount, Math.random, cartoonIds)
+          ? createTargetColors(effectiveDifficulty.id, gameMode.id, cleanGameFamily, roundCount, flagDifficulty, cartoonIds, teamIds)
           : targetColors;
       const nextTargetColor = cartoonTargetColors[nextRoundIndex];
 
@@ -709,6 +716,7 @@ export function useSingleplayerGame(
     effectiveDifficulty,
     gameMode,
     isCartoonMode,
+    isPokemonMode,
     isBrandMode,
     isEndlessMode,
     isEliminationMode,
@@ -962,7 +970,7 @@ export function useSingleplayerGame(
     setRoundIndex(0);
     setTargetColor(null);
     setTargetColors(
-      isFlagMode || isCartoonMode || isBrandMode
+      isFlagMode || isCartoonMode || isPokemonMode || isBrandMode
         ? createTargetColors(
             effectiveDifficulty.id,
             gameMode.id,
@@ -991,6 +999,7 @@ export function useSingleplayerGame(
     hintsEnabled,
     isBrandMode,
     isCartoonMode,
+    isPokemonMode,
     isEliminationMode,
     isEndlessMode,
     isFlagMode,

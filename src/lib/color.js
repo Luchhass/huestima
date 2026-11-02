@@ -4,6 +4,7 @@ import {
   CARTOON_OPTIONS,
   getCartoonOption,
 } from "./cartoons";
+import { POKEMON_OPTIONS } from "./pokemon";
 import { getDifficultyOption, hasDifficultyControl } from "./difficulty";
 import { DEFAULT_FLAG_ID, FLAG_OPTIONS, getFlagOption } from "./flags";
 import { BRAND_OPTIONS, DEFAULT_BRAND_ID, getBrandOption } from "./brands";
@@ -139,6 +140,8 @@ export function isCartoonColor(color) {
   return color?.type === GAME_MODE_IDS.CARTOON && Boolean(color?.cartoonId);
 }
 
+export function isPokemonColor(color) { return color?.type === GAME_MODE_IDS.CARTOON && Boolean(color?.pokemonId); }
+
 export function isBrandColor(color) {
   return color?.type === "brand" && Boolean(color?.brandId);
 }
@@ -179,7 +182,7 @@ function averageRgbHex(firstHex, secondHex) {
 export function gradientBackground(color) {
   if (isFlagColor(color)) return color.hex;
   if (isBrandColor(color)) return color.backgroundHex || "#e3e3e3";
-  if (isCartoonColor(color)) {
+  if (isCartoonColor(color) || isPokemonColor(color)) {
     return "#000000";
   }
   if (!isGradientColor(color)) return color?.hex || color;
@@ -190,7 +193,7 @@ export function gradientBackground(color) {
 export function colorToneHex(color) {
   if (isFlagColor(color)) return color.hex;
   if (isBrandColor(color)) return color.backgroundHex || "#e3e3e3";
-  if (isCartoonColor(color)) return color.toneHex || color.hex || "#000000";
+  if (isCartoonColor(color) || isPokemonColor(color)) return color.toneHex || color.hex || "#000000";
   if (!isGradientColor(color)) {
     const tone = color?.toneHex || color?.hex || color;
     return typeof tone === "string" ? tone : "#000000";
@@ -402,6 +405,27 @@ function mergeCartoonPaint(cartoon, color) {
 }
 
 export function withCartoonHex(color) {
+  if (color?.pokemonId) {
+    const pokemon = POKEMON_OPTIONS.find((item) => item.id === color.pokemonId) || POKEMON_OPTIONS[0];
+    const clean = withHex({ ...pokemon.paint, ...color });
+    return {
+      ...pokemon,
+      ...clean,
+      type: GAME_MODE_IDS.CARTOON,
+      pokemonId: pokemon.id,
+      pokemonName: pokemon.name,
+      imagePath: pokemon.imagePath,
+      assetPath: pokemon.assetPath,
+      scenePath: pokemon.scenePath,
+      baseScenePath: pokemon.baseScenePath,
+      originalScenePath: pokemon.originalScenePath,
+      maskPath: pokemon.maskPath,
+      paintBase: pokemon.paint,
+      layers: pokemon.layers,
+      hex: clean.hex,
+      toneHex: clean.hex,
+    };
+  }
   const cartoon = getCartoonOption(color?.cartoonId || DEFAULT_CARTOON_ID);
 
   if (!cartoon) {
@@ -439,7 +463,22 @@ export function withCartoonHex(color) {
   };
 }
 
+export function randomPokemonTargetColors(count, random = Math.random) {
+  const shuffled = [...POKEMON_OPTIONS];
+  for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+  return Array.from({ length: count }, (_, i) => withCartoonHex({ pokemonId: shuffled[i % shuffled.length].id }));
+}
+
 export function withCartoonDifficultyHex(guessColor, targetColor, difficulty) {
+  if (isPokemonColor(targetColor)) {
+    return withCartoonHex({
+      ...guessColor,
+      pokemonId: targetColor.pokemonId,
+      h: channelValue({ difficulty, channel: "h", targetValue: targetColor.h, guessValue: guessColor?.h, fallbackValue: 210 }),
+      s: channelValue({ difficulty, channel: "s", targetValue: targetColor.s, guessValue: guessColor?.s, fallbackValue: 50 }),
+      v: channelValue({ difficulty, channel: "v", targetValue: targetColor.v, guessValue: guessColor?.v, fallbackValue: 78 }),
+    });
+  }
   if (!targetColor || !isCartoonColor(targetColor)) {
     return withCartoonHex(guessColor);
   }
@@ -599,6 +638,9 @@ export function createDefaultCartoonGuess(
     targetOrCartoonId && typeof targetOrCartoonId === "object"
       ? targetOrCartoonId
       : null;
+  if (isPokemonColor(targetColor)) {
+    return withCartoonDifficultyHex({ pokemonId: targetColor.pokemonId, ...difficultyDefaultGuess(difficulty) }, targetColor, difficulty);
+  }
   const cartoonId = targetColor?.cartoonId || targetOrCartoonId || DEFAULT_CARTOON_ID;
   const defaultGuess = difficultyDefaultGuess(difficulty);
   const guessColor = {
@@ -791,6 +833,8 @@ export function getVisualLabel(color, locale = "en") {
   if (isFlagColor(color)) {
     return pickLocalizedLabel(color.flagLabels, locale, color.flagLabel || "");
   }
+
+  if (isPokemonColor(color)) return color.pokemonName || "Pokémon";
 
   if (isCartoonColor(color)) {
     return pickLocalizedLabel(

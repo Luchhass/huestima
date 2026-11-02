@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Image from "next/image";
 import HomeCardArtwork from "./HomeCardArtwork";
 import gsap from "gsap";
 import PushNotification from "@/components/ui/PushNotification";
@@ -52,6 +53,7 @@ import { getAvailableGameModeOptions } from "@/lib/gameMode";
 import { FLAG_DIFFICULTY_OPTIONS } from "@/lib/flags";
 import { CARTOON_PACKS } from "@/lib/cartoons";
 import { TEAM_OPTIONS } from "@/lib/teams";
+import { POKEMON_OPTIONS, POKEDEX_STORAGE_KEY } from "@/lib/pokemon";
 import { playSoundFile, preloadSoundFile } from "@/lib/sound";
 import { trackEvent } from "@/lib/analytics";
 import {
@@ -292,6 +294,12 @@ export default function HomeCard({
   const [cartoonCharacterIndex, setCartoonCharacterIndex] = useState(0);
   const [cartoonBurst, setCartoonBurst] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [pokedex, setPokedex] = useState({});
+  useEffect(() => {
+    const load = () => { try { setPokedex(JSON.parse(localStorage.getItem(POKEDEX_STORAGE_KEY) || "{}")); } catch { setPokedex({}); } };
+    load(); window.addEventListener("huestima-pokedex-update", load); window.addEventListener("storage", load);
+    return () => { window.removeEventListener("huestima-pokedex-update", load); window.removeEventListener("storage", load); };
+  }, []);
   const [deferViewReveal, setDeferViewReveal] = useState(false);
   const [isStartingSingleplayer, setIsStartingSingleplayer] = useState(false);
   const contentRef = useRef(null);
@@ -312,6 +320,7 @@ export default function HomeCard({
   const isCartoonPool = view === "cartoonPool";
   const isFlagPool = view === "flagPool";
   const isTeamPool = view === "teamPool";
+  const isPokedexView = view === "pokedex";
   const availableModeIds = (isMultiplayer ? multiplayerGameModeOptions : singleplayerGameModeOptions).map(({ id }) => id).join(",");
   useEffect(() => {
     const ids = availableModeIds.split(",").filter(Boolean);
@@ -329,13 +338,11 @@ export default function HomeCard({
       cartoonPoolReturnView === "singleplayer");
   const isExpandedCard =
     !isStartingSingleplayer &&
-    (isSingleplayerTallView || (isMultiplayer && isMultiplayerTallStep));
-  const cardHeight = useResponsiveCardHeight(
-    isExpandedCard || isCartoonPool || isFlagPool,
-  );
+    (isSingleplayerTallView || isPokedexView || (isMultiplayer && isMultiplayerTallStep));
+  const cardHeight = useResponsiveCardHeight(isExpandedCard || isCartoonPool || isFlagPool || isPokedexView);
   const cardStyle = cardHeight ? { height: cardHeight } : undefined;
   const homeSection = t(`home.sections.${cleanGameFamily}`);
-  const homeTitle = homeSection?.title || t(`gameFamily.${cleanGameFamily}`);
+  const homeTitle = homeSection?.title || (cleanGameFamily === "pokemon" ? "Pokémon" : t(`gameFamily.${cleanGameFamily}`));
   const homeParagraphs = Array.isArray(homeSection?.paragraphs)
     ? homeSection.paragraphs
     : t("home.paragraphs");
@@ -382,7 +389,6 @@ export default function HomeCard({
       { at: 0.46, duration: 0.69, y: 121, x: 4, scale: 0.91, ease: "power4.out" },
       { at: 0.54, duration: 0.6, y: 96, x: -3, scale: 0.96, ease: "back.out(1.1)" },
     ];
-
     let tween = null;
 
     const stopTween = () => {
@@ -397,7 +403,14 @@ export default function HomeCard({
 
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
-        gsap.set(sticker.children, { clearProps: "all" });
+        if (cleanGameFamily === GAME_FAMILY_IDS.POKEMON) {
+          gsap.set(sticker.querySelectorAll(".pokemon-home-roster__character"), {
+            autoAlpha: 1,
+            clearProps: "transform",
+          });
+        } else {
+          gsap.set(sticker.children, { clearProps: "all" });
+        }
         return;
       }
 
@@ -432,23 +445,55 @@ export default function HomeCard({
         return;
       }
 
+      if (cleanGameFamily === GAME_FAMILY_IDS.POKEMON) {
+        const pieces = Array.from(sticker.querySelectorAll(".pokemon-home-roster__character"));
+        gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
+        tween = gsap.timeline();
+
+        pieces.forEach((piece, index) => {
+          const preset = brandPiecePresets[index % brandPiecePresets.length];
+          tween.fromTo(
+            piece,
+            { autoAlpha: 0, x: preset.x, y: preset.y, scale: preset.scale },
+            {
+              autoAlpha: 1,
+              x: 0,
+              y: 0,
+              scale: 1,
+              duration: preset.duration,
+              ease: preset.ease,
+              overwrite: true,
+              clearProps: "transform",
+            },
+            preset.at,
+          );
+        });
+        return;
+      }
+
       if (cleanGameFamily === GAME_FAMILY_IDS.COLOR) {
-        const colorWave = sticker.querySelector(".home-color-spectrum__shell");
+        const colorWaves = Array.from(sticker.querySelectorAll(".home-color-spectrum__shell"));
         gsap.set(sticker, { autoAlpha: 1, yPercent: 0 });
 
-        if (!colorWave) return;
+        if (!colorWaves.length) return;
 
-        tween = gsap.fromTo(
-          colorWave,
-          { y: 500 },
-          {
-            y: 0,
-            duration: event.detail?.duration ?? 0.9,
-            ease: event.detail?.ease ?? "power4.out",
-            overwrite: true,
-            onComplete: () => gsap.set(colorWave, { clearProps: "transform" }),
-          },
-        );
+        tween = gsap.timeline({
+          onComplete: () => gsap.set(colorWaves, { clearProps: "transform" }),
+        });
+        colorWaves.forEach((wave) => {
+          const startsAbove = wave.classList.contains("home-color-spectrum__shell--secondary");
+          tween.fromTo(
+            wave,
+            { y: startsAbove ? -500 : 500 },
+            {
+              y: 0,
+              duration: event.detail?.duration ?? 0.9,
+              ease: event.detail?.ease ?? "power4.out",
+              overwrite: true,
+            },
+            0,
+          );
+        });
         return;
       }
 
@@ -485,6 +530,172 @@ export default function HomeCard({
       window.removeEventListener(SCREEN_REVEAL_START_EVENT, handleRevealStart);
       window.removeEventListener(SCREEN_FADE_OUT_EVENT, handleFadeOut);
       stopTween();
+    };
+  }, [cleanGameFamily, view]);
+
+  useLayoutEffect(() => {
+    if (view !== "home" || ![GAME_FAMILY_IDS.POKEMON, GAME_FAMILY_IDS.BRAND].includes(cleanGameFamily)) return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const sticker = stickerRef.current;
+    if (!sticker) return undefined;
+
+    const pieces = Array.from(sticker.querySelectorAll(".home-artwork-drag-piece"));
+    if (!pieces.length) return undefined;
+
+    const states = new Map(pieces.map((piece) => [piece, {
+      baseTransform: window.getComputedStyle(piece).transform,
+      inlineTransform: piece.style.transform,
+      inlineTranslate: piece.style.translate,
+      inlineZIndex: piece.style.zIndex,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      dragX: 0,
+      dragY: 0,
+      followX: 0,
+      followY: 0,
+      targetFollowX: 0,
+      targetFollowY: 0,
+      rotation: 0,
+      targetRotation: 0,
+    }]));
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    let tiltFrame = 0;
+
+    const setTilt = (piece, event) => {
+      const rect = piece.getBoundingClientRect();
+      const x = clamp((event.clientX - (rect.left + rect.width / 2)) / Math.max(rect.width / 2, 1), -1, 1);
+      const y = clamp((event.clientY - (rect.top + rect.height / 2)) / Math.max(rect.height / 2, 1), -1, 1);
+      const state = states.get(piece);
+      const dx = event.clientX - (rect.left + rect.width / 2);
+      const dy = event.clientY - (rect.top + rect.height / 2);
+      const distance = Math.hypot(dx, dy);
+      const influence = Math.max(0, 1 - distance / 360);
+      const pull = influence * influence * 12;
+      state.targetFollowX = distance ? (dx / distance) * pull : 0;
+      state.targetFollowY = distance ? (dy / distance) * pull : 0;
+      state.targetRotation = (x * 0.7 - y * 0.3) * 6 * influence;
+    };
+
+    const renderTilt = () => {
+      tiltFrame = 0;
+      let stillMoving = false;
+      pieces.forEach((piece) => {
+        const state = states.get(piece);
+        state.rotation += (state.targetRotation - state.rotation) * 0.14;
+        state.followX += (state.targetFollowX - state.followX) * 0.22;
+        state.followY += (state.targetFollowY - state.followY) * 0.22;
+        if (Math.abs(state.targetRotation - state.rotation) < 0.008) state.rotation = state.targetRotation;
+        else stillMoving = true;
+        if (Math.abs(state.targetFollowX - state.followX) < 0.03) state.followX = state.targetFollowX;
+        else stillMoving = true;
+        if (Math.abs(state.targetFollowY - state.followY) < 0.03) state.followY = state.targetFollowY;
+        else stillMoving = true;
+
+        if (state.rotation === 0) {
+          piece.style.transform = state.inlineTransform;
+        } else {
+          const base = state.baseTransform === "none" ? "" : `${state.baseTransform} `;
+          piece.style.transform = `${base}rotate(${state.rotation}deg)`;
+        }
+        piece.style.translate = `${state.dragX + state.followX}px ${state.dragY + state.followY}px`;
+      });
+      if (stillMoving) tiltFrame = window.requestAnimationFrame(renderTilt);
+    };
+
+    const queueTiltRender = () => {
+      if (!tiltFrame) tiltFrame = window.requestAnimationFrame(renderTilt);
+    };
+
+    const handleWindowPointerMove = (event) => {
+      if (event.pointerType === "touch") return;
+      pieces.forEach((piece) => setTilt(piece, event));
+      queueTiltRender();
+    };
+
+    const handleWindowBlur = () => {
+      pieces.forEach((piece) => {
+        const state = states.get(piece);
+        state.targetRotation = 0;
+        state.targetFollowX = 0;
+        state.targetFollowY = 0;
+        if (state.pointerId !== null) {
+          if (piece.hasPointerCapture(state.pointerId)) piece.releasePointerCapture(state.pointerId);
+          state.pointerId = null;
+          delete piece.dataset.dragging;
+          piece.style.transition = "";
+        }
+        piece.style.zIndex = state.inlineZIndex;
+      });
+      queueTiltRender();
+    };
+
+    const handlePointerDown = (event) => {
+      if (event.button !== 0 || event.pointerType === "touch") return;
+      const piece = event.currentTarget;
+      const state = states.get(piece);
+      state.pointerId = event.pointerId;
+      state.startX = event.clientX;
+      state.startY = event.clientY;
+      piece.dataset.dragging = "true";
+      piece.style.zIndex = String(100 + pieces.indexOf(piece));
+      piece.style.transition = "none";
+      piece.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    };
+
+    const handleDragStart = (event) => event.preventDefault();
+
+    const handlePiecePointerMove = (event) => {
+      const piece = event.currentTarget;
+      const state = states.get(piece);
+      if (state.pointerId !== event.pointerId) return;
+      state.dragX = clamp(state.dragX + event.clientX - state.startX, -75, 75);
+      state.dragY = clamp(state.dragY + event.clientY - state.startY, -65, 65);
+      state.startX = event.clientX;
+      state.startY = event.clientY;
+      piece.style.translate = `${state.dragX + state.followX}px ${state.dragY + state.followY}px`;
+    };
+
+    const handlePointerUp = (event) => {
+      const piece = event.currentTarget;
+      const state = states.get(piece);
+      if (state.pointerId !== event.pointerId) return;
+      state.pointerId = null;
+      delete piece.dataset.dragging;
+      piece.style.transition = "";
+      if (piece.hasPointerCapture(event.pointerId)) piece.releasePointerCapture(event.pointerId);
+      piece.style.zIndex = state.inlineZIndex;
+    };
+
+    window.addEventListener("pointermove", handleWindowPointerMove);
+    window.addEventListener("blur", handleWindowBlur);
+    pieces.forEach((piece) => {
+      piece.addEventListener("pointerdown", handlePointerDown);
+      piece.addEventListener("pointermove", handlePiecePointerMove);
+      piece.addEventListener("pointerup", handlePointerUp);
+      piece.addEventListener("pointercancel", handlePointerUp);
+      piece.addEventListener("dragstart", handleDragStart);
+    });
+
+    return () => {
+      window.removeEventListener("pointermove", handleWindowPointerMove);
+      window.removeEventListener("blur", handleWindowBlur);
+      if (tiltFrame) window.cancelAnimationFrame(tiltFrame);
+      pieces.forEach((piece) => {
+        piece.removeEventListener("pointerdown", handlePointerDown);
+        piece.removeEventListener("pointermove", handlePiecePointerMove);
+        piece.removeEventListener("pointerup", handlePointerUp);
+        piece.removeEventListener("pointercancel", handlePointerUp);
+        piece.removeEventListener("dragstart", handleDragStart);
+        const state = states.get(piece);
+        piece.style.transform = state.inlineTransform;
+        piece.style.translate = state.inlineTranslate;
+        piece.style.zIndex = state.inlineZIndex;
+        piece.style.transition = "";
+        delete piece.dataset.dragging;
+      });
     };
   }, [cleanGameFamily, view]);
 
@@ -889,6 +1100,16 @@ export default function HomeCard({
           data-route-transition-scope
           className={`home-card-content home-card-content--${view} relative z-10 flex h-full flex-col`}
         >
+          {cleanGameFamily === GAME_FAMILY_IDS.POKEMON && view === "home" && (
+            <span data-screen-reveal className="pokedex-reveal-shell absolute right-[-6px] top-[-1.5rem] z-20 h-28 w-28 sm:right-[-4px] sm:top-[-1rem] sm:h-32 sm:w-32">
+              <button type="button" onClick={() => changeView("pokedex")} aria-label="Open Pokédex" className="pokedex-trigger">
+                <span className="pokedex-trigger__artwork"><span className="pokedex-reveal-artwork">
+                  <Image src="/game-modes/pokemon/ui/Pokedex-closed.png" alt="" width={465} height={550} sizes="128px" className="pokedex-trigger__image pokedex-trigger__image--closed" />
+                  <Image src="/game-modes/pokemon/ui/Pokedex-open.png" alt="" width={710} height={637} sizes="128px" className="pokedex-trigger__image pokedex-trigger__image--open" />
+                </span></span>
+              </button>
+            </span>
+          )}
           {view === "home" ? (
             <>
                   <div data-screen-reveal className="home-copy max-w-[23.5rem]">
@@ -908,6 +1129,7 @@ export default function HomeCard({
                     ))}
                   </div>
 
+
                   <div
                     data-screen-reveal
                     className="home-actions relative z-10 mt-auto self-start"
@@ -923,6 +1145,36 @@ export default function HomeCard({
                   </div>
 
             </>
+          ) : isPokedexView ? (
+            <section data-screen-reveal className="relative flex h-full min-h-0 flex-col" aria-label="Pokédex">
+              <header className="relative mb-5 flex shrink-0 items-end gap-3 border-b border-white/10 pb-4 pr-12">
+                <h1 className="text-[clamp(2.3rem,9.2vw,3.2rem)] font-semibold lowercase leading-[0.9] tracking-normal text-white sm:text-[4.05rem]">Pokédex</h1>
+                <div className="text-base font-medium tabular-nums text-white/55">{Object.keys(pokedex).length}<span className="px-1 text-current">/</span>{POKEMON_OPTIONS.length}</div>
+                <CardCloseButton onClick={() => changeView("home")} label={t("common.backHome")} className="absolute right-0 top-0 size-8 bg-transparent hover:bg-white/10 sm:size-9" iconClassName="size-5 sm:size-6" />
+              </header>
+              <div className="grid min-h-0 flex-1 grid-cols-4 content-start gap-2 overflow-y-auto pr-1 sm:gap-2.5">
+                {POKEMON_OPTIONS.map((pokemon) => {
+                  const caught = pokedex[pokemon.id];
+                  return (
+                    <article
+                      key={pokemon.id}
+                      className={`flex aspect-[1/1.12] min-h-[88px] min-w-0 flex-col items-center gap-1.5 rounded-xl p-2 text-center sm:p-3 ${caught ? "bg-white/[0.075]" : "bg-white/[0.035]"}`}
+                    >
+                      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+                        {caught ? (
+                          <Image src={pokemon.imagePath} alt={pokemon.name} width={96} height={96} sizes="96px" className="h-full max-h-16 w-full object-contain" />
+                        ) : (
+                          <span aria-hidden="true" className="text-2xl font-light text-white/20 sm:text-3xl">?</span>
+                        )}
+                      </div>
+                      <span className={`block w-full truncate text-[0.65rem] font-medium leading-tight sm:text-xs ${caught ? "text-white/85" : "tabular-nums text-white/35"}`}>
+                        {caught ? pokemon.name : `#${pokemon.id}`}
+                      </span>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
           ) : isCartoonPool ? (
             <CartoonPoolPicker
               value={cartoonIds}

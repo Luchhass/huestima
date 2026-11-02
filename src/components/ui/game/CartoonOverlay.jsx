@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { isCartoonColor } from "@/lib/color";
+import { isCartoonColor, isPokemonColor } from "@/lib/color";
 import CartoonCanvas from "./CartoonCanvas";
 
 const VARIANT_CLASSES = {
@@ -52,6 +52,16 @@ export default function CartoonOverlay({
   const sceneObjectPosition = color?.sceneObjectPosition || "50%";
   const isSurfaceReady = readySurfacePath === imagePath;
   const variantStyle = VARIANT_CLASSES[variant] || VARIANT_CLASSES.reference;
+  const pokemonPaintBase = color?.paintBase || color?.paint || {};
+  const pokemonHueDelta = ((Number(color?.h || 0) - Number(pokemonPaintBase.h || 0) + 540) % 360) - 180;
+  const pokemonSaturationScale = Math.min(
+    3,
+    Math.max(0.15, Number(color?.s ?? pokemonPaintBase.s ?? 100) / Math.max(1, Number(pokemonPaintBase.s ?? 100))),
+  );
+  const pokemonBrightnessScale = Math.min(
+    2.5,
+    Math.max(0.25, Number(color?.v ?? pokemonPaintBase.v ?? 100) / Math.max(1, Number(pokemonPaintBase.v ?? 100))),
+  );
   const scenePlacementStyle =
     slice === "top"
       ? {
@@ -121,7 +131,8 @@ export default function CartoonOverlay({
     setReadySurfacePath(null);
   }, [imagePath]);
 
-  if (!isCartoonColor(color) || !imagePath) return null;
+  if (isPokemonColor(color) && !isSceneImage) return <span aria-hidden="true" className={`pointer-events-none absolute inset-0 z-[1] flex items-center justify-center rounded-[inherit] bg-black ${className}`}><Image src={color.imagePath} alt="" fill unoptimized className="object-contain p-5" sizes="400px" /></span>;
+  if ((!isCartoonColor(color) && !isPokemonColor(color)) || !imagePath) return null;
 
   if (isSceneImage) {
     return (
@@ -130,19 +141,24 @@ export default function CartoonOverlay({
         className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden rounded-[inherit] ${className}`}
         style={{
           borderRadius: "inherit",
-          backgroundColor: color.hex || "transparent",
+          backgroundColor: isPokemonColor(color) ? "#000000" : color.hex || "transparent",
         }}
       >
         <span className="absolute" style={scenePlacementStyle}>
           <Image
-            src={baseScenePath || imagePath}
+            src={isPokemonColor(color) ? originalScenePath || imagePath : baseScenePath || imagePath}
             alt=""
             fill
             sizes="(max-width: 640px) 100vw, 500px"
             unoptimized
             onError={() => setHasImageError(true)}
             className={`object-cover ${isSurfaceReady ? "invisible" : "visible"}`}
-            style={{ objectPosition: sceneObjectPosition }}
+            style={{
+              objectPosition: sceneObjectPosition,
+              filter: isPokemonColor(color)
+                ? `hue-rotate(${pokemonHueDelta}deg) saturate(${pokemonSaturationScale}) brightness(${pokemonBrightnessScale})`
+                : undefined,
+            }}
           />
           {!hasImageError && useCanvas && originalScenePath && baseScenePath && (
             <CartoonCanvas
@@ -177,7 +193,7 @@ export default function CartoonOverlay({
               }}
             />
           )}
-          <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />
+          {!isPokemonColor(color) && <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%,rgba(0,0,0,0.12))]" />}
         </span>
       </span>
     );

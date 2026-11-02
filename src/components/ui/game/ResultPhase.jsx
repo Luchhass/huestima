@@ -10,6 +10,7 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isFlagColor,
   isGradientColor,
@@ -75,7 +76,7 @@ function formatHsb(color) {
     return `H${Math.round(color.left.h)} -> H${Math.round(color.right.h)}`;
   }
 
-  if (isFlagColor(color) || isBrandColor(color)) {
+  if (isFlagColor(color) || isBrandColor(color) || isPokemonColor(color)) {
     return `H${Math.round(color.h)} S${Math.round(color.s)} B${Math.round(color.v)}`;
   }
 
@@ -909,8 +910,8 @@ export default function ResultPhase({
 
   const guessTone = swatchToneClasses(colorToneHex(result.guess));
   const targetTone = swatchToneClasses(colorToneHex(result.target));
-  const isCartoonGuessResult = isCartoonColor(result.guess);
-  const isCartoonTargetResult = isCartoonColor(result.target);
+  const isCartoonGuessResult = isCartoonColor(result.guess) || isPokemonColor(result.guess);
+  const isCartoonTargetResult = isCartoonColor(result.target) || isPokemonColor(result.target);
   const isBrandGuessResult = isBrandColor(result.guess);
   const isBrandTargetResult = isBrandColor(result.target);
   const brandResultTextStyle = {

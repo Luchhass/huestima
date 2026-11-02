@@ -40,7 +40,7 @@ const nextConfig = {
         ],
       },
       {
-        source: "/og-:mode.png",
+        source: "/social/og-:mode.png",
         headers: [
           {
             key: "Cache-Control",

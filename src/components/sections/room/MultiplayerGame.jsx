@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { GAME_MODE_IDS, ROUND_COUNT } from "@/lib/constants";
 import {
   isCartoonFamily,
+  isPokemonFamily,
   isLogoFamily,
   isFlagFamily,
   normalizeGameFamily,
@@ -17,6 +18,7 @@ import { GAME_PHASES } from "@/hooks/useSingleplayerGame";
 import { useMultiplayerGame } from "@/hooks/useMultiplayerGame";
 import { trackMatchEnd, trackMatchStart } from "@/lib/analytics";
 import { upsertMatchHistoryEntry } from "@/lib/matchHistory";
+import { recordPokemonScore } from "@/lib/pokemon";
 import { releaseVisualRenderService } from "@/lib/cartoonRenderService";
 import GameCardShell from "@/components/ui/game/GameCardShell";
 import IntroPhase from "@/components/ui/game/IntroPhase";
@@ -120,12 +122,13 @@ export default function MultiplayerGame({
   const isPatternMode = game.gameMode.id === GAME_MODE_IDS.PATTERN;
   const isOddMode = game.gameMode.id === GAME_MODE_IDS.ODD;
   const isCartoonMode = isCartoonFamily(cleanGameFamily);
+  const isPokemonMode = isPokemonFamily(cleanGameFamily);
   const isBrandMode = isLogoFamily(cleanGameFamily);
   const visualPreloadTargets = useMemo(() => {
-    if (!isFlagMode && !isCartoonMode && !isBrandMode) return [];
+    if (!isFlagMode && !isCartoonMode && !isPokemonMode && !isBrandMode) return [];
     const nextTargets = game.targetColors.slice(game.roundIndex, game.roundIndex + 2);
     return nextTargets.length ? nextTargets : game.targetColor ? [game.targetColor] : [];
-  }, [game.roundIndex, game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode]);
+  }, [game.roundIndex, game.targetColor, game.targetColors, isBrandMode, isCartoonMode, isFlagMode, isPokemonMode]);
   const [renderedPhase, setRenderedPhase] = useState(null);
   const [isShowcaseWidgetExiting, setIsShowcaseWidgetExiting] = useState(false);
   const [isShowcaseWidgetEntering, setIsShowcaseWidgetEntering] = useState(false);
@@ -139,12 +142,13 @@ export default function MultiplayerGame({
   const oddTransitioningRef = useRef(false);
   const isPageUnloadRef = useRef(false);
   const historySavedRef = useRef(false);
+  const recordedPokemonResultsRef = useRef(new Set());
   const usesShowcaseGuessChrome =
-    game.isRushMode && (isFlagMode || isCartoonMode);
+    game.isRushMode && (isFlagMode || isCartoonMode || isPokemonMode);
   const usesShowcaseTransition =
     cleanGameFamily !== "color" && !game.isRushMode && !isOddMode;
   const usesExternalGuessChrome =
-    (isFlagMode || isCartoonMode) && renderedPhase === GAME_PHASES.GUESS;
+    (isFlagMode || isCartoonMode || isPokemonMode) && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseGuessPhase =
     usesShowcaseGuessChrome && renderedPhase === GAME_PHASES.GUESS;
   const isRenderedShowcaseResultPhase = renderedPhase === GAME_PHASES.RESULT;
@@ -162,13 +166,13 @@ export default function MultiplayerGame({
       : 0;
 
   const visualPreload = useVisualAssetPreload(
-    isFlagMode || isCartoonMode || isBrandMode,
+    isFlagMode || isCartoonMode || isPokemonMode || isBrandMode,
     visualPreloadTargets,
   );
   useMusicScene(
     renderedPhase === null || renderedPhase === GAME_PHASES.INTRO
       ? "silent"
-      : isCartoonMode
+      : isCartoonMode || isPokemonMode
         ? MUSIC_SCENES.CARTOON_GAME
         : MUSIC_SCENES.GAME,
   );
@@ -176,6 +180,17 @@ export default function MultiplayerGame({
   useEffect(() => {
     return () => releaseVisualRenderService();
   }, []);
+
+  useEffect(() => {
+    if (!isPokemonMode) return;
+    for (const result of game.results || []) {
+      const key = `${roomCode}:${playerId}:${result?.roundIndex ?? result?.round}:${result?.target?.pokemonId}`;
+      if (result?.score > 0 && result.target?.pokemonId && !recordedPokemonResultsRef.current.has(key)) {
+        recordedPokemonResultsRef.current.add(key);
+        recordPokemonScore(result.target.pokemonId, result.score);
+      }
+    }
+  }, [game.results, isPokemonMode, playerId, roomCode]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -565,7 +580,7 @@ export default function MultiplayerGame({
             ? "#3f3f46"
             : renderedPhase === GAME_PHASES.GUESS && game.isBlendMode
               ? "#000000"
-              : isLogoFamily(cleanGameFamily)
+                : isLogoFamily(cleanGameFamily) || isPokemonMode
                 ? "#000000"
                 : null
         }
@@ -584,7 +599,7 @@ export default function MultiplayerGame({
             : ""
         }`}
         cartoonOverlayProps={
-          isCartoonMode
+          isCartoonMode || isPokemonMode
             ? {
                 variant:
                   renderedPhase === GAME_PHASES.GUESS ? "guess" : "reference",

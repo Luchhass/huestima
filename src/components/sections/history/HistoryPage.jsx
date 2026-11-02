@@ -35,6 +35,7 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isFlagColor,
   readableTone,
@@ -84,7 +85,7 @@ function colorTitleLabel(color, locale) {
     return `${color.left.hex} / ${color.right.hex}`;
   }
 
-  if (isFlagColor(color) || isCartoonColor(color) || isBrandColor(color)) {
+  if (isFlagColor(color) || isCartoonColor(color) || isPokemonColor(color) || isBrandColor(color)) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
@@ -130,7 +131,7 @@ function RoundTiles({ results = [], locale, t, hideScores = false }) {
             />
           )}
 
-          {isCartoonColor(result.target) && (
+          {(isCartoonColor(result.target) || isPokemonColor(result.target)) && (
             <CartoonOverlay
               color={result.guess}
               variant="tile"

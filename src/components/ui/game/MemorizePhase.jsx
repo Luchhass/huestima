@@ -33,7 +33,7 @@ export default function MemorizePhase({
   const roundRef = useRef(null);
   const brandRef = useRef(null);
   const progressRef = useRef(null);
-  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "pokemon" || gameFamily === "flag";
   const isDecoyTarget = isDecoyColor(targetColor);
   const topColor = isDecoyTarget && targetColor.targetPosition === "bottom"
     ? targetColor.decoy

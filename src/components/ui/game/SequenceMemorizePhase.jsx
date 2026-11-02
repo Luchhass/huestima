@@ -32,7 +32,7 @@ export default function SequenceMemorizePhase({
   const lastSecondRef = useRef(Math.ceil(durationMs / 1000));
   const onColorChangeRef = useRef(onColorChange);
   const onCompleteRef = useRef(onComplete);
-  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "pokemon" || gameFamily === "flag";
 
   const visibleColors = useMemo(
     () => colors.filter(Boolean).slice(0, roundCount),

@@ -37,6 +37,7 @@ import {
   createDefaultGradientGuess,
   createDefaultBlendGuess,
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isFlagColor,
   isGradientColor,
@@ -77,7 +78,7 @@ function createDefaultGuess(difficulty, gameMode, gameFamily, targetColor = null
     return createDefaultFlagGuess(targetColor, difficulty);
   }
 
-  if (isCartoonFamily(gameFamily)) {
+  if (isCartoonFamily(gameFamily) || gameFamily === "pokemon") {
     return createDefaultCartoonGuess(targetColor, difficulty);
   }
 
@@ -112,7 +113,7 @@ function constrainGuessColor(
     return withFlagDifficultyHex(guessColor, targetColor, difficulty);
   }
 
-  if (isCartoonFamily(gameFamily) || isCartoonColor(guessColor)) {
+  if (isCartoonFamily(gameFamily) || gameFamily === "pokemon" || isCartoonColor(guessColor) || isPokemonColor(guessColor)) {
     return withCartoonDifficultyHex(guessColor, targetColor, difficulty);
   }
 

@@ -23,6 +23,8 @@ node_modules/
 # temporary files
 /tmp/
 server/data/
+/data/*.sqlite*
+server/.server-dev*.log
 
 # misc
 .DS_Store

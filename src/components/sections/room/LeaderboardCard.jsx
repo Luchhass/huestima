@@ -9,6 +9,7 @@ import {
   getVisualLabel,
   gradientBackground,
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isFlagColor,
   readableTone,
@@ -43,7 +44,7 @@ function colorTitleLabel(color, locale) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
-  if (isCartoonColor(color) || isBrandColor(color)) {
+  if (isCartoonColor(color) || isPokemonColor(color) || isBrandColor(color)) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
@@ -204,7 +205,7 @@ export default function LeaderboardCard({
                       <FlagOverlay color={result.target} className="z-[1]" />
                     )}
 
-                    {isCartoonColor(result.target) && (
+                    {(isCartoonColor(result.target) || isPokemonColor(result.target)) && (
                       <CartoonOverlay
                         color={result.target}
                         variant="tile"

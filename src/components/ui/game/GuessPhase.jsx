@@ -13,6 +13,7 @@ import { useTranslation } from "@/hooks/useLanguage";
 import {
   colorToneHex,
   isCartoonColor,
+  isPokemonColor,
   isBlendColor,
   isFlagColor,
   isGradientColor,
@@ -92,7 +93,7 @@ export default function GuessPhase({
       ? Math.ceil(Math.max(0, rushRemainingMs) / 1000)
       : null,
   );
-  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "flag";
+  const usesMiddleProgress = gameFamily === "cartoon" || gameFamily === "pokemon" || gameFamily === "flag";
 
   const adminButtonRef = useRef(null);
   const adminButtonCoreRef = useRef(null);
@@ -114,7 +115,7 @@ export default function GuessPhase({
   const isGradientGuess = isGradientColor(guessColor);
   const isBlendGuess = isBlendMode && isBlendColor(guessColor);
   const isFlagGuess = isFlagColor(guessColor);
-  const isCartoonGuess = isCartoonColor(guessColor);
+  const isCartoonGuess = isCartoonColor(guessColor) || isPokemonColor(guessColor);
   const usesExternalControlWidget = isFlagGuess || isCartoonGuess;
   const usesShowcaseGuessLayout =
     showcaseLayoutEnabled && usesExternalControlWidget;

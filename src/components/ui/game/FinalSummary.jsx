@@ -12,6 +12,7 @@ import {
   gradientBackground,
   isBrandColor,
   isCartoonColor,
+  isPokemonColor,
   isFlagColor,
 } from "@/lib/color";
 import { getFinalAssessmentKey } from "@/lib/i18n";
@@ -40,7 +41,7 @@ function colorTitleLabel(color, locale) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
-  if (isCartoonColor(color)) {
+  if (isCartoonColor(color) || isPokemonColor(color)) {
     return `${getVisualLabel(color, locale)} ${color.hex}`.trim();
   }
 
@@ -103,7 +104,7 @@ function SummaryTile({ result, locale, t, isSpotMode = false, hideScore = false 
         />
       )}
 
-      {isCartoonColor(result.target) && (
+      {(isCartoonColor(result.target) || isPokemonColor(result.target)) && (
         <CartoonOverlay
           color={result.guess}
           variant="tile"

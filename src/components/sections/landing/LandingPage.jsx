@@ -49,6 +49,13 @@ const LANDING_CARDS = [
     description: "Remember a character's signature colors and rebuild the palette.",
   },
   {
+    id: "pokemon",
+    href: "/pokemon",
+    className: "landing-card--pokemon",
+    title: "Pokémon",
+    description: "Remember a Pokémon's color, recreate its shade and fill your Pokédex.",
+  },
+  {
     id: "brand",
     href: "/brand",
     className: "landing-card--brand",
@@ -362,7 +369,8 @@ export default function LandingPage() {
             </h1>
             <p className="landing-page__subtitle">
               Chase a color after it disappears, pull the defining shade from a
-              flag, rebuild a cartoon character&apos;s palette, recognize a brand by
+              flag, rebuild a cartoon character&apos;s palette, catch Pokémon by
+              remembering their colors, recognize a brand by
               its signature hue, prove how well you know your team&apos;s colors, or
               test your perception by spotting what breaks a color pattern. Each
               game turns color into a different visual challenge.
@@ -391,7 +399,7 @@ export default function LandingPage() {
                 >
                   <div className="landing-card__canvas">
                     <div className="landing-card__artwork" aria-hidden="true" inert>
-                      <HomeCardArtwork cleanGameFamily={id} />
+                      <HomeCardArtwork cleanGameFamily={id} includePokemonPokedex={id === "pokemon"} />
                     </div>
                     <span className="landing-card__copy">
                       <span className="landing-card__title">{title}</span>

@@ -4,6 +4,7 @@ import test from "node:test";
 import { BRAND_ITEMS, TEAM_ITEMS } from "../shared/brandCatalog.mjs";
 import { CARTOON_ITEMS } from "../shared/cartoonCatalog.mjs";
 import { FLAG_ITEMS } from "../shared/flagCatalog.mjs";
+import { POKEMON_ITEMS } from "../shared/pokemonCatalog.mjs";
 import {
   GAME_FAMILY_MODE_IDS,
   MULTIPLAYER_GAME_FAMILY_MODE_IDS,
@@ -505,6 +506,44 @@ test("every multiplayer family and mode starts with a valid game payload", () =>
   }
 });
 
+test("Pokémon targets carry their image identity through a perfect multiplayer score", () => {
+  const created = createRoom({
+    playerId: "pokemon-host",
+    playerName: "Pokémon host",
+    roomName: "Pokémon test room",
+    visibility: "public",
+    gameMode: "normal",
+    gameFamily: GAME_FAMILIES.POKEMON,
+    difficulty: "normal",
+    roundCount: 3,
+  });
+  assert.equal(created.ok, true);
+
+  const roomCode = created.data.room.code;
+  const started = startRoomGame({ roomCode, playerId: "pokemon-host" });
+  assert.equal(started.ok, true);
+  const room = getRoom(roomCode);
+  const target = room.game.targetColors[0];
+  assert.ok(POKEMON_ITEMS.some((pokemon) => pokemon.id === target.pokemonId));
+  const pokemon = POKEMON_ITEMS.find((item) => item.id === target.pokemonId);
+  assert.equal(target.imagePath, pokemon.imagePath);
+  assert.ok(target.imagePath.startsWith("/game-modes/pokemon/source/"));
+  assert.ok(existsSync(`public${target.imagePath}`));
+  assert.ok(target.scenePath.endsWith(`${target.pokemonId}-scene.webp`));
+  assert.ok(target.maskPath.endsWith(`${target.pokemonId}-scene-mask.png`));
+  assert.ok(target.layers?.some((layer) => layer.maskPath === target.maskPath));
+
+  const result = submitRoundGuess(room, {
+    playerId: "pokemon-host",
+    roundIndex: 0,
+    guessColor: target,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.data.result.score, 10);
+  assert.equal(result.data.result.target.pokemonId, target.pokemonId);
+  assert.equal(result.data.result.guess.pokemonId, target.pokemonId);
+});
+
 test("pattern multiplayer scores the repaired shared board", () => {
   const playerId = `pattern-multiplayer-${Date.now()}`;
   const created = createRoom({
@@ -680,6 +719,10 @@ test("pattern scoring follows repaired puzzle progress", () => {
 });
 
 test("every visual catalog entry has its runtime assets", () => {
+  for (const pokemon of POKEMON_ITEMS) {
+    assertGeneratedAssets("public/game-modes/pokemon/generated", pokemon.id);
+  }
+
   for (const flag of FLAG_ITEMS) {
     assertGeneratedAssets("public/game-modes/flag/generated", flag.id);
   }

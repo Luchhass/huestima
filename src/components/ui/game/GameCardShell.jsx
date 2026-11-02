@@ -11,6 +11,7 @@ import {
   gradientBackground,
   isBrandColor,
   isCartoonColor,
+  isPokemonColor,
   isFlagColor,
 } from "@/lib/color";
 import CartoonOverlay from "./CartoonOverlay";
@@ -36,6 +37,7 @@ export default function GameCardShell({
   const cardHeight = useResponsiveCardHeight(isExpanded, heightMode);
   const isFlagCard = isFlagColor(color);
   const isCartoonCard = isCartoonColor(color);
+  const isPokemonCard = isPokemonColor(color);
   const isBrandCard = isBrandColor(color);
   const background = color ? gradientBackground(color) : null;
   const toneSource = overlayToneSource || color;
@@ -100,8 +102,9 @@ export default function GameCardShell({
         {isCartoonCard && (
           <CartoonOverlay color={color} {...cartoonOverlayProps} />
         )}
+        {isPokemonCard && <CartoonOverlay color={color} {...cartoonOverlayProps} />}
         {isBrandCard && <BrandOverlay color={color} {...brandOverlayProps} />}
-        {(isFlagCard || isCartoonCard || isBrandCard) && visualLabel && !hideVisualLabel && (
+        {(isFlagCard || isCartoonCard || isPokemonCard || isBrandCard) && visualLabel && !hideVisualLabel && (
           <span
             className={`pointer-events-none absolute z-12 max-w-[45%] truncate text-base font-semibold ${
               isBrandCard && Number.isFinite(brandLabelOffset?.base)

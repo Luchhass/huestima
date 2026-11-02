@@ -1,5 +1,6 @@
 import {
   isCartoonColor,
+  isPokemonColor,
   isBrandColor,
   isFlagColor,
   withCartoonHex,
@@ -13,7 +14,7 @@ import { normalizeGameFamily } from "@/lib/gameFamily";
 
 const SHARE_FORMAT_PREFIX = "v2.";
 
-const FAMILY_CODES = { color: "c", flag: "f", cartoon: "t", brand: "b", team: "m", perception: "p" };
+const FAMILY_CODES = { color: "c", flag: "f", cartoon: "t", pokemon: "k", brand: "b", team: "m", perception: "p" };
 const FAMILY_BY_CODE = Object.fromEntries(
   Object.entries(FAMILY_CODES).map(([family, code]) => [code, family]),
 );
@@ -66,6 +67,7 @@ function compactColor(color) {
   }
 
   if (isFlagColor(color)) return ["f", color.flagId, ...compactHsv(color)];
+  if (isPokemonColor(color)) return ["k", color.pokemonId, ...compactHsv(color)];
   if (isCartoonColor(color)) return ["t", color.cartoonId, ...compactHsv(color)];
   if (color?.teamId) return ["m", color.teamId, ...compactHsv(color)];
   if (isBrandColor(color)) return ["b", color.brandId, ...compactHsv(color)];
@@ -103,6 +105,7 @@ function expandColor(value) {
   };
 
   if (type === "f") return withFlagHex({ flagId: idOrHue, ...hsv });
+  if (type === "k") return withCartoonHex({ pokemonId: idOrHue, ...hsv });
   if (type === "t") return withCartoonHex({ cartoonId: idOrHue, ...hsv });
   if (type === "m") return withTeamHex({ teamId: idOrHue, ...hsv });
   if (type === "b") return withBrandHex({ brandId: idOrHue, ...hsv });

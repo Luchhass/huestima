@@ -242,6 +242,7 @@ export const DICTIONARIES = {
             "Recreate the hidden character color while the scene stays unchanged, then see how close your guess is.",
           ],
         },
+        pokemon: { title: "Pokémon", paragraphs: ["A Pokémon appears with a color to remember. Study its shade before it disappears.", "Recreate the hidden color, earn points and add your Pokémon to the Pokédex."] },
         brand: {
           title: "Brand",
           paragraphs: [
@@ -423,9 +424,13 @@ export const DICTIONARIES = {
     },
     gameFamily: {
       label: "Game section",
+      gallery: "Gallery",
+      toons: "Toons",
+      logos: "Logos",
       color: "Color",
       flag: "Flag",
       cartoon: "Cartoon",
+      pokemon: "Pokémon",
       brand: "Brand",
       team: "Teams",
       perception: "Perception",
@@ -492,6 +497,7 @@ export const DICTIONARIES = {
         color: "Study the color, then rebuild it with the controls.",
         flag: "The flag stays fixed; match the color behind it.",
         cartoon: "Use the scene to match the featured character’s color.",
+        pokemon: "Study a Pokémon’s color, recreate it and earn a Pokédex entry.",
         brand: "Read the signature color of a familiar brand logo and reproduce that color without changing the logo itself.",
         team: "Study the defining color of the team crest and recreate it while the crest’s shape and details remain fixed.",
         perception: "Read the visual order in a field of colors and repair the pieces that break it.",
@@ -957,6 +963,7 @@ export const DICTIONARIES = {
             "Sahne sabit kalırken kaybolan karakter rengini yeniden kurar, tahmininin aslına yakınlığını görürsün.",
           ],
         },
+        pokemon: { title: "Pokémon", paragraphs: ["Hatırlaman gereken rengiyle bir Pokémon görürsün. Kaybolmadan önce tonunu incele.", "Gizlenen rengi yeniden oluştur, puan kazan ve Pokémon'u Pokédex'ine ekle."] },
         brand: {
           title: "Marka",
           paragraphs: [
@@ -1138,9 +1145,13 @@ export const DICTIONARIES = {
     },
     gameFamily: {
       label: "Oyun bölümü",
+      gallery: "Galeri",
+      toons: "Toons",
+      logos: "Logos",
       color: "Renk",
       flag: "Bayrak",
       cartoon: "Çizgi Film",
+      pokemon: "Pokémon",
       brand: "Marka",
       team: "Takım",
       perception: "Algı",
@@ -1207,6 +1218,7 @@ export const DICTIONARIES = {
         color: "Rengi incele, sonra kontrollerle yeniden oluştur.",
         flag: "Bayrak sabit kalır; arkasındaki rengi eşleştir.",
         cartoon: "Sahneyi kullan ve öne çıkan karakterin rengini eşleştir.",
+        pokemon: "Pokémon'un rengini incele, yeniden oluştur ve Pokédex'e ekle.",
         brand: "Tanıdık bir marka logosunun karakteristik rengini incele ve logonun kendisini değiştirmeden bu rengi yeniden üret.",
         team: "Takım armasını tanımlayan rengi incele; armanın biçimi ve ayrıntıları sabitken bu rengi yeniden oluştur.",
         perception: "Renk alanındaki görsel düzeni oku ve akışı bozan parçaları doğru yerine taşı.",

@@ -30,6 +30,7 @@ export const GAME_FAMILIES = {
   COLOR: "color",
   FLAG: "flag",
   CARTOON: "cartoon",
+  POKEMON: "pokemon",
   BRAND: "brand",
   TEAM: "team",
   PERCEPTION: "perception",

@@ -6,11 +6,13 @@ import { GAME_FAMILY_IDS } from "@/lib/gameFamily";
 
 export default function HomeCardArtwork({
   cleanGameFamily, view = "home", stickerRef, cartoonCharacterRef,
+  includePokemonPokedex = false,
   cartoonCharacterConfig = { id: "ben", src: "/game-modes/cartoon/ben-10/ben-home-character-new.png", width: 600, height: 1400, imageClassName: "cartoon-home-character--ben" },
   cartoonBurst = null, handleCartoonCharacterKeyDown,
 }) {
   const [perceptionHue, setPerceptionHue] = useState(198);
   const perceptionTileRefs = useRef(new Map());
+  const interactivePieceClass = stickerRef && view === "home" ? "home-artwork-drag-piece" : "";
 
   useEffect(() => {
     const timer = window.setTimeout(() => setPerceptionHue(Math.floor(Math.random() * 360)), 0);
@@ -104,6 +106,7 @@ export default function HomeCardArtwork({
         {(cleanGameFamily === GAME_FAMILY_IDS.TEAM ||
           cleanGameFamily === GAME_FAMILY_IDS.PERCEPTION ||
           cleanGameFamily === GAME_FAMILY_IDS.CARTOON ||
+          cleanGameFamily === GAME_FAMILY_IDS.POKEMON ||
           cleanGameFamily === GAME_FAMILY_IDS.BRAND ||
           cleanGameFamily === GAME_FAMILY_IDS.FLAG ||
           cleanGameFamily === GAME_FAMILY_IDS.COLOR) && (
@@ -119,12 +122,28 @@ export default function HomeCardArtwork({
                   ? "-bottom-8 -right-6 w-[190px] sm:-bottom-6 sm:-right-4 sm:w-[225px]"
                 : cleanGameFamily === GAME_FAMILY_IDS.FLAG
                   ? "inset-0 h-full w-full"
+                : cleanGameFamily === GAME_FAMILY_IDS.POKEMON
+                  ? "-bottom-2 right-[-12px] h-[190px] w-[300px] sm:-bottom-3 sm:right-[-12px] sm:h-[220px] sm:w-[360px]"
                 : cleanGameFamily === GAME_FAMILY_IDS.BRAND
                   ? "bottom-0 right-0 h-[280px] w-[300px] sm:h-[330px] sm:w-[350px]"
                   : "-bottom-8 right-4 w-40 sm:-bottom-12 sm:right-6 sm:w-56"
             }`}
           >
-            {cleanGameFamily === GAME_FAMILY_IDS.COLOR ? (
+            {cleanGameFamily === GAME_FAMILY_IDS.POKEMON ? (
+              <div className={`pokemon-home-roster ${view === "home" ? "pokemon-home-roster--active" : ""} ${stickerRef ? "pokemon-home-roster--gsap" : ""}`}>
+                {includePokemonPokedex && (
+                  <span className="pokemon-home-pokedex" aria-hidden="true">
+                    <Image src="/game-modes/pokemon/ui/Pokedex-closed.png" alt="" width={465} height={550} className="pokemon-home-pokedex__image pokemon-home-pokedex__image--closed" />
+                    <Image src="/game-modes/pokemon/ui/Pokedex-open.png" alt="" width={710} height={637} className="pokemon-home-pokedex__image pokemon-home-pokedex__image--open" />
+                  </span>
+                )}
+                <Image src="/game-modes/pokemon/source/001Bulbasaur_OS_anime.png" alt="" width={600} height={600} className={`pokemon-home-roster__character pokemon-home-roster__character--bulbasaur ${interactivePieceClass}`} priority />
+                <Image src="/game-modes/pokemon/source/039Jigglypuff_OS_anime.png" alt="" width={600} height={600} className={`pokemon-home-roster__character pokemon-home-roster__character--jigglypuff ${interactivePieceClass}`} priority />
+                <Image src="/game-modes/pokemon/source/004Charmander_OS_anime.png" alt="" width={600} height={600} className={`pokemon-home-roster__character pokemon-home-roster__character--charmander ${interactivePieceClass}`} priority />
+                <Image src="/game-modes/pokemon/source/025Pikachu_OS_anime.png" alt="" width={600} height={600} className={`pokemon-home-roster__character pokemon-home-roster__character--pikachu ${interactivePieceClass}`} priority />
+                <Image src="/game-modes/pokemon/source/007Squirtle_OS_anime.png" alt="" width={600} height={600} className={`pokemon-home-roster__character pokemon-home-roster__character--squirtle ${interactivePieceClass}`} priority />
+              </div>
+            ) : cleanGameFamily === GAME_FAMILY_IDS.COLOR ? (
               <svg
                 viewBox="0 0 500 500"
                 preserveAspectRatio="none"
@@ -139,6 +158,10 @@ export default function HomeCardArtwork({
                     d="M 90 520 C 100 474 112 438 148 428 C 186 418 207 399 232 370 C 260 337 285 307 319 315 C 356 325 379 338 410 312 C 441 286 450 251 476 237 C 494 228 510 238 525 251 L 525 525 L 90 525 Z"
                   >
                   </path>
+                  <path
+                    id="home-color-wave-shape-secondary"
+                    d="M -35 -60 H 280 C 274 23 267 41 245 46 C 222 51 210 60 194 75 C 178 91 163 106 143 103 C 120 98 107 91 88 104 C 69 117 64 135 48 142 C 38 146 28 141 19 135 C 12 132 -12 116 -35 120 Z"
+                  />
                   <filter
                     id="home-color-wave-soften"
                     x="-32%"
@@ -146,7 +169,7 @@ export default function HomeCardArtwork({
                     width="164%"
                     height="164%"
                   >
-                    <feGaussianBlur stdDeviation="22" />
+                    <feGaussianBlur stdDeviation="14" />
                   </filter>
                   <filter
                     id="home-color-spectrum-blend"
@@ -156,12 +179,21 @@ export default function HomeCardArtwork({
                     height="116%"
                     colorInterpolationFilters="sRGB"
                   >
-                    <feGaussianBlur stdDeviation="20 2" />
+                    <feGaussianBlur stdDeviation="12 1.5" />
                   </filter>
                   <mask id="home-color-wave-mask" maskUnits="userSpaceOnUse">
                     <rect y="-30" width="500" height="560" fill="black" />
                     <use
                       href="#home-color-wave-shape"
+                      fill="white"
+                      filter="url(#home-color-wave-soften)"
+                    />
+                  </mask>
+                  <mask id="home-color-wave-mask-secondary" maskUnits="userSpaceOnUse">
+                    <rect y="-30" width="500" height="560" fill="black" />
+                    <use
+                      href="#home-color-wave-shape-secondary"
+                      transform="translate(-35 -60) scale(1.1 1.04) translate(35 60)"
                       fill="white"
                       filter="url(#home-color-wave-soften)"
                     />
@@ -188,6 +220,21 @@ export default function HomeCardArtwork({
                   className="home-color-spectrum__shell"
                   filter="url(#home-color-spectrum-blend)"
                   mask="url(#home-color-wave-mask)"
+                >
+                  <rect
+                    className="home-color-spectrum__track"
+                    x="-500"
+                    y="-30"
+                    width="1500"
+                    height="560"
+                    fill="url(#home-color-rgb-spectrum)"
+                  />
+                </g>
+                <g
+                  className="home-color-spectrum__shell home-color-spectrum__shell--secondary"
+                  filter="url(#home-color-spectrum-blend)"
+                  mask="url(#home-color-wave-mask-secondary)"
+                  opacity="0.82"
                 >
                   <rect
                     className="home-color-spectrum__track"
@@ -226,7 +273,7 @@ export default function HomeCardArtwork({
                   width={1024}
                   height={1024}
                   sizes="(max-width: 640px) 72px, 86px"
-                  className="absolute bottom-16 right-[120px] w-[72px] -rotate-[17deg] drop-shadow-[0_11px_16px_rgba(0,0,0,0.42)] sm:bottom-[76px] sm:right-[142px] sm:w-[86px]"
+                  className={`absolute bottom-16 right-[120px] w-[72px] -rotate-[17deg] drop-shadow-[0_11px_16px_rgba(0,0,0,0.42)] sm:bottom-[76px] sm:right-[142px] sm:w-[86px] ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -235,7 +282,7 @@ export default function HomeCardArtwork({
                   width={739}
                   height={709}
                   sizes="(max-width: 640px) 72px, 86px"
-                  className="absolute bottom-12 right-[62px] z-20 w-[72px] rotate-[10deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-14 sm:right-[76px] sm:w-[86px]"
+                  className={`absolute bottom-12 right-[62px] z-20 w-[72px] rotate-[10deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-14 sm:right-[76px] sm:w-[86px] ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -244,7 +291,7 @@ export default function HomeCardArtwork({
                   width={1500}
                   height={1500}
                   sizes="(max-width: 640px) 68px, 82px"
-                  className="absolute bottom-[105px] right-8 z-20 w-[68px] rotate-[18deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-[120px] sm:right-9 sm:w-[82px]"
+                  className={`absolute bottom-[105px] right-8 z-20 w-[68px] rotate-[18deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-[120px] sm:right-9 sm:w-[82px] ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -253,7 +300,7 @@ export default function HomeCardArtwork({
                   width={900}
                   height={900}
                   sizes="(max-width: 640px) 92px, 112px"
-                  className="absolute -bottom-1 right-[135px] w-[92px] -rotate-[13deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:-bottom-1 sm:right-[158px] sm:w-28"
+                  className={`absolute -bottom-1 right-[135px] w-[92px] -rotate-[13deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:-bottom-1 sm:right-[158px] sm:w-28 ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -262,7 +309,7 @@ export default function HomeCardArtwork({
                   width={4096}
                   height={4096}
                   sizes="(max-width: 640px) 84px, 102px"
-                  className="absolute bottom-9 -right-2 z-10 w-[84px] -rotate-[8deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-11 sm:-right-1.5 sm:w-[102px]"
+                  className={`absolute bottom-9 -right-2 z-10 w-[84px] -rotate-[8deg] drop-shadow-[0_12px_17px_rgba(0,0,0,0.42)] sm:bottom-11 sm:-right-1.5 sm:w-[102px] ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -271,7 +318,7 @@ export default function HomeCardArtwork({
                   width={4096}
                   height={4096}
                   sizes="(max-width: 640px) 82px, 102px"
-                  className="absolute bottom-[166px] -right-1 w-[82px] -rotate-[14deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:bottom-[188px] sm:right-0 sm:w-[102px]"
+                  className={`absolute bottom-[166px] -right-1 w-[82px] -rotate-[14deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:bottom-[188px] sm:right-0 sm:w-[102px] ${interactivePieceClass}`}
                   priority
                 />
                 <Image
@@ -280,7 +327,7 @@ export default function HomeCardArtwork({
                   width={400}
                   height={400}
                   sizes="(max-width: 640px) 168px, 202px"
-                  className="absolute -bottom-[60px] -right-8 w-[168px] rotate-[7deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:-bottom-[72px] sm:-right-9 sm:w-[202px]"
+                  className={`absolute -bottom-[60px] -right-8 w-[168px] rotate-[7deg] drop-shadow-[0_13px_18px_rgba(0,0,0,0.42)] sm:-bottom-[72px] sm:-right-9 sm:w-[202px] ${interactivePieceClass}`}
                   priority
                 />
               </>
