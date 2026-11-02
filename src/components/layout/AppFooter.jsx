@@ -202,7 +202,7 @@ export default function AppFooter() {
         className="app-mobile-footer pointer-events-none fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-40 flex items-end justify-between gap-3 text-[10px] font-medium tracking-[0.025em] text-zinc-500 sm:hidden"
       >
         <div className="flex max-w-[55%] min-w-0 flex-col items-start gap-1.5 text-left leading-tight">
-          <span className="pointer-events-auto inline-flex items-center gap-2 whitespace-nowrap">
+          <span className="pointer-events-auto hidden items-center gap-2 whitespace-nowrap sm:inline-flex">
             <BrandLogoMark className="size-4" centerClassName="size-[42%]" />
             <span>huestima.com</span>
           </span>

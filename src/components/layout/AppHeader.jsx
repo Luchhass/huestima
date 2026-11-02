@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Crown, History, Menu, UserRound, X } from "lucide-react";
+import { Bell, ChevronDown, Crown, History, Menu, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import gsap from "gsap";
 import { requestActiveGameExit } from "@/lib/gameNavigation";
@@ -922,20 +922,30 @@ export default function AppHeader() {
                   </div>
                 );
               })}
-              <details name="header-game-family-dropdown" className="group -mb-[0.12em] pb-[0.12em]">
-                <summary data-mobile-menu-nav-item className={`cursor-pointer list-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeCharacterOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>{t("gameFamily.toons")}</summary>
-                <div className="mt-2 flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
-                  {GAME_FAMILY_OPTIONS.filter(({ id }) => ["cartoon", "pokemon"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+              <details name="header-game-family-dropdown" className="group mobile-menu-family-dropdown -mb-[0.12em] pb-[0.12em]">
+                <summary data-mobile-menu-nav-item className={`flex cursor-pointer list-none items-center gap-3 transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeCharacterOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>
+                  {t("gameFamily.toons")}
+                  <ChevronDown aria-hidden="true" className="mt-1 size-[0.38em] shrink-0 transition-transform duration-200 group-open:rotate-180" strokeWidth={2.5} />
+                </summary>
+                <div className="mobile-menu-family-dropdown__content">
+                  <div className="mobile-menu-family-dropdown__inner flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
+                    {GAME_FAMILY_OPTIONS.filter(({ id }) => ["cartoon", "pokemon"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+                  </div>
                 </div>
               </details>
               {GAME_FAMILY_OPTIONS.filter(({ id }) => id === "perception").map((option) => {
                 const active = pathname === option.href || pathname?.startsWith(`${option.href}/`);
                 return <Link key={option.id} href={localizeLandingHref(option.href, locale)} aria-current={active ? "page" : undefined} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={`-mb-[0.12em] pb-[0.12em] transition ${active ? "text-zinc-950 dark:text-white" : "text-zinc-950/34 hover:text-zinc-950 dark:text-white/34 dark:hover:text-white"}`}>{t(`gameFamily.${option.id}`)}</Link>;
               })}
-              <details name="header-game-family-dropdown" className="group -mb-[0.12em] pb-[0.12em]">
-                <summary data-mobile-menu-nav-item className={`cursor-pointer list-none transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeBrandTeamOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>{t("gameFamily.logos")}</summary>
-                <div className="mt-2 flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
-                  {GAME_FAMILY_OPTIONS.filter(({ id }) => ["brand", "team"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+              <details name="header-game-family-dropdown" className="group mobile-menu-family-dropdown -mb-[0.12em] pb-[0.12em]">
+                <summary data-mobile-menu-nav-item className={`flex cursor-pointer list-none items-center gap-3 transition hover:text-zinc-950 dark:hover:text-white group-open:text-zinc-950 dark:group-open:text-white ${activeBrandTeamOption ? "text-zinc-950 dark:text-white" : "text-zinc-950/45 dark:text-white/45"}`}>
+                  {t("gameFamily.logos")}
+                  <ChevronDown aria-hidden="true" className="mt-1 size-[0.38em] shrink-0 transition-transform duration-200 group-open:rotate-180" strokeWidth={2.5} />
+                </summary>
+                <div className="mobile-menu-family-dropdown__content">
+                  <div className="mobile-menu-family-dropdown__inner flex flex-col gap-1 pl-5 text-[clamp(1.8rem,8vw,3rem)]">
+                    {GAME_FAMILY_OPTIONS.filter(({ id }) => ["brand", "team"].includes(id)).map((option) => <Link key={option.id} href={localizeLandingHref(option.href, locale)} data-mobile-menu-nav-item onClick={(event) => handleFamilyNavigation(event, localizeLandingHref(option.href, locale), pathname === option.href)} className={pathname === option.href || pathname?.startsWith(`${option.href}/`) ? "text-zinc-950 dark:text-white" : "text-zinc-950/65 dark:text-white/65"}>{t(`gameFamily.${option.id}`)}</Link>)}
+                  </div>
                 </div>
               </details>
             </nav>

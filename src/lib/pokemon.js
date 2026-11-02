@@ -1,5 +1,4 @@
 import { POKEMON_ITEMS, getPokemonItem } from "../../shared/pokemonCatalog.mjs";
-import { trackEvent } from "./analytics";
 
 export const POKEMON_OPTIONS = POKEMON_ITEMS.map((pokemon) => ({
   ...pokemon,
@@ -22,5 +21,4 @@ export function recordPokemonScore(id, score) {
   dex[id] = { bestScore: Math.max(previous.bestScore || 0, score), catches: (previous.catches || 0) + 1 };
   localStorage.setItem(POKEDEX_STORAGE_KEY, JSON.stringify(dex));
   window.dispatchEvent(new Event("huestima-pokedex-update"));
-  trackEvent("pokemon_catch", { pokemon_id: String(id), score, catch_count: dex[id].catches });
 }
